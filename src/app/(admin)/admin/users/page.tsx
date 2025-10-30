@@ -19,7 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc, collection, doc, setDoc } from '@/firebase';
+import { useCollection, useUser, useDoc, useUpdateDoc } from '@/lib/db-hooks';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { placeholderImages } from '@/lib/placeholder-images';
@@ -52,10 +52,22 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
-import type { UserProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+
+interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: 'athlete' | 'trainer' | 'admin';
+  location?: string;
+  socialLinks?: {
+    instagram?: string;
+    facebook?: string;
+    twitter?: string;
+  };
+  trainerId?: string;
+  favoriteGymIds?: string[];
+}
 
 
 const editUserSchema = z.object({
@@ -68,24 +80,23 @@ const editUserSchema = z.object({
 type EditUserFormValues = z.infer<typeof editUserSchema>;
 
 export default function AdminUsersPage() {
-  const { user: currentUser } = useUser();
-  const firestore = useFirestore();
+  const { user: currentUser, isUserLoading } = useUser();
   const { toast } = useToast();
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
 
-  const currentUserProfileRef = useMemoFirebase(
-    () => (currentUser ? doc(firestore, 'users', currentUser.uid) : null),
-    [currentUser, firestore]
+  // Fetch current user profile
+  const { data: currentUserProfile, isLoading: isCurrentUserProfileLoading } = useDoc<UserProfile>(
+    'users',
+    currentUser?.uid || null
   );
-  const { data: currentUserProfile, isLoading: isCurrentUserProfileLoading } = useDoc<UserProfile>(currentUserProfileRef);
 
-  const usersCollectionRef = useMemoFirebase(
-    () => (firestore && currentUserProfile?.role === 'admin' ? collection(firestore, 'users') : null),
-    [firestore, currentUserProfile]
+  // Fetch all users if current user is admin
+  const { data: users, isLoading: usersLoading, refetch } = useCollection<UserProfile>(
+    currentUserProfile?.role === 'admin' ? 'users' : null
   );
-  const { data: users, isLoading: usersLoading } = useCollection(usersCollectionRef);
+
+  const { updateDoc, isLoading: isUpdating } = useUpdateDoc();
 
   const avatarImage = placeholderImages.find((img) => img.id === 'avatar-male');
 
@@ -103,35 +114,24 @@ export default function AdminUsersPage() {
   };
 
   const handleUpdateUser = async (data: EditUserFormValues) => {
-    if (!selectedUser || !firestore) return;
-    setIsUpdating(true);
+    if (!selectedUser) return;
 
-    const userDocRef = doc(firestore, 'users', selectedUser.id);
-    const updatedData = {
-      ...selectedUser,
-      ...data,
-    };
-
-    setDoc(userDocRef, updatedData, { merge: true })
-      .then(() => {
-        toast({
-          title: 'Sukces!',
-          description: `Dane użytkownika ${data.name} zostały zaktualizowane.`,
-        });
-        setEditDialogOpen(false);
-        setSelectedUser(null);
-      })
-      .catch((serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: userDocRef.path,
-          operation: 'update',
-          requestResourceData: updatedData,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      })
-      .finally(() => {
-        setIsUpdating(false);
+    try {
+      await updateDoc('users', selectedUser.id, data);
+      toast({
+        title: 'Sukces!',
+        description: `Dane użytkownika ${data.name} zostały zaktualizowane.`,
       });
+      setEditDialogOpen(false);
+      setSelectedUser(null);
+      refetch(); // Refresh the users list
+    } catch (error) {
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się zaktualizować użytkownika.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const getInitials = (name: string | null | undefined) => {
@@ -143,7 +143,7 @@ export default function AdminUsersPage() {
       .toUpperCase();
   };
 
-  const getRoleVariant = (role: string) => {
+  const getRoleVariant = (role: string): 'destructive' | 'secondary' | 'default' => {
     switch (role) {
       case 'admin':
         return 'destructive';
@@ -154,7 +154,20 @@ export default function AdminUsersPage() {
     }
   };
 
-  const pageIsLoading = isCurrentUserProfileLoading || (currentUserProfile?.role === 'admin' && usersLoading);
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'Administrator';
+      case 'trainer':
+        return 'Trener';
+      case 'athlete':
+        return 'Sportowiec';
+      default:
+        return role;
+    }
+  };
+
+  const pageIsLoading = isUserLoading || isCurrentUserProfileLoading || (currentUserProfile?.role === 'admin' && usersLoading);
 
   return (
     <div className="container mx-auto p-4 md:p-8">
@@ -186,7 +199,7 @@ export default function AdminUsersPage() {
                         <TableCell className="text-right"><Skeleton className="h-9 w-24 ml-auto" /></TableCell>
                     </TableRow>
                  ))
-              ) : users && currentUserProfile?.role === 'admin' ? (
+              ) : users && users.length > 0 && currentUserProfile?.role === 'admin' ? (
                 users.map((user: UserProfile) => (
                   <TableRow key={user.id}>
                     <TableCell>
@@ -200,8 +213,8 @@ export default function AdminUsersPage() {
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
-                      <Badge variant={getRoleVariant(user.role)} className="capitalize">
-                        {user.role}
+                      <Badge variant={getRoleVariant(user.role)}>
+                        {getRoleLabel(user.role)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -214,7 +227,9 @@ export default function AdminUsersPage() {
               ))) : (
                 <TableRow>
                   <TableCell colSpan={4} className="py-12 text-center text-muted-foreground">
-                    Brak uprawnień do wyświetlania użytkowników.
+                    {currentUserProfile?.role !== 'admin'
+                      ? 'Brak uprawnień do wyświetlania użytkowników.'
+                      : 'Brak użytkowników w systemie.'}
                   </TableCell>
                 </TableRow>
               )}

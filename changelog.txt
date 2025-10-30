@@ -75,3 +75,23 @@ MongoDB + Mongoose zastąpiły Firestore.
 - Wszystkie pliki aplikacji importują funkcje Firebase z warstwy kompatybilności (@/firebase)
 - Warstwa kompatybilności eksportuje stuby dla wszystkich funkcji Firebase (doc, collection, query, itp.)
 
+=== 2025-10-30 - Migracja strony zarządzania użytkownikami na MongoDB ===
+- Przepisano /admin/users/page.tsx aby używał MongoDB zamiast Firebase
+- Zamieniono Firebase hooks (useFirestore, useMemoFirebase, useCollection z @/firebase) na MongoDB hooks (useCollection, useDoc, useUpdateDoc z @/lib/db-hooks)
+- Usunięto wszystkie importy Firebase (doc, collection, setDoc, errorEmitter, FirestorePermissionError)
+- Dodano funkcję getRoleLabel() do wyświetlania polskich nazw ról użytkowników
+- Zaktualizowano obsługę błędów - używa teraz toast zamiast Firebase error emitter
+- Dodano automatyczne odświeżanie listy użytkowników po edycji (refetch)
+- Strona wyświetla użytkowników z bazy MongoDB z możliwością edycji imienia i roli
+
+=== 2025-10-30 - Migracja strony zarządzania grupami mięśniowymi na MongoDB ===
+- Przepisano /admin/muscle-groups/page.tsx aby używał MongoDB zamiast Firebase
+- Zamieniono Firebase hooks (useFirestore, useMemoFirebase, useCollection, addDoc, updateDoc, deleteDoc z @/firebase) na MongoDB hooks (useCollection, useCreateDoc, useUpdateDoc, useDeleteDoc z @/lib/db-hooks)
+- Usunięto wszystkie importy Firebase (doc, collection, addDoc, updateDoc, deleteDoc, errorEmitter, FirestorePermissionError)
+- Ulepszono zarządzanie dialogami - jeden dialog dla dodawania i edycji z dynamicznym tytułem
+- Zaktualizowano obsługę błędów - używa teraz toast zamiast Firebase error emitter
+- Dodano automatyczne odświeżanie listy grup mięśniowych po dodaniu, edycji lub usunięciu (refetch)
+- Dodano wskaźnik ładowania dla przycisku usuwania
+- Poprawiono walidację URL obrazka - akceptuje pusty string jako opcjonalną wartość
+- Strona umożliwia dodawanie nowych grup mięśniowych, edycję istniejących oraz ich usuwanie
+
