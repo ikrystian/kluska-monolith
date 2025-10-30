@@ -28,3 +28,50 @@ CHANGELOG
 - Dodano logikę przekierowań w (trainer)/layout.tsx dla użytkowników z niewłaściwą rolą
 - Dodano logikę przekierowań w (athlete)/layout.tsx dla użytkowników z niewłaściwą rolą
 
+MIGRACJA Z FIREBASE NA MONGODB:
+- Zainstalowano pakiety: mongodb, mongoose, bcryptjs, jsonwebtoken, next-auth
+- Utworzono konfigurację połączenia MongoDB w src/lib/mongodb.ts
+- Utworzono modele Mongoose dla wszystkich kolekcji (User, Article, Conversation, Message, itp.)
+- Zaimplementowano NextAuth.js jako system autentykacji zastępujący Firebase Auth
+- Utworzono API routes dla operacji CRUD na bazie danych (/api/db/[collection])
+- Zaimplementowano hooki React do pracy z MongoDB (useCollection, useDoc, useCreateDoc, useUpdateDoc, useDeleteDoc)
+- Utworzono MongoDBProvider zastępujący FirebaseProvider
+- Zaktualizowano główny layout aplikacji aby używał MongoDBProvider
+- Zaktualizowano strony login i register aby używały NextAuth zamiast Firebase Auth
+- Dodano zmienne środowiskowe MONGO_DB_URI, NEXTAUTH_SECRET, NEXTAUTH_URL do .env
+- Zaktualizowano wszystkie layouty (athlete, trainer, admin, app) aby używały MongoDB hooks
+- Utworzono warstwę kompatybilności Firebase (src/lib/firebase-compat.tsx) dla stopniowej migracji
+- Zaktualizowano src/firebase/index.ts aby eksportował warstwę kompatybilności
+- Build aplikacji zakończony sukcesem - aplikacja kompiluje się poprawnie
+- Odinstalowano pakiet firebase z projektu (npm uninstall firebase)
+- Usunięto pliki konfiguracyjne Firebase (firestore.rules, apphosting.yaml)
+- Katalog src/firebase zachowany jako warstwa kompatybilności (do usunięcia po pełnej migracji)
+- Zaktualizowano importy w plikach admina aby używały warstwy kompatybilności
+- Utworzono funkcje stub w warstwie kompatybilności dla wszystkich funkcji Firebase (doc, collection, query, setDoc, getStorage, itp.)
+- Zaktualizowano wszystkie importy Firebase w plikach aplikacji (athlete, trainer) - 22 pliki
+- Zaktualizowano src/firebase/errors.ts aby nie używał Firebase Auth
+- Usunięto duplikaty importów w plikach templates
+- Build zakończony sukcesem - wszystkie pliki skompilowane poprawnie
+- Zaktualizowano src/components/nav.tsx aby używał MongoDB hooks zamiast Firebase
+- Naprawiono błąd ReferenceError: doc is not defined w komponencie nawigacji
+
+MIGRACJA Z FIREBASE NA MONGODB ZAKOŃCZONA POMYŚLNIE!
+Aplikacja używa teraz MongoDB zamiast Firebase.
+NextAuth.js zastąpił Firebase Auth.
+MongoDB + Mongoose zastąpiły Firestore.
+
+=== 2025-10-30 - Reorganizacja panelu admina ===
+- Przeniesiono zarządzanie użytkownikami z /admin/dashboard do /admin/users
+- Dashboard admina (/admin/dashboard) jest teraz pustą stroną z placeholder
+- Zaktualizowano nawigację admina - dodano osobny link do zarządzania użytkownikami
+- Usunięto nieużywane importy z komponentu nawigacji
+- Naprawiono błąd Next.js 15 - params muszą być await'owane w API routes
+- Zaktualizowano /api/db/[collection]/route.ts i /api/db/[collection]/[id]/route.ts
+
+=== 2025-10-30 - Usunięcie błędów Firebase ===
+- Naprawiono błąd ReferenceError: doc is not defined w src/app/page.tsx
+- Zaktualizowano src/app/page.tsx aby używał MongoDB hooks (useUser, useDoc) zamiast Firebase
+- Usunięto zależności od useFirestore, useMemoFirebase i doc z landing page
+- Wszystkie pliki aplikacji importują funkcje Firebase z warstwy kompatybilności (@/firebase)
+- Warstwa kompatybilności eksportuje stuby dla wszystkich funkcji Firebase (doc, collection, query, itp.)
+

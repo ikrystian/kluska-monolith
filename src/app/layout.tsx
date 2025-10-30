@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { MongoDBProvider } from '@/lib/mongodb-provider';
 import { ThemeProvider } from '@/components/theme-provider';
 
 export const metadata: Metadata = {
@@ -32,10 +32,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <FirebaseClientProvider>
+          <MongoDBProvider>
             {children}
             <Toaster />
-          </FirebaseClientProvider>
+          </MongoDBProvider>
         </ThemeProvider>
       </body>
     </html>

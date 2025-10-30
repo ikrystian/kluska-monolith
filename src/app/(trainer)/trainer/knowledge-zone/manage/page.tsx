@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where, doc, addDoc, updateDoc, deleteDoc, Timestamp, writeBatch } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, useUser, collection, query, where, doc, addDoc, updateDoc, deleteDoc, Timestamp, writeBatch } from '@/firebase';
 import type { Article, ArticleCategory } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

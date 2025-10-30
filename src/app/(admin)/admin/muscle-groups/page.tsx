@@ -13,8 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, collection, addDoc, deleteDoc, doc, updateDoc } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Loader2, PlusCircle, Trash2, Dumbbell, Edit } from 'lucide-react';
 import {
@@ -76,7 +75,7 @@ export default function MuscleGroupsPage() {
         imageUrl: group.imageUrl,
     });
   };
-  
+
   const handleCloseDialogs = () => {
     setEditingGroup(null);
     form.reset({ name: '', imageUrl: '' });
@@ -116,7 +115,7 @@ export default function MuscleGroupsPage() {
             imageUrl: data.imageUrl || `https://picsum.photos/seed/${encodeURIComponent(data.name)}/400/300`,
             imageHint: data.name.toLowerCase(),
         };
-    
+
         addDoc(muscleGroupsRef!, newGroupData)
           .then(() => {
             toast({
@@ -246,7 +245,7 @@ export default function MuscleGroupsPage() {
                   <Card key={group.id} className="overflow-hidden flex flex-col">
                       <div className="relative h-40 w-full">
                           {group.imageUrl && (
-                              <Image 
+                              <Image
                                 src={group.imageUrl}
                                 alt={group.name}
                                 fill

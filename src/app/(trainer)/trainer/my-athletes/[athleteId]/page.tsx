@@ -42,8 +42,7 @@ import {
 import { ChartTooltipContent, ChartContainer } from '@/components/ui/chart';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit, doc, updateDoc, where, getDocs, setDoc, Timestamp, getDoc } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase, collection, query, orderBy, limit, doc, updateDoc, where, getDocs, setDoc, Timestamp, getDoc } from '@/firebase';
 import type { Goal, WorkoutLog, PlannedWorkout, UserProfile, WorkoutPlan, Exercise, Conversation, AthleteProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';

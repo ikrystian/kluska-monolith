@@ -15,22 +15,19 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { placeholderImages } from '@/lib/placeholder-images';
-import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useDoc } from '@/lib/db-hooks';
 
 export default function LandingPage() {
   const heroImage = placeholderImages.find((img) => img.id === 'hero');
 
   const { user, isUserLoading } = useUser();
   const router = useRouter();
-  const firestore = useFirestore();
 
-  const userProfileRef = useMemoFirebase(() => {
-    if (!user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [user, firestore]);
-
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
+  // Fetch user profile from MongoDB
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc(
+    user ? 'users' : null,
+    user?.uid || null
+  );
 
   const isLoading = isUserLoading || (user && isProfileLoading);
 
@@ -43,7 +40,7 @@ export default function LandingPage() {
       } else if (userProfile.role === 'athlete') {
         router.push('/athlete/dashboard');
       } else {
-        router.push('/dashboard');
+alert('Unknown role');
       }
     }
   }, [user, userProfile, isLoading, router]);

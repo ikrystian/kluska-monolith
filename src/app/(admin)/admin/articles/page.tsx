@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, doc, updateDoc, deleteDoc, Timestamp, setDoc } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, collection, query, doc, updateDoc, deleteDoc, Timestamp, setDoc } from '@/firebase';
 import type { Article, ArticleCategory } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -53,10 +52,10 @@ export default function ManageArticlesPage() {
     [firestore]
   );
   const { data: articles, isLoading } = useCollection<Article>(articlesQuery);
-  
+
   const articleCategoriesRef = useMemoFirebase(() => firestore ? collection(firestore, 'articleCategories') : null, [firestore]);
   const { data: categories, isLoading: categoriesLoading } = useCollection<ArticleCategory>(articleCategoriesRef);
-  
+
   const form = useForm<ArticleFormValues>({
     resolver: zodResolver(articleSchema),
     defaultValues: {
@@ -83,7 +82,7 @@ export default function ManageArticlesPage() {
     }
     setDialogOpen(true);
   };
-  
+
   const onSubmit = async (data: ArticleFormValues) => {
     const { isSubmitting } = form.formState;
     if(isSubmitting) return;
@@ -105,7 +104,7 @@ export default function ManageArticlesPage() {
         }));
     }
   };
-  
+
   const handleDelete = async (articleId: string) => {
       const articleRef = doc(firestore, 'articles', articleId);
       try {

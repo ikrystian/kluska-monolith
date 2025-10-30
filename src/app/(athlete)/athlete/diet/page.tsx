@@ -12,8 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, Timestamp, query, orderBy, where } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useMemoFirebase, collection, addDoc, Timestamp, query, orderBy, where } from '@/firebase';
 import type { FoodItem, LoggedMeal, MealType } from '@/lib/types';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';

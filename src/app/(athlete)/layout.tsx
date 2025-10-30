@@ -3,10 +3,9 @@
 import { AppNav } from '@/components/nav';
 import { AppHeader } from '@/components/header';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useDoc } from '@/lib/db-hooks';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { doc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 
 export default function AthleteLayout({
@@ -16,14 +15,11 @@ export default function AthleteLayout({
 }>) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
-  const firestore = useFirestore();
 
-  const userProfileRef = useMemoFirebase(() => {
-    if (!user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [user, firestore]);
-
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc(
+    user ? 'users' : null,
+    user?.uid || null
+  );
 
   const isLoading = isUserLoading || isProfileLoading;
 

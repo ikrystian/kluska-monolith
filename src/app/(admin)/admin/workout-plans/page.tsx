@@ -1,8 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from '@/firebase';
-import { collection, query, where, doc } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc, collection, query, where, doc } from '@/firebase';
 import type { WorkoutPlan, UserProfile } from '@/lib/types';
 import {
   Table,
@@ -48,7 +47,7 @@ export default function AdminWorkoutPlansPage() {
     if (!users) return new Map();
     return new Map(users.map(u => [u.id, u.name]));
   }, [users]);
-  
+
   const isLoading = isCurrentUserProfileLoading || (currentUserProfile?.role === 'admin' && (plansLoading || usersLoading));
 
   return (

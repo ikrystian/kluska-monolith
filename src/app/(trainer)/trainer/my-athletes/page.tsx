@@ -24,17 +24,10 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useFirestore, useUser, useCollection, useMemoFirebase, useDoc } from '@/firebase';
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  doc,
-  setDoc,
-  deleteDoc,
-  FirestoreError,
-} from 'firebase/firestore';
+import { useAuth, useFirestore, useUser, useCollection, useMemoFirebase, useDoc, collection, query, where, getDocs, doc, setDoc, deleteDoc } from '@/firebase';
+
+// FirestoreError type for compatibility
+type FirestoreError = Error & { code?: string };
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { placeholderImages } from '@/lib/placeholder-images';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -76,7 +69,7 @@ export default function MyAthletesPage() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  
+
   const avatarImage = placeholderImages.find((img) => img.id === 'avatar-male');
 
   const userProfileRef = useMemoFirebase(
@@ -114,7 +107,7 @@ export default function MyAthletesPage() {
       where('email', '==', email),
       where('role', '==', 'athlete')
     );
-    
+
     getDocs(q).then((querySnapshot) => {
        if (querySnapshot.empty) {
         setSearchError('Nie znaleziono sportowca z tym adresem e-mail.');
@@ -138,7 +131,7 @@ export default function MyAthletesPage() {
       setSearchLoading(false);
     })
   };
-  
+
   const handleAddAthlete = async () => {
     if (!foundUser || !user) return;
 
@@ -152,7 +145,7 @@ export default function MyAthletesPage() {
     }
 
     setAddLoading(true);
-    
+
     const athleteRef = doc(firestore, `trainers/${user.uid}/athletes`, foundUser.id);
     const athleteProfile = {
         id: foundUser.id,
@@ -161,7 +154,7 @@ export default function MyAthletesPage() {
         role: 'athlete',
         trainerId: user.uid,
     };
-    
+
     setDoc(athleteRef, athleteProfile)
       .then(() => {
         toast({
@@ -187,7 +180,7 @@ export default function MyAthletesPage() {
   const handleRemoveAthlete = async (athleteId: string) => {
     if (!user) return;
     const athleteRef = doc(firestore, `trainers/${user.uid}/athletes`, athleteId);
-    
+
     deleteDoc(athleteRef)
       .then(() => {
         toast({

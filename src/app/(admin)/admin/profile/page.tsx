@@ -16,8 +16,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { placeholderImages } from '@/lib/placeholder-images';
-import { useDoc, useFirestore, useUser, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, setDoc, collection, query } from 'firebase/firestore';
+import { useDoc, useFirestore, useUser, useMemoFirebase, useCollection, doc, setDoc, collection, query } from '@/firebase';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import type { UserProfile, Gym } from '@/lib/types';
@@ -80,7 +79,7 @@ export default function ProfilePage() {
         ...userProfile,
         ...data
     };
-    
+
     setDoc(userProfileRef!, updatedData, { merge: true })
       .then(() => {
         toast({
@@ -244,7 +243,7 @@ export default function ProfilePage() {
                             </>
                         )}
                     </div>
-                  
+
                     <div className="space-y-4 pt-4">
                         <h3 className="font-semibold">Ulubione Siłownie</h3>
                         <FormField
@@ -294,7 +293,7 @@ export default function ProfilePage() {
                           )}
                         />
                     </div>
-                  
+
                   <div className="space-y-2">
                     <FormLabel>Motyw</FormLabel>
                     <ThemeToggle />

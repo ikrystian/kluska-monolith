@@ -20,9 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import type { WorkoutPlan, Exercise, WorkoutLog, WorkoutDay } from '@/lib/types';
-import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, addDoc, Timestamp, query, where, doc, setDoc, updateDoc } from 'firebase/firestore';
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc, collection, addDoc, Timestamp, query, where, doc, setDoc, updateDoc, getStorage, ref as storageRef, uploadBytes, getDownloadURL } from '@/firebase';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -55,7 +53,7 @@ function AddExerciseDialog({ allExercises, onAddExercise }: { allExercises: Exer
 
   const filteredExercises = useMemo(() => {
     if (!allExercises) return [];
-    return allExercises.filter(ex => 
+    return allExercises.filter(ex =>
       ex.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ex.muscleGroup.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -79,7 +77,7 @@ function AddExerciseDialog({ allExercises, onAddExercise }: { allExercises: Exer
           <DialogTitle>Wybierz Ćwiczenie</DialogTitle>
         </DialogHeader>
         <div className="flex items-center space-x-2">
-          <Input 
+          <Input
             placeholder="Szukaj ćwiczenia..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -88,7 +86,7 @@ function AddExerciseDialog({ allExercises, onAddExercise }: { allExercises: Exer
         <ScrollArea className="h-72">
           <div className="space-y-2 pr-4">
             {filteredExercises?.map(ex => (
-              <div 
+              <div
                 key={ex.id}
                 onClick={() => handleSelectExercise(ex.id)}
                 className="flex justify-between items-center p-3 rounded-md border cursor-pointer hover:bg-secondary"
@@ -123,7 +121,7 @@ function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkou
   const router = useRouter();
 
   const [activeExerciseIndex, setActiveExerciseIndex] = useState(0);
-  
+
   const form = useForm<LogFormValues>({
     resolver: zodResolver(logSchema),
     defaultValues: initialWorkout,
@@ -133,7 +131,7 @@ function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkou
     control: form.control,
     name: "exercises",
   });
-  
+
   useEffect(() => {
     // If we're on a non-existent index (e.g., after deleting the last item), go to the new last item.
     if (fields.length > 0 && activeExerciseIndex >= fields.length) {
@@ -179,7 +177,7 @@ function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkou
       setPhotoPreview(URL.createObjectURL(file));
     }
   };
-  
+
   const handleAddExercise = (exerciseId: string) => {
     const newExercise = { exerciseId, sets: [], duration: 0 };
     append(newExercise);
@@ -206,7 +204,7 @@ function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkou
       if (!user || !firestore || !workoutLogId) return;
 
       setIsSaving(true);
-      
+
       let photoURL: string | undefined = undefined;
       if (photoFile) {
         try {
@@ -235,7 +233,7 @@ function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkou
           status: 'completed',
           ...(photoURL && { photoURL }),
       };
-      
+
       const workoutDocRef = doc(firestore, `users/${user.uid}/workoutSessions`, workoutLogId);
 
       updateDoc(workoutDocRef, finalLogData)
@@ -269,7 +267,7 @@ function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkou
             <p><span className="font-semibold">Nazwa:</span> {form.getValues('workoutName')}</p>
             <p><span className="font-semibold">Ćwiczenia:</span> {form.getValues('exercises').length}</p>
             <p><span className="font-semibold">Czas trwania:</span> {Math.round((new Date().getTime() - startTime.getTime()) / (1000 * 60))} minut</p>
-            
+
             <div className="pt-4 space-y-4">
                 {photoPreview && (
                   <div className="relative w-full aspect-video rounded-md overflow-hidden mb-2">
@@ -320,11 +318,11 @@ function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkou
           </CardHeader>
           <CardContent className="space-y-4">
              {currentExercise ? (
-                <ExerciseCard 
-                    key={currentExercise.id} 
-                    index={activeExerciseIndex} 
-                    exerciseDetails={exerciseDetails} 
-                    onRemoveExercise={() => handleRemoveExercise(activeExerciseIndex)} 
+                <ExerciseCard
+                    key={currentExercise.id}
+                    index={activeExerciseIndex}
+                    exerciseDetails={exerciseDetails}
+                    onRemoveExercise={() => handleRemoveExercise(activeExerciseIndex)}
                 />
             ) : (
               <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center">
@@ -333,11 +331,11 @@ function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkou
                 <p className="mt-1 text-sm text-muted-foreground mb-4">Dodaj pierwsze ćwiczenie, aby zacząć.</p>
               </div>
             )}
-            
+
             <div className="flex items-center gap-2">
                 <div className="flex-1">
-                    <AddExerciseDialog 
-                        allExercises={allExercises} 
+                    <AddExerciseDialog
+                        allExercises={allExercises}
                         onAddExercise={handleAddExercise}
                     />
                 </div>
@@ -455,7 +453,7 @@ function FromTemplateForm({ onStartWorkout, allExercises }: { onStartWorkout: (t
             where('assignedAthleteIds', 'array-contains', user.uid)
         );
     }, [firestore, user]);
-    
+
     const myPlansQuery = useMemoFirebase(() => {
         if (!user) return null;
         return query(collection(firestore, 'workoutPlans'), where('trainerId', '==', user.uid));
@@ -463,7 +461,7 @@ function FromTemplateForm({ onStartWorkout, allExercises }: { onStartWorkout: (t
 
     const { data: assignedPlans, isLoading: assignedPlansLoading } = useCollection<WorkoutPlan>(workoutPlansRef);
     const { data: myPlans, isLoading: myPlansLoading } = useCollection<WorkoutPlan>(myPlansQuery);
-    
+
     const workoutPlans = useMemo(() => {
         const plansMap = new Map<string, WorkoutPlan>();
         assignedPlans?.forEach(plan => plansMap.set(plan.id, plan));
@@ -584,7 +582,7 @@ export default function LogWorkoutPage() {
   const handleStartWorkout = (data: LogFormValues) => {
     setActiveWorkout(data);
   };
-  
+
   const handleFinishWorkout = () => {
       setActiveWorkout(null);
   }

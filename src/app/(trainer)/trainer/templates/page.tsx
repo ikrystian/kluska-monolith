@@ -5,7 +5,6 @@ import { useForm, useFieldArray, FormProvider, useFormContext } from 'react-hook
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { PlusCircle, Trash2, Library, Save, Users, Loader2, GripVertical, Edit, Timer } from 'lucide-react';
-import { collection, doc, setDoc, query, where, deleteDoc, updateDoc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,8 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
 import type { WorkoutPlan, Exercise, UserProfile } from '@/lib/types';
-import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
-import { errorEmitter } from '@/firebase/error-emitter';
+import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc, collection, doc, setDoc, query, where, deleteDoc, updateDoc } from '@/firebase';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -47,12 +45,12 @@ const templateSchema = z.object({
 
 type TemplateFormValues = z.infer<typeof templateSchema>;
 
-function TemplateForm({ 
-    onSave, 
-    allExercises, 
-    editingPlan 
-}: { 
-    onSave: () => void, 
+function TemplateForm({
+    onSave,
+    allExercises,
+    editingPlan
+}: {
+    onSave: () => void,
     allExercises: Exercise[] | null,
     editingPlan: WorkoutPlan | null
 }) {
@@ -80,7 +78,7 @@ function TemplateForm({
       workoutDays: [],
     },
   });
-  
+
   useEffect(() => {
     if (isEditMode && editingPlan) {
       form.reset({
@@ -133,7 +131,7 @@ function TemplateForm({
             });
     } else {
         const planCollectionRef = collection(firestore, 'workoutPlans');
-        const newPlanRef = doc(planCollectionRef); 
+        const newPlanRef = doc(planCollectionRef);
 
         const newPlan: WorkoutPlan = {
           id: newPlanRef.id,
@@ -143,7 +141,7 @@ function TemplateForm({
           assignedAthleteIds: [],
           workoutDays: data.workoutDays,
         };
-        
+
         await setDoc(newPlanRef, newPlan)
             .then(() => {
                 toast({
@@ -199,7 +197,7 @@ function TemplateForm({
                 </FormItem>
               )}
             />
-            
+
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Dni Treningowe</h3>
               <Accordion type="multiple" className="w-full space-y-4">
@@ -425,7 +423,7 @@ function AssignPlanDialog({ plan }: { plan: WorkoutPlan }) {
       })
       .finally(() => setIsAssigning(false));
   };
-  
+
   const handleCheckboxChange = (athleteId: string, checked: boolean | "indeterminate") => {
     if(checked) {
         setSelectedAthletes(prev => [...prev, athleteId]);
@@ -497,7 +495,7 @@ export default function TemplatesPage() {
 
     const { data: assignedPlans, isLoading: assignedPlansLoading } = useCollection<WorkoutPlan>(assignedPlansQuery);
     const { data: myPlans, isLoading: myPlansLoading } = useCollection<WorkoutPlan>(myPlansQuery);
-    
+
     const workoutPlans = useMemo(() => {
         const plansMap = new Map<string, WorkoutPlan>();
         assignedPlans?.forEach(plan => plansMap.set(plan.id, plan));
@@ -517,7 +515,7 @@ export default function TemplatesPage() {
         setEditingPlan(null);
         setView('list');
     };
-    
+
     const handleEditClick = (plan: WorkoutPlan) => {
         setEditingPlan(plan);
         setView('form');
@@ -531,7 +529,7 @@ export default function TemplatesPage() {
     const handleDelete = async (planId: string) => {
       if (!user) return;
       const planRef = doc(firestore, `workoutPlans`, planId);
-      
+
       try {
         await deleteDoc(planRef);
         toast({
@@ -547,7 +545,7 @@ export default function TemplatesPage() {
           errorEmitter.emit('permission-error', permissionError);
       }
     }
-    
+
     if (view === 'form') {
         return (
             <div className="container mx-auto p-4 md:p-8">
@@ -558,7 +556,7 @@ export default function TemplatesPage() {
             </div>
         );
     }
-  
+
   return (
     <div className="container mx-auto p-4 md:p-8">
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

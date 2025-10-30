@@ -1,7 +1,6 @@
 'use client';
 
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useDoc, useFirestore, useMemoFirebase, doc } from '@/firebase';
 import { useParams, useRouter } from 'next/navigation';
 import type { Article } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';

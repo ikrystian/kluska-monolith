@@ -15,13 +15,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dumbbell } from 'lucide-react';
 import Link from 'next/link';
-import { useAuth, useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { signIn } from 'next-auth/react';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { errorEmitter } from '@/firebase/error-emitter';
+import { useUser, useDoc } from '@/lib/db-hooks';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -30,18 +27,13 @@ export default function RegisterPage() {
   const [role, setRole] = useState<'athlete' | 'trainer' | 'admin'>('athlete');
   const [uiLoading, setUiLoading] = useState(false);
   const router = useRouter();
-  const auth = useAuth();
-  const firestore = useFirestore();
   const { toast } = useToast();
 
   const { user, isUserLoading } = useUser();
-
-  const userProfileRef = useMemoFirebase(() => {
-    if (!user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [user, firestore]);
-
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc(
+    user ? 'users' : null,
+    user?.uid || null
+  );
 
   const isLoading = isUserLoading || uiLoading || (user && isProfileLoading);
 
@@ -49,6 +41,10 @@ export default function RegisterPage() {
     if (!isUserLoading && user && userProfile) {
       if (userProfile.role === 'admin') {
         router.push('/admin/dashboard');
+      } else if (userProfile.role === 'trainer') {
+        router.push('/trainer/dashboard');
+      } else if (userProfile.role === 'athlete') {
+        router.push('/athlete/dashboard');
       } else {
         router.push('/dashboard');
       }
@@ -66,45 +62,36 @@ export default function RegisterPage() {
     }
     setUiLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      const userProfileData = {
-        id: user.uid,
-        name: name,
-        email: email,
-        role: role,
-      };
-
-      const userDocRef = doc(firestore, 'users', user.uid);
-
-      await setDoc(userDocRef, userProfileData).catch((serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: userDocRef.path,
-          operation: 'create',
-          requestResourceData: userProfileData,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        // We still want to proceed even if this fails, so we don't re-throw
+      // Register user via API
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, role }),
       });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Registration failed');
+      }
 
       toast({
         title: 'Rejestracja udana!',
-        description: 'Witaj w GymProgress! Przekierowywanie...',
+        description: 'Witaj w GymProgress! Logowanie...',
       });
 
-      // The useEffect will handle the redirect once the user and profile are loaded.
-      // We don't need an explicit router.push here.
+      // Auto-login after registration
+      await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+
+      // The useEffect will handle the redirect
 
     } catch (error: any) {
-      let errorMessage = 'Wystąpił nieznany błąd. Spróbuj ponownie.';
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'Ten adres email jest już zajęty.';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Podany adres email jest nieprawidłowy.';
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'Hasło jest zbyt słabe. Użyj co najmniej 6 znaków.';
-      }
+      let errorMessage = error.message || 'Wystąpił nieznany błąd. Spróbuj ponownie.';
+
       toast({
         title: 'Błąd rejestracji',
         description: errorMessage,

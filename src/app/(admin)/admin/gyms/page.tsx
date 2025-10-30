@@ -19,8 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, setDoc, deleteDoc, addDoc } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, collection, doc, setDoc, deleteDoc, addDoc } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Edit, Loader2, PlusCircle, Trash2, Building2 } from 'lucide-react';
 import {
@@ -74,7 +73,7 @@ export default function GymsPage() {
       address: '',
     }
   });
-  
+
   const { formState: { isSubmitting } } = form;
 
   const handleOpenDialog = (gym: Gym | null) => {
@@ -187,7 +186,7 @@ export default function GymsPage() {
           </Table>
         </CardContent>
       </Card>
-      
+
       <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>

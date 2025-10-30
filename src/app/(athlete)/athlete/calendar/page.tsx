@@ -8,8 +8,7 @@ import { pl } from 'date-fns/locale';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useCollection, useFirestore, useUser, useMemoFirebase, collection, query, where } from '@/firebase';
 import type { Exercise, PlannedWorkout, WorkoutLog } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 

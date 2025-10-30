@@ -60,9 +60,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, Timestamp, deleteDoc, doc, query, orderBy, updateDoc } from 'firebase/firestore';
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useUser, useFirestore, useCollection, useMemoFirebase, collection, addDoc, Timestamp, deleteDoc, doc, query, orderBy, updateDoc, getStorage, ref as storageRef, uploadBytes, getDownloadURL } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -97,7 +95,7 @@ type AchievementFormValues = z.infer<typeof achievementSchema>;
 // --- GOAL FORM ---
 function GoalForm({ onFormSubmit, goal, onDialogClose }: { onFormSubmit: (data: GoalFormValues) => Promise<void>, goal?: Goal | null, onDialogClose: () => void }) {
   const isEditMode = !!goal;
-  
+
   const form = useForm<GoalFormValues>({
     resolver: zodResolver(goalSchema),
     defaultValues: isEditMode ? {
@@ -278,7 +276,7 @@ function AddAchievementForm({ onAchievementAdded }: { onAchievementAdded: () => 
       files.forEach(file => append(file));
     }
   };
-  
+
   const uploadPhotos = async (photos: File[]): Promise<string[]> => {
     if (!user) return [];
     const storage = getStorage();
@@ -292,7 +290,7 @@ function AddAchievementForm({ onAchievementAdded }: { onAchievementAdded: () => 
 
   async function onSubmit(data: AchievementFormValues) {
     if (!user || !firestore) return;
-    
+
     let photoURLs: string[] = [];
     if (data.photos && data.photos.length > 0) {
         try {
@@ -534,7 +532,7 @@ function ConvertGoalToAchievementForm({ goal, onConverted }: { goal: Goal, onCon
       await addDoc(achievementsCollection, newAchievementData);
       const goalDocRef = doc(firestore, `users/${user.uid}/goals`, goal.id);
       await deleteDoc(goalDocRef);
-      
+
       toast({
         title: 'Cel Osiągnięty!',
         description: 'Gratulacje! Twój cel został przeniesiony do trofeów.',
@@ -690,7 +688,7 @@ export default function GoalsAndAchievementsPage() {
     [user, firestore]
   );
   const { data: goals, isLoading: goalsLoading } = useCollection<Goal>(goalsRef);
-  
+
   // Fetch Achievements
   const achievementsRef = useMemoFirebase(() =>
     user ? query(collection(firestore, `users/${user.uid}/achievements`), orderBy('date', 'desc')) : null,
@@ -747,7 +745,7 @@ export default function GoalsAndAchievementsPage() {
         });
     }
   };
-  
+
   const handleAchievementAdded = () => {
     setAchievementDialogOpen(false);
   }
@@ -755,7 +753,7 @@ export default function GoalsAndAchievementsPage() {
   const handleGoalConverted = () => {
     setGoalToConvert(null);
   }
-  
+
   const handleDeleteGoal = async () => {
     if (!goalToDelete || !user || !firestore) return;
     const goalDocRef = doc(firestore, `users/${user.uid}/goals`, goalToDelete.id);
@@ -850,7 +848,7 @@ export default function GoalsAndAchievementsPage() {
                   </Card>
               );
               })}
-              
+
               <Card onClick={() => { setEditingGoal(null); setGoalDialogOpen(true); }} className="flex flex-col items-center justify-center border-dashed hover:border-primary hover:bg-secondary/30 transition-colors cursor-pointer min-h-[280px]">
                   <CardContent className="text-center p-6">
                       <PlusCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -922,13 +920,13 @@ export default function GoalsAndAchievementsPage() {
             <GoalForm onFormSubmit={handleGoalFormSubmit} goal={editingGoal} onDialogClose={handleGoalDialogClose} />
         </DialogContent>
       </Dialog>
-      
+
       <Dialog open={isAchievementDialogOpen} onOpenChange={setAchievementDialogOpen}>
           <DialogContent>
               <AddAchievementForm onAchievementAdded={handleAchievementAdded} />
           </DialogContent>
       </Dialog>
-      
+
       <Dialog open={!!goalToConvert} onOpenChange={() => setGoalToConvert(null)}>
           <DialogContent>
               {goalToConvert && <ConvertGoalToAchievementForm goal={goalToConvert} onConverted={handleGoalConverted} />}
@@ -952,4 +950,3 @@ export default function GoalsAndAchievementsPage() {
   );
 }
 
-    

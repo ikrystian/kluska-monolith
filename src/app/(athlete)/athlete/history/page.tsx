@@ -28,8 +28,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, where, doc, deleteDoc } from 'firebase/firestore';
+import { useCollection, useFirestore, useUser, useMemoFirebase, collection, query, orderBy, where, doc, deleteDoc } from '@/firebase';
 import type { WorkoutLog, Exercise } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';

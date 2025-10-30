@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  BarChart,
   CalendarDays,
   Dumbbell,
   History,
@@ -11,12 +10,10 @@ import {
   PlusSquare,
   Library,
   Users,
-  Shield,
   RectangleEllipsis,
   Trophy,
   Footprints,
   Salad,
-  Handshake,
   BookOpen,
   Ruler,
   Building2,
@@ -39,11 +36,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { placeholderImages } from '@/lib/placeholder-images';
-import { useAuth, useDoc, useMemoFirebase, useUser, useCollection } from '@/firebase';
-import { doc, collection, query } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
-import { signOut } from 'firebase/auth';
-import type { Conversation } from '@/lib/types';
+import { useDoc, useUser, signOut } from '@/firebase';
 import { Badge } from '@/components/ui/badge';
 
 const athleteNavItems = [
@@ -72,7 +65,8 @@ const trainerNavItems = [
 ]
 
 const adminNavItems = [
-    { href: '/admin/dashboard', icon: Shield, label: 'Użytkownicy' },
+    { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { href: '/admin/users', icon: Users, label: 'Użytkownicy' },
     { href: '/admin/exercises', icon: Dumbbell, label: 'Wszystkie Ćwiczenia' },
     { href: '/admin/workout-plans', icon: ClipboardList, label: 'Wszystkie Plany' },
     { href: '/admin/articles', icon: BookMarked, label: 'Wszystkie Artykuły' },
@@ -84,30 +78,21 @@ export function AppNav() {
   const pathname = usePathname();
   const avatarImage = placeholderImages.find(img => img.id === 'avatar-male');
   const { user } = useUser();
-  const firestore = useFirestore();
-  const auth = useAuth();
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
 
-  const userProfileRef = useMemoFirebase(() => {
-    if (!user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [user, firestore]);
-  const { data: userProfile } = useDoc(userProfileRef);
-
-  const conversationsQuery = useMemoFirebase(
-    () => user ? query(collection(firestore, `users/${user.uid}/conversations`)) : null,
-    [user, firestore]
+  // Fetch user profile using MongoDB hooks
+  const { data: userProfile } = useDoc(
+    user ? 'users' : null,
+    user?.uid || null
   );
-  const { data: conversations } = useCollection<Conversation>(conversationsQuery);
 
-  const totalUnreadCount = conversations?.reduce((total, convo) => {
-      const unread = convo.unreadCount?.[user?.uid ?? ''] ?? 0;
-      return total + unread;
-  }, 0) || 0;
+  // For now, conversations are not implemented in MongoDB
+  // This will need to be updated when conversations are migrated
+  const totalUnreadCount = 0;
 
   const handleLogout = async () => {
-    await signOut(auth);
+    await signOut();
     router.push('/login');
   };
 

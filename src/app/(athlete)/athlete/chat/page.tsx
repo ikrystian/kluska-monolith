@@ -3,8 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, where, doc, setDoc, addDoc, serverTimestamp, orderBy, getDoc, Timestamp, deleteDoc, getDocs, writeBatch, increment } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, collection, query, where, doc, setDoc, addDoc, serverTimestamp, orderBy, getDoc, Timestamp, deleteDoc, getDocs, writeBatch, increment } from '@/firebase';
 import type { Conversation, Message, UserProfile, WorkoutPlan, AthleteProfile } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';

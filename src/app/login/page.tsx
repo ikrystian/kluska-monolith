@@ -15,28 +15,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dumbbell } from 'lucide-react';
 import Link from 'next/link';
-import { useAuth, useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signIn } from 'next-auth/react';
 import { useToast } from '@/hooks/use-toast';
-import { doc } from 'firebase/firestore';
+import { useUser, useDoc } from '@/lib/db-hooks';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [uiLoading, setUiLoading] = useState(false);
   const router = useRouter();
-  const auth = useAuth();
   const { toast } = useToast();
 
   const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
-
-  const userProfileRef = useMemoFirebase(() => {
-    if (!user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [user, firestore]);
-
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc(
+    user ? 'users' : null,
+    user?.uid || null
+  );
 
   const isLoading = isUserLoading || uiLoading || (user && isProfileLoading);
 
@@ -57,31 +51,24 @@ export default function LoginPage() {
   const handleLogin = async () => {
     setUiLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        toast({
+          title: 'Błąd logowania',
+          description: 'Nieprawidłowy adres e-mail lub hasło.',
+          variant: 'destructive',
+        });
+      }
       // The useEffect will handle the redirect
     } catch (error: any) {
-      let errorMessage = 'Nieprawidłowy email lub hasło. Spróbuj ponownie.';
-
-      switch (error.code) {
-        case 'auth/user-not-found':
-        case 'auth/wrong-password':
-        case 'auth/invalid-credential':
-          errorMessage = 'Nieprawidłowy adres e-mail lub hasło.';
-          break;
-        case 'auth/invalid-email':
-          errorMessage = 'Proszę podać prawidłowy adres e-mail.';
-          break;
-        case 'auth/too-many-requests':
-          errorMessage = 'Zbyt wiele prób logowania. Spróbuj ponownie później.';
-          break;
-        default:
-          errorMessage = 'Wystąpił nieznany błąd logowania.';
-          break;
-      }
-
       toast({
         title: 'Błąd logowania',
-        description: errorMessage,
+        description: 'Wystąpił nieznany błąd logowania.',
         variant: 'destructive',
       });
     } finally {

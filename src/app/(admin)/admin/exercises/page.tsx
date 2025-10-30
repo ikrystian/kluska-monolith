@@ -26,8 +26,7 @@ import { Textarea } from '@/components/ui/textarea';
 import type { Exercise, MuscleGroup } from '@/lib/types';
 import { Search, Loader2, Edit, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, collection, doc, setDoc, deleteDoc } from '@/firebase';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -59,7 +58,7 @@ export default function AdminExercisesPage() {
 
   const muscleGroupsRef = useMemoFirebase(() => (firestore ? collection(firestore, 'muscleGroups') : null), [firestore]);
   const { data: muscleGroups, isLoading: muscleGroupsLoading } = useCollection<MuscleGroup>(muscleGroupsRef);
-  
+
   const isLoading = exercisesLoading || muscleGroupsLoading;
 
   const form = useForm<ExerciseFormValues>({
@@ -71,11 +70,11 @@ export default function AdminExercisesPage() {
       exercise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       exercise.muscleGroup.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
+
   const handleFormSubmit = async (data: ExerciseFormValues) => {
     if (!firestore || !selectedExercise) return;
     setIsSubmitting(true);
-    
+
     const exerciseDocRef = doc(firestore, 'exercises', selectedExercise.id);
     const updatedData = {
         ...selectedExercise,
@@ -111,7 +110,7 @@ export default function AdminExercisesPage() {
     });
     setEditDialogOpen(true);
   };
-  
+
   const handleDeleteExercise = async (exercise: Exercise) => {
     if (!firestore) return;
     const exerciseDocRef = doc(firestore, 'exercises', exercise.id);
@@ -208,7 +207,7 @@ export default function AdminExercisesPage() {
           </Card>
         )}
       </div>
-      
+
       <Dialog open={isEditDialogOpen} onOpenChange={(isOpen) => { setEditDialogOpen(isOpen); if(!isOpen) setSelectedExercise(null); }}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -313,4 +312,3 @@ export default function AdminExercisesPage() {
   );
 }
 
-    
