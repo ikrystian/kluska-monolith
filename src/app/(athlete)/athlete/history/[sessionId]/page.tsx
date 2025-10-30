@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Dumbbell, Activity, Clock, MessageSquare, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { useDoc, useFirestore, useUser, useCollection, useMemoFirebase, doc, collection, query, where } from '@/firebase';
+import { useDoc, useCollection, useUser } from '@/lib/db-hooks';
 import type { WorkoutLog, Exercise, Gym } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter, useParams } from 'next/navigation';
@@ -21,24 +21,13 @@ import Image from 'next/image';
 
 export default function SessionSummaryPage() {
   const { user } = useUser();
-  const firestore = useFirestore();
   const router = useRouter();
   const params = useParams();
   const sessionId = params.sessionId as string;
 
-  const sessionRef = useMemoFirebase(
-    () => user && sessionId ? doc(firestore, `users/${user.uid}/workoutSessions`, sessionId) : null,
-    [user, firestore, sessionId]
-  );
-  
-  const { data: workoutLog, isLoading: sessionLoading } = useDoc<WorkoutLog>(sessionRef);
+  const { data: workoutLog, isLoading: sessionLoading } = useDoc<WorkoutLog>('workoutLogs', sessionId);
 
-  const exercisesRef = useMemoFirebase(
-    () => firestore ? collection(firestore, 'exercises') : null,
-    [firestore]
-  );
-
-  const { data: exercises, isLoading: exercisesLoading } = useCollection<Exercise>(exercisesRef);
+  const { data: exercises, isLoading: exercisesLoading } = useCollection<Exercise>('exercises');
 
   const isLoading = sessionLoading || exercisesLoading;
 
@@ -93,7 +82,7 @@ export default function SessionSummaryPage() {
             <CardHeader>
                 <CardTitle className="font-headline text-3xl">{workoutLog.workoutName}</CardTitle>
                 <CardDescription className="text-lg">
-                  {workoutLog.endTime ? format(workoutLog.endTime.toDate(), 'd MMMM yyyy, HH:mm', { locale: pl }) : '...'}
+                  {workoutLog.endTime ? format(new Date(workoutLog.endTime), 'd MMMM yyyy, HH:mm', { locale: pl }) : '...'}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -131,7 +120,7 @@ export default function SessionSummaryPage() {
                         </CardContent>
                     </Card>
                 </div>
-                
+
                 <div>
                 <h3 className="mb-4 font-headline text-xl">Szczegóły sesji</h3>
                 <Table>

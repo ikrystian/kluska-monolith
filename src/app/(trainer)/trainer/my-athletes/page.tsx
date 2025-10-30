@@ -74,12 +74,13 @@ export default function MyAthletesPage() {
   const avatarImage = placeholderImages.find((img) => img.id === 'avatar-male');
 
   // Get current user profile
-  const { data: userProfile } = useDoc<UserProfile>('users', user?.uid || '');
+  const { data: userProfile, isLoading: userProfileLoading } = useDoc<UserProfile>('users', user?.uid || '');
 
   // Get all users with role 'athlete' and trainerId matching current user
+  // Only fetch when userProfile is loaded and user is a trainer
   const { data: athletes, isLoading: athletesLoading, refetch: refetchAthletes } = useCollection<UserProfile>(
     'users',
-    user?.uid && userProfile?.role === 'trainer' ? { role: 'athlete', trainerId: user.uid } : undefined
+    !userProfileLoading && user?.uid && userProfile?.role === 'trainer' ? { role: 'athlete', trainerId: user.uid } : undefined
   );
 
   const form = useForm<SearchFormValues>({
@@ -292,7 +293,7 @@ export default function MyAthletesPage() {
                      </div>
                       <div className="flex items-center gap-2">
                         <Button asChild variant="outline" size="sm">
-                            <Link href={`/my-athletes/${athlete.id}`}>Zobacz Profil</Link>
+                            <Link href={`/trainer/my-athletes/${athlete.id}`}>Zobacz Profil</Link>
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>

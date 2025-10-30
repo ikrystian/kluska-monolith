@@ -1,5 +1,180 @@
 CHANGELOG
 
+=== 2025-10-30 - Dodanie animacji do dodawania ćwiczeń i serii w /athlete/log ===
+- Dodano animację slide-in-up (0.3s) dla nowo dodanego ćwiczenia w "Rozpocznij Trening od Podstaw"
+- Dodano animację fade-in (0.3s) dla nowo dodanej serii w karcie ćwiczenia
+- Dodano keyframes do tailwind.config.ts dla animacji slide-in-up i fade-in
+- Użytkownik teraz widzi wizualny feedback gdy dodaje ćwiczenie lub serię
+
+=== 2025-10-30 - Naprawa natychmiastowego wyświetlania ćwiczeń w /athlete/exercises ===
+- Dodano refetch dla listy ćwiczeń po dodaniu nowego ćwiczenia
+- Dodano refetch dla listy ćwiczeń po aktualizacji ćwiczenia
+- Dodano refetch dla listy ćwiczeń po usunięciu ćwiczenia
+- Ćwiczenia teraz pojawiają się natychmiast na liście bez odświeżenia strony
+
+=== 2025-10-30 - Migracja /athlete/history na MongoDB ===
+- Zmieniono pobieranie historii treningów z Firebase na MongoDB API w /athlete/history
+- Zmieniono pobieranie ćwiczeń z Firebase na MongoDB API
+- Zmieniono usuwanie treningów na MongoDB API zamiast Firebase
+- Naprawiono routing po usunięciu treningu - teraz odświeża listę treningów
+- Naprawiono formatowanie daty w /athlete/history/[sessionId] - zmieniono .toDate() na new Date()
+- Zmieniono routing w szczegółach treningu z /history na /athlete/history
+
+=== 2025-10-30 - Migracja /athlete/log na MongoDB i filtrowanie ćwiczeń z planu ===
+- Zmieniono pobieranie planów treningowych z Firebase na MongoDB API w /athlete/log
+- Zmieniono pobieranie ćwiczeń z Firebase na MongoDB API
+- Dodano filtrowanie ćwiczeń - w sekcji "Wybierz ćwiczenie" wyświetlają się tylko ćwiczenia z przypisanego planu trenera
+- Zmieniono tworzenie i aktualizację workout logs na MongoDB API zamiast Firebase
+- Sportowiec widzi przypisane plany treningowe w "Zaloguj z planu"
+- Sportowiec widzi tylko ćwiczenia które wchodzą w skład wybranego planu
+
+=== 2025-10-30 - Naprawa wyświetlania wszystkich sportowców na /trainer/my-athletes ===
+- Naprawiono problem gdzie przez chwilę wyświetlały się wszyscy sportowcy zamiast tylko przypisanych
+- Dodano isLoading flag do useDoc hook dla userProfile
+- Zmieniono warunek pobierania listy sportowców aby czekał aż userProfile będzie załadowany (!userProfileLoading)
+- Zapytanie do bazy danych jest teraz wysyłane tylko gdy userProfile jest załadowany i użytkownik ma rolę trainer
+- Eliminuje to race condition gdzie zapytanie było wysyłane z undefined warunkami
+
+=== 2025-10-30 - Dodanie autosave draft dla planów treningowych ===
+- Dodano pole isDraft do modelu WorkoutPlan w src/models/WorkoutPlan.ts i src/models/index.ts
+- Zmodyfikowano TemplateForm w src/app/(trainer)/trainer/templates/page.tsx aby automatycznie zapisywał plan jako draft po dodaniu każdego dnia
+- Zmodyfikowano TemplateForm w src/app/(athlete)/athlete/templates/page.tsx z tą samą funkcjonalnością
+- Dodano funkcję saveDraft() która zapisuje plan bez pełnej walidacji formularza
+- Dodano wrapper appendDay() który wywołuje saveDraft() po dodaniu nowego dnia treningowego
+- Zaktualizowano onSubmit() aby ustawiał isDraft: false przy finalnym zapisaniu planu
+- Dodano informacyjny komunikat w CardDescription pokazujący że plan jest automatycznie zapisywany jako szkic
+- Użytkownik nie straci dodawanego planu po odświeżeniu strony - plan jest zapisywany w bazie danych
+
+=== 2025-10-30 - Dodanie mapy siłowni dla trenera ===
+- Skopiowano stronę mapy z /athlete/map do /trainer/map
+- Dodano link do mapy siłowni w menu trenera
+- Trener może teraz przeglądać siłownie dodane przez admina na mapie
+
+=== 2025-10-30 - Naprawienie filtrowania osób w "Rozpocznij nową konwersację" ===
+- Zmieniono obliczanie existingConversationIds aby używało conversationId zamiast id
+- Dodano pole conversationId do interfejsu Conversation w /trainer/chat/page.tsx
+- Osoby z którymi już istnieje czat nie pojawią się na liście "Rozpocznij nową konwersację"
+
+=== 2025-10-30 - Naprawienie błędu czatu - konwersacja nie pojawia się bez odświeżenia ===
+- Zmieniono parametr URL z 'conversation' na 'conversationId' dla spójności we wszystkich plikach
+- Dodano callback onConversationCreated do odświeżenia listy konwersacji po utworzeniu nowej
+- Naprawiono Link do konwersacji aby używał poprawnego parametru URL
+- Naprawiono parametry URL w /trainer/dashboard i /trainer/my-athletes/[athleteId]
+- Po kliknięciu "Rozpocznij czat" konwersacja pojawia się natychmiast na liście bez konieczności odświeżenia
+
+=== 2025-10-30 - Dodanie zarządzania kategoriami artykułów do /admin/articles ===
+- Dodano sekcję do zarządzania kategoriami artykułów bezpośrednio na stronie /admin/articles
+- Kategorie wyświetlane w formie kartek z liczbą przypisanych artykułów
+- Możliwość dodawania, edytowania i usuwania kategorii bez opuszczania strony
+- Zabezpieczenie przed usunięciem kategorii, która ma przypisane artykuły
+- Integracja z istniejącym systemem kategorii (ArticleCategory model)
+- Ulepszona UX - wszystkie funkcje zarządzania artykułami w jednym miejscu
+
+=== 2025-10-30 - Dodanie funkcjonalności "Zapamiętaj mnie" do logowania ===
+- Dodano checkbox "Zapamiętaj mnie" do formularza logowania
+- Zmodyfikowano NextAuth aby obsługiwać dłuższe sesje (30 dni) dla zapamiętanych użytkowników
+- Dodano pole rememberMe do credentials provider
+- Sesja domyślna: 24 godziny, sesja z "Zapamiętaj mnie": 30 dni
+- Zaktualizowano type definitions dla User i JWT aby obsługiwać rememberMe
+- Użytkownicy mogą teraz pozostać zalogowani przez dłuższy czas
+
+=== 2025-10-30 - Naprawienie błędu tworzenia konwersacji - Invalid ObjectId ===
+- Zmieniono model Conversation aby używał pola conversationId zamiast _id dla identyfikacji konwersacji
+- Zaktualizowano src/app/(trainer)/trainer/chat/page.tsx aby nie ustawiał _id bezpośrednio
+- Zaktualizowano src/app/(trainer)/trainer/my-athletes/[athleteId]/page.tsx aby nie ustawiał _id bezpośrednio
+- MongoDB teraz auto-generuje _id, a conversationId przechowuje identyfikator konwersacji (sortowana kombinacja UID użytkowników)
+- Naprawiono błąd "Cast to ObjectId failed" przy tworzeniu nowej konwersacji
+
+=== 2025-10-30 - Naprawienie FatSecret API - zmiana na REST API v1.0 z Basic Auth ===
+- Zmieniono endpoint z 'https://platform.fatsecret.com/rest/foods.search.v2' na 'https://platform.fatsecret.com/rest/food.search'
+- Usunięto OAuth 2.0 fallback - teraz zawsze używa Basic Auth (działa na darmowym planie)
+- Uproszczono logikę autentykacji - bezpośrednio koduje credentials w Base64
+- Usunięto getAccessToken() - nie jest już potrzebna dla REST API v1.0
+- FatSecret API teraz działa prawidłowo na darmowym planie
+
+=== 2025-10-30 - Migracja z Firebase na MongoDB - usunięcie useDoc z '@/firebase' ===
+- Zmieniono src/app/(athlete)/athlete/knowledge-zone/[articleId]/page.tsx aby używał useDoc z '@/lib/db-hooks'
+- Zmieniono src/app/(athlete)/athlete/history/[sessionId]/page.tsx aby używał useDoc i useCollection z '@/lib/db-hooks'
+- Zmieniono src/components/profile/profile-page.tsx aby używał useDoc, useCollection i useUpdateDoc z '@/lib/db-hooks'
+- Usunięto importy Firebase (useFirestore, useMemoFirebase, doc, collection, query, where, orderBy, limit, setDoc, errorEmitter, FirestorePermissionError)
+- Zastąpiono Firebase API na MongoDB API poprzez @/lib/db-hooks
+- Build aplikacji przechodzi pomyślnie - brak błędów TypeScript
+
+=== 2025-10-30 - Naprawienie integracji FatSecret API dla darmowego planu ===
+- Zaktualizowano src/ai/flows/fatsecret-flow.ts aby obsługiwać zarówno OAuth 2.0 jak i Basic Auth
+- Dodano fallback na Basic Auth gdy OAuth 2.0 zwróci błąd (dla darmowego planu FatSecret)
+- Zmieniono getAccessToken() aby zwracała 'basic_auth_fallback' zamiast rzucać błąd
+- Zaktualizowano searchFood() aby używała Basic Auth (base64 encoded credentials) gdy OAuth nie działa
+- Teraz aplikacja działa zarówno na darmowym planie jak i na płatnych planach FatSecret API
+
+=== 2025-10-30 - Dodanie funkcjonalności zarządzania dietami dla trenera ===
+- Rozszerzono model Meal w src/models/Conversation.ts o pole trainerId i timestamps
+- Dodano indeks na trainerId w MealSchema dla szybszego wyszukiwania diet trenera
+- Utworzono nową stronę src/app/(trainer)/trainer/diet/page.tsx do zarządzania dietami sportowców
+- Strona umożliwia trenerowi: wybór sportowca, wyszukiwanie produktów z FatSecret API, ręczne wpisywanie danych
+- Zaimplementowano komponent SearchFoodItemForm do wyszukiwania produktów z FatSecret API
+- Dodano wyświetlanie podsumowania wartości odżywczych (kalorie, białko, węglowodany, tłuszcze)
+- Dodano link do zarządzania dietami w nawigacji trenera (ikona Salad, label "Diety")
+- Trener może teraz tworzyć diety dla swoich sportowców z wykorzystaniem FatSecret API lub ręcznego wpisywania
+
+=== 2025-10-30 - Migracja athlete/templates z Firebase na MongoDB API ===
+- Zmieniono src/app/(athlete)/athlete/templates/page.tsx aby używał MongoDB hooks zamiast Firebase API
+- Zastąpiono Firebase useCollection na MongoDB useCollection z db-hooks.tsx
+- Zmieniono pobieranie planów treningowych na MongoDB query: { assignedAthleteIds: { $in: [user.uid] } } i { trainerId: user.uid }
+- Zmieniono pobieranie ćwiczeń na MongoDB query z filtrowaniem w useMemo (public exercises + exercises from assigned plans)
+- Zaktualizowano TemplateForm aby używał useCreateDoc i useUpdateDoc zamiast Firebase setDoc i updateDoc
+- Zaktualizowano AssignPlanDialog aby używał MongoDB API do pobierania sportowców i aktualizacji przypisań
+- Zaktualizowano handleDelete aby używał useDeleteDoc zamiast Firebase deleteDoc
+- Usunięto nieużywane importy z Firebase (@/firebase)
+- Sportowiec widzi teraz: ćwiczenia dodane przez admina (ownerId === 'public') + ćwiczenia z przypisanych planów treningowych
+
+=== 2025-10-30 - Migracja athlete/exercises z Firebase na MongoDB API ===
+- Zmieniono src/app/(athlete)/athlete/exercises/page.tsx aby używał MongoDB hooks zamiast Firebase API
+- Zastąpiono Firebase useCollection, useFirestore, useDoc, useMemoFirebase na MongoDB useCollection, useCreateDoc, useUpdateDoc, useDeleteDoc
+- Zmieniono pobieranie planów treningowych na MongoDB query: { assignedAthleteIds: { $in: [user.uid] } }
+- Zmieniono pobieranie ćwiczeń na MongoDB query: { ownerId: { $in: ['public', user.uid] } } i { id: { $in: exerciseIds } }
+- Zmieniono pobieranie grup mięśniowych na MongoDB query bez filtrów (wszystkie grupy dodane przez admina)
+- Zaktualizowano handleFormSubmit aby używał useCreateDoc i useUpdateDoc zamiast Firebase setDoc
+- Zaktualizowano handleDeleteExercise aby używał useDeleteDoc zamiast Firebase deleteDoc
+- Usunięto nieużywane importy z Firebase (@/firebase, FirestorePermissionError, errorEmitter)
+- Sportowiec widzi teraz: grupy mięśniowe dodane przez admina + ćwiczenia publiczne i z przypisanych planów
+
+=== 2025-10-30 - Naprawienie schematu WorkoutPlan ===
+- Zaktualizowano src/models/WorkoutPlan.ts aby pasowała do struktury danych wysyłanej z frontendu
+- Zmieniono strukturę exercises z { exerciseId, exerciseName, sets: number, reps: number } na { exerciseId, sets: [{ reps, weight }], duration }
+- Usunięto pola exerciseName, restTime, notes z schematu
+- Dodano pole duration dla ćwiczeń czasowych
+- Struktura sets zmieniona z liczby na tablicę obiektów { reps, weight }
+- Konieczne jest wyczyszczenie starej kolekcji workoutPlans z bazy danych
+- Utworzono i uruchomiono skrypt migracji scripts/fix-workout-plan-schema.js
+
+=== 2025-10-30 - Naprawienie JWT decryption error w NextAuth ===
+- Wygenerowano prawidłowy NEXTAUTH_SECRET zamiast placeholder'a
+- Zaktualizowano .env.local z nowym sekretem (w2HygVMYnv0753q/ND61mLD5oaj/Xs2y2CG42ymEP7Q=)
+- Zrestartowano dev server aby załadować nowy sekret
+- Błąd JWEDecryptionFailed powinien być teraz naprawiony
+
+=== 2025-10-30 - Dodanie możliwości usuwania użytkowników w panelu admina ===
+- Dodano przycisk "Usuń" w tabeli użytkowników w src/app/(admin)/admin/users/page.tsx
+- Dodano dialog potwierdzenia usunięcia użytkownika z ostrzeżeniem o nieodwracalności operacji
+- Zaimplementowano funkcję handleDeleteUser wykorzystującą hook useDeleteDoc
+- Dodano zabezpieczenie uniemożliwiające usunięcie własnego konta (przycisk disabled dla zalogowanego użytkownika)
+- Dodano ikonę Trash2 z lucide-react dla lepszej wizualizacji akcji usuwania
+
+=== 2025-10-30 - Refactoring stron profilu - eliminacja duplikacji kodu ===
+- Utworzono wspólny komponent ProfilePage w src/components/profile/profile-page.tsx
+- Zaktualizowano src/app/(athlete)/athlete/profile/page.tsx aby używał wspólnego komponentu
+- Zaktualizowano src/app/(trainer)/trainer/profile/page.tsx aby używał wspólnego komponentu
+- Zaktualizowano src/app/(admin)/admin/profile/page.tsx aby używał wspólnego komponentu
+- Wyeliminowano 100% duplikację kodu (3x 335 linii) poprzez centralizację logiki profilu
+
+=== 2025-10-30 - Naprawa systemu autoryzacji i typowania NextAuth ===
+- Utworzono plik src/types/next-auth.d.ts z rozszerzeniem typów NextAuth (User, Session, JWT) o pola id i role
+- Usunięto wszystkie rzutowania 'as any' z plików src/lib/auth.ts, src/lib/db-hooks.tsx i src/firebase/errors.ts
+- Zaktualizowano funkcję buildAuthObject w src/firebase/errors.ts aby używała typów Session['user']
+- Zweryfikowano poprawność middleware hashowania hasła w modelu User (src/models/User.ts)
+- Poprawiono typowanie callbacks w NextAuth (jwt i session) dla lepszej type safety
+
 - Dodano panel trenera z przedrostkiem URL /trainer/
 - Utworzono layout dla trenera z weryfikacją uprawnień (rola trainer lub admin)
 - Utworzono stronę dashboardu trenera z przykładową treścią lorem ipsum
@@ -48,6 +223,12 @@ SEKCJA 5: WIDOKI ADMINISTRATORA - MIGRACJA MONGODB:
 - Utworzono MongoDBProvider zastępujący FirebaseProvider
 - Zaktualizowano główny layout aplikacji aby używał MongoDBProvider
 - Zaktualizowano strony login i register aby używały NextAuth zamiast Firebase Auth
+
+SEKCJA 6: WIDOKI TRENERA - IMPLEMENTACJA:
+
+- Zaimplementowano Trainer Dashboard (src/app/(trainer)/trainer/dashboard/page.tsx) ze statystykami sportowców, ostatnimi aktywnościami, nieprzeczytanymi wiadomościami i metrykami
+- Zaktualizowano stronę Moi Sportowcy (src/app/(trainer)/trainer/my-athletes/page.tsx) z poprawionymi linkami do profili sportowców
+- Zmigrowano szczegółowy profil sportowca (src/app/(trainer)/trainer/my-athletes/[athleteId]/page.tsx) z Firebase na MongoDB z historią treningów, pomiarami ciała, celami i możliwością dodawania feedbacku
 - Dodano zmienne środowiskowe MONGO_DB_URI, NEXTAUTH_SECRET, NEXTAUTH_URL do .env
 - Zaktualizowano wszystkie layouty (athlete, trainer, admin, app) aby używały MongoDB hooks
 - Utworzono warstwę kompatybilności Firebase (src/lib/firebase-compat.tsx) dla stopniowej migracji
@@ -167,4 +348,14 @@ MODELE DANYCH:
 - Utworzono model Gym (src/models/Gym.ts) z polami: name, address, location, description, amenities, rating, photoUrls
 - Zaktualizowano src/models/index.ts aby eksportował wszystkie nowe modele
 - Zaktualizowano importy w API routes (/api/db/[collection]/route.ts i /api/db/[collection]/[id]/route.ts)
+
+=== 2025-10-30 - Naprawa walidacji enum dla pola type w modelu Exercise ===
+- Naprawiono błąd walidacji: "weight is not a valid enum value for path type"
+- Zaktualizowano src/models/Exercise.ts - zmieniono enum z ['system', 'custom'] na ['weight', 'duration', 'reps']
+- Usunięto duplikat definicji schematu Exercise z src/models/index.ts
+- Wyrównano interfejs IExercise w src/models/Exercise.ts z prawidłowymi wartościami enum
+- Usunięto domyślną wartość 'custom' z pola type (nie jest już potrzebna)
+- Utworzono skrypt scripts/fix-exercise-schema.js do usunięcia starej kolekcji z bazy danych
+- Uruchomiono skrypt - stara kolekcja exercises została usunięta z MongoDB
+- Nowa kolekcja będzie utworzona automatycznie przy następnym użyciu z prawidłowym schematem
 

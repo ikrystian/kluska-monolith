@@ -217,6 +217,7 @@ export type Gym = {
 
 export type Conversation = {
   id: string;
+  conversationId: string;
   participants: string[];
   trainerId: string;
   athleteId: string;
@@ -246,4 +247,3 @@ export interface AthleteProfile extends UserProfile {
   trainerId: string;
 }
 
-    

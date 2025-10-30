@@ -24,44 +24,7 @@ const ArticleCategorySchema = new Schema<IArticleCategory>(
 export const ArticleCategory: Model<IArticleCategory> =
   mongoose.models.ArticleCategory || mongoose.model<IArticleCategory>('ArticleCategory', ArticleCategorySchema);
 
-// Exercise
-export interface IExercise {
-  _id: string;
-  name: string;
-  muscleGroup: string;
-  description: string;
-  image: string;
-  imageHint: string;
-  ownerId?: string;
-  type: 'weight' | 'duration' | 'reps';
-}
 
-const ExerciseSchema = new Schema<IExercise>(
-  {
-    name: { type: String, required: true },
-    muscleGroup: { type: String, required: true },
-    description: { type: String, required: true },
-    image: { type: String, required: true },
-    imageHint: { type: String, required: true },
-    ownerId: { type: String },
-    type: { type: String, enum: ['weight', 'duration', 'reps'], required: true },
-  },
-  {
-    toJSON: {
-      transform: (_, ret) => {
-        ret.id = ret._id.toString();
-        delete ret.__v;
-        return ret;
-      },
-    },
-  }
-);
-
-ExerciseSchema.index({ muscleGroup: 1 });
-ExerciseSchema.index({ ownerId: 1 });
-
-export const Exercise: Model<IExercise> =
-  mongoose.models.Exercise || mongoose.model<IExercise>('Exercise', ExerciseSchema);
 
 // Workout Log
 export interface IWorkoutLog {
@@ -176,6 +139,7 @@ export interface IWorkoutPlan {
       duration?: number;
     }[];
   }[];
+  isDraft: boolean;
 }
 
 const WorkoutPlanSchema = new Schema<IWorkoutPlan>(
@@ -195,6 +159,7 @@ const WorkoutPlanSchema = new Schema<IWorkoutPlan>(
         duration: { type: Number },
       }],
     }],
+    isDraft: { type: Boolean, default: true },
   },
   {
     toJSON: {

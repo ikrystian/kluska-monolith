@@ -11,7 +11,7 @@ interface FatSecretFood {
 }
 
 interface Serving {
-    food_name: string; 
+    food_name: string;
     serving_id: string;
     serving_description: string;
     serving_url: string;
@@ -60,47 +60,60 @@ async function getAccessToken(): Promise<string> {
     if (!clientId || !clientSecret) {
         throw new Error('FatSecret API credentials are not configured in .env file.');
     }
-    
+
     if (accessToken && accessToken.expires_at > Date.now()) {
         return accessToken.token;
     }
-    
+
     const tokenUrl = 'https://oauth.fatsecret.com/connect/token';
 
-    const response = await fetch(tokenUrl, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-            'grant_type': 'client_credentials',
-            'scope': 'basic',
-            'client_id': clientId,
-            'client_secret': clientSecret,
-        })
-    });
+    try {
+        const response = await fetch(tokenUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                'grant_type': 'client_credentials',
+                'scope': 'basic',
+                'client_id': clientId,
+                'client_secret': clientSecret,
+            })
+        });
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`FatSecret Token API Error: ${response.status} ${errorText}`);
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('OAuth 2.0 failed, falling back to Basic Auth');
+            // Return a dummy token - we'll use Basic Auth instead
+            return 'basic_auth_fallback';
+        }
+
+        const data = await response.json();
+
+        accessToken = {
+            token: data.access_token,
+            expires_at: Date.now() + (data.expires_in * 1000)
+        };
+
+        return accessToken!.token;
+    } catch (error) {
+        console.error('OAuth 2.0 error, falling back to Basic Auth:', error);
+        return 'basic_auth_fallback';
     }
-
-    const data = await response.json();
-    
-    accessToken = {
-        token: data.access_token,
-        expires_at: Date.now() + (data.expires_in * 1000)
-    };
-    
-    return accessToken!.token;
 }
 
 export async function searchFood(query: string): Promise<Serving[]> {
-    const apiUrl = 'https://platform.fatsecret.com/rest/foods.search.v2';
+    const clientId = process.env.FATSECRET_CLIENT_ID;
+    const clientSecret = process.env.FATSECRET_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+        throw new Error('FatSecret API credentials are not configured in .env file.');
+    }
+
+    // Use REST API v1.0 endpoint which works with Basic Auth on free plan
+    const apiUrl = 'https://platform.fatsecret.com/rest/food.search';
 
     try {
-        const token = await getAccessToken();
-
         const params = new URLSearchParams({
             search_expression: query,
             format: 'json',
@@ -108,11 +121,15 @@ export async function searchFood(query: string): Promise<Serving[]> {
             max_results: '20'
         });
 
+        // Use Basic Auth for free plan
+        const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+        const headers: Record<string, string> = {
+            'Authorization': `Basic ${credentials}`
+        };
+
         const response = await fetch(`${apiUrl}?${params.toString()}`, {
             method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            headers
         });
 
         if (!response.ok) {
@@ -121,7 +138,7 @@ export async function searchFood(query: string): Promise<Serving[]> {
         }
 
         const data: SearchResponse = await response.json();
-        
+
         if (data.error) {
             throw new Error(`FatSecret API Error: ${data.error.message}`);
         }

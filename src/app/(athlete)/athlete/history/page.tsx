@@ -28,58 +28,61 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { useCollection, useFirestore, useUser, useMemoFirebase, collection, query, orderBy, where, doc, deleteDoc } from '@/firebase';
+import { useCollection, useUser } from '@/lib/db-hooks';
 import type { WorkoutLog, Exercise } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { errorEmitter } from '@/firebase/error-emitter';
 import { Loader2, Trash2 } from 'lucide-react';
 
 export default function HistoryPage() {
   const { user } = useUser();
-  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const sessionsRef = useMemoFirebase(() => 
-    user ? query(collection(firestore, `users/${user.uid}/workoutSessions`), orderBy('endTime', 'desc')) : null,
-    [user, firestore]
-  );
-  
-  const exercisesRef = useMemoFirebase(() => 
-    firestore ? collection(firestore, 'exercises') : null,
-    [firestore]
+  // Fetch workout logs for the current user, sorted by endTime descending
+  const { data: workoutLogs, isLoading, refetch } = useCollection<WorkoutLog>(
+    user?.uid ? 'workoutLogs' : null,
+    user?.uid ? { athleteId: user.uid } : undefined,
+    { sort: { endTime: -1 } }
   );
 
-  const { data: workoutHistory, isLoading: sessionsLoading } = useCollection<WorkoutLog>(sessionsRef);
-  const { data: exercises, isLoading: exercisesLoading } = useCollection<Exercise>(exercisesRef);
-
-  const isLoading = sessionsLoading || exercisesLoading;
+  // Fetch exercises (public and user's own)
+  const { data: exercises } = useCollection<Exercise>(
+    'exercises',
+    user?.uid ? { ownerId: { $in: ['public', user.uid] } } : undefined
+  );
 
   const handleDelete = async (sessionId: string) => {
-    if (!user || !firestore) return;
+    if (!user) return;
     setDeletingId(sessionId);
 
-    const sessionDocRef = doc(firestore, `users/${user.uid}/workoutSessions`, sessionId);
-
     try {
-        await deleteDoc(sessionDocRef);
+        const response = await fetch(`/api/db/workoutLogs/${sessionId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete workout log');
+        }
+
         toast({
             title: "Trening usunięty",
             description: "Wybrana sesja treningowa została pomyślnie usunięta.",
             variant: "destructive"
         });
-    } catch (e) {
-        const permissionError = new FirestorePermissionError({
-            path: sessionDocRef.path,
-            operation: 'delete',
+        refetch();
+    } catch (error) {
+        console.error('Error deleting workout log:', error);
+        toast({
+            title: "Błąd",
+            description: "Nie udało się usunąć treningu.",
+            variant: "destructive"
         });
-        errorEmitter.emit('permission-error', permissionError);
     } finally {
         setDeletingId(null);
     }
@@ -105,7 +108,7 @@ export default function HistoryPage() {
                         </AccordionTrigger>
                     </AccordionItem>
                 ))
-            ) : workoutHistory?.map((log) => {
+            ) : workoutLogs?.map((log) => {
               if (log.status === 'in-progress') return null;
 
               const totalVolume = log.exercises.reduce((acc, ex) => {
@@ -116,11 +119,11 @@ export default function HistoryPage() {
               return (
                 <AccordionItem value={log.id} key={log.id}>
                   <div className="flex items-center">
-                    <AccordionTrigger className="hover:no-underline flex-grow" onClick={() => router.push(`/history/${log.id}`)}>
+                    <AccordionTrigger className="hover:no-underline flex-grow" onClick={() => router.push(`/athlete/history/${log.id}`)}>
                       <div className="flex w-full items-center justify-between pr-4">
                         <div className="text-left">
                           <p className="font-semibold">{log.workoutName}</p>
-                          <p className="text-sm text-muted-foreground">{format(log.endTime.toDate(), 'd MMMM yyyy', { locale: pl })}</p>
+                          <p className="text-sm text-muted-foreground">{format(new Date(log.endTime), 'd MMMM yyyy', { locale: pl })}</p>
                         </div>
                         <div className="hidden text-right md:block">
                           <p className="font-semibold">{log.duration} min</p>

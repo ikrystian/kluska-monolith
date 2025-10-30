@@ -1,6 +1,6 @@
 'use client';
 
-import { useDoc, useFirestore, useMemoFirebase, doc } from '@/firebase';
+import { useDoc } from '@/lib/db-hooks';
 import { useParams, useRouter } from 'next/navigation';
 import type { Article } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,15 +12,9 @@ import { pl } from 'date-fns/locale';
 
 export default function ArticlePage() {
   const { articleId } = useParams();
-  const firestore = useFirestore();
   const router = useRouter();
 
-  const articleRef = useMemoFirebase(
-    () => doc(firestore, `articles/${articleId as string}`),
-    [firestore, articleId]
-  );
-
-  const { data: article, isLoading } = useDoc<Article>(articleRef);
+  const { data: article, isLoading } = useDoc<Article>('articles', articleId as string);
 
   if (isLoading) {
     return (

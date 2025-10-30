@@ -19,12 +19,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useCollection, useUser, useDoc, useUpdateDoc } from '@/lib/db-hooks';
+import { useCollection, useUser, useDoc, useUpdateDoc, useDeleteDoc } from '@/lib/db-hooks';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { placeholderImages } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
-import { Edit, Loader2 } from 'lucide-react';
+import { Edit, Loader2, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -83,6 +83,7 @@ export default function AdminUsersPage() {
   const { user: currentUser, isUserLoading } = useUser();
   const { toast } = useToast();
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
 
   // Fetch current user profile
@@ -97,6 +98,7 @@ export default function AdminUsersPage() {
   );
 
   const { updateDoc, isLoading: isUpdating } = useUpdateDoc();
+  const { deleteDoc, isLoading: isDeleting } = useDeleteDoc();
 
   const avatarImage = placeholderImages.find((img) => img.id === 'avatar-male');
 
@@ -129,6 +131,32 @@ export default function AdminUsersPage() {
       toast({
         title: 'Błąd',
         description: 'Nie udało się zaktualizować użytkownika.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteClick = (user: UserProfile) => {
+    setSelectedUser(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+
+    try {
+      await deleteDoc('users', selectedUser.id);
+      toast({
+        title: 'Sukces!',
+        description: `Użytkownik ${selectedUser.name} został usunięty.`,
+      });
+      setDeleteDialogOpen(false);
+      setSelectedUser(null);
+      refetch(); // Refresh the users list
+    } catch (error) {
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się usunąć użytkownika.',
         variant: 'destructive',
       });
     }
@@ -218,10 +246,21 @@ export default function AdminUsersPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="outline" size="sm" onClick={() => handleEditClick(user)}>
-                        <Edit className="mr-2 h-3 w-3" />
-                        Edytuj
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleEditClick(user)}>
+                          <Edit className="mr-2 h-3 w-3" />
+                          Edytuj
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteClick(user)}
+                          disabled={user.id === currentUser?.uid}
+                        >
+                          <Trash2 className="mr-2 h-3 w-3" />
+                          Usuń
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
               ))) : (
@@ -296,6 +335,34 @@ export default function AdminUsersPage() {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Usuń Użytkownika</DialogTitle>
+            <DialogDescription>
+              Czy na pewno chcesz usunąć użytkownika <strong>{selectedUser?.name}</strong>?
+              Ta operacja jest nieodwracalna.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="secondary" disabled={isDeleting}>
+                Anuluj
+              </Button>
+            </DialogClose>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeleteUser}
+              disabled={isDeleting}
+            >
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Usuń
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -20,9 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import type { WorkoutPlan, Exercise, WorkoutLog, WorkoutDay } from '@/lib/types';
-import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc, collection, addDoc, Timestamp, query, where, doc, setDoc, updateDoc, getStorage, ref as storageRef, uploadBytes, getDownloadURL } from '@/firebase';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { errorEmitter } from '@/firebase/error-emitter';
+import { useCollection, useUser } from '@/lib/db-hooks';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -47,17 +45,24 @@ type LogFormValues = z.infer<typeof logSchema>;
 
 
 // --- ADD EXERCISE DIALOG ---
-function AddExerciseDialog({ allExercises, onAddExercise }: { allExercises: Exercise[] | null; onAddExercise: (exerciseId: string) => void; }) {
+function AddExerciseDialog({ allExercises, onAddExercise, planExerciseIds }: { allExercises: Exercise[] | null; onAddExercise: (exerciseId: string) => void; planExerciseIds?: string[] }) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredExercises = useMemo(() => {
     if (!allExercises) return [];
-    return allExercises.filter(ex =>
+    let exercises = allExercises;
+
+    // If planExerciseIds is provided, filter to only those exercises
+    if (planExerciseIds && planExerciseIds.length > 0) {
+      exercises = exercises.filter(ex => planExerciseIds.includes(ex.id));
+    }
+
+    return exercises.filter(ex =>
       ex.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ex.muscleGroup.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [allExercises, searchTerm]);
+  }, [allExercises, searchTerm, planExerciseIds]);
 
   const handleSelectExercise = (exerciseId: string) => {
     onAddExercise(exerciseId);
@@ -107,7 +112,7 @@ function AddExerciseDialog({ allExercises, onAddExercise }: { allExercises: Exer
 
 
 // --- ACTIVE WORKOUT - "FROM SCRATCH" ---
-function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkout }: { initialWorkout: LogFormValues; allExercises: Exercise[] | null; onFinishWorkout: () => void; }) {
+function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkout, planExerciseIds }: { initialWorkout: LogFormValues; allExercises: Exercise[] | null; onFinishWorkout: () => void; planExerciseIds?: string[] }) {
   const [startTime] = useState(new Date());
   const [workoutLogId, setWorkoutLogId] = useState<string | null>(null);
   const [isFinished, setIsFinished] = useState(false);
@@ -117,10 +122,10 @@ function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkou
   const photoInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useUser();
-  const firestore = useFirestore();
   const router = useRouter();
 
   const [activeExerciseIndex, setActiveExerciseIndex] = useState(0);
+  const [newExerciseId, setNewExerciseId] = useState<string | null>(null);
 
   const form = useForm<LogFormValues>({
     resolver: zodResolver(logSchema),
@@ -141,33 +146,39 @@ function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkou
 
   // Effect to create the workout document on start
   useEffect(() => {
-    if (!user || !firestore || workoutLogId) return;
+    if (!user || workoutLogId) return;
 
     const createInitialWorkoutLog = async () => {
       const initialLogData = {
-        ...initialWorkout,
+        workoutName: initialWorkout.workoutName,
+        exercises: initialWorkout.exercises,
         status: 'in-progress',
-        startTime: Timestamp.fromDate(startTime),
+        startTime: startTime,
         athleteId: user.uid,
       };
 
-      const sessionsCollection = collection(firestore, `users/${user.uid}/workoutSessions`);
       try {
-        const docRef = await addDoc(sessionsCollection, initialLogData);
-        setWorkoutLogId(docRef.id);
-      } catch (serverError) {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: sessionsCollection.path,
-          operation: 'create',
-          requestResourceData: initialLogData,
-        }));
+        const response = await fetch('/api/db/workoutLogs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(initialLogData),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create workout log');
+        }
+
+        const result = await response.json();
+        setWorkoutLogId(result.data.id);
+      } catch (error) {
+        console.error('Error creating workout log:', error);
         toast({ title: 'Błąd', description: 'Nie udało się rozpocząć sesji treningowej.', variant: 'destructive' });
         onFinishWorkout(); // Go back if we can't create the log
       }
     };
 
     createInitialWorkoutLog();
-  }, [user, firestore, initialWorkout, onFinishWorkout, workoutLogId, startTime, toast]);
+  }, [user, initialWorkout, onFinishWorkout, workoutLogId, startTime, toast]);
 
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -182,6 +193,10 @@ function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkou
     const newExercise = { exerciseId, sets: [], duration: 0 };
     append(newExercise);
     setActiveExerciseIndex(fields.length); // Switch to the newly added exercise
+
+    // Trigger animation for new exercise
+    setNewExerciseId(exerciseId);
+    setTimeout(() => setNewExerciseId(null), 300);
   };
 
   const handleRemoveExercise = (index: number) => {
@@ -201,18 +216,26 @@ function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkou
 
 
   const handleSaveWorkout = async (data: LogFormValues) => {
-      if (!user || !firestore || !workoutLogId) return;
+      if (!user || !workoutLogId) return;
 
       setIsSaving(true);
 
       let photoURL: string | undefined = undefined;
       if (photoFile) {
         try {
-          const storage = getStorage();
-          const filePath = `workout-photos/${user.uid}/${new Date().getTime()}-${photoFile.name}`;
-          const fileRef = storageRef(storage, filePath);
-          const snapshot = await uploadBytes(fileRef, photoFile);
-          photoURL = await getDownloadURL(snapshot.ref);
+          const formData = new FormData();
+          formData.append('file', photoFile);
+          formData.append('userId', user.uid);
+
+          const uploadResponse = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (uploadResponse.ok) {
+            const uploadResult = await uploadResponse.json();
+            photoURL = uploadResult.url;
+          }
         } catch (error) {
           console.error("Error uploading photo: ", error);
           toast({
@@ -226,34 +249,41 @@ function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkou
       const endTime = new Date();
       const duration = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
 
-      const finalLogData: Partial<WorkoutLog> = {
-          ...data,
+      const finalLogData = {
+          workoutName: data.workoutName,
+          exercises: data.exercises,
           duration: duration,
-          endTime: Timestamp.fromDate(endTime),
+          endTime: endTime,
           status: 'completed',
           ...(photoURL && { photoURL }),
       };
 
-      const workoutDocRef = doc(firestore, `users/${user.uid}/workoutSessions`, workoutLogId);
+      try {
+        const response = await fetch(`/api/db/workoutLogs/${workoutLogId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(finalLogData),
+        });
 
-      updateDoc(workoutDocRef, finalLogData)
-          .then(() => {
-              toast({
-                  title: 'Trening Zapisany!',
-                  description: `${data.workoutName} został zapisany w Twojej historii.`,
-              });
-              router.push(`/history/${workoutLogId}`);
-          })
-          .catch((serverError) => {
-              const permissionError = new FirestorePermissionError({
-                  path: workoutDocRef.path,
-                  operation: 'update',
-                  requestResourceData: finalLogData,
-              });
-              errorEmitter.emit('permission-error', permissionError);
-          }).finally(() => {
-              setIsSaving(false);
-          });
+        if (!response.ok) {
+          throw new Error('Failed to save workout');
+        }
+
+        toast({
+            title: 'Trening Zapisany!',
+            description: `${data.workoutName} został zapisany w Twojej historii.`,
+        });
+        router.push(`/athlete/history/${workoutLogId}`);
+      } catch (error) {
+        console.error('Error saving workout:', error);
+        toast({
+            title: 'Błąd',
+            description: 'Nie udało się zapisać treningu.',
+            variant: 'destructive',
+        });
+      } finally {
+        setIsSaving(false);
+      }
   };
 
   if (isFinished) {
@@ -318,12 +348,14 @@ function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkou
           </CardHeader>
           <CardContent className="space-y-4">
              {currentExercise ? (
-                <ExerciseCard
-                    key={currentExercise.id}
-                    index={activeExerciseIndex}
-                    exerciseDetails={exerciseDetails}
-                    onRemoveExercise={() => handleRemoveExercise(activeExerciseIndex)}
-                />
+                <div className={newExerciseId === currentExercise.exerciseId ? 'animate-slide-in-up' : ''}>
+                  <ExerciseCard
+                      key={currentExercise.id}
+                      index={activeExerciseIndex}
+                      exerciseDetails={exerciseDetails}
+                      onRemoveExercise={() => handleRemoveExercise(activeExerciseIndex)}
+                  />
+                </div>
             ) : (
               <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center">
                 <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -337,6 +369,7 @@ function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkou
                     <AddExerciseDialog
                         allExercises={allExercises}
                         onAddExercise={handleAddExercise}
+                        planExerciseIds={planExerciseIds}
                     />
                 </div>
                 {fields.length > 0 && (
@@ -371,6 +404,18 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise }: { index: num
     control,
     name: `exercises.${index}.sets`
   });
+  const [newSetId, setNewSetId] = useState<string | null>(null);
+
+  const handleAddSet = () => {
+    const newSet = { reps: 0, weight: 0 };
+    append(newSet);
+    // Get the ID of the newly added set (it will be the last one)
+    setTimeout(() => {
+      setNewSetId(fields[fields.length].id);
+      // Clear the highlight after animation completes
+      setTimeout(() => setNewSetId(null), 300);
+    }, 0);
+  };
 
   return (
     <Card className="bg-secondary/50">
@@ -399,7 +444,12 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise }: { index: num
               {exerciseDetails?.type === 'weight' && <Label className="col-span-5 text-sm text-muted-foreground">Ciężar (kg)</Label>}
             </div>
             {fields.map((setField, setIndex) => (
-              <div key={setField.id} className="grid grid-cols-12 gap-2 items-center">
+              <div
+                key={setField.id}
+                className={`grid grid-cols-12 gap-2 items-center ${
+                  newSetId === setField.id ? 'animate-fade-in' : ''
+                }`}
+              >
                 <p className="font-medium text-sm text-center col-span-1">{setIndex + 1}</p>
                 <FormField
                   control={control}
@@ -428,7 +478,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise }: { index: num
                 </Button>
               </div>
             ))}
-            <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => append({ reps: 0, weight: 0 })}>
+            <Button type="button" variant="outline" size="sm" className="w-full" onClick={handleAddSet}>
               <PlusCircle className="mr-2 h-4 w-4" /> Dodaj serię
             </Button>
           </div>
@@ -439,28 +489,23 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise }: { index: num
 }
 
 // --- FROM TEMPLATE COMPONENT ---
-function FromTemplateForm({ onStartWorkout, allExercises }: { onStartWorkout: (template: LogFormValues) => void; allExercises: Exercise[] | null; }) {
+function FromTemplateForm({ onStartWorkout, allExercises }: { onStartWorkout: (template: LogFormValues, exerciseIds?: string[]) => void; allExercises: Exercise[] | null; }) {
     const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
     const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
 
     const { user } = useUser();
-    const firestore = useFirestore();
 
-    const workoutPlansRef = useMemoFirebase(() => {
-        if (!user) return null;
-        return query(
-            collection(firestore, 'workoutPlans'),
-            where('assignedAthleteIds', 'array-contains', user.uid)
-        );
-    }, [firestore, user]);
+    // Fetch plans assigned to the athlete
+    const { data: assignedPlans, isLoading: assignedPlansLoading } = useCollection<WorkoutPlan>(
+        user?.uid ? 'workoutPlans' : null,
+        user?.uid ? { assignedAthleteIds: { $in: [user.uid] } } : undefined
+    );
 
-    const myPlansQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return query(collection(firestore, 'workoutPlans'), where('trainerId', '==', user.uid));
-    }, [firestore, user]);
-
-    const { data: assignedPlans, isLoading: assignedPlansLoading } = useCollection<WorkoutPlan>(workoutPlansRef);
-    const { data: myPlans, isLoading: myPlansLoading } = useCollection<WorkoutPlan>(myPlansQuery);
+    // Fetch plans created by the athlete (if they're also a trainer)
+    const { data: myPlans, isLoading: myPlansLoading } = useCollection<WorkoutPlan>(
+        user?.uid ? 'workoutPlans' : null,
+        user?.uid ? { trainerId: user.uid } : undefined
+    );
 
     const workoutPlans = useMemo(() => {
         const plansMap = new Map<string, WorkoutPlan>();
@@ -489,7 +534,11 @@ function FromTemplateForm({ onStartWorkout, allExercises }: { onStartWorkout: (t
                 duration: ex.duration || 0,
             })),
         };
-        onStartWorkout(workoutData);
+
+        // Extract exercise IDs from the plan
+        const exerciseIds = workoutDay.exercises.map(ex => ex.exerciseId);
+
+        onStartWorkout(workoutData, exerciseIds);
         setSelectedPlanId(null);
         setSelectedDayIndex(null);
     };
@@ -569,33 +618,35 @@ function FromTemplateForm({ onStartWorkout, allExercises }: { onStartWorkout: (t
 // --- MAIN PAGE COMPONENT ---
 export default function LogWorkoutPage() {
   const [activeWorkout, setActiveWorkout] = useState<LogFormValues | null>(null);
+  const [planExerciseIds, setPlanExerciseIds] = useState<string[] | undefined>(undefined);
   const [currentTab, setCurrentTab] = useState("from-template");
   const { user } = useUser();
-  const firestore = useFirestore();
 
-  const exercisesRef = useMemoFirebase(() =>
-    firestore && user ? query(collection(firestore, 'exercises'), where('ownerId', 'in', ['public', user.uid])) : null,
-    [firestore, user]
+  // Fetch exercises (public and user's own)
+  const { data: allExercises } = useCollection<Exercise>(
+    'exercises',
+    user?.uid ? { ownerId: { $in: ['public', user.uid] } } : undefined
   );
-  const { data: allExercises } = useCollection<Exercise>(exercisesRef);
 
-  const handleStartWorkout = (data: LogFormValues) => {
+  const handleStartWorkout = (data: LogFormValues, exerciseIds?: string[]) => {
     setActiveWorkout(data);
+    setPlanExerciseIds(exerciseIds);
   };
 
   const handleFinishWorkout = () => {
       setActiveWorkout(null);
+      setPlanExerciseIds(undefined);
   }
 
   const startFromScratch = (workoutName: string) => {
-    handleStartWorkout({ workoutName, exercises: [] });
+    handleStartWorkout({ workoutName, exercises: [] }, undefined);
   }
 
   if (activeWorkout) {
       return (
           <div className="container mx-auto p-4 md:p-8 flex justify-center">
              <div className="w-full max-w-lg">
-                <ActiveWorkoutFromScratch initialWorkout={activeWorkout} onFinishWorkout={handleFinishWorkout} allExercises={allExercises} />
+                <ActiveWorkoutFromScratch initialWorkout={activeWorkout} onFinishWorkout={handleFinishWorkout} allExercises={allExercises} planExerciseIds={planExerciseIds} />
              </div>
           </div>
       )
@@ -610,7 +661,7 @@ export default function LogWorkoutPage() {
           <TabsTrigger value="from-scratch">Od Podstaw</TabsTrigger>
         </TabsList>
         <TabsContent value="from-template">
-          <FromTemplateForm onStartWorkout={(data) => handleStartWorkout(data)} allExercises={allExercises} />
+          <FromTemplateForm onStartWorkout={(data, exerciseIds) => handleStartWorkout(data, exerciseIds)} allExercises={allExercises} />
         </TabsContent>
         <TabsContent value="from-scratch">
             <Card>

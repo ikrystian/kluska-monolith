@@ -135,9 +135,11 @@ src/
 - `/trainer/chat` - Czat z sportowcami
 - `/trainer/templates` - Plany treningowe trenera
 - `/trainer/exercises` - Ćwiczenia trenera
+- `/trainer/diet` - Diety trenera
 - `/trainer/knowledge-zone` - Artykuły trenera
 - `/trainer/knowledge-zone/manage` - Zarządzanie artykułami
 - `/trainer/knowledge-zone/[articleId]` - Szczegóły artykułu
+- `/trainer/map` - Mapa siłowni
 - `/trainer/profile` - Profil trenera
 
 #### 4. Panel Sportowca (`/(athlete)`)

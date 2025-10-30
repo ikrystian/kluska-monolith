@@ -8,7 +8,7 @@ export interface IExercise extends Document {
   image?: string;
   imageHint?: string;
   ownerId?: string;
-  type: 'system' | 'custom';
+  type: 'weight' | 'duration' | 'reps';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,11 +21,10 @@ const ExerciseSchema = new Schema<IExercise>(
     image: { type: String },
     imageHint: { type: String },
     ownerId: { type: String },
-    type: { 
-      type: String, 
-      enum: ['system', 'custom'], 
-      required: true,
-      default: 'custom'
+    type: {
+      type: String,
+      enum: ['weight', 'duration', 'reps'],
+      required: true
     },
   },
   {
@@ -46,6 +45,6 @@ ExerciseSchema.index({ ownerId: 1 });
 ExerciseSchema.index({ type: 1 });
 ExerciseSchema.index({ name: 'text' });
 
-export const Exercise: Model<IExercise> = 
+export const Exercise: Model<IExercise> =
   mongoose.models.Exercise || mongoose.model<IExercise>('Exercise', ExerciseSchema);
 

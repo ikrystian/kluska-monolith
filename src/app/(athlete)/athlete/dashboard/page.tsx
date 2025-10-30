@@ -1,129 +1,418 @@
 'use client';
 
+import { useMemo } from 'react';
+import Link from 'next/link';
+import { format, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
+import { pl } from 'date-fns/locale';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Calendar } from '@/components/ui/calendar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useCollection, useFirestore, useUser, useMemoFirebase, collection, query, orderBy, where, doc, limit } from '@/firebase';
+import { useDoc } from '@/firebase';
+import type { WorkoutLog, Goal, BodyMeasurement, RunningSession, LoggedMeal, PlannedWorkout, UserProfile, WorkoutPlan } from '@/lib/types';
+import { Activity, Target, Weight, Footprints, ChefHat, Calendar as CalendarIcon, TrendingUp, Dumbbell, Clock, Award } from 'lucide-react';
+
+const StatCard = ({
+  title,
+  value,
+  unit,
+  icon: Icon,
+  isLoading,
+  trend,
+  href
+}: {
+  title: string;
+  value: string | number;
+  unit?: string;
+  icon: React.ElementType;
+  isLoading: boolean;
+  trend?: string;
+  href?: string;
+}) => {
+  const CardComponent = href ? Link : 'div';
+  return (
+    <CardComponent href={href || ''} className={href ? 'block' : ''}>
+      <Card className={href ? 'transition-all hover:shadow-lg' : ''}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          <Icon className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <Skeleton className="h-8 w-24" />
+          ) : (
+            <div className="text-2xl font-bold">
+              {value} {unit && <span className="text-base font-normal text-muted-foreground">{unit}</span>}
+            </div>
+          )}
+          {trend && !isLoading && (
+            <p className="text-xs text-muted-foreground mt-1">{trend}</p>
+          )}
+        </CardContent>
+      </Card>
+    </CardComponent>
+  );
+};
 
 export default function AthleteDashboardPage() {
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  // User profile
+  const userProfileRef = useMemoFirebase(() => (user ? doc(firestore, `users/${user.uid}`) : null), [user, firestore]);
+  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
+
+  // Recent workouts (last 5)
+  const workoutSessionsRef = useMemoFirebase(() =>
+    user ? query(collection(firestore, `users/${user.uid}/workoutSessions`), where('status', '==', 'completed'), orderBy('endTime', 'desc'), limit(5)) : null,
+    [user, firestore]
+  );
+  const { data: recentWorkouts, isLoading: workoutsLoading } = useCollection<WorkoutLog>(workoutSessionsRef);
+
+  // Active goals
+  const goalsRef = useMemoFirebase(() =>
+    user ? collection(firestore, `users/${user.uid}/goals`) : null,
+    [user, firestore]
+  );
+  const { data: goals, isLoading: goalsLoading } = useCollection<Goal>(goalsRef);
+
+  // Latest body measurement
+  const measurementsRef = useMemoFirebase(() =>
+    user ? query(collection(firestore, `users/${user.uid}/bodyMeasurements`), orderBy('date', 'desc'), limit(1)) : null,
+    [user, firestore]
+  );
+  const { data: latestMeasurements, isLoading: measurementsLoading } = useCollection<BodyMeasurement>(measurementsRef);
+
+  // Recent running sessions (last 30 days)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const runningSessionsRef = useMemoFirebase(() =>
+    user ? query(
+      collection(firestore, `users/${user.uid}/runningSessions`),
+      where('date', '>=', thirtyDaysAgo),
+      orderBy('date', 'desc')
+    ) : null,
+    [user, firestore]
+  );
+  const { data: runningSessions, isLoading: runningLoading } = useCollection<RunningSession>(runningSessionsRef);
+
+  // Recent meals (today)
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+
+  const todayMealsRef = useMemoFirebase(() =>
+    user ? query(
+      collection(firestore, `users/${user.uid}/meals`),
+      where('date', '>=', todayStart),
+      where('date', '<=', todayEnd)
+    ) : null,
+    [user, firestore]
+  );
+  const { data: todayMeals, isLoading: mealsLoading } = useCollection<LoggedMeal>(todayMealsRef);
+
+  // This week's planned workouts
+  const weekStart = startOfWeek(new Date(), { locale: pl });
+  const weekEnd = endOfWeek(new Date(), { locale: pl });
+
+  const plannedWorkoutsRef = useMemoFirebase(() =>
+    user ? query(
+      collection(firestore, `users/${user.uid}/plannedWorkouts`),
+      where('date', '>=', weekStart),
+      where('date', '<=', weekEnd)
+    ) : null,
+    [user, firestore]
+  );
+  const { data: plannedWorkouts, isLoading: plannedLoading } = useCollection<PlannedWorkout>(plannedWorkoutsRef);
+
+  // Assigned workout plans
+  const assignedPlansQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(firestore, 'workoutPlans'), where('assignedAthleteIds', 'array-contains', user.uid));
+  }, [firestore, user]);
+  const { data: assignedPlans } = useCollection<WorkoutPlan>(assignedPlansQuery);
+
+  // Calculate stats
+  const stats = useMemo(() => {
+    // Workout stats
+    const totalWorkouts = recentWorkouts?.length || 0;
+    const thisWeekWorkouts = recentWorkouts?.filter(w =>
+      isWithinInterval(w.endTime.toDate(), { start: weekStart, end: weekEnd })
+    ).length || 0;
+
+    // Goals progress
+    const completedGoals = goals?.filter(g => (g.current / g.target) * 100 >= 100).length || 0;
+    const totalGoals = goals?.length || 0;
+
+    // Weight progress
+    const currentWeight = latestMeasurements?.[0]?.weight || 0;
+
+    // Running stats
+    const totalRunningDistance = runningSessions?.reduce((acc, session) => acc + session.distance, 0) || 0;
+    const totalRunningTime = runningSessions?.reduce((acc, session) => acc + session.duration, 0) || 0;
+
+    // Today's calories
+    const todayCalories = todayMeals?.reduce((acc, meal) =>
+      acc + meal.foodItems.reduce((mealAcc, item) => mealAcc + item.calories, 0), 0
+    ) || 0;
+
+    // This week's training volume
+    const thisWeekVolume = recentWorkouts?.filter(w =>
+      isWithinInterval(w.endTime.toDate(), { start: weekStart, end: weekEnd })
+    ).reduce((acc, w) => {
+      return acc + w.exercises.reduce((exAcc, ex) => {
+        return exAcc + ex.sets.reduce((setAcc, set) => setAcc + set.reps * (set.weight || 0), 0);
+      }, 0);
+    }, 0) || 0;
+
+    return {
+      totalWorkouts,
+      thisWeekWorkouts,
+      completedGoals,
+      totalGoals,
+      currentWeight,
+      totalRunningDistance,
+      totalRunningTime,
+      todayCalories,
+      thisWeekVolume,
+    };
+  }, [recentWorkouts, goals, latestMeasurements, runningSessions, todayMeals, weekStart, weekEnd]);
+
+  const isLoading = workoutsLoading || goalsLoading || measurementsLoading || runningLoading || mealsLoading;
+
   return (
     <div className="container mx-auto p-4 md:p-8">
-      <h1 className="mb-6 font-headline text-3xl font-bold">Panel Sportowca</h1>
+      <div className="mb-6">
+        <h1 className="font-headline text-3xl font-bold">Panel Sportowca</h1>
+        <p className="text-muted-foreground">Witaj, {userProfile?.name}! Oto Twój przegląd postępów.</p>
+      </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Lorem Ipsum</CardTitle>
-            <CardDescription>Dolor sit amet consectetur</CardDescription>
+      {/* Statistics Grid */}
+      <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Treningi w tym tygodniu"
+          value={stats.thisWeekWorkouts}
+          icon={Dumbbell}
+          isLoading={isLoading}
+          trend={`z ${stats.totalWorkouts} łącznie`}
+          href="/athlete/history"
+        />
+        <StatCard
+          title="Objętość tego tygodnia"
+          value={stats.thisWeekVolume.toLocaleString()}
+          unit="kg"
+          icon={Activity}
+          isLoading={isLoading}
+          href="/athlete/history"
+        />
+        <StatCard
+          title="Ukończone cele"
+          value={`${stats.completedGoals}/${stats.totalGoals}`}
+          icon={Target}
+          isLoading={isLoading}
+          href="/athlete/goals"
+        />
+        <StatCard
+          title="Aktualna waga"
+          value={stats.currentWeight.toFixed(1)}
+          unit="kg"
+          icon={Weight}
+          isLoading={isLoading}
+          href="/athlete/measurements"
+        />
+        <StatCard
+          title="Bieganie (30 dni)"
+          value={stats.totalRunningDistance.toFixed(1)}
+          unit="km"
+          icon={Footprints}
+          isLoading={isLoading}
+          trend={`${Math.round(stats.totalRunningTime)} min łącznie`}
+          href="/athlete/running"
+        />
+        <StatCard
+          title="Kalorie dzisiaj"
+          value={stats.todayCalories}
+          unit="kcal"
+          icon={ChefHat}
+          isLoading={isLoading}
+          href="/athlete/diet"
+        />
+        <StatCard
+          title="Przypisane plany"
+          value={assignedPlans?.length || 0}
+          icon={Award}
+          isLoading={isLoading}
+          href="/athlete/templates"
+        />
+        <StatCard
+          title="Zaplanowane na dziś"
+          value={plannedWorkouts?.filter(p => {
+            const today = new Date();
+            return format(p.date.toDate(), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
+          }).length || 0}
+          icon={CalendarIcon}
+          isLoading={plannedLoading}
+          href="/athlete/calendar"
+        />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Recent Workouts */}
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="font-headline">Ostatnie Treningi</CardTitle>
+              <CardDescription>Twoja najnowsza aktywność treningowa</CardDescription>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/athlete/history">Zobacz wszystkie</Link>
+            </Button>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor
-              incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
-              exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-            </p>
+            {isLoading ? (
+              <div className="space-y-3">
+                {Array.from({length: 3}).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 rounded-md border">
+                    <div className="space-y-1">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                ))}
+              </div>
+            ) : recentWorkouts && recentWorkouts.length > 0 ? (
+              <div className="space-y-3">
+                {recentWorkouts.map(workout => {
+                  const totalVolume = workout.exercises.reduce((acc, ex) => {
+                    const exVolume = ex.sets.reduce((setAcc, set) => setAcc + set.reps * (set.weight || 0), 0);
+                    return acc + exVolume;
+                  }, 0);
+
+                  return (
+                    <Link key={workout.id} href={`/athlete/history/${workout.id}`}>
+                      <div className="flex items-center justify-between p-3 rounded-md border hover:bg-secondary/50 transition-colors">
+                        <div>
+                          <p className="font-semibold">{workout.workoutName}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {format(workout.endTime.toDate(), 'd MMM yyyy', { locale: pl })} • {workout.duration} min
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold">{totalVolume.toLocaleString()} kg</p>
+                          <p className="text-sm text-muted-foreground">{workout.exercises.length} ćwiczeń</p>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">Brak ostatnich treningów</p>
+                <Button variant="outline" className="mt-2" asChild>
+                  <Link href="/athlete/log">Rozpocznij trening</Link>
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
+        {/* Active Goals */}
         <Card>
-          <CardHeader>
-            <CardTitle>Duis Aute Irure</CardTitle>
-            <CardDescription>Reprehenderit in voluptate</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="font-headline">Aktywne Cele</CardTitle>
+              <CardDescription>Twój postęp w osiąganiu celów</CardDescription>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/athlete/goals">Zobacz wszystkie</Link>
+            </Button>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-              fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-              culpa qui officia deserunt mollit anim id est laborum.
-            </p>
-          </CardContent>
-        </Card>
+            {isLoading ? (
+              <div className="space-y-4">
+                {Array.from({length: 3}).map((_, i) => (
+                  <div key={i} className="space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-2 w-full" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                ))}
+              </div>
+            ) : goals && goals.length > 0 ? (
+              <div className="space-y-4">
+                {goals.slice(0, 3).map(goal => {
+                  const progress = Math.min((goal.current / goal.target) * 100, 100);
+                  const isCompleted = progress >= 100;
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Sed Ut Perspiciatis</CardTitle>
-            <CardDescription>Unde omnis iste natus</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque
-              laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi
-              architecto beatae vitae dicta sunt explicabo.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Nemo Enim Ipsam</CardTitle>
-            <CardDescription>Voluptatem quia voluptas</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia
-              consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro
-              quisquam est, qui dolorem ipsum quia dolor sit amet.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>At Vero Eos</CardTitle>
-            <CardDescription>Et accusamus et iusto</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium
-              voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint
-              occaecati cupiditate non provident.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Temporibus Autem</CardTitle>
-            <CardDescription>Quibusdam et aut officiis</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe
-              eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum
-              rerum hic tenetur a sapiente delectus.
-            </p>
+                  return (
+                    <div key={goal.id} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="font-semibold text-sm">{goal.title}</p>
+                        <Badge variant={isCompleted ? "default" : "secondary"}>
+                          {progress.toFixed(0)}%
+                        </Badge>
+                      </div>
+                      <Progress value={progress} className={isCompleted ? '[&>div]:bg-green-500' : ''} />
+                      <p className="text-xs text-muted-foreground">
+                        {goal.current.toLocaleString()} / {goal.target.toLocaleString()} {goal.unit}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Target className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">Brak aktywnych celów</p>
+                <Button variant="outline" className="mt-2" asChild>
+                  <Link href="/athlete/goals">Ustaw cel</Link>
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
+      {/* Quick Actions */}
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle>Informacje Dodatkowe</CardTitle>
-          <CardDescription>Lorem ipsum dolor sit amet</CardDescription>
+          <CardTitle className="font-headline">Szybkie Akcje</CardTitle>
+          <CardDescription>Najczęściej używane funkcje</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <h3 className="mb-2 font-semibold">Nam Libero Tempore</h3>
-            <p className="text-sm text-muted-foreground">
-              Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus
-              id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor
-              repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus
-              saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae.
-            </p>
-          </div>
-          <div>
-            <h3 className="mb-2 font-semibold">Itaque Earum Rerum</h3>
-            <p className="text-sm text-muted-foreground">
-              Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus
-              maiores alias consequatur aut perferendis doloribus asperiores repellat. Lorem ipsum
-              dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore
-              et dolore magna aliqua.
-            </p>
-          </div>
-          <div>
-            <h3 className="mb-2 font-semibold">Quis Autem Vel Eum</h3>
-            <p className="text-sm text-muted-foreground">
-              Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae
-              consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur. Ut enim ad
-              minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam.
-            </p>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Button asChild className="h-auto p-4 flex-col">
+              <Link href="/athlete/log">
+                <Dumbbell className="h-8 w-8 mb-2" />
+                <span>Rozpocznij Trening</span>
+              </Link>
+            </Button>
+            <Button variant="outline" asChild className="h-auto p-4 flex-col">
+              <Link href="/athlete/measurements">
+                <Weight className="h-8 w-8 mb-2" />
+                <span>Dodaj Pomiary</span>
+              </Link>
+            </Button>
+            <Button variant="outline" asChild className="h-auto p-4 flex-col">
+              <Link href="/athlete/running">
+                <Footprints className="h-8 w-8 mb-2" />
+                <span>Zapisz Bieg</span>
+              </Link>
+            </Button>
+            <Button variant="outline" asChild className="h-auto p-4 flex-col">
+              <Link href="/athlete/diet">
+                <ChefHat className="h-8 w-8 mb-2" />
+                <span>Dodaj Posiłek</span>
+              </Link>
+            </Button>
           </div>
         </CardContent>
       </Card>

@@ -1,5 +1,7 @@
 'use client';
 
+import { Session } from 'next-auth';
+
 type SecurityRuleContext = {
   path: string;
   operation: 'get' | 'list' | 'create' | 'update' | 'delete' | 'write';
@@ -38,7 +40,7 @@ interface SecurityRuleRequest {
  * @param currentUser The currently authenticated user from NextAuth.
  * @returns An object that mirrors request.auth in security rules, or null.
  */
-function buildAuthObject(currentUser: any | null): AuthObject | null {
+function buildAuthObject(currentUser: Session['user'] | null): AuthObject | null {
   if (!currentUser) {
     return null;
   }
@@ -48,7 +50,7 @@ function buildAuthObject(currentUser: any | null): AuthObject | null {
     email: currentUser.email || null,
     email_verified: true, // NextAuth handles email verification
     phone_number: null,
-    sub: currentUser.id || currentUser.uid || '',
+    sub: currentUser.id,
     auth: {
       identities: {},
       sign_in_provider: 'credentials',
@@ -57,7 +59,7 @@ function buildAuthObject(currentUser: any | null): AuthObject | null {
   };
 
   return {
-    uid: currentUser.id || currentUser.uid || '',
+    uid: currentUser.id,
     token: token,
   };
 }

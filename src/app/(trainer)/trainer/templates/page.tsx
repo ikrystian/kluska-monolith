@@ -102,6 +102,8 @@ function TemplateForm({
   const { createDoc } = useCreateDoc();
   const { updateDoc } = useUpdateDoc();
   const isEditMode = !!editingPlan;
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [draftPlanId, setDraftPlanId] = useState<string | null>(editingPlan?.id || null);
 
   const form = useForm<TemplateFormValues>({
     resolver: zodResolver(templateSchema),
@@ -146,34 +148,99 @@ function TemplateForm({
     }
   }, [editingPlan, isEditMode, form]);
 
-  const { fields: dayFields, append: appendDay, remove: removeDay } = useFieldArray({
+  const { fields: dayFields, append: appendDayBase, remove: removeDay } = useFieldArray({
     control: form.control,
     name: 'workoutDays',
   });
+
+  // Wrapper around appendDay to save draft after adding a day
+  const appendDay = (day: any) => {
+    appendDayBase(day);
+    // Save draft after adding day
+    setTimeout(() => saveDraft(), 100);
+  };
+
+  // Function to save plan as draft without full validation
+  const saveDraft = async () => {
+    if (!user) return;
+
+    try {
+      const currentData = form.getValues();
+
+      // Only save if we have at least a name and one day
+      if (!currentData.name || currentData.workoutDays.length === 0) {
+        return;
+      }
+
+      setIsSavingDraft(true);
+
+      if (draftPlanId) {
+        // Update existing draft
+        await updateDoc('workoutPlans', draftPlanId, {
+          name: currentData.name,
+          description: currentData.description || '',
+          workoutDays: currentData.workoutDays,
+          isDraft: true,
+        });
+      } else {
+        // Create new draft
+        const newPlan = {
+          name: currentData.name,
+          description: currentData.description || '',
+          trainerId: user.uid,
+          assignedAthleteIds: [],
+          workoutDays: currentData.workoutDays,
+          isDraft: true,
+        };
+
+        const createdPlan = await createDoc('workoutPlans', newPlan);
+        setDraftPlanId(createdPlan.id);
+      }
+    } catch (error) {
+      // Silently fail for draft saves - don't show error toast
+      console.error('Draft save failed:', error);
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
 
   async function onSubmit(data: TemplateFormValues) {
     if (!user) return;
 
     try {
-      if (isEditMode && editingPlan) {
+      if (draftPlanId) {
+        // Update existing draft to finalize it
+        await updateDoc('workoutPlans', draftPlanId, {
+          name: data.name,
+          description: data.description || '',
+          workoutDays: data.workoutDays,
+          isDraft: false,
+        });
+        toast({
+          title: 'Plan Zapisany!',
+          description: `Plan '${data.name}' został zapisany.`
+        });
+      } else if (isEditMode && editingPlan) {
         // Update existing plan
         await updateDoc('workoutPlans', editingPlan.id, {
           name: data.name,
           description: data.description || '',
           workoutDays: data.workoutDays,
+          isDraft: false,
         });
         toast({
           title: 'Plan Zaktualizowany!',
           description: `Plan '${data.name}' został zmieniony.`
         });
       } else {
-        // Create new plan
+        // Create new plan (shouldn't happen if draft was created)
         const newPlan = {
           name: data.name,
           description: data.description || '',
           trainerId: user.uid,
           assignedAthleteIds: [],
           workoutDays: data.workoutDays,
+          isDraft: false,
         };
 
         await createDoc('workoutPlans', newPlan);
@@ -188,9 +255,7 @@ function TemplateForm({
     } catch (error) {
       toast({
         title: 'Błąd',
-        description: isEditMode
-          ? 'Nie udało się zaktualizować planu.'
-          : 'Nie udało się utworzyć planu.',
+        description: 'Nie udało się zapisać planu.',
         variant: 'destructive',
       });
     }
@@ -202,7 +267,14 @@ function TemplateForm({
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardHeader>
             <CardTitle className="font-headline">{isEditMode ? 'Edytuj Plan Treningowy' : 'Stwórz Nowy Plan Treningowy'}</CardTitle>
-            <CardDescription>{isEditMode ? `Edytujesz plan "${editingPlan.name}".` : 'Zbuduj plan treningowy do wielokrotnego użytku, który możesz przypisywać sportowcom.'}</CardDescription>
+            <CardDescription>
+              {isEditMode ? `Edytujesz plan "${editingPlan.name}".` : 'Zbuduj plan treningowy do wielokrotnego użytku, który możesz przypisywać sportowcom.'}
+              {draftPlanId && !isEditMode && (
+                <div className="mt-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 p-2 rounded">
+                  💾 Plan jest automatycznie zapisywany jako szkic po dodaniu każdego dnia.
+                </div>
+              )}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <FormField

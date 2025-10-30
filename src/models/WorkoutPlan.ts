@@ -4,11 +4,11 @@ export interface IWorkoutDay {
   dayName: string;
   exercises: {
     exerciseId: string;
-    exerciseName: string;
-    sets: number;
-    reps: number;
-    restTime?: number; // in seconds
-    notes?: string;
+    sets: {
+      reps: number;
+      weight?: number;
+    }[];
+    duration?: number; // in seconds for time-based exercises
   }[];
 }
 
@@ -19,6 +19,7 @@ export interface IWorkoutPlan extends Document {
   trainerId: string;
   assignedAthleteIds: string[];
   workoutDays: IWorkoutDay[];
+  isDraft: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,15 +36,18 @@ const WorkoutPlanSchema = new Schema<IWorkoutPlan>(
         exercises: [
           {
             exerciseId: { type: String, required: true },
-            exerciseName: { type: String, required: true },
-            sets: { type: Number, required: true },
-            reps: { type: Number, required: true },
-            restTime: { type: Number },
-            notes: { type: String },
+            sets: [
+              {
+                reps: { type: Number, required: true },
+                weight: { type: Number },
+              },
+            ],
+            duration: { type: Number },
           },
         ],
       },
     ],
+    isDraft: { type: Boolean, default: true },
   },
   {
     timestamps: true,

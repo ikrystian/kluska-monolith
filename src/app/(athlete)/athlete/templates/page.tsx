@@ -15,8 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
 import type { WorkoutPlan, Exercise, UserProfile } from '@/lib/types';
-import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc, collection, doc, setDoc, query, where, deleteDoc, updateDoc } from '@/firebase';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { useUser, useCollection, useDoc, useCreateDoc, useUpdateDoc, useDeleteDoc } from '@/lib/db-hooks';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -56,8 +55,11 @@ function TemplateForm({
 }) {
   const { toast } = useToast();
   const { user } = useUser();
-  const firestore = useFirestore();
+  const { createDoc } = useCreateDoc();
+  const { updateDoc } = useUpdateDoc();
   const isEditMode = !!editingPlan;
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [draftPlanId, setDraftPlanId] = useState<string | null>(editingPlan?.id || null);
 
   const form = useForm<TemplateFormValues>({
     resolver: zodResolver(templateSchema),
@@ -102,63 +104,110 @@ function TemplateForm({
     }
   }, [editingPlan, isEditMode, form]);
 
-  const { fields: dayFields, append: appendDay, remove: removeDay } = useFieldArray({
+  const { fields: dayFields, append: appendDayBase, remove: removeDay } = useFieldArray({
     control: form.control,
     name: 'workoutDays',
   });
 
-  async function onSubmit(data: TemplateFormValues) {
-    if (!user || !firestore) return;
+  // Wrapper around appendDay to save draft after adding a day
+  const appendDay = (day: any) => {
+    appendDayBase(day);
+    // Save draft after adding day
+    setTimeout(() => saveDraft(), 100);
+  };
 
-    if (isEditMode && editingPlan) {
-        const planDocRef = doc(firestore, 'workoutPlans', editingPlan.id);
-        const updatedPlanData = {
-            ...editingPlan,
-            ...data,
+  // Function to save plan as draft without full validation
+  const saveDraft = async () => {
+    if (!user) return;
+
+    try {
+      const currentData = form.getValues();
+
+      // Only save if we have at least a name and one day
+      if (!currentData.name || currentData.workoutDays.length === 0) {
+        return;
+      }
+
+      setIsSavingDraft(true);
+
+      if (draftPlanId) {
+        // Update existing draft
+        await updateDoc('workoutPlans', draftPlanId, {
+          name: currentData.name,
+          description: currentData.description || '',
+          workoutDays: currentData.workoutDays,
+          isDraft: true,
+        });
+      } else {
+        // Create new draft
+        const newPlan = {
+          name: currentData.name,
+          description: currentData.description || '',
+          trainerId: user.uid,
+          assignedAthleteIds: [],
+          workoutDays: currentData.workoutDays,
+          isDraft: true,
         };
-        await updateDoc(planDocRef, updatedPlanData)
-            .then(() => {
-                toast({ title: 'Plan Zaktualizowany!', description: `Plan '${data.name}' został zmieniony.` });
-                onSave();
-            })
-            .catch((serverError) => {
-                const permissionError = new FirestorePermissionError({
-                    path: planDocRef.path,
-                    operation: 'update',
-                    requestResourceData: updatedPlanData,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            });
-    } else {
-        const planCollectionRef = collection(firestore, 'workoutPlans');
-        const newPlanRef = doc(planCollectionRef);
 
-        const newPlan: WorkoutPlan = {
-          id: newPlanRef.id,
+        const createdPlan = await createDoc('workoutPlans', newPlan);
+        setDraftPlanId(createdPlan.id);
+      }
+    } catch (error) {
+      // Silently fail for draft saves - don't show error toast
+      console.error('Draft save failed:', error);
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
+  async function onSubmit(data: TemplateFormValues) {
+    if (!user) return;
+
+    try {
+      if (draftPlanId) {
+        // Update existing draft to finalize it
+        const updatedPlanData = {
           name: data.name,
           description: data.description || '',
-          trainerId: user.uid, // trainerId is used as ownerId
+          workoutDays: data.workoutDays,
+          isDraft: false,
+        };
+        await updateDoc('workoutPlans', draftPlanId, updatedPlanData);
+        toast({ title: 'Plan Zapisany!', description: `Plan '${data.name}' został zapisany.` });
+        onSave();
+      } else if (isEditMode && editingPlan) {
+        const updatedPlanData = {
+          name: data.name,
+          description: data.description || '',
+          workoutDays: data.workoutDays,
+          isDraft: false,
+        };
+        await updateDoc('workoutPlans', editingPlan.id, updatedPlanData);
+        toast({ title: 'Plan Zaktualizowany!', description: `Plan '${data.name}' został zmieniony.` });
+        onSave();
+      } else {
+        const newPlan = {
+          name: data.name,
+          description: data.description || '',
+          trainerId: user.uid,
           assignedAthleteIds: [],
           workoutDays: data.workoutDays,
+          isDraft: false,
         };
-
-        await setDoc(newPlanRef, newPlan)
-            .then(() => {
-                toast({
-                    title: 'Plan Zapisany!',
-                    description: `Plan '${data.name}' został utworzony.`,
-                });
-                form.reset();
-                onSave();
-            })
-            .catch((serverError) => {
-                const permissionError = new FirestorePermissionError({
-                    path: newPlanRef.path,
-                    operation: 'create',
-                    requestResourceData: newPlan,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            });
+        await createDoc('workoutPlans', newPlan);
+        toast({
+          title: 'Plan Zapisany!',
+          description: `Plan '${data.name}' został utworzony.`,
+        });
+        form.reset();
+        onSave();
+      }
+    } catch (error) {
+      toast({
+        title: 'Błąd',
+        description: error instanceof Error ? error.message : 'Nie udało się zapisać planu.',
+        variant: 'destructive',
+      });
     }
   }
 
@@ -168,7 +217,14 @@ function TemplateForm({
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardHeader>
             <CardTitle className="font-headline">{isEditMode ? 'Edytuj Plan Treningowy' : 'Stwórz Nowy Plan Treningowy'}</CardTitle>
-            <CardDescription>{isEditMode ? `Edytujesz plan "${editingPlan.name}".` : 'Zbuduj plan treningowy do wielokrotnego użytku, który możesz przypisywać sportowcom.'}</CardDescription>
+            <CardDescription>
+              {isEditMode ? `Edytujesz plan "${editingPlan.name}".` : 'Zbuduj plan treningowy do wielokrotnego użytku, który możesz przypisywać sportowcom.'}
+              {draftPlanId && !isEditMode && (
+                <div className="mt-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 p-2 rounded">
+                  💾 Plan jest automatycznie zapisywany jako szkic po dodaniu każdego dnia.
+                </div>
+              )}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <FormField
@@ -386,42 +442,39 @@ const ExerciseSets = ({ fieldNamePrefix, showWeight }: { fieldNamePrefix: `worko
 
 function AssignPlanDialog({ plan }: { plan: WorkoutPlan }) {
   const { user } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
+  const { updateDoc } = useUpdateDoc();
 
   const [open, setOpen] = useState(false);
   const [selectedAthletes, setSelectedAthletes] = useState<string[]>(plan.assignedAthleteIds || []);
   const [isAssigning, setIsAssigning] = useState(false);
 
-  const athletesCollectionRef = useMemoFirebase(() => {
-    if (!user) return null;
-    return collection(firestore, `trainers/${user.uid}/athletes`);
-  }, [firestore, user]);
-
-  const { data: athletes, isLoading } = useCollection(athletesCollectionRef);
+  // Fetch athletes managed by this user (trainerId = user.uid)
+  const { data: athletes, isLoading } = useCollection<UserProfile>(
+    user?.uid ? 'users' : null,
+    user?.uid ? { trainerId: user.uid, role: 'athlete' } : undefined
+  );
 
   const handleAssign = async () => {
-    if (!user || !firestore) return;
+    if (!user) return;
     setIsAssigning(true);
 
-    const planRef = doc(firestore, 'workoutPlans', plan.id);
-    setDoc(planRef, { assignedAthleteIds: selectedAthletes }, { merge: true })
-      .then(() => {
-        toast({
-          title: "Plan Przypisany!",
-          description: `Pomyślnie zaktualizowano przypisania dla planu "${plan.name}".`,
-        });
-        setOpen(false);
-      })
-      .catch((serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: planRef.path,
-          operation: 'update',
-          requestResourceData: { assignedAthleteIds: selectedAthletes },
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      })
-      .finally(() => setIsAssigning(false));
+    try {
+      await updateDoc('workoutPlans', plan.id, { assignedAthleteIds: selectedAthletes });
+      toast({
+        title: "Plan Przypisany!",
+        description: `Pomyślnie zaktualizowano przypisania dla planu "${plan.name}".`,
+      });
+      setOpen(false);
+    } catch (error) {
+      toast({
+        title: 'Błąd',
+        description: error instanceof Error ? error.message : 'Nie udało się przypisać planu.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsAssigning(false);
+    }
   };
 
   const handleCheckboxChange = (athleteId: string, checked: boolean | "indeterminate") => {
@@ -477,24 +530,23 @@ function AssignPlanDialog({ plan }: { plan: WorkoutPlan }) {
 
 export default function TemplatesPage() {
     const { user } = useUser();
-    const firestore = useFirestore();
     const { toast } = useToast();
+    const { deleteDoc } = useDeleteDoc();
 
     const [view, setView] = useState<'list' | 'form'>('list');
     const [editingPlan, setEditingPlan] = useState<WorkoutPlan | null>(null);
 
-    const assignedPlansQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return query(collection(firestore, 'workoutPlans'), where('assignedAthleteIds', 'array-contains', user.uid));
-    }, [firestore, user]);
+    // Fetch assigned workout plans (plans where user is in assignedAthleteIds)
+    const { data: assignedPlans, isLoading: assignedPlansLoading } = useCollection<WorkoutPlan>(
+        user?.uid ? 'workoutPlans' : null,
+        user?.uid ? { assignedAthleteIds: { $in: [user.uid] } } : undefined
+    );
 
-    const myPlansQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return query(collection(firestore, 'workoutPlans'), where('trainerId', '==', user.uid));
-    }, [firestore, user]);
-
-    const { data: assignedPlans, isLoading: assignedPlansLoading } = useCollection<WorkoutPlan>(assignedPlansQuery);
-    const { data: myPlans, isLoading: myPlansLoading } = useCollection<WorkoutPlan>(myPlansQuery);
+    // Fetch user's own workout plans (plans where user is trainerId)
+    const { data: myPlans, isLoading: myPlansLoading } = useCollection<WorkoutPlan>(
+        user?.uid ? 'workoutPlans' : null,
+        user?.uid ? { trainerId: user.uid } : undefined
+    );
 
     const workoutPlans = useMemo(() => {
         const plansMap = new Map<string, WorkoutPlan>();
@@ -503,11 +555,36 @@ export default function TemplatesPage() {
         return Array.from(plansMap.values());
     }, [assignedPlans, myPlans]);
 
-    const exercisesRef = useMemoFirebase(() =>
-        firestore && user ? query(collection(firestore, 'exercises'), where('ownerId', 'in', ['public', user.uid])) : null,
-        [firestore, user]
-    );
-    const { data: allExercises, isLoading: exercisesLoading } = useCollection<Exercise>(exercisesRef);
+    // Fetch all exercises (we'll filter them in useMemo)
+    const { data: fetchedExercises, isLoading: exercisesLoading } = useCollection<Exercise>('exercises');
+
+    // Filter exercises: public exercises + exercises from assigned workout plans
+    const allExercises = useMemo(() => {
+        if (!fetchedExercises) return null;
+
+        const exercisesMap = new Map<string, Exercise>();
+
+        // Collect exercise IDs from assigned workout plans
+        const exerciseIdsFromPlans = new Set<string>();
+        assignedPlans?.forEach(plan => {
+            plan.workoutDays?.forEach(day => {
+                day.exercises?.forEach(ex => {
+                    if (ex.exerciseId) {
+                        exerciseIdsFromPlans.add(ex.exerciseId);
+                    }
+                });
+            });
+        });
+
+        // Add exercises that are either public or used in assigned plans
+        fetchedExercises.forEach(ex => {
+            if (ex.ownerId === 'public' || exerciseIdsFromPlans.has(ex.id)) {
+                exercisesMap.set(ex.id, ex);
+            }
+        });
+
+        return Array.from(exercisesMap.values());
+    }, [fetchedExercises, assignedPlans]);
 
     const isLoading = assignedPlansLoading || myPlansLoading || exercisesLoading;
 
@@ -528,21 +605,20 @@ export default function TemplatesPage() {
 
     const handleDelete = async (planId: string) => {
       if (!user) return;
-      const planRef = doc(firestore, `workoutPlans`, planId);
 
       try {
-        await deleteDoc(planRef);
+        await deleteDoc('workoutPlans', planId);
         toast({
           title: "Plan Usunięty",
           description: "Plan treningowy został pomyślnie usunięty.",
           variant: "destructive",
         })
-      } catch (e) {
-          const permissionError = new FirestorePermissionError({
-            path: planRef.path,
-            operation: 'delete',
-          });
-          errorEmitter.emit('permission-error', permissionError);
+      } catch (error) {
+        toast({
+          title: 'Błąd',
+          description: error instanceof Error ? error.message : 'Nie udało się usunąć planu.',
+          variant: 'destructive',
+        });
       }
     }
 

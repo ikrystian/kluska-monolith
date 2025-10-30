@@ -37,9 +37,7 @@ import { Textarea } from '@/components/ui/textarea';
 import type { Exercise, MuscleGroup, WorkoutPlan, UserProfile } from '@/lib/types';
 import { PlusCircle, Search, Loader2, Dumbbell, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc, collection, query, where, doc, addDoc, setDoc, deleteDoc, getDocs } from '@/firebase';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { errorEmitter } from '@/firebase/error-emitter';
+import { useCollection, useUser, useCreateDoc, useUpdateDoc, useDeleteDoc } from '@/lib/db-hooks';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   DropdownMenu,
@@ -52,23 +50,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 export default function ExercisesPage() {
   const { user } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
+  const { createDoc } = useCreateDoc();
+  const { updateDoc } = useUpdateDoc();
+  const { deleteDoc } = useDeleteDoc();
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
 
-  const userProfileRef = useMemoFirebase(() => (user ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
-  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
-
-  const assignedPlansQuery = useMemoFirebase(() => {
-    if (!user || !userProfile || userProfile.role !== 'athlete') return null;
-    return query(collection(firestore, 'workoutPlans'), where('assignedAthleteIds', 'array-contains', user.uid));
-  }, [firestore, user, userProfile]);
-
-  const { data: assignedPlans } = useCollection<WorkoutPlan>(assignedPlansQuery);
+  // Fetch assigned workout plans
+  const { data: assignedPlans, isLoading: assignedPlansLoading } = useCollection<WorkoutPlan>(
+    user?.uid ? 'workoutPlans' : null,
+    user?.uid ? { assignedAthleteIds: { $in: [user.uid] } } : undefined
+  );
 
   const exerciseIds = useMemo(() => {
     const ids = new Set<string>();
@@ -84,22 +80,17 @@ export default function ExercisesPage() {
     return Array.from(ids);
   }, [assignedPlans]);
 
-  const exercisesRef = useMemoFirebase(() => {
-      if (!firestore || exerciseIds.length === 0) return null;
-      // Firestore 'in' query can take max 30 elements
-      if (exerciseIds.length <= 30) {
-        return query(collection(firestore, 'exercises'), where('id', 'in', exerciseIds));
-      }
-      return null; // Handle larger sets separately if needed
-  }, [firestore, exerciseIds]);
-  
-  const publicAndUserExercisesQuery = useMemoFirebase(() => {
-      if(!firestore || !user) return null;
-      return query(collection(firestore, 'exercises'), where('ownerId', 'in', ['public', user.uid]));
-  }, [firestore, user]);
+  // Fetch exercises from assigned plans
+  const { data: assignedExercises, isLoading: assignedLoading } = useCollection<Exercise>(
+    exerciseIds.length > 0 ? 'exercises' : null,
+    exerciseIds.length > 0 ? { id: { $in: Array.from(exerciseIds) } } : undefined
+  );
 
-  const { data: assignedExercises, isLoading: assignedLoading } = useCollection<Exercise>(exercisesRef);
-  const { data: publicAndUserExercises, isLoading: publicAndUserLoading } = useCollection<Exercise>(publicAndUserExercisesQuery);
+  // Fetch public and user's own exercises
+  const { data: publicAndUserExercises, isLoading: publicAndUserLoading, refetch: refetchExercises } = useCollection<Exercise>(
+    user?.uid ? 'exercises' : null,
+    user?.uid ? { ownerId: { $in: ['public', user.uid] } } : undefined
+  );
 
   const allExercises = useMemo(() => {
       const combined = new Map<string, Exercise>();
@@ -108,14 +99,9 @@ export default function ExercisesPage() {
       return Array.from(combined.values());
   }, [publicAndUserExercises, assignedExercises]);
 
+  // Fetch muscle groups
+  const { data: muscleGroups, isLoading: muscleGroupsLoading } = useCollection<MuscleGroup>('muscleGroups');
 
-  const muscleGroupsRef = useMemoFirebase(() =>
-    firestore ? collection(firestore, 'muscleGroups') : null,
-    [firestore]
-  );
-
-  const { data: muscleGroups, isLoading: muscleGroupsLoading } = useCollection<MuscleGroup>(muscleGroupsRef);
-  
   const isLoading = assignedLoading || publicAndUserLoading || muscleGroupsLoading;
 
   const filteredExercises = allExercises?.filter(
@@ -123,10 +109,10 @@ export default function ExercisesPage() {
       exercise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       exercise.muscleGroup.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
+
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!user || !firestore) return;
+    if (!user) return;
     setIsSubmitting(true);
 
     const form = event.currentTarget;
@@ -137,55 +123,42 @@ export default function ExercisesPage() {
       description: formData.get('description') as string,
       type: formData.get('type') as 'weight' | 'duration' | 'reps',
     };
-    
-    if(selectedExercise) {
+
+    try {
+      if(selectedExercise) {
         // Update existing exercise
-        const exerciseDocRef = doc(firestore, 'exercises', selectedExercise.id);
         const updatedData = {
-            ...selectedExercise,
-            ...exerciseData
+          name: exerciseData.name,
+          muscleGroup: exerciseData.muscleGroup,
+          description: exerciseData.description,
+          type: exerciseData.type,
         };
-        setDoc(exerciseDocRef, updatedData, { merge: true })
-        .then(() => {
-            toast({ title: "Sukces!", description: "Ćwiczenie zostało zaktualizowane."});
-            setEditDialogOpen(false);
-            setSelectedExercise(null);
-        })
-        .catch((serverError) => {
-            const permissionError = new FirestorePermissionError({
-              path: exerciseDocRef.path,
-              operation: 'update',
-              requestResourceData: updatedData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        })
-        .finally(() => setIsSubmitting(false));
-    } else {
+        await updateDoc('exercises', selectedExercise.id, updatedData);
+        toast({ title: "Sukces!", description: "Ćwiczenie zostało zaktualizowane."});
+        setEditDialogOpen(false);
+        setSelectedExercise(null);
+        refetchExercises();
+      } else {
         // Add new exercise
-        const exercisesCollection = collection(firestore, 'exercises');
-        const newExerciseRef = doc(exercisesCollection);
         const newExerciseData = {
-            id: newExerciseRef.id,
-            ...exerciseData,
-            image: `https://picsum.photos/seed/${encodeURIComponent(exerciseData.name)}/400/300`,
-            imageHint: exerciseData.name.toLowerCase(),
-            ownerId: user.uid,
+          ...exerciseData,
+          image: `https://picsum.photos/seed/${encodeURIComponent(exerciseData.name)}/400/300`,
+          imageHint: exerciseData.name.toLowerCase(),
+          ownerId: user.uid,
         };
-        
-        setDoc(newExerciseRef, newExerciseData)
-          .then(() => {
-            toast({ title: "Sukces!", description: "Nowe ćwiczenie zostało dodane."});
-            setAddDialogOpen(false);
-          })
-          .catch((serverError) => {
-            const permissionError = new FirestorePermissionError({
-              path: exercisesCollection.path,
-              operation: 'create',
-              requestResourceData: newExerciseData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-          })
-          .finally(() => setIsSubmitting(false));
+        await createDoc('exercises', newExerciseData);
+        toast({ title: "Sukces!", description: "Nowe ćwiczenie zostało dodane."});
+        setAddDialogOpen(false);
+        refetchExercises();
+      }
+    } catch (error) {
+      toast({
+        title: 'Błąd',
+        description: error instanceof Error ? error.message : 'Nie udało się zapisać ćwiczenia.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -193,25 +166,25 @@ export default function ExercisesPage() {
     setSelectedExercise(exercise);
     setEditDialogOpen(true);
   };
-  
-  const handleDeleteExercise = async () => {
-    if (!selectedExercise || !firestore) return;
-    setIsSubmitting(true);
-    const exerciseDocRef = doc(firestore, 'exercises', selectedExercise.id);
 
-    deleteDoc(exerciseDocRef)
-      .then(() => {
-        toast({ title: "Sukces!", description: "Ćwiczenie zostało usunięte."});
-        setSelectedExercise(null);
-      })
-      .catch((serverError) => {
-         const permissionError = new FirestorePermissionError({
-            path: exerciseDocRef.path,
-            operation: 'delete',
-          });
-          errorEmitter.emit('permission-error', permissionError);
-      })
-      .finally(() => setIsSubmitting(false));
+  const handleDeleteExercise = async () => {
+    if (!selectedExercise) return;
+    setIsSubmitting(true);
+
+    try {
+      await deleteDoc('exercises', selectedExercise.id);
+      toast({ title: "Sukces!", description: "Ćwiczenie zostało usunięte."});
+      setSelectedExercise(null);
+      refetchExercises();
+    } catch (error) {
+      toast({
+        title: 'Błąd',
+        description: error instanceof Error ? error.message : 'Nie udało się usunąć ćwiczenia.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
 
@@ -381,14 +354,14 @@ export default function ExercisesPage() {
             </Card>
           )}
         </div>
-        
+
         {/* Edit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={(isOpen) => { setEditDialogOpen(isOpen); if(!isOpen) setSelectedExercise(null); }}>
           <DialogContent className="sm:max-w-[425px]">
             <ExerciseDialogContent isEditMode={true} />
           </DialogContent>
         </Dialog>
-        
+
         {/* Delete Confirmation Dialog Content */}
         <AlertDialogContent>
             <AlertDialogHeader>
@@ -412,4 +385,3 @@ export default function ExercisesPage() {
   );
 }
 
-    

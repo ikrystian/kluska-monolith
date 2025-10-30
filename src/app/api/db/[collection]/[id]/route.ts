@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/mongodb';
+import { isValidObjectId } from 'mongoose';
 
 // Import all models
 import { User } from '@/models/User';
@@ -44,34 +45,52 @@ const modelMap: Record<string, any> = {
   gyms: Gym,
 };
 
-// GET - Fetch single document
+// GET - Fetch single document by ID
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ collection: string; id: string }> }
 ) {
   try {
+    console.log('API GET request received');
     const session = await getServerSession(authOptions);
+    console.log('Session:', session ? 'authenticated' : 'not authenticated');
 
-    // Some documents might be public, adjust as needed
+    // Some collections might be public, adjust as needed
     // if (!session) {
     //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     // }
 
+    console.log('Connecting to database...');
     await connectToDatabase();
+    console.log('Database connected');
 
     const { collection, id } = await params;
+    console.log(`Fetching from collection: ${collection}, id: ${id}`);
+
     const Model = modelMap[collection];
+    console.log(`Model found: ${Model ? 'yes' : 'no'}`);
 
     if (!Model) {
+      console.log('Model not found in modelMap');
       return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
     }
 
-    const doc = await Model.findById(id);
+    console.log(`Validating ObjectId: ${id}`);
+    if (!isValidObjectId(id)) {
+      console.log('Invalid ObjectId format');
+      return NextResponse.json({ error: 'Invalid ID format' }, { status: 400 });
+    }
+
+    console.log('Querying database for document...');
+    const doc = await Model.findById(id).exec();
+    console.log(`Document found: ${doc ? 'yes' : 'no'}`);
 
     if (!doc) {
+      console.log('Document not found in database');
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
     }
 
+    console.log('Returning document successfully');
     return NextResponse.json({ data: doc.toJSON() });
   } catch (error) {
     console.error('GET /api/db/[collection]/[id] error:', error);
@@ -82,7 +101,7 @@ export async function GET(
   }
 }
 
-// PATCH - Update document
+// PATCH - Update single document by ID
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ collection: string; id: string }> }
@@ -103,8 +122,12 @@ export async function PATCH(
       return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
     }
 
+    if (!isValidObjectId(id)) {
+      return NextResponse.json({ error: 'Invalid ID format' }, { status: 400 });
+    }
+
     const body = await request.json();
-    const doc = await Model.findByIdAndUpdate(id, body, { new: true });
+    const doc = await Model.findByIdAndUpdate(id, body, { new: true }).exec();
 
     if (!doc) {
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
@@ -120,7 +143,7 @@ export async function PATCH(
   }
 }
 
-// DELETE - Delete document
+// DELETE - Delete single document by ID
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ collection: string; id: string }> }
@@ -141,13 +164,17 @@ export async function DELETE(
       return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
     }
 
-    const doc = await Model.findByIdAndDelete(id);
+    if (!isValidObjectId(id)) {
+      return NextResponse.json({ error: 'Invalid ID format' }, { status: 400 });
+    }
+
+    const doc = await Model.findByIdAndDelete(id).exec();
 
     if (!doc) {
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ message: 'Document deleted successfully' });
   } catch (error) {
     console.error('DELETE /api/db/[collection]/[id] error:', error);
     return NextResponse.json(
@@ -156,4 +183,3 @@ export async function DELETE(
     );
   }
 }
-

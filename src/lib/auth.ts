@@ -11,6 +11,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
+        rememberMe: { label: 'Remember Me', type: 'checkbox' },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -36,6 +37,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
+          rememberMe: credentials.rememberMe === 'true',
         };
       },
     }),
@@ -44,14 +46,15 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role;
+        token.role = user.role;
+        token.rememberMe = (user as any).rememberMe || false;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).role = token.role;
+        session.user.id = token.id;
+        session.user.role = token.role;
       }
       return session;
     },
@@ -61,7 +64,17 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
+    maxAge: 24 * 60 * 60, // 24 godziny (domyślnie)
+  },
+  jwt: {
+    maxAge: 30 * 24 * 60 * 60, // 30 dni dla "Zapamiętaj mnie"
   },
   secret: process.env.NEXTAUTH_SECRET || 'your-secret-key-change-this-in-production',
+  events: {
+    async signIn({ user, account, profile, isNewUser }) {
+      // Logowanie dla debugowania
+      console.log('User signed in:', user.email);
+    },
+  },
 };
 

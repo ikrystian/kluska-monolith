@@ -1,43 +1,59 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc, collection, query, where, doc } from '@/firebase';
-import type { Article, ArticleCategory } from '@/lib/types';
+import { useCollection, useDoc, useUser } from '@/lib/db-hooks';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Pencil } from 'lucide-react';
+
+interface Article {
+  id: string;
+  title: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  category: string;
+  status: 'published' | 'draft';
+  coverImageUrl?: string;
+  imageHint?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface ArticleCategory {
+  id: string;
+  name: string;
+}
+
+interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: 'athlete' | 'trainer' | 'admin';
+}
 
 interface ArticlesByCategory {
   [category: string]: Article[];
 }
 
 export default function KnowledgeZonePage() {
-  const firestore = useFirestore();
   const { user } = useUser();
 
-  const userProfileRef = useMemoFirebase(
-    () => (user ? doc(firestore, `users/${user.uid}`) : null),
-    [user, firestore]
-  );
-  const { data: userProfile } = useDoc(userProfileRef);
+  const { data: userProfile } = useDoc<UserProfile>('users', user?.uid || '');
 
-  const categoriesQuery = useMemoFirebase(
-    () => query(collection(firestore, 'articleCategories')),
-    [firestore]
-  );
-  const { data: categories, isLoading: categoriesLoading } = useCollection<ArticleCategory>(categoriesQuery);
+  const { data: categories, isLoading: categoriesLoading } = useCollection<ArticleCategory>('articleCategories');
 
-  const articlesQuery = useMemoFirebase(
-    () => query(collection(firestore, 'articles'), where('status', '==', 'published')),
-    [firestore]
+  const { data: articles, isLoading: articlesLoading } = useCollection<Article>(
+    'articles',
+    { status: 'published' },
+    { sort: { createdAt: -1 } }
   );
-  const { data: articles, isLoading: articlesLoading } = useCollection<Article>(articlesQuery);
 
   const canManage = userProfile?.role === 'admin' || userProfile?.role === 'trainer';
 
@@ -61,7 +77,7 @@ export default function KnowledgeZonePage() {
       <div className="mb-6 flex justify-end">
         {canManage && (
           <Button asChild>
-            <Link href="/knowledge-zone/manage">
+            <Link href="/trainer/knowledge-zone/manage">
               <Pencil className="mr-2 h-4 w-4" />
               Zarządzaj Artykułami
             </Link>
@@ -95,7 +111,7 @@ export default function KnowledgeZonePage() {
             <h2 className="font-headline text-2xl font-bold mb-4 border-b pb-2">{categoryName}</h2>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {categoryArticles.map(article => (
-                <Link href={`/knowledge-zone/${article.id}`} key={article.id}>
+                <Link href={`/trainer/knowledge-zone/${article.id}`} key={article.id}>
                   <Card className="overflow-hidden transition-all hover:shadow-lg h-full flex flex-col">
                     <div className="relative h-48 w-full">
                       <Image
@@ -112,7 +128,7 @@ export default function KnowledgeZonePage() {
                     <CardContent className="flex-grow"></CardContent>
                     <CardFooter className="flex justify-between text-sm text-muted-foreground">
                       <span>{article.authorName}</span>
-                      <span>{format(article.createdAt.toDate(), 'd MMM yyyy', { locale: pl })}</span>
+                      <span>{format(new Date(article.createdAt), 'd MMM yyyy', { locale: pl })}</span>
                     </CardFooter>
                   </Card>
                 </Link>

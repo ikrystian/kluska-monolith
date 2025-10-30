@@ -61,7 +61,9 @@ const trainerNavItems = [
     { href: '/trainer/chat', icon: MessageSquare, label: 'Czat' },
     { href: '/trainer/templates', icon: Library, label: 'Plany Treningowe' },
     { href: '/trainer/exercises', icon: Dumbbell, label: 'Ćwiczenia' },
+    { href: '/trainer/diet', icon: Salad, label: 'Diety' },
     { href: '/trainer/knowledge-zone', icon: BookOpen, label: 'Strefa Wiedzy' },
+    { href: '/trainer/map', icon: Map, label: 'Mapa Siłowni' },
 ]
 
 const adminNavItems = [

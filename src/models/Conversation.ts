@@ -2,6 +2,7 @@ import mongoose, { Schema, Model } from 'mongoose';
 
 export interface IConversation {
   _id: string;
+  conversationId: string;
   participants: string[];
   trainerId: string;
   athleteId: string;
@@ -20,6 +21,7 @@ export interface IConversation {
 
 const ConversationSchema = new Schema<IConversation>(
   {
+    conversationId: { type: String, required: true, unique: true },
     participants: [{ type: String, required: true }],
     trainerId: { type: String, required: true },
     athleteId: { type: String, required: true },
@@ -44,12 +46,13 @@ const ConversationSchema = new Schema<IConversation>(
   }
 );
 
+ConversationSchema.index({ conversationId: 1 });
 ConversationSchema.index({ participants: 1 });
 ConversationSchema.index({ trainerId: 1 });
 ConversationSchema.index({ athleteId: 1 });
 ConversationSchema.index({ updatedAt: -1 });
 
-export const Conversation: Model<IConversation> = 
+export const Conversation: Model<IConversation> =
   mongoose.models.Conversation || mongoose.model<IConversation>('Conversation', ConversationSchema);
 
 // Message
@@ -81,7 +84,7 @@ const MessageSchema = new Schema<IMessage>(
 
 MessageSchema.index({ conversationId: 1, createdAt: 1 });
 
-export const Message: Model<IMessage> = 
+export const Message: Model<IMessage> =
   mongoose.models.Message || mongoose.model<IMessage>('Message', MessageSchema);
 
 // Body Measurement
@@ -129,7 +132,7 @@ const BodyMeasurementSchema = new Schema<IBodyMeasurement>(
 
 BodyMeasurementSchema.index({ ownerId: 1, date: -1 });
 
-export const BodyMeasurement: Model<IBodyMeasurement> = 
+export const BodyMeasurement: Model<IBodyMeasurement> =
   mongoose.models.BodyMeasurement || mongoose.model<IBodyMeasurement>('BodyMeasurement', BodyMeasurementSchema);
 
 // Trainer Request
@@ -164,13 +167,14 @@ const TrainerRequestSchema = new Schema<ITrainerRequest>(
 TrainerRequestSchema.index({ trainerId: 1, status: 1 });
 TrainerRequestSchema.index({ athleteId: 1 });
 
-export const TrainerRequest: Model<ITrainerRequest> = 
+export const TrainerRequest: Model<ITrainerRequest> =
   mongoose.models.TrainerRequest || mongoose.model<ITrainerRequest>('TrainerRequest', TrainerRequestSchema);
 
 // Meal
 export interface IMeal {
   _id: string;
   ownerId: string;
+  trainerId?: string;
   date: Date;
   type: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
   foodItems: {
@@ -180,11 +184,14 @@ export interface IMeal {
     carbs: number;
     fat: number;
   }[];
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 const MealSchema = new Schema<IMeal>(
   {
     ownerId: { type: String, required: true },
+    trainerId: { type: String },
     date: { type: Date, required: true },
     type: { type: String, enum: ['Breakfast', 'Lunch', 'Dinner', 'Snack'], required: true },
     foodItems: [{
@@ -196,6 +203,7 @@ const MealSchema = new Schema<IMeal>(
     }],
   },
   {
+    timestamps: true,
     toJSON: {
       transform: (_, ret) => {
         ret.id = ret._id.toString();
@@ -207,8 +215,9 @@ const MealSchema = new Schema<IMeal>(
 );
 
 MealSchema.index({ ownerId: 1, date: -1 });
+MealSchema.index({ trainerId: 1, date: -1 });
 
-export const Meal: Model<IMeal> = 
+export const Meal: Model<IMeal> =
   mongoose.models.Meal || mongoose.model<IMeal>('Meal', MealSchema);
 
 // Running Session
@@ -244,7 +253,7 @@ const RunningSessionSchema = new Schema<IRunningSession>(
 
 RunningSessionSchema.index({ ownerId: 1, date: -1 });
 
-export const RunningSession: Model<IRunningSession> = 
+export const RunningSession: Model<IRunningSession> =
   mongoose.models.RunningSession || mongoose.model<IRunningSession>('RunningSession', RunningSessionSchema);
 
 // Achievement
@@ -278,7 +287,7 @@ const AchievementSchema = new Schema<IAchievement>(
 
 AchievementSchema.index({ ownerId: 1, date: -1 });
 
-export const Achievement: Model<IAchievement> = 
+export const Achievement: Model<IAchievement> =
   mongoose.models.Achievement || mongoose.model<IAchievement>('Achievement', AchievementSchema);
 
 // Gym
@@ -304,6 +313,6 @@ const GymSchema = new Schema<IGym>(
   }
 );
 
-export const Gym: Model<IGym> = 
+export const Gym: Model<IGym> =
   mongoose.models.Gym || mongoose.model<IGym>('Gym', GymSchema);
 

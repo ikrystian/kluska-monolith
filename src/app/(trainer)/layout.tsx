@@ -33,10 +33,11 @@ export default function TrainerLayout({
         router.push('/athlete/dashboard');
       } else if (userProfile?.role === 'admin') {
         router.push('/admin/dashboard');
-      } else if (userProfile?.role == 'trainer') {
-        // If logged in but not a trainer/athlete/admin, go to login
-        router.push('/trainer/dashboard');
+      } else if (userProfile && userProfile.role !== 'trainer') {
+        // If logged in but not a trainer, go to login
+        router.push('/login');
       }
+      // If user is trainer, don't redirect - let them stay on current page
     }
   }, [user, userProfile, isLoading, router]);
 
@@ -73,4 +74,3 @@ export default function TrainerLayout({
     </SidebarProvider>
   );
 }
-

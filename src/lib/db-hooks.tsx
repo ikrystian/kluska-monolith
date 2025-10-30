@@ -48,7 +48,7 @@ export function useCollection<T = any>(
       if (options?.limit) params.append('limit', options.limit.toString());
 
       const response = await fetch(`/api/db/${collection}?${params.toString()}`);
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch ${collection}: ${response.statusText}`);
       }
@@ -94,7 +94,7 @@ export function useDoc<T = any>(
 
     try {
       const response = await fetch(`/api/db/${collection}/${id}`);
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch document: ${response.statusText}`);
       }
@@ -226,13 +226,13 @@ export function useDeleteDoc() {
  */
 export function useUser() {
   const { data: session, status } = useSession();
-  
+
   return {
     user: session?.user ? {
-      uid: (session.user as any).id,
+      uid: session.user.id,
       email: session.user.email,
       name: session.user.name,
-      role: (session.user as any).role,
+      role: session.user.role,
     } : null,
     isUserLoading: status === 'loading',
     userError: null,

@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dumbbell } from 'lucide-react';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
@@ -22,6 +23,7 @@ import { useUser, useDoc } from '@/lib/db-hooks';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [uiLoading, setUiLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -54,6 +56,7 @@ export default function LoginPage() {
       const result = await signIn('credentials', {
         email,
         password,
+        rememberMe: rememberMe.toString(),
         redirect: false,
       });
 
@@ -117,6 +120,17 @@ export default function LoginPage() {
               disabled={isLoading}
               onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="rememberMe"
+              checked={rememberMe}
+              onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+              disabled={isLoading}
+            />
+            <Label htmlFor="rememberMe" className="font-normal cursor-pointer">
+              Zapamiętaj mnie
+            </Label>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
