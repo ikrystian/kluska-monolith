@@ -81,7 +81,7 @@ const StatCard = ({ title, value, unit, icon: Icon, isLoading }: { title: string
 );
 
 const MeasurementChart = ({ data, dataKey, title, unit }: { data: any[], dataKey: string, title: string, unit: string }) => {
-    
+
     const chartConfig = {
       value: {
         label: title,
@@ -100,7 +100,7 @@ const MeasurementChart = ({ data, dataKey, title, unit }: { data: any[], dataKey
     }
 
     return (
-        <div className="h-64">
+        <div className="">
             <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
                 <LineChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid vertical={false} />
@@ -153,11 +153,11 @@ export default function MeasurementsPage() {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
 
-  const measurementsRef = useMemoFirebase(() => 
+  const measurementsRef = useMemoFirebase(() =>
     user ? query(collection(firestore, `users/${user.uid}/bodyMeasurements`), orderBy('date', 'desc')) : null,
     [user, firestore]
   );
-  
+
   const { data: measurements, isLoading } = useCollection<BodyMeasurement>(measurementsRef);
 
   const chartData = useMemo(() => {
@@ -414,11 +414,11 @@ export default function MeasurementsPage() {
                 </div>
             ) : chartTabs.map((tab) => (
                 <TabsContent key={tab.value} value={tab.value}>
-                  <MeasurementChart 
+                  <MeasurementChart
                     data={tab.dataKey === 'weight' ? chartData : chartData.map(d => ({...d, [tab.dataKey]: d.circumferences[tab.dataKey as keyof typeof d.circumferences]}))}
                     dataKey={tab.dataKey}
                     title={tab.label}
-                    unit={tab.unit} 
+                    unit={tab.unit}
                   />
                 </TabsContent>
             ))}

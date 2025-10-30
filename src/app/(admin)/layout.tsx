@@ -33,9 +33,12 @@ export default function AdminLayout({
       if (!user) {
         // If not logged in at all, go to login
         router.push('/login');
+      } else if (userProfile?.role === 'athlete') {
+        router.push('/athlete/dashboard');
+      } else if (userProfile?.role === 'trainer') {
+        router.push('/trainer/dashboard');
       } else if (userProfile?.role !== 'admin') {
-        // If logged in but not an admin, go to the regular dashboard
-        router.push('/dashboard');
+        router.push('/admin/dashboard');
       }
     }
   }, [user, userProfile, isLoading, router]);
@@ -63,7 +66,7 @@ export default function AdminLayout({
   // It is now safe to render the admin layout and its children.
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen w-full">
         <AppNav />
         <main className="flex-1 flex-col overflow-y-auto bg-secondary/30">
           <AppHeader />

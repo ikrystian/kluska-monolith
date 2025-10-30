@@ -28,7 +28,20 @@ export default function AthleteLayout({
   const isLoading = isUserLoading || isProfileLoading;
 
   useEffect(() => {
-    
+    // This effect handles redirection after loading is complete
+    if (!isLoading) {
+      if (!user) {
+        // If not logged in at all, go to login
+        router.push('/login');
+      } else if (userProfile?.role === 'trainer') {
+        router.push('/trainer/dashboard');
+      } else if (userProfile?.role === 'admin') {
+        router.push('/admin/dashboard');
+      } else if (userProfile?.role !== 'athlete') {
+        // If logged in but not an athlete/trainer/admin, go to login
+        router.push('/athlete/dashboard');
+      }
+    }
   }, [user, userProfile, isLoading, router]);
 
   // Render loading state until we are certain about the user's auth state and role.
@@ -54,7 +67,7 @@ export default function AthleteLayout({
   // It is now safe to render the athlete layout and its children.
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen w-full">
         <AppNav />
         <main className="flex-1 flex-col overflow-y-auto bg-secondary/30">
           <AppHeader />

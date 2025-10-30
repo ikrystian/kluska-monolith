@@ -10,4 +10,21 @@ CHANGELOG
 - Utworzono stronę dashboardu sportowca z przykładową treścią lorem ipsum
 - Zaktualizowano nawigację aby każda rola (athlete, trainer, admin) miała dedykowane elementy menu
 - Zaktualizowano przekierowania w login page, landing page i app layout aby sportowcy byli kierowani do /athlete/dashboard
+- Dodano dostęp do /chat, /templates, /exercises i /knowledge-zone w panelu trenera
+- Potwierdzono że /profile jest dostępny dla wszystkich ról (athlete, trainer, admin) poprzez stopkę nawigacji
+- Skopiowano strony chat, templates, exercises, knowledge-zone i profile do folderu (trainer) aby uniknąć przekierowań z layoutu (app)
+- Zaktualizowano nawigację trenera aby używała ścieżek /trainer/chat, /trainer/templates, /trainer/exercises, /trainer/knowledge-zone
+- Skopiowano te same strony do folderu (athlete) dla spójności
+- Zaktualizowano nawigację sportowca aby używała ścieżek /athlete/chat, /athlete/templates, /athlete/exercises, /athlete/knowledge-zone
+- Dodano dynamiczne linki do profilu w zależności od roli użytkownika (/athlete/profile, /trainer/profile, /admin/profile)
+- Poprawiono wyświetlanie badge z liczbą nieprzeczytanych wiadomości dla różnych ścieżek czatu
+- Skopiowano stronę profile do folderu (admin) dla administratorów
+- Zaktualizowano wszystkie wewnętrzne linki do czatu w stronach /trainer/chat i /athlete/chat
+- Naprawiono link do czatu w profilu sportowca (trener -> sportowiec) aby używał /trainer/chat
+- Usunięto oryginalne strony z folderu (app) aby uniknąć konfliktu równoległych stron w Next.js
+- Przeniesiono strony z (trainer)/ do (trainer)/trainer/ aby uniknąć konfliktu routingu
+- Przeniesiono strony z (athlete)/ do (athlete)/athlete/ dla spójności struktury
+- Naprawiono przekierowania w (admin)/layout.tsx aby poprawnie kierować użytkowników do odpowiednich dashboardów
+- Dodano logikę przekierowań w (trainer)/layout.tsx dla użytkowników z niewłaściwą rolą
+- Dodano logikę przekierowań w (athlete)/layout.tsx dla użytkowników z niewłaściwą rolą
 

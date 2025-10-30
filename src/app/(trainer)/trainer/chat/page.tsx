@@ -50,10 +50,10 @@ function NewConversationDialog({ existingConversationIds }: { existingConversati
     const [open, setOpen] = useState(false);
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [isCreating, setIsCreating] = useState(false);
-    
+
     const userProfileRef = useMemoFirebase(() => (user ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
     const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
-    
+
     const athletesRef = useMemoFirebase(() => {
         if (!user || userProfile?.role !== 'trainer') return null;
         return collection(firestore, `trainers/${user.uid}/athletes`);
@@ -65,7 +65,7 @@ function NewConversationDialog({ existingConversationIds }: { existingConversati
         return doc(firestore, 'users', (userProfile as AthleteProfile).trainerId);
     }, [user, userProfile, firestore]);
     const { data: trainerProfile, isLoading: trainerLoading } = useDoc<UserProfile>(trainerProfileRef);
-    
+
     const potentialContacts = useMemo(() => {
         let contacts: UserProfile[] = [];
         if (userProfile?.role === 'trainer' && athletes) {
@@ -73,7 +73,7 @@ function NewConversationDialog({ existingConversationIds }: { existingConversati
         } else if (userProfile?.role === 'athlete' && trainerProfile) {
             contacts = [trainerProfile];
         }
-        
+
         return contacts.filter(contact => {
             if (!user || !contact) return false;
             const conversationId = [user.uid, contact.id].sort().join('_');
@@ -85,20 +85,20 @@ function NewConversationDialog({ existingConversationIds }: { existingConversati
 
     const handleStartConversation = async () => {
         if (!user || !userProfile || !selectedUserId) return;
-        
+
         const otherUser = potentialContacts.find(c => c.id === selectedUserId);
         if (!otherUser) return;
-        
+
         setIsCreating(true);
 
         const conversationId = [user.uid, selectedUserId].sort().join('_');
-        
+
         const batch = writeBatch(firestore);
 
         const mainConversationRef = doc(firestore, 'conversations', conversationId);
         const userConversationRef = doc(firestore, `users/${user.uid}/conversations`, conversationId);
         const otherUserConversationRef = doc(firestore, `users/${selectedUserId}/conversations`, conversationId);
-        
+
         const newConversation: Conversation = {
             id: conversationId,
             participants: [user.uid, selectedUserId],
@@ -121,7 +121,7 @@ function NewConversationDialog({ existingConversationIds }: { existingConversati
         try {
             await batch.commit();
             setOpen(false);
-            router.push(`/chat?conversationId=${conversationId}`);
+            router.push(`/trainer/chat?conversationId=${conversationId}`);
         } catch (e) {
             console.error(e);
             toast({
@@ -195,7 +195,7 @@ function ChatView({ conversation, onBack }: { conversation: Conversation, onBack
     );
 
     const { data: messages, isLoading } = useCollection<Message>(messagesQuery);
-    
+
     const userProfileRef = useMemoFirebase(() => {
         if (!user) return null;
         return doc(firestore, 'users', user.uid);
@@ -203,7 +203,7 @@ function ChatView({ conversation, onBack }: { conversation: Conversation, onBack
     const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
     const otherParticipantId = userProfile?.role === 'trainer' ? conversation.athleteId : conversation.trainerId;
-    
+
     const otherParticipantProfileRef = useMemoFirebase(() => {
         if (!otherParticipantId) return null;
         return doc(firestore, 'users', otherParticipantId);
@@ -219,10 +219,10 @@ function ChatView({ conversation, onBack }: { conversation: Conversation, onBack
             const userConvRef = doc(firestore, `users/${user.uid}/conversations`, conversation.id);
 
             const updateField = `unreadCount.${user.uid}`;
-            
+
             batch.update(mainConvRef, { [updateField]: 0 });
             batch.update(userConvRef, { [updateField]: 0 });
-            
+
             batch.commit().catch(e => console.error("Could not mark messages as read", e));
         }
     }, [conversation, user, firestore]);
@@ -243,7 +243,7 @@ function ChatView({ conversation, onBack }: { conversation: Conversation, onBack
         setNewMessage('');
 
         const messagesRef = collection(firestore, `conversations/${conversation.id}/messages`);
-        
+
         const lastMessageData = {
             text: messageText,
             senderId: user.uid,
@@ -255,7 +255,7 @@ function ChatView({ conversation, onBack }: { conversation: Conversation, onBack
             updatedAt: Timestamp.now(),
             [`unreadCount.${otherParticipantId}`]: increment(1)
         };
-        
+
         const batch = writeBatch(firestore);
 
         // Create new message
@@ -265,12 +265,12 @@ function ChatView({ conversation, onBack }: { conversation: Conversation, onBack
             createdAt: Timestamp.now(),
             conversationId: conversation.id,
         });
-        
+
         // Update metadata on all conversation docs
         batch.update(doc(firestore, 'conversations', conversation.id), updateData);
         batch.update(doc(firestore, `users/${user.uid}/conversations`, conversation.id), updateData);
         batch.update(doc(firestore, `users/${otherParticipantId}/conversations`, conversation.id), updateData);
-        
+
         try {
             await batch.commit();
         } catch (e) {
@@ -283,7 +283,7 @@ function ChatView({ conversation, onBack }: { conversation: Conversation, onBack
             setNewMessage(messageText); // Restore message on failure
         }
     };
-    
+
     if(!otherParticipant) {
         return <div className="flex flex-col items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin" /></div>
     }
@@ -311,7 +311,7 @@ function ChatView({ conversation, onBack }: { conversation: Conversation, onBack
                         const isMe = message.senderId === user?.uid;
                         return (
                             <div key={message.id} className={cn("flex", isMe ? 'justify-end' : 'justify-start')}>
-                                <div className={cn("max-w-xs md:max-w-md lg:max-w-lg p-3 rounded-lg", 
+                                <div className={cn("max-w-xs md:max-w-md lg:max-w-lg p-3 rounded-lg",
                                     isMe ? 'bg-primary text-primary-foreground' : 'bg-secondary'
                                 )}>
                                     <p>{message.text}</p>
@@ -328,10 +328,10 @@ function ChatView({ conversation, onBack }: { conversation: Conversation, onBack
 
             <footer className="p-4 border-t">
                 <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                    <Input 
+                    <Input
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Napisz wiadomość..." 
+                        placeholder="Napisz wiadomość..."
                         autoComplete="off"
                     />
                     <Button type="submit" size="icon" disabled={!newMessage.trim()}>
@@ -357,11 +357,11 @@ export default function ChatPage() {
     );
 
     const { data: conversations, isLoading } = useCollection<Conversation>(conversationsQuery);
-    
+
     const { data: userProfile } = useDoc<UserProfile>(
         useMemoFirebase(() => (user ? doc(firestore, 'users', user.uid) : null), [user, firestore])
     );
-    
+
     useEffect(() => {
         const conversationIdFromUrl = searchParams.get('conversationId');
         if (conversationIdFromUrl) {
@@ -370,10 +370,10 @@ export default function ChatPage() {
             setSelectedConversationId(null);
         }
     }, [searchParams]);
-    
+
     const handleBackToList = () => {
         setSelectedConversationId(null);
-        router.replace('/chat', { scroll: false });
+        router.replace('/trainer/chat', { scroll: false });
     };
 
     const handleDeleteConversation = async (conversation: Conversation) => {
@@ -425,7 +425,7 @@ export default function ChatPage() {
 
 
     const selectedConversation = conversations?.find(c => c.id === selectedConversationId);
-    
+
     const existingConversationIds = useMemo(() => conversations?.map(c => c.id) || [], [conversations]);
 
     const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : '?';
@@ -450,11 +450,11 @@ export default function ChatPage() {
                                 return (
                                     <div key={convo.id} className="relative group">
                                          <Link
-                                            href={`/chat?conversationId=${convo.id}`}
+                                            href={`/trainer/chat?conversationId=${convo.id}`}
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 setSelectedConversationId(convo.id);
-                                                router.replace(`/chat?conversationId=${convo.id}`, { scroll: false });
+                                                router.replace(`/trainer/chat?conversationId=${convo.id}`, { scroll: false });
                                             }}
                                             className={cn(
                                                 "block p-4 border-b hover:bg-secondary/50",

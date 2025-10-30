@@ -80,7 +80,7 @@ function AssignPlanDialog({ athlete, trainerId }: { athlete: UserProfile, traine
   const trainerPlansQuery = useMemoFirebase(() => {
     return query(collection(firestore, 'workoutPlans'), where('trainerId', '==', trainerId));
   }, [firestore, trainerId]);
-  
+
   const { data: trainerPlans, isLoading } = useCollection<WorkoutPlan>(trainerPlansQuery);
 
   const [assignedPlanIds, setAssignedPlanIds] = useState<string[]>([]);
@@ -194,11 +194,11 @@ function FeedbackDialog({ workout, athleteId }: { workout: WorkoutLog, athleteId
     const [open, setOpen] = useState(false);
     const [feedback, setFeedback] = useState(workout.feedback || '');
     const [isSaving, setIsSaving] = useState(false);
-    
+
     const handleSave = async () => {
         setIsSaving(true);
         const workoutRef = doc(firestore, `users/${athleteId}/workoutSessions`, workout.id);
-        
+
         await updateDoc(workoutRef, { feedback })
             .then(() => {
                 toast({ title: 'Sukces', description: 'Feedback został zapisany.'});
@@ -214,7 +214,7 @@ function FeedbackDialog({ workout, athleteId }: { workout: WorkoutLog, athleteId
             })
             .finally(() => setIsSaving(false));
     }
-    
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -231,7 +231,7 @@ function FeedbackDialog({ workout, athleteId }: { workout: WorkoutLog, athleteId
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4">
-                    <Textarea 
+                    <Textarea
                         value={feedback}
                         onChange={(e) => setFeedback(e.target.value)}
                         placeholder="Napisz swój komentarz do tego treningu..."
@@ -264,7 +264,7 @@ export default function AthleteProfilePage() {
   }, [athleteId, firestore]);
   const { data: athleteProfile, isLoading: profileLoading } = useDoc<UserProfile>(athleteProfileRef);
 
-  const sessionsRef = useMemoFirebase(() => 
+  const sessionsRef = useMemoFirebase(() =>
     athleteId ? query(collection(firestore, `users/${athleteId}/workoutSessions`), orderBy('endTime', 'desc')) : null,
     [athleteId, firestore]
   );
@@ -272,15 +272,15 @@ export default function AthleteProfilePage() {
     athleteId ? collection(firestore, `users/${athleteId}/goals`) : null,
     [athleteId, firestore]
   );
-  const exercisesRef = useMemoFirebase(() => 
+  const exercisesRef = useMemoFirebase(() =>
     firestore ? collection(firestore, 'exercises') : null,
     [firestore]
   );
 
-  const upcomingWorkoutQuery = useMemoFirebase(() => 
+  const upcomingWorkoutQuery = useMemoFirebase(() =>
     athleteId ? query(
-      collection(firestore, `users/${athleteId}/plannedWorkouts`), 
-      orderBy('date', 'asc'), 
+      collection(firestore, `users/${athleteId}/plannedWorkouts`),
+      orderBy('date', 'asc'),
       limit(1)
     ) : null,
     [athleteId, firestore]
@@ -296,7 +296,7 @@ export default function AthleteProfilePage() {
   const totalWorkouts = workoutHistory?.length || 0;
   const totalWeightLifted = workoutHistory?.reduce((acc, log) => {
     if (!log.endTime) return acc;
-    return acc + (log.exercises?.reduce((exAcc, ex) => 
+    return acc + (log.exercises?.reduce((exAcc, ex) =>
       exAcc + (ex.sets?.reduce((setAcc, set) => setAcc + set.reps * (set.weight || 0), 0) || 0)
     , 0) || 0)
   }, 0) || 0;
@@ -319,14 +319,14 @@ export default function AthleteProfilePage() {
 
     const conversationId = [trainerUser.uid, athleteProfile.id].sort().join('_');
     const mainConversationRef = doc(firestore, 'conversations', conversationId);
-    
+
     try {
         const docSnap = await getDoc(mainConversationRef);
-        
+
         if (!docSnap.exists()) {
             const trainerProfileSnap = await getDoc(doc(firestore, 'users', trainerUser.uid));
             const trainerProfile = trainerProfileSnap.data() as UserProfile;
-            
+
             const newConversation: Conversation = {
                 id: conversationId,
                 participants: [trainerUser.uid, athleteProfile.id],
@@ -341,9 +341,9 @@ export default function AthleteProfilePage() {
                   [athleteProfile.id]: 0,
                 },
             };
-            
+
             const batch = setDoc(firestore);
-            
+
             // Create in main collection
             batch.set(mainConversationRef, newConversation);
             // Create copy for trainer
@@ -353,8 +353,8 @@ export default function AthleteProfilePage() {
 
             await batch.commit();
         }
-        
-        router.push(`/chat?conversationId=${conversationId}`);
+
+        router.push(`/trainer/chat?conversationId=${conversationId}`);
 
     } catch (e) {
         console.error(e);
@@ -372,7 +372,7 @@ export default function AthleteProfilePage() {
       color: "hsl(var(--primary))",
     },
   } satisfies import('@/components/ui/chart').ChartConfig;
-  
+
   const isLoading = sessionsLoading || goalsLoading || upcomingWorkoutsLoading || profileLoading || exercisesLoading;
 
   if (isLoading && !athleteProfile) {

@@ -50,7 +50,7 @@ service cloud.firestore {
     }
 
     /**
-     * @description Stores the public-facing profile for all users (both athletes and trainers).
+     * @description Checks if the authenticated user is an administrator.
      * @path /users/{userId}
      * @allow (create) - User with UID 'user123' can create their profile at /users/user123.
      * @allow (get, update, delete) - User with UID 'user123' can read/update/delete their profile at /users/user123.
