@@ -40,6 +40,8 @@ export default function LandingPage() {
         router.push('/admin/dashboard');
       } else if (userProfile.role === 'trainer') {
         router.push('/trainer/dashboard');
+      } else if (userProfile.role === 'athlete') {
+        router.push('/athlete/dashboard');
       } else {
         router.push('/dashboard');
       }

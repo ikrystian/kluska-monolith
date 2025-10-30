@@ -46,21 +46,21 @@ import { signOut } from 'firebase/auth';
 import type { Conversation } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 
-const navItems = [
-  { href: '/dashboard', icon: LayoutDashboard, label: 'Panel' },
-  { href: '/log', icon: PlusSquare, label: 'Zapisz Trening' },
-  { href: '/calendar', icon: CalendarDays, label: 'Kalendarz' },
+const athleteNavItems = [
+  { href: '/athlete/dashboard', icon: LayoutDashboard, label: 'Panel Sportowca' },
+  { href: '/athlete/log', icon: PlusSquare, label: 'Zapisz Trening' },
+  { href: '/athlete/calendar', icon: CalendarDays, label: 'Kalendarz' },
   { href: '/chat', icon: MessageSquare, label: 'Czat' },
   { href: '/templates', icon: Library, label: 'Plany Treningowe' },
   { href: '/exercises', icon: Dumbbell, label: 'Ćwiczenia' },
-  { href: '/running', icon: Footprints, label: 'Bieganie' },
-  { href: '/diet', icon: Salad, label: 'Dieta' },
-  { href: '/measurements', icon: Ruler, label: 'Pomiary' },
-  { href: '/history', icon: History, label: 'Historia' },
-  { href: '/goals', icon: Trophy, label: 'Cele i Trofea' },
+  { href: '/athlete/running', icon: Footprints, label: 'Bieganie' },
+  { href: '/athlete/diet', icon: Salad, label: 'Dieta' },
+  { href: '/athlete/measurements', icon: Ruler, label: 'Pomiary' },
+  { href: '/athlete/history', icon: History, label: 'Historia' },
+  { href: '/athlete/goals', icon: Trophy, label: 'Cele i Trofea' },
   { href: '/knowledge-zone', icon: BookOpen, label: 'Strefa Wiedzy' },
-  { href: '/trainers', icon: Handshake, label: 'Trenerzy' },
-  { href: '/map', icon: Map, label: 'Mapa' },
+  { href: '/athlete/trainers', icon: Handshake, label: 'Trenerzy' },
+  { href: '/athlete/map', icon: Map, label: 'Mapa' },
 ];
 
 const trainerNavItems = [
@@ -117,7 +117,7 @@ export function AppNav() {
   const isTrainer = userProfile?.role === 'trainer';
   const isAdmin = userProfile?.role === 'admin';
 
-  const itemsToRender = isAdmin ? adminNavItems : navItems;
+  const itemsToRender = isAdmin ? adminNavItems : isTrainer ? trainerNavItems : athleteNavItems;
 
   return (
     <Sidebar>
@@ -133,7 +133,7 @@ export function AppNav() {
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
-                isActive={pathname.startsWith(item.href) && (item.href !== '/dashboard' || pathname === '/dashboard')}
+                isActive={pathname.startsWith(item.href) && (item.href !== '/athlete/dashboard' && item.href !== '/trainer/dashboard' && item.href !== '/admin/dashboard' || pathname === item.href)}
                 tooltip={{ children: item.label }}
                 onClick={() => setOpenMobile(false)}
               >
@@ -145,21 +145,6 @@ export function AppNav() {
                           {totalUnreadCount}
                       </Badge>
                   )}
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-          {isTrainer && trainerNavItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname.startsWith(item.href)}
-                tooltip={{ children: item.label }}
-                onClick={() => setOpenMobile(false)}
-              >
-                <Link href={item.href}>
-                  <item.icon />
-                  <span>{item.label}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

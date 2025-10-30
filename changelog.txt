@@ -5,4 +5,9 @@ CHANGELOG
 - Utworzono stronę dashboardu trenera z przykładową treścią lorem ipsum
 - Dodano link do panelu trenera w nawigacji dla użytkowników z rolą trainer
 - Zaktualizowano przekierowania w login page i landing page aby trenerzy byli kierowani do /trainer/dashboard
+- Dodano panel sportowca z przedrostkiem URL /athlete/
+- Utworzono layout dla sportowca z weryfikacją uprawnień (rola athlete)
+- Utworzono stronę dashboardu sportowca z przykładową treścią lorem ipsum
+- Zaktualizowano nawigację aby każda rola (athlete, trainer, admin) miała dedykowane elementy menu
+- Zaktualizowano przekierowania w login page, landing page i app layout aby sportowcy byli kierowani do /athlete/dashboard
 
