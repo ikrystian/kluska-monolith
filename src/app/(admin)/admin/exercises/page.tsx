@@ -26,9 +26,7 @@ import { Textarea } from '@/components/ui/textarea';
 import type { Exercise, MuscleGroup } from '@/lib/types';
 import { Search, Loader2, Edit, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useCollection, useFirestore, useMemoFirebase, collection, doc, setDoc, deleteDoc } from '@/firebase';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { errorEmitter } from '@/firebase/error-emitter';
+import { useCollection, useUpdateDoc, useDeleteDoc } from '@/lib/db-hooks';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -40,24 +38,21 @@ const exerciseSchema = z.object({
   muscleGroup: z.string().min(1, 'Grupa mięśniowa jest wymagana.'),
   description: z.string().min(1, 'Opis jest wymagany.'),
   image: z.string().url('Nieprawidłowy URL obrazu.'),
-  type: z.enum(['weight', 'duration', 'reps'], { required_error: "Typ ćwiczenia jest wymagany."}),
+  type: z.enum(['system', 'custom'], { required_error: "Typ ćwiczenia jest wymagany."}),
 });
 
 type ExerciseFormValues = z.infer<typeof exerciseSchema>;
 
 export default function AdminExercisesPage() {
-  const firestore = useFirestore();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
 
-  const exercisesRef = useMemoFirebase(() => (firestore ? collection(firestore, 'exercises') : null), [firestore]);
-  const { data: allExercises, isLoading: exercisesLoading } = useCollection<Exercise>(exercisesRef);
-
-  const muscleGroupsRef = useMemoFirebase(() => (firestore ? collection(firestore, 'muscleGroups') : null), [firestore]);
-  const { data: muscleGroups, isLoading: muscleGroupsLoading } = useCollection<MuscleGroup>(muscleGroupsRef);
+  const { data: allExercises, isLoading: exercisesLoading, refetch: refetchExercises } = useCollection<Exercise>('exercises');
+  const { data: muscleGroups, isLoading: muscleGroupsLoading } = useCollection<MuscleGroup>('muscleGroups');
+  const { updateDoc, isLoading: isUpdating } = useUpdateDoc();
+  const { deleteDoc, isLoading: isDeleting } = useDeleteDoc();
 
   const isLoading = exercisesLoading || muscleGroupsLoading;
 
@@ -72,31 +67,26 @@ export default function AdminExercisesPage() {
   );
 
   const handleFormSubmit = async (data: ExerciseFormValues) => {
-    if (!firestore || !selectedExercise) return;
-    setIsSubmitting(true);
+    if (!selectedExercise) return;
 
-    const exerciseDocRef = doc(firestore, 'exercises', selectedExercise.id);
     const updatedData = {
-        ...selectedExercise,
         ...data,
         imageHint: data.name.toLowerCase(),
     };
 
-    setDoc(exerciseDocRef, updatedData, { merge: true })
-    .then(() => {
-        toast({ title: "Sukces!", description: "Ćwiczenie zostało zaktualizowane."});
-        setEditDialogOpen(false);
-        setSelectedExercise(null);
-    })
-    .catch((serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: exerciseDocRef.path,
-          operation: 'update',
-          requestResourceData: updatedData,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-    })
-    .finally(() => setIsSubmitting(false));
+    try {
+      await updateDoc('exercises', selectedExercise.id || selectedExercise._id, updatedData);
+      toast({ title: "Sukces!", description: "Ćwiczenie zostało zaktualizowane."});
+      setEditDialogOpen(false);
+      setSelectedExercise(null);
+      refetchExercises();
+    } catch (error) {
+      toast({
+        title: "Błąd",
+        description: "Nie udało się zaktualizować ćwiczenia.",
+        variant: "destructive"
+      });
+    }
   };
 
   const openEditDialog = (exercise: Exercise) => {
@@ -106,26 +96,23 @@ export default function AdminExercisesPage() {
       muscleGroup: exercise.muscleGroup,
       description: exercise.description,
       image: exercise.image,
-      type: exercise.type || 'weight',
+      type: exercise.type || 'system',
     });
     setEditDialogOpen(true);
   };
 
   const handleDeleteExercise = async (exercise: Exercise) => {
-    if (!firestore) return;
-    const exerciseDocRef = doc(firestore, 'exercises', exercise.id);
-
-    deleteDoc(exerciseDocRef)
-      .then(() => {
-        toast({ title: "Sukces!", description: "Ćwiczenie zostało usunięte.", variant: 'destructive'});
-      })
-      .catch((serverError) => {
-         const permissionError = new FirestorePermissionError({
-            path: exerciseDocRef.path,
-            operation: 'delete',
-          });
-          errorEmitter.emit('permission-error', permissionError);
+    try {
+      await deleteDoc('exercises', exercise.id || exercise._id);
+      toast({ title: "Sukces!", description: "Ćwiczenie zostało usunięte.", variant: 'destructive'});
+      refetchExercises();
+    } catch (error) {
+      toast({
+        title: "Błąd",
+        description: "Nie udało się usunąć ćwiczenia.",
+        variant: "destructive"
       });
+    }
   };
 
   const getOwnerBadge = (ownerId: string | undefined) => {
@@ -224,7 +211,7 @@ export default function AdminExercisesPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Nazwa</FormLabel>
-                    <FormControl><Input {...field} disabled={isSubmitting} /></FormControl>
+                    <FormControl><Input {...field} disabled={isUpdating} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -235,7 +222,7 @@ export default function AdminExercisesPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Grupa mięśniowa</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting || muscleGroupsLoading}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isUpdating || muscleGroupsLoading}>
                         <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="Wybierz grupę mięśniową" />
@@ -243,7 +230,7 @@ export default function AdminExercisesPage() {
                         </FormControl>
                         <SelectContent>
                             {muscleGroups?.map(group => (
-                                <SelectItem key={group.id} value={group.name}>{group.name}</SelectItem>
+                                <SelectItem key={group.id || group._id} value={group.name}>{group.name}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
@@ -257,16 +244,15 @@ export default function AdminExercisesPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Typ ćwiczenia</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isUpdating}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Wybierz typ ćwiczenia" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="weight">Na ciężar (serie/powtórzenia)</SelectItem>
-                        <SelectItem value="duration">Na czas (sekundy)</SelectItem>
-                        <SelectItem value="reps">Na powtórzenia (bez ciężaru)</SelectItem>
+                        <SelectItem value="system">Systemowe</SelectItem>
+                        <SelectItem value="custom">Własne</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -279,7 +265,7 @@ export default function AdminExercisesPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Opis</FormLabel>
-                    <FormControl><Textarea {...field} disabled={isSubmitting} /></FormControl>
+                    <FormControl><Textarea {...field} disabled={isUpdating} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -290,17 +276,17 @@ export default function AdminExercisesPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>URL Obrazu</FormLabel>
-                    <FormControl><Input {...field} disabled={isSubmitting} /></FormControl>
+                    <FormControl><Input {...field} disabled={isUpdating} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <DialogFooter className="pt-4">
                 <DialogClose asChild>
-                  <Button type="button" variant="secondary" disabled={isSubmitting}>Anuluj</Button>
+                  <Button type="button" variant="secondary" disabled={isUpdating}>Anuluj</Button>
                 </DialogClose>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button type="submit" disabled={isUpdating}>
+                  {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Zapisz zmiany
                 </Button>
               </DialogFooter>

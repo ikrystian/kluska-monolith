@@ -21,7 +21,7 @@ const ArticleCategorySchema = new Schema<IArticleCategory>(
   }
 );
 
-export const ArticleCategory: Model<IArticleCategory> = 
+export const ArticleCategory: Model<IArticleCategory> =
   mongoose.models.ArticleCategory || mongoose.model<IArticleCategory>('ArticleCategory', ArticleCategorySchema);
 
 // Exercise
@@ -60,7 +60,7 @@ const ExerciseSchema = new Schema<IExercise>(
 ExerciseSchema.index({ muscleGroup: 1 });
 ExerciseSchema.index({ ownerId: 1 });
 
-export const Exercise: Model<IExercise> = 
+export const Exercise: Model<IExercise> =
   mongoose.models.Exercise || mongoose.model<IExercise>('Exercise', ExerciseSchema);
 
 // Workout Log
@@ -119,7 +119,7 @@ const WorkoutLogSchema = new Schema<IWorkoutLog>(
 
 WorkoutLogSchema.index({ athleteId: 1, endTime: -1 });
 
-export const WorkoutLog: Model<IWorkoutLog> = 
+export const WorkoutLog: Model<IWorkoutLog> =
   mongoose.models.WorkoutLog || mongoose.model<IWorkoutLog>('WorkoutLog', WorkoutLogSchema);
 
 // Goal
@@ -155,7 +155,7 @@ const GoalSchema = new Schema<IGoal>(
 
 GoalSchema.index({ ownerId: 1 });
 
-export const Goal: Model<IGoal> = 
+export const Goal: Model<IGoal> =
   mongoose.models.Goal || mongoose.model<IGoal>('Goal', GoalSchema);
 
 // Workout Plan
@@ -210,7 +210,7 @@ const WorkoutPlanSchema = new Schema<IWorkoutPlan>(
 WorkoutPlanSchema.index({ trainerId: 1 });
 WorkoutPlanSchema.index({ assignedAthleteIds: 1 });
 
-export const WorkoutPlan: Model<IWorkoutPlan> = 
+export const WorkoutPlan: Model<IWorkoutPlan> =
   mongoose.models.WorkoutPlan || mongoose.model<IWorkoutPlan>('WorkoutPlan', WorkoutPlanSchema);
 
 // Planned Workout
@@ -254,7 +254,7 @@ const PlannedWorkoutSchema = new Schema<IPlannedWorkout>(
 
 PlannedWorkoutSchema.index({ ownerId: 1, date: 1 });
 
-export const PlannedWorkout: Model<IPlannedWorkout> = 
+export const PlannedWorkout: Model<IPlannedWorkout> =
   mongoose.models.PlannedWorkout || mongoose.model<IPlannedWorkout>('PlannedWorkout', PlannedWorkoutSchema);
 
 // Muscle Group
@@ -282,9 +282,20 @@ const MuscleGroupSchema = new Schema<IMuscleGroup>(
   }
 );
 
-export const MuscleGroup: Model<IMuscleGroup> = 
+export const MuscleGroup: Model<IMuscleGroup> =
   mongoose.models.MuscleGroup || mongoose.model<IMuscleGroup>('MuscleGroup', MuscleGroupSchema);
 
+// Export all models
 export * from './User';
 export * from './Article';
+export * from './Exercise';
+export * from './WorkoutLog';
+export * from './WorkoutPlan';
+export * from './Conversation';
+export * from './Message';
+export * from './BodyMeasurement';
+export * from './RunningSession';
+export * from './Goal';
+export * from './MuscleGroup';
+export * from './Gym';
 

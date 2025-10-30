@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc, collection, query, where, doc } from '@/firebase';
+import { useCollection, useUser } from '@/lib/db-hooks';
 import type { WorkoutPlan, UserProfile } from '@/lib/types';
 import {
   Table,
@@ -23,32 +23,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AdminWorkoutPlansPage() {
   const { user: currentUser } = useUser();
-  const firestore = useFirestore();
 
-  const currentUserProfileRef = useMemoFirebase(
-    () => (currentUser ? doc(firestore, 'users', currentUser.uid) : null),
-    [currentUser, firestore]
-  );
-  const { data: currentUserProfile, isLoading: isCurrentUserProfileLoading } = useDoc<UserProfile>(currentUserProfileRef);
-
-  const plansRef = useMemoFirebase(
-    () => (firestore && currentUserProfile?.role === 'admin' ? collection(firestore, 'workoutPlans') : null),
-    [firestore, currentUserProfile]
-  );
-  const { data: plans, isLoading: plansLoading } = useCollection<WorkoutPlan>(plansRef);
-
-  const usersRef = useMemoFirebase(
-    () => (firestore && currentUserProfile?.role === 'admin' ? collection(firestore, 'users') : null),
-    [firestore, currentUserProfile]
-  );
-  const { data: users, isLoading: usersLoading } = useCollection<UserProfile>(usersRef);
+  const { data: plans, isLoading: plansLoading } = useCollection<WorkoutPlan>('workoutPlans');
+  const { data: users, isLoading: usersLoading } = useCollection<UserProfile>('users');
 
   const usersMap = useMemo(() => {
     if (!users) return new Map();
-    return new Map(users.map(u => [u.id, u.name]));
+    return new Map(users.map(u => [u.id || u._id, u.name]));
   }, [users]);
 
-  const isLoading = isCurrentUserProfileLoading || (currentUserProfile?.role === 'admin' && (plansLoading || usersLoading));
+  const isLoading = plansLoading || usersLoading;
 
   return (
     <div className="container mx-auto p-4 md:p-8">
@@ -77,9 +61,9 @@ export default function AdminWorkoutPlansPage() {
                     <TableCell><Skeleton className="h-5 w-16" /></TableCell>
                   </TableRow>
                 ))
-              ) : plans && currentUserProfile?.role === 'admin' ? (
-                plans.map((plan) => (
-                  <TableRow key={plan.id}>
+              ) : plans && plans.length > 0 ? (
+                plans.map((plan: any) => (
+                  <TableRow key={plan._id || plan.id}>
                     <TableCell className="font-medium">{plan.name}</TableCell>
                     <TableCell>{usersMap.get(plan.trainerId) || plan.trainerId}</TableCell>
                     <TableCell>
@@ -90,7 +74,7 @@ export default function AdminWorkoutPlansPage() {
               ) : (
                  <TableRow>
                     <TableCell colSpan={3} className="text-center text-muted-foreground py-12">
-                        <p>Brak planów treningowych w systemie lub brak uprawnień do ich wyświetlenia.</p>
+                        <p>Brak planów treningowych w systemie.</p>
                     </TableCell>
                 </TableRow>
                )}

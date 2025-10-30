@@ -6,25 +6,23 @@ import { connectToDatabase } from '@/lib/mongodb';
 // Import all models
 import { User } from '@/models/User';
 import { Article } from '@/models/Article';
+import { Exercise } from '@/models/Exercise';
+import { WorkoutLog } from '@/models/WorkoutLog';
+import { WorkoutPlan } from '@/models/WorkoutPlan';
+import { Conversation } from '@/models/Conversation';
+import { Message } from '@/models/Message';
+import { BodyMeasurement } from '@/models/BodyMeasurement';
+import { RunningSession } from '@/models/RunningSession';
+import { Goal } from '@/models/Goal';
+import { MuscleGroup } from '@/models/MuscleGroup';
+import { Gym } from '@/models/Gym';
 import {
   ArticleCategory,
-  Exercise,
-  WorkoutLog,
-  Goal,
-  WorkoutPlan,
   PlannedWorkout,
-  MuscleGroup
-} from '@/models';
-import {
-  Conversation,
-  Message,
-  BodyMeasurement,
   TrainerRequest,
   Meal,
-  RunningSession,
-  Achievement,
-  Gym
-} from '@/models/Conversation';
+  Achievement
+} from '@/models';
 
 const modelMap: Record<string, any> = {
   users: User,

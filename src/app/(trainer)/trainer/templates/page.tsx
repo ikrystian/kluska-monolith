@@ -53,7 +53,14 @@ interface UserProfile {
   name: string;
   email: string;
   role: 'athlete' | 'trainer' | 'admin';
+  location?: string;
+  socialLinks?: {
+    instagram?: string;
+    facebook?: string;
+    twitter?: string;
+  };
   trainerId?: string;
+  favoriteGymIds?: string[];
 }
 
 
@@ -419,11 +426,10 @@ function AssignPlanDialog({ plan, onUpdate }: { plan: WorkoutPlan; onUpdate: () 
   const [open, setOpen] = useState(false);
   const [selectedAthletes, setSelectedAthletes] = useState<string[]>(plan.assignedAthleteIds || []);
 
-  // Fetch athletes from trainers/{trainerId}/athletes subcollection
-  const { data: athletes, isLoading } = useCollection(
-    `trainers/${user?.uid}/athletes`,
-    undefined,
-    { enabled: !!user?.uid }
+  // Fetch athletes assigned to this trainer from users collection
+  const { data: athletes, isLoading } = useCollection<UserProfile>(
+    user?.uid ? 'users' : null,
+    { role: 'athlete', trainerId: user?.uid }
   );
 
   const handleAssign = async () => {

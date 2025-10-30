@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useCollection, useFirestore, useMemoFirebase, collection, query, doc, updateDoc, deleteDoc, Timestamp, setDoc } from '@/firebase';
+import { useCollection, useUpdateDoc, useDeleteDoc } from '@/lib/db-hooks';
 import type { Article, ArticleCategory } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,8 +24,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
@@ -42,19 +40,14 @@ const articleSchema = z.object({
 type ArticleFormValues = z.infer<typeof articleSchema>;
 
 export default function ManageArticlesPage() {
-  const firestore = useFirestore();
   const { toast } = useToast();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
 
-  const articlesQuery = useMemoFirebase(
-    () => firestore ? collection(firestore, 'articles') : null,
-    [firestore]
-  );
-  const { data: articles, isLoading } = useCollection<Article>(articlesQuery);
-
-  const articleCategoriesRef = useMemoFirebase(() => firestore ? collection(firestore, 'articleCategories') : null, [firestore]);
-  const { data: categories, isLoading: categoriesLoading } = useCollection<ArticleCategory>(articleCategoriesRef);
+  const { data: articles, isLoading, refetch: refetchArticles } = useCollection<Article>('articles');
+  const { data: categories, isLoading: categoriesLoading } = useCollection<ArticleCategory>('articleCategories');
+  const { updateDoc, isLoading: isUpdating } = useUpdateDoc();
+  const { deleteDoc, isLoading: isDeleting } = useDeleteDoc();
 
   const form = useForm<ArticleFormValues>({
     resolver: zodResolver(articleSchema),
@@ -90,31 +83,32 @@ export default function ManageArticlesPage() {
     if (!editingArticle) return; // Should not happen in edit mode
 
     try {
-      const articleRef = doc(firestore, 'articles', editingArticle.id);
-      await updateDoc(articleRef, { ...data, updatedAt: Timestamp.now() });
+      await updateDoc('articles', editingArticle.id || editingArticle._id, { ...data, updatedAt: new Date() });
       toast({ title: 'Sukces!', description: 'Artykuł został zaktualizowany.' });
       setDialogOpen(false);
       setEditingArticle(null);
+      refetchArticles();
     } catch(e) {
         console.error(e);
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: `articles/${editingArticle.id}`,
-            operation: 'update',
-            requestResourceData: data,
+        toast({
+          title: "Błąd",
+          description: "Nie udało się zaktualizować artykułu.",
+          variant: "destructive"
         }));
     }
   };
 
   const handleDelete = async (articleId: string) => {
-      const articleRef = doc(firestore, 'articles', articleId);
       try {
-          await deleteDoc(articleRef);
+          await deleteDoc('articles', articleId);
           toast({ title: 'Usunięto!', description: 'Artykuł został usunięty.', variant: 'destructive'});
+          refetchArticles();
       } catch(e) {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: articleRef.path,
-            operation: 'delete',
-        }));
+          toast({
+            title: "Błąd",
+            description: "Nie udało się usunąć artykułu.",
+            variant: "destructive"
+          });
       }
   }
 
@@ -141,8 +135,8 @@ export default function ManageArticlesPage() {
                     {isLoading ? (
                         <TableRow><TableCell colSpan={6} className="text-center">Ładowanie artykułów...</TableCell></TableRow>
                     ) : articles && articles.length > 0 ? (
-                        articles.map(article => (
-                            <TableRow key={article.id}>
+                        articles.map((article: any) => (
+                            <TableRow key={article._id || article.id}>
                                 <TableCell className="font-medium">{article.title}</TableCell>
                                 <TableCell>{article.authorName}</TableCell>
                                 <TableCell>{article.category}</TableCell>
@@ -151,17 +145,17 @@ export default function ManageArticlesPage() {
                                         {article.status === 'published' ? 'Opublikowany' : 'Szkic'}
                                     </Badge>
                                 </TableCell>
-                                <TableCell>{format(article.createdAt.toDate(), 'd MMM yyyy', {locale: pl})}</TableCell>
+                                <TableCell>{format(new Date(article.createdAt), 'd MMM yyyy', {locale: pl})}</TableCell>
                                 <TableCell className="text-right space-x-2">
                                     {article.status === 'published' && (
                                         <Button asChild variant="ghost" size="icon">
-                                            <Link href={`/knowledge-zone/${article.id}`} target="_blank"><Eye className="h-4 w-4"/></Link>
+                                            <Link href={`/knowledge-zone/${article._id || article.id}`} target="_blank"><Eye className="h-4 w-4"/></Link>
                                         </Button>
                                     )}
                                     <Button variant="outline" size="icon" onClick={() => openDialog(article)}>
                                         <Edit className="h-4 w-4"/>
                                     </Button>
-                                    <Button variant="destructive" size="icon" onClick={() => handleDelete(article.id)}>
+                                    <Button variant="destructive" size="icon" onClick={() => handleDelete(article._id || article.id)}>
                                         <Trash2 className="h-4 w-4"/>
                                     </Button>
                                 </TableCell>

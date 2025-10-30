@@ -19,7 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useCollection, useFirestore, useMemoFirebase, collection, doc, setDoc, deleteDoc, addDoc } from '@/firebase';
+import { useCollection, useCreateDoc, useUpdateDoc, useDeleteDoc } from '@/lib/db-hooks';
 import { Button } from '@/components/ui/button';
 import { Edit, Loader2, PlusCircle, Trash2, Building2 } from 'lucide-react';
 import {
@@ -42,8 +42,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import type { Gym } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -55,16 +53,14 @@ const gymSchema = z.object({
 type GymFormValues = z.infer<typeof gymSchema>;
 
 export default function GymsPage() {
-  const firestore = useFirestore();
   const { toast } = useToast();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [editingGym, setEditingGym] = useState<Gym | null>(null);
 
-  const gymsCollectionRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'gyms') : null),
-    [firestore]
-  );
-  const { data: gyms, isLoading } = useCollection<Gym>(gymsCollectionRef);
+  const { data: gyms, isLoading, refetch: refetchGyms } = useCollection<Gym>('gyms');
+  const { createDoc, isLoading: isCreating } = useCreateDoc();
+  const { updateDoc, isLoading: isUpdating } = useUpdateDoc();
+  const { deleteDoc, isLoading: isDeleting } = useDeleteDoc();
 
   const form = useForm<GymFormValues>({
     resolver: zodResolver(gymSchema),
@@ -74,8 +70,6 @@ export default function GymsPage() {
     }
   });
 
-  const { formState: { isSubmitting } } = form;
-
   const handleOpenDialog = (gym: Gym | null) => {
     setEditingGym(gym);
     form.reset(gym ? { name: gym.name, address: gym.address } : { name: '', address: '' });
@@ -83,44 +77,33 @@ export default function GymsPage() {
   };
 
   const handleFormSubmit = async (data: GymFormValues) => {
-    if (!firestore || !gymsCollectionRef) return;
-
     try {
       if (editingGym) {
         // Update
-        const gymDocRef = doc(firestore, 'gyms', editingGym.id);
-        await setDoc(gymDocRef, data, { merge: true });
+        await updateDoc('gyms', editingGym.id || editingGym._id, data);
         toast({ title: 'Sukces!', description: 'Dane siłowni zostały zaktualizowane.' });
       } else {
         // Create
-        await addDoc(gymsCollectionRef, data);
+        await createDoc('gyms', data);
         toast({ title: 'Sukces!', description: 'Nowa siłownia została dodana.' });
       }
       setDialogOpen(false);
       setEditingGym(null);
       form.reset();
+      refetchGyms();
     } catch (e) {
       console.error(e);
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: `gyms/${editingGym?.id || ''}`,
-        operation: editingGym ? 'update' : 'create',
-        requestResourceData: data,
-      }));
-       toast({ title: 'Błąd!', description: 'Wystąpił błąd podczas zapisywania siłowni.', variant: 'destructive' });
+      toast({ title: 'Błąd!', description: 'Wystąpił błąd podczas zapisywania siłowni.', variant: 'destructive' });
     }
   };
 
   const handleDelete = async (gymId: string) => {
-    if (!firestore) return;
-    const gymDocRef = doc(firestore, 'gyms', gymId);
     try {
-      await deleteDoc(gymDocRef);
+      await deleteDoc('gyms', gymId);
       toast({ title: 'Usunięto!', description: 'Siłownia została usunięta.', variant: 'destructive' });
+      refetchGyms();
     } catch (e) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: gymDocRef.path,
-        operation: 'delete',
-      }));
+      toast({ title: 'Błąd!', description: 'Nie udało się usunąć siłowni.', variant: 'destructive' });
     }
   };
 
@@ -167,7 +150,7 @@ export default function GymsPage() {
                       <Edit className="mr-2 h-3 w-3" />
                       Edytuj
                     </Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDelete(gym.id)}>
+                    <Button variant="destructive" size="sm" onClick={() => handleDelete(gym.id || gym._id)}>
                       <Trash2 className="mr-2 h-3 w-3" />
                       Usuń
                     </Button>
@@ -218,12 +201,12 @@ export default function GymsPage() {
               />
               <DialogFooter>
                 <DialogClose asChild>
-                  <Button type="button" variant="secondary" disabled={isSubmitting}>
+                  <Button type="button" variant="secondary" disabled={isCreating || isUpdating}>
                     Anuluj
                   </Button>
                 </DialogClose>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button type="submit" disabled={isCreating || isUpdating}>
+                  {(isCreating || isUpdating) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Zapisz
                 </Button>
               </DialogFooter>

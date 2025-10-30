@@ -35,6 +35,16 @@ MIGRACJA Z FIREBASE NA MONGODB:
 - Zaimplementowano NextAuth.js jako system autentykacji zastępujący Firebase Auth
 - Utworzono API routes dla operacji CRUD na bazie danych (/api/db/[collection])
 - Zaimplementowano hooki React do pracy z MongoDB (useCollection, useDoc, useCreateDoc, useUpdateDoc, useDeleteDoc)
+
+SEKCJA 5: WIDOKI ADMINISTRATORA - MIGRACJA MONGODB:
+- Zaimplementowano admin dashboard (src/app/(admin)/admin/dashboard/page.tsx) z metrykami systemowymi i statystykami
+- Zmigrowano zarządzanie ćwiczeniami (src/app/(admin)/admin/exercises/page.tsx) z Firebase na MongoDB
+- Zmigrowano zarządzanie planami treningowymi (src/app/(admin)/admin/workout-plans/page.tsx) z Firebase na MongoDB
+- Zmigrowano zarządzanie artykułami (src/app/(admin)/admin/articles/page.tsx) z Firebase na MongoDB
+- Zmigrowano zarządzanie siłowniami (src/app/(admin)/admin/gyms/page.tsx) z Firebase na MongoDB
+- Zaktualizowano wszystkie handlery CRUD aby używały MongoDB hooks zamiast Firebase
+- Dodano refetch po operacjach CRUD dla odświeżania danych
+- Zmieniono typy ćwiczeń z 'weight'/'duration'/'reps' na 'system'/'custom'
 - Utworzono MongoDBProvider zastępujący FirebaseProvider
 - Zaktualizowano główny layout aplikacji aby używał MongoDBProvider
 - Zaktualizowano strony login i register aby używały NextAuth zamiast Firebase Auth
@@ -127,4 +137,34 @@ MongoDB + Mongoose zastąpiły Firestore.
 - Usuwanie sportowca ustawia trainerId na null w profilu użytkownika
 - Zaktualizowano obsługę błędów - używa teraz toast zamiast Firebase error emitter
 - Dodano automatyczne odświeżanie listy sportowców po dodaniu lub usunięciu (refetch)
+
+=== 2025-10-30 - Naprawa przypisywania planów treningowych do sportowców ===
+- Naprawiono AssignPlanDialog w /trainer/templates/page.tsx aby pobierał sportowców z MongoDB
+- Zmieniono zapytanie z nieistniejącej kolekcji trainers/{trainerId}/athletes na users z filtrem { role: 'athlete', trainerId: user.uid }
+- Zaktualizowano interfejs UserProfile w pliku templates/page.tsx aby był zgodny z typem z lib/types.ts
+- Funkcjonalność przypisywania planów treningowych do sportowców działa poprawnie z MongoDB
+- Trenerzy mogą teraz przypisywać swoje plany treningowe do sportowców, którzy są do nich przypisani
+
+=== 2025-10-30 - Implementacja MongoDB - Sekcja 1 i 2 ===
+KONFIGURACJA PODSTAWOWA:
+- Utworzono plik .env.local z wszystkimi wymaganymi zmiennymi środowiskowymi
+- Zaktualizowano model User - dodano middleware pre-save do hashowania hasła
+- Dodano metodę comparePassword do modelu User
+- Połączenie z MongoDB już istniało w src/lib/mongodb.ts
+- NextAuth już był skonfigurowany w src/lib/auth.ts i src/app/api/auth/[...nextauth]/route.ts
+
+MODELE DANYCH:
+- Utworzono model Exercise (src/models/Exercise.ts) z polami: name, muscleGroup, description, image, imageHint, ownerId, type
+- Utworzono model WorkoutLog (src/models/WorkoutLog.ts) z polami: athleteId, workoutName, startTime, endTime, duration, exercises, photoURL, status, feedback
+- Utworzono model WorkoutPlan (src/models/WorkoutPlan.ts) z polami: name, description, trainerId, assignedAthleteIds, workoutDays
+- Model Article już istniał w src/models/Article.ts
+- Model Conversation już istniał w src/models/Conversation.ts
+- Utworzono osobny plik Message (src/models/Message.ts) dla lepszej organizacji
+- Utworzono model BodyMeasurement (src/models/BodyMeasurement.ts) z polami: ownerId, date, weight, circumferences, photoURLs, sharedWithTrainer
+- Utworzono model RunningSession (src/models/RunningSession.ts) z polami: ownerId, date, distance, duration, avgPace, notes
+- Utworzono model Goal (src/models/Goal.ts) z polami: ownerId, title, target, current, unit, deadline, status
+- Utworzono model MuscleGroup (src/models/MuscleGroup.ts) z polami: name, description, imageUrl, imageHint
+- Utworzono model Gym (src/models/Gym.ts) z polami: name, address, location, description, amenities, rating, photoUrls
+- Zaktualizowano src/models/index.ts aby eksportował wszystkie nowe modele
+- Zaktualizowano importy w API routes (/api/db/[collection]/route.ts i /api/db/[collection]/[id]/route.ts)
 
