@@ -1,0 +1,8 @@
+CHANGELOG
+
+- Dodano panel trenera z przedrostkiem URL /trainer/
+- Utworzono layout dla trenera z weryfikacją uprawnień (rola trainer lub admin)
+- Utworzono stronę dashboardu trenera z przykładową treścią lorem ipsum
+- Dodano link do panelu trenera w nawigacji dla użytkowników z rolą trainer
+- Zaktualizowano przekierowania w login page i landing page aby trenerzy byli kierowani do /trainer/dashboard
+

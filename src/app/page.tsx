@@ -38,6 +38,8 @@ export default function LandingPage() {
     if (!isLoading && user && userProfile) {
       if (userProfile.role === 'admin') {
         router.push('/admin/dashboard');
+      } else if (userProfile.role === 'trainer') {
+        router.push('/trainer/dashboard');
       } else {
         router.push('/dashboard');
       }

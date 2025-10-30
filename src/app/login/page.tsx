@@ -44,6 +44,8 @@ export default function LoginPage() {
     if (!isUserLoading && user && userProfile) {
       if (userProfile.role === 'admin') {
         router.push('/admin/dashboard');
+      } else if (userProfile.role === 'trainer') {
+        router.push('/trainer/dashboard');
       } else {
         router.push('/dashboard');
       }
@@ -57,7 +59,7 @@ export default function LoginPage() {
       // The useEffect will handle the redirect
     } catch (error: any) {
       let errorMessage = 'Nieprawidłowy email lub hasło. Spróbuj ponownie.';
-      
+
       switch (error.code) {
         case 'auth/user-not-found':
         case 'auth/wrong-password':
@@ -84,7 +86,7 @@ export default function LoginPage() {
       setUiLoading(false);
     }
   };
-  
+
   if (isLoading || user) {
     return (
       <div className="flex min-h-screen items-center justify-center">

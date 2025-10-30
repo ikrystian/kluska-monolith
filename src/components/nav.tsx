@@ -64,7 +64,9 @@ const navItems = [
 ];
 
 const trainerNavItems = [
-    { href: '/my-athletes', icon: Users, label: 'Moi Sportowcy' },
+    { href: '/trainer/dashboard', icon: LayoutDashboard, label: 'Panel Trenera' },
+    { href: '/trainer/my-athletes', icon: Users, label: 'Moi Sportowcy' },
+
 ]
 
 const adminNavItems = [
@@ -96,7 +98,7 @@ export function AppNav() {
     [user, firestore]
   );
   const { data: conversations } = useCollection<Conversation>(conversationsQuery);
-  
+
   const totalUnreadCount = conversations?.reduce((total, convo) => {
       const unread = convo.unreadCount?.[user?.uid ?? ''] ?? 0;
       return total + unread;
@@ -106,7 +108,7 @@ export function AppNav() {
     await signOut(auth);
     router.push('/login');
   };
-  
+
   const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
