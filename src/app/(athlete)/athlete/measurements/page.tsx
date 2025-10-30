@@ -146,7 +146,7 @@ const MeasurementChart = ({ data, dataKey, title, unit }: { data: any[], dataKey
 
 
 export default function MeasurementsPage() {
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isDialogOpen, setDialogOpen] = useState(false);
@@ -154,11 +154,20 @@ export default function MeasurementsPage() {
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
 
   const measurementsRef = useMemoFirebase(() =>
-    user ? query(collection(firestore, `users/${user.uid}/bodyMeasurements`), orderBy('date', 'desc')) : null,
-    [user, firestore]
+    !isUserLoading && user ? query(collection(firestore, `users/${user.uid}/bodyMeasurements`), orderBy('date', 'desc')) : null,
+    [user, isUserLoading, firestore]
   );
 
   const { data: measurements, isLoading } = useCollection<BodyMeasurement>(measurementsRef);
+
+  // Combine local isLoading with useCollection's isLoading
+  const combinedLoading = isLoading || isUserLoading;
+
+  // If user is loading, or no user, prevent UI from showing data, but do show skeletons
+  // This ensures that the UI correctly reflects the loading state during auth checks
+  const displayMeasurements = isUserLoading ? null : measurements;
+
+
 
   const chartData = useMemo(() => {
     if (!measurements) return [];
@@ -390,9 +399,9 @@ export default function MeasurementsPage() {
       </div>
 
        <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <StatCard title="Waga" value={latestMeasurement?.weight?.toFixed(1) || ' - '} unit="kg" icon={Weight} isLoading={isLoading} />
-          <StatCard title="Talia" value={latestMeasurement?.circumferences?.waist?.toFixed(1) || ' - '} unit="cm" icon={Ruler} isLoading={isLoading} />
-          <StatCard title="Postęp" value="+1.2" unit="kg" icon={BarChart} isLoading={isLoading} />
+          <StatCard title="Waga" value={latestMeasurement?.weight?.toFixed(1) || ' - '} unit="kg" icon={Weight} isLoading={combinedLoading} />
+          <StatCard title="Talia" value={latestMeasurement?.circumferences?.waist?.toFixed(1) || ' - '} unit="cm" icon={Ruler} isLoading={combinedLoading} />
+          <StatCard title="Postęp" value="+1.2" unit="kg" icon={BarChart} isLoading={combinedLoading} />
       </div>
 
       <Card className="mb-6">
@@ -408,7 +417,7 @@ export default function MeasurementsPage() {
               ))}
             </TabsList>
 
-            {isLoading ? (
+            {combinedLoading ? (
                 <div className="h-64 flex justify-center items-center">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
@@ -445,7 +454,7 @@ export default function MeasurementsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading ? (
+              {combinedLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
                     <TableCell><Skeleton className="h-5 w-24" /></TableCell>
@@ -457,8 +466,8 @@ export default function MeasurementsPage() {
                     <TableCell><Skeleton className="h-5 w-16" /></TableCell>
                   </TableRow>
                 ))
-              ) : measurements && measurements.length > 0 ? (
-                measurements.map((session) => (
+              ) : displayMeasurements && displayMeasurements.length > 0 ? (
+                displayMeasurements.map((session) => (
                     <TableRow key={session.id}>
                       <TableCell className="font-medium">{format(session.date.toDate(), 'd MMM yyyy', { locale: pl })}</TableCell>
                       <TableCell className="font-bold">{session.weight.toFixed(1)}</TableCell>
