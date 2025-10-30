@@ -95,3 +95,36 @@ MongoDB + Mongoose zastąpiły Firestore.
 - Poprawiono walidację URL obrazka - akceptuje pusty string jako opcjonalną wartość
 - Strona umożliwia dodawanie nowych grup mięśniowych, edycję istniejących oraz ich usuwanie
 
+=== 2025-10-30 - Migracja strony ćwiczeń trenera na MongoDB ===
+- Przepisano /trainer/exercises/page.tsx aby używał MongoDB zamiast Firebase
+- Zamieniono Firebase hooks (useFirestore, useMemoFirebase, useCollection, useDoc, doc, collection, query, where, addDoc, setDoc, deleteDoc z @/firebase) na MongoDB hooks (useCollection, useDoc, useCreateDoc, useUpdateDoc, useDeleteDoc z @/lib/db-hooks)
+- Usunięto wszystkie importy Firebase (errorEmitter, FirestorePermissionError)
+- Grupy mięśniowe są teraz pobierane z bazy danych MongoDB (kolekcja muscleGroups) zamiast hardcoded wartości
+- Zaktualizowano obsługę błędów - używa teraz toast zamiast Firebase error emitter
+- Dodano automatyczne odświeżanie listy ćwiczeń po dodaniu, edycji lub usunięciu (refetch)
+- Uproszczono logikę pobierania ćwiczeń - używa MongoDB query z operatorem $in
+- Strona wyświetla grupy mięśniowe dodane przez administratora w /admin/muscle-groups
+
+=== 2025-10-30 - Migracja strony szablonów treningowych trenera na MongoDB ===
+- Przepisano /trainer/templates/page.tsx aby używał MongoDB zamiast Firebase
+- Zamieniono Firebase hooks (useFirestore, useMemoFirebase, useCollection, doc, collection, query, where, setDoc, updateDoc, deleteDoc z @/firebase) na MongoDB hooks (useCollection, useCreateDoc, useUpdateDoc, useDeleteDoc z @/lib/db-hooks)
+- Usunięto wszystkie importy Firebase (errorEmitter, FirestorePermissionError)
+- Ćwiczenia są teraz pobierane z bazy danych MongoDB z filtrem ownerId: { $in: ['public', user.uid] }
+- Zaktualizowano obsługę błędów - używa teraz toast zamiast Firebase error emitter
+- Dodano automatyczne odświeżanie listy planów po dodaniu, edycji, usunięciu lub przypisaniu (refetch)
+- Uproszczono logikę pobierania planów treningowych - używa MongoDB query zamiast Firebase query
+- Przy wyborze ćwiczeń w szablonach wyświetlają się ćwiczenia dodane przez trenera w /trainer/exercises (publiczne i własne)
+- Zaktualizowano AssignPlanDialog aby używał MongoDB hooks i odświeżał listę po przypisaniu
+
+=== 2025-10-30 - Migracja strony zarządzania sportowcami trenera na MongoDB ===
+- Przepisano /trainer/my-athletes/page.tsx aby używał MongoDB zamiast Firebase
+- Zamieniono Firebase hooks (useFirestore, useMemoFirebase, useCollection, useDoc, doc, collection, query, where, getDocs, setDoc, deleteDoc z @/firebase) na MongoDB hooks (useCollection, useDoc z @/lib/db-hooks)
+- Usunięto wszystkie importy Firebase (errorEmitter, FirestorePermissionError)
+- Trenerzy mogą teraz wyszukiwać użytkowników o roli athlete po adresie email
+- Zmieniono logikę przypisywania sportowców - zamiast subkolekcji trainers/{trainerId}/athletes używa pola trainerId w profilu użytkownika
+- Lista sportowców jest pobierana z kolekcji users z filtrem { role: 'athlete', trainerId: user.uid }
+- Dodawanie sportowca aktualizuje pole trainerId w profilu użytkownika (PATCH /api/db/users/{athleteId})
+- Usuwanie sportowca ustawia trainerId na null w profilu użytkownika
+- Zaktualizowano obsługę błędów - używa teraz toast zamiast Firebase error emitter
+- Dodano automatyczne odświeżanie listy sportowców po dodaniu lub usunięciu (refetch)
+

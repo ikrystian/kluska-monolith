@@ -33,9 +33,9 @@ export default function TrainerLayout({
         router.push('/athlete/dashboard');
       } else if (userProfile?.role === 'admin') {
         router.push('/admin/dashboard');
-      } else if (userProfile?.role !== 'trainer') {
+      } else if (userProfile?.role == 'trainer') {
         // If logged in but not a trainer/athlete/admin, go to login
-        router.push('/login');
+        router.push('/trainer/dashboard');
       }
     }
   }, [user, userProfile, isLoading, router]);

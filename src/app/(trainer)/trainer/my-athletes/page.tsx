@@ -24,15 +24,10 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useFirestore, useUser, useCollection, useMemoFirebase, useDoc, collection, query, where, getDocs, doc, setDoc, deleteDoc } from '@/firebase';
-
-// FirestoreError type for compatibility
-type FirestoreError = Error & { code?: string };
+import { useCollection, useUser, useDoc } from '@/lib/db-hooks';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { placeholderImages } from '@/lib/placeholder-images';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { errorEmitter } from '@/firebase/error-emitter';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,7 +39,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import type { UserProfile } from '@/lib/types';
+
+interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: 'athlete' | 'trainer' | 'admin';
+  trainerId?: string;
+}
 
 
 const searchSchema = z.object({
@@ -62,7 +64,6 @@ type FoundUser = {
 
 export default function MyAthletesPage() {
   const { toast } = useToast();
-  const firestore = useFirestore();
   const { user } = useUser();
 
   const [foundUser, setFoundUser] = useState<FoundUser | null>(null);
@@ -72,19 +73,14 @@ export default function MyAthletesPage() {
 
   const avatarImage = placeholderImages.find((img) => img.id === 'avatar-male');
 
-  const userProfileRef = useMemoFirebase(
-    () => (user ? doc(firestore, 'users', user.uid) : null),
-    [user, firestore]
+  // Get current user profile
+  const { data: userProfile } = useDoc<UserProfile>('users', user?.uid || '');
+
+  // Get all users with role 'athlete' and trainerId matching current user
+  const { data: athletes, isLoading: athletesLoading, refetch: refetchAthletes } = useCollection<UserProfile>(
+    'users',
+    user?.uid && userProfile?.role === 'trainer' ? { role: 'athlete', trainerId: user.uid } : undefined
   );
-  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
-
-
-  const athletesCollectionRef = useMemoFirebase(() => {
-    if (!user || userProfile?.role !== 'trainer') return null;
-    return collection(firestore, `trainers/${user.uid}/athletes`);
-  }, [firestore, user, userProfile]);
-
-  const { data: athletes, isLoading: athletesLoading } = useCollection(athletesCollectionRef);
 
   const form = useForm<SearchFormValues>({
     resolver: zodResolver(searchSchema),
@@ -92,8 +88,9 @@ export default function MyAthletesPage() {
   });
 
   const handleSearch = async ({ email }: SearchFormValues) => {
-    if (userProfile?.role !== 'admin') {
-      setSearchError('Tylko administratorzy mogą wyszukiwać użytkowników.');
+    // Trenerzy mogą wyszukiwać sportowców
+    if (userProfile?.role !== 'trainer') {
+      setSearchError('Tylko trenerzy mogą wyszukiwać sportowców.');
       return;
     }
 
@@ -101,35 +98,28 @@ export default function MyAthletesPage() {
     setFoundUser(null);
     setSearchError(null);
 
-    const usersRef = collection(firestore, 'users');
-    const q = query(
-      usersRef,
-      where('email', '==', email),
-      where('role', '==', 'athlete')
-    );
+    try {
+      // Search for user by email and role
+      const query = JSON.stringify({ email, role: 'athlete' });
+      const response = await fetch(`/api/db/users?query=${encodeURIComponent(query)}`);
 
-    getDocs(q).then((querySnapshot) => {
-       if (querySnapshot.empty) {
+      if (!response.ok) {
+        throw new Error('Błąd wyszukiwania');
+      }
+
+      const result = await response.json();
+
+      if (!result.data || result.data.length === 0) {
         setSearchError('Nie znaleziono sportowca z tym adresem e-mail.');
       } else {
-        const userDoc = querySnapshot.docs[0];
-        setFoundUser({ id: userDoc.id, ...(userDoc.data() as Omit<FoundUser, 'id'>) });
+        setFoundUser(result.data[0]);
       }
-    }).catch((error: FirestoreError) => {
-        if (error.code === 'permission-denied') {
-            const permissionError = new FirestorePermissionError({
-                path: 'users',
-                operation: 'list',
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            setSearchError('Nie masz uprawnień do wyszukiwania użytkowników.');
-        } else {
-            console.error('Błąd wyszukiwania użytkownika:', error);
-            setSearchError('Wystąpił błąd podczas wyszukiwania. Spróbuj ponownie.');
-        }
-    }).finally(() => {
+    } catch (error) {
+      console.error('Błąd wyszukiwania użytkownika:', error);
+      setSearchError('Wystąpił błąd podczas wyszukiwania. Spróbuj ponownie.');
+    } finally {
       setSearchLoading(false);
-    })
+    }
   };
 
   const handleAddAthlete = async () => {
@@ -145,62 +135,69 @@ export default function MyAthletesPage() {
     }
 
     setAddLoading(true);
-
-    const athleteRef = doc(firestore, `trainers/${user.uid}/athletes`, foundUser.id);
-    const athleteProfile = {
-        id: foundUser.id,
-        name: foundUser.name,
-        email: foundUser.email,
-        role: 'athlete',
-        trainerId: user.uid,
-    };
-
-    setDoc(athleteRef, athleteProfile)
-      .then(() => {
-        toast({
-            title: 'Sportowiec Dodany!',
-            description: `${foundUser.name} został dodany do Twojej listy.`,
-        });
-        setFoundUser(null);
-        form.reset();
-      })
-      .catch((serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: athleteRef.path,
-          operation: 'create',
-          requestResourceData: athleteProfile,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      })
-      .finally(() => {
-        setAddLoading(false);
+    try {
+      // Update user's trainerId field to assign them to this trainer
+      const response = await fetch(`/api/db/users/${foundUser.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trainerId: user.uid }),
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to add athlete');
+      }
+
+      toast({
+        title: 'Sportowiec Dodany!',
+        description: `${foundUser.name} został dodany do Twojej listy.`,
+      });
+
+      setFoundUser(null);
+      form.reset();
+      refetchAthletes(); // Refresh the list
+    } catch (error) {
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się dodać sportowca.',
+        variant: 'destructive',
+      });
+    } finally {
+      setAddLoading(false);
+    }
   };
 
   const handleRemoveAthlete = async (athleteId: string) => {
     if (!user) return;
-    const athleteRef = doc(firestore, `trainers/${user.uid}/athletes`, athleteId);
 
-    deleteDoc(athleteRef)
-      .then(() => {
-        toast({
-            title: 'Sportowiec Usunięty!',
-            description: `Sportowiec został usunięty z Twojej listy.`,
-            variant: 'destructive'
-        });
-      })
-      .catch((serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: athleteRef.path,
-          operation: 'delete',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      })
+    try {
+      // Remove trainerId from user to unassign them from this trainer
+      const response = await fetch(`/api/db/users/${athleteId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trainerId: null }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to remove athlete');
+      }
+
+      toast({
+        title: 'Sportowiec Usunięty!',
+        description: `Sportowiec został usunięty z Twojej listy.`,
+        variant: 'destructive'
+      });
+      refetchAthletes(); // Refresh the list
+    } catch (error) {
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się usunąć sportowca.',
+        variant: 'destructive',
+      });
+    }
   };
 
 
   return (
-    <AlertDialog>
     <div className="container mx-auto p-4 md:p-8">
       <h1 className="mb-6 font-headline text-3xl font-bold">Moi Sportowcy</h1>
       <div className="grid gap-8 md:grid-cols-2">
@@ -297,12 +294,13 @@ export default function MyAthletesPage() {
                         <Button asChild variant="outline" size="sm">
                             <Link href={`/my-athletes/${athlete.id}`}>Zobacz Profil</Link>
                         </Button>
-                        <AlertDialogTrigger asChild>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
                             <Button variant="destructive" size="icon" className='h-9 w-9'>
                                 <Trash2 className="h-4 w-4" />
                             </Button>
-                        </AlertDialogTrigger>
-                         <AlertDialogContent>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
                             <AlertDialogHeader>
                                 <AlertDialogTitle>Czy na pewno chcesz usunąć sportowca?</AlertDialogTitle>
                                 <AlertDialogDescription>
@@ -315,7 +313,8 @@ export default function MyAthletesPage() {
                                     Usuń
                                 </AlertDialogAction>
                             </AlertDialogFooter>
-                        </AlertDialogContent>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                   </li>
                 ))}
@@ -333,6 +332,5 @@ export default function MyAthletesPage() {
         </Card>
       </div>
     </div>
-    </AlertDialog>
   );
 }
