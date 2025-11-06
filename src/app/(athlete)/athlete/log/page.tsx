@@ -399,23 +399,24 @@ function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkou
 }
 
 function ExerciseCard({ index, exerciseDetails, onRemoveExercise }: { index: number, exerciseDetails: Exercise | undefined, onRemoveExercise: () => void }) {
-  const { control } = useFormContext<LogFormValues>();
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: `exercises.${index}.sets`
-  });
-  const [newSetId, setNewSetId] = useState<string | null>(null);
+   const { control, watch } = useFormContext<LogFormValues>();
+   const { fields, append, remove } = useFieldArray({
+     control,
+     name: `exercises.${index}.sets`
+   });
+   const [newSetId, setNewSetId] = useState<string | null>(null);
 
-  const handleAddSet = () => {
-    const newSet = { reps: 0, weight: 0 };
-    append(newSet);
-    // Get the ID of the newly added set (it will be the last one)
-    setTimeout(() => {
-      setNewSetId(fields[fields.length].id);
-      // Clear the highlight after animation completes
-      setTimeout(() => setNewSetId(null), 300);
-    }, 0);
-  };
+   const handleAddSet = () => {
+     // Clone values from the last set if it exists, otherwise use defaults
+     if (fields.length > 0) {
+       const lastSetIndex = fields.length - 1;
+       const lastReps = watch(`exercises.${index}.sets.${lastSetIndex}.reps`);
+       const lastWeight = watch(`exercises.${index}.sets.${lastSetIndex}.weight`);
+       append({ reps: lastReps, weight: lastWeight });
+     } else {
+       append({ reps: 0, weight: 0 });
+     }
+   };
 
   return (
     <Card className="bg-secondary/50">

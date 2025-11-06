@@ -434,60 +434,72 @@ function DayFormContent({ dayIndex, allExercises }: { dayIndex: number; allExerc
 }
 
 const ExerciseSets = ({ fieldNamePrefix, showWeight }: { fieldNamePrefix: `workoutDays.${number}.exercises.${number}`; showWeight: boolean; }) => {
-  const { control } = useFormContext();
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: `${fieldNamePrefix}.sets`,
-  });
+   const { control, watch } = useFormContext();
+   const { fields, append, remove } = useFieldArray({
+     control,
+     name: `${fieldNamePrefix}.sets`,
+   });
 
-  return (
-    <div className="space-y-2">
-      <div className="grid grid-cols-12 gap-2 items-center">
-        <Label className="col-span-1 text-sm text-muted-foreground"></Label>
-        <Label className="col-span-5 text-sm text-muted-foreground">Powtórzenia</Label>
-        {showWeight && <Label className="col-span-5 text-sm text-muted-foreground">Ciężar (kg)</Label>}
-      </div>
-      {fields.map((setField, setIndex) => (
-        <div key={setField.id} className="grid grid-cols-12 gap-2 items-center">
-          <p className="font-medium text-sm text-center col-span-1">{setIndex + 1}</p>
-          <FormField
-            control={control}
-            name={`${fieldNamePrefix}.sets.${setIndex}.reps`}
-            render={({ field }) => (
-              <FormItem className="col-span-5">
-                <FormControl><Input type="number" placeholder="Powt." {...field} /></FormControl>
-                <FormMessage/>
-              </FormItem>
-            )}
-          />
-          {showWeight && (
-            <FormField
-              control={control}
-              name={`${fieldNamePrefix}.sets.${setIndex}.weight`}
-              render={({ field }) => (
-                <FormItem className="col-span-5">
-                  <FormControl><Input type="number" placeholder="Ciężar" {...field} /></FormControl>
-                  <FormMessage/>
-                </FormItem>
-              )}
-            />
-          )}
-          <Button type="button" variant="ghost" size="icon" onClick={() => remove(setIndex)} className="col-span-1">
-            <Trash2 className="h-4 w-4 text-destructive"/>
-          </Button>
-        </div>
-      ))}
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="w-full"
-        onClick={() => append({ reps: 8, weight: 0 })}
-      >
-        <PlusCircle className="mr-2 h-4 w-4" /> Dodaj Serię
-      </Button>
-    </div>
-  );
+   const handleAddSet = () => {
+     // Clone values from the last set if it exists, otherwise use defaults
+     if (fields.length > 0) {
+       const lastSetIndex = fields.length - 1;
+       const lastReps = watch(`${fieldNamePrefix}.sets.${lastSetIndex}.reps`);
+       const lastWeight = watch(`${fieldNamePrefix}.sets.${lastSetIndex}.weight`);
+       append({ reps: lastReps, weight: lastWeight });
+     } else {
+       append({ reps: 8, weight: 0 });
+     }
+   };
+
+   return (
+     <div className="space-y-2">
+       <div className="grid grid-cols-12 gap-2 items-center">
+         <Label className="col-span-1 text-sm text-muted-foreground"></Label>
+         <Label className="col-span-5 text-sm text-muted-foreground">Powtórzenia</Label>
+         {showWeight && <Label className="col-span-5 text-sm text-muted-foreground">Ciężar (kg)</Label>}
+       </div>
+       {fields.map((setField, setIndex) => (
+         <div key={setField.id} className="grid grid-cols-12 gap-2 items-center">
+           <p className="font-medium text-sm text-center col-span-1">{setIndex + 1}</p>
+           <FormField
+             control={control}
+             name={`${fieldNamePrefix}.sets.${setIndex}.reps`}
+             render={({ field }) => (
+               <FormItem className="col-span-5">
+                 <FormControl><Input type="number" placeholder="Powt." {...field} /></FormControl>
+                 <FormMessage/>
+               </FormItem>
+             )}
+           />
+           {showWeight && (
+             <FormField
+               control={control}
+               name={`${fieldNamePrefix}.sets.${setIndex}.weight`}
+               render={({ field }) => (
+                 <FormItem className="col-span-5">
+                   <FormControl><Input type="number" placeholder="Ciężar" {...field} /></FormControl>
+                   <FormMessage/>
+                 </FormItem>
+               )}
+             />
+           )}
+           <Button type="button" variant="ghost" size="icon" onClick={() => remove(setIndex)} className="col-span-1">
+             <Trash2 className="h-4 w-4 text-destructive"/>
+           </Button>
+         </div>
+       ))}
+       <Button
+         type="button"
+         variant="ghost"
+         size="sm"
+         className="w-full"
+         onClick={handleAddSet}
+       >
+         <PlusCircle className="mr-2 h-4 w-4" /> Dodaj Serię
+       </Button>
+     </div>
+   );
 };
 
 function AssignPlanDialog({ plan, onUpdate }: { plan: WorkoutPlan; onUpdate: () => void }) {
