@@ -127,6 +127,22 @@ export async function PATCH(
     }
 
     const body = await request.json();
+
+    // Special validation for users collection - check email uniqueness
+    if (collection === 'users' && body.email) {
+      const existingUser = await Model.findOne({
+        email: body.email,
+        _id: { $ne: id } // Exclude current user from the check
+      }).exec();
+
+      if (existingUser) {
+        return NextResponse.json(
+          { error: 'Email address is already in use by another user' },
+          { status: 400 }
+        );
+      }
+    }
+
     const doc = await Model.findByIdAndUpdate(id, body, { new: true }).exec();
 
     if (!doc) {

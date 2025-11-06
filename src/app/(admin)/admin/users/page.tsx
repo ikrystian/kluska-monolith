@@ -72,6 +72,7 @@ interface UserProfile {
 
 const editUserSchema = z.object({
   name: z.string().min(1, 'Imię jest wymagane.'),
+  email: z.string().email('Nieprawidłowy format adresu email.'),
   role: z.enum(['athlete', 'trainer', 'admin'], {
     required_error: 'Rola jest wymagana.',
   }),
@@ -110,6 +111,7 @@ export default function AdminUsersPage() {
     setSelectedUser(user);
     form.reset({
       name: user.name,
+      email: user.email,
       role: user.role,
     });
     setEditDialogOpen(true);
@@ -302,6 +304,19 @@ export default function AdminUsersPage() {
               />
               <FormField
                 control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name="role"
                 render={({ field }) => (
                   <FormItem>
@@ -368,4 +383,3 @@ export default function AdminUsersPage() {
     </div>
   );
 }
-
