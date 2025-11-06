@@ -12,13 +12,31 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
         rememberMe: { label: 'Remember Me', type: 'checkbox' },
+        impersonateUserId: { label: 'Impersonate User ID', type: 'text' },
       },
       async authorize(credentials) {
+        await connectToDatabase();
+
+        // Handle impersonation
+        if (credentials?.impersonateUserId) {
+          const targetUser = await User.findById(credentials.impersonateUserId);
+          if (!targetUser) {
+            throw new Error('User not found');
+          }
+
+          return {
+            id: targetUser._id.toString(),
+            email: targetUser.email,
+            name: targetUser.name,
+            role: targetUser.role,
+            rememberMe: false,
+          };
+        }
+
+        // Regular login
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Email and password are required');
         }
-
-        await connectToDatabase();
 
         const user = await User.findOne({ email: credentials.email });
 

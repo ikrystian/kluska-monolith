@@ -36,9 +36,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 const exerciseSchema = z.object({
   name: z.string().min(1, 'Nazwa jest wymagana.'),
   muscleGroup: z.string().min(1, 'Grupa mięśniowa jest wymagana.'),
-  description: z.string().min(1, 'Opis jest wymagany.'),
+  description: z.string().optional(),
   image: z.string().url('Nieprawidłowy URL obrazu.'),
-  type: z.enum(['system', 'custom'], { required_error: "Typ ćwiczenia jest wymagany."}),
+  type: z.enum(['weight', 'duration', 'reps'], { required_error: "Typ ćwiczenia jest wymagany."}),
 });
 
 type ExerciseFormValues = z.infer<typeof exerciseSchema>;
@@ -75,7 +75,7 @@ export default function AdminExercisesPage() {
     };
 
     try {
-      await updateDoc('exercises', selectedExercise.id || selectedExercise._id, updatedData);
+      await updateDoc('exercises', selectedExercise.id, updatedData);
       toast({ title: "Sukces!", description: "Ćwiczenie zostało zaktualizowane."});
       setEditDialogOpen(false);
       setSelectedExercise(null);
@@ -96,14 +96,14 @@ export default function AdminExercisesPage() {
       muscleGroup: exercise.muscleGroup,
       description: exercise.description,
       image: exercise.image,
-      type: exercise.type || 'system',
+      type: exercise.type || 'weight',
     });
     setEditDialogOpen(true);
   };
 
   const handleDeleteExercise = async (exercise: Exercise) => {
     try {
-      await deleteDoc('exercises', exercise.id || exercise._id);
+      await deleteDoc('exercises', exercise.id);
       toast({ title: "Sukces!", description: "Ćwiczenie zostało usunięte.", variant: 'destructive'});
       refetchExercises();
     } catch (error) {
@@ -230,7 +230,7 @@ export default function AdminExercisesPage() {
                         </FormControl>
                         <SelectContent>
                             {muscleGroups?.map(group => (
-                                <SelectItem key={group.id || group._id} value={group.name}>{group.name}</SelectItem>
+                                <SelectItem key={group.id} value={group.name}>{group.name}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
@@ -251,8 +251,9 @@ export default function AdminExercisesPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="system">Systemowe</SelectItem>
-                        <SelectItem value="custom">Własne</SelectItem>
+                        <SelectItem value="weight">Na wagę</SelectItem>
+                        <SelectItem value="duration">Na czas</SelectItem>
+                        <SelectItem value="reps">Na powtórzenia</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -264,7 +265,7 @@ export default function AdminExercisesPage() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Opis</FormLabel>
+                    <FormLabel>Opis (opcjonalny)</FormLabel>
                     <FormControl><Textarea {...field} disabled={isUpdating} /></FormControl>
                     <FormMessage />
                   </FormItem>
@@ -297,4 +298,3 @@ export default function AdminExercisesPage() {
     </div>
   );
 }
-

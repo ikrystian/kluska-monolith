@@ -120,7 +120,7 @@ export default function ExercisesPage() {
     const exerciseData = {
       name: formData.get('name') as string,
       muscleGroup: formData.get('muscleGroup') as string,
-      description: formData.get('description') as string,
+      description: formData.get('description') as string || '',
       type: formData.get('type') as 'weight' | 'duration' | 'reps',
     };
 
@@ -229,8 +229,8 @@ export default function ExercisesPage() {
             </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="description" className="text-right">Opis</Label>
-            <Textarea id="description" name="description" defaultValue={isEditMode ? selectedExercise?.description : ''} className="col-span-3" required disabled={isSubmitting} />
+            <Label htmlFor="description" className="text-right">Opis (opcjonalny)</Label>
+            <Textarea id="description" name="description" defaultValue={isEditMode ? selectedExercise?.description : ''} className="col-span-3" disabled={isSubmitting} />
           </div>
         </div>
         <DialogFooter>
@@ -384,4 +384,3 @@ export default function ExercisesPage() {
     </AlertDialog>
   );
 }
-

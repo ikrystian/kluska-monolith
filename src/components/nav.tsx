@@ -21,9 +21,11 @@ import {
   Map,
   ClipboardList,
   BookMarked,
+  ArrowLeft,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useState } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -38,6 +40,19 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { placeholderImages } from '@/lib/placeholder-images';
 import { useDoc, useUser, signOut } from '@/firebase';
 import { Badge } from '@/components/ui/badge';
+import { signIn } from 'next-auth/react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { useCollection } from '@/lib/db-hooks';
+import { Loader2 } from 'lucide-react';
 
 const athleteNavItems = [
   { href: '/athlete/dashboard', icon: LayoutDashboard, label: 'Panel Sportowca' },
@@ -82,11 +97,21 @@ export function AppNav() {
   const { user } = useUser();
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
+  const { toast } = useToast();
+  const [isImpersonationDialogOpen, setIsImpersonationDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isImpersonating, setIsImpersonating] = useState(false);
+  const [adminSession, setAdminSession] = useState<{ id: string; email: string; name: string } | null>(null);
 
   // Fetch user profile using MongoDB hooks
   const { data: userProfile } = useDoc(
     user ? 'users' : null,
     user?.uid || null
+  );
+
+  // Fetch all users for impersonation
+  const { data: allUsers } = useCollection<any>(
+    userProfile?.role === 'admin' ? 'users' : null
   );
 
   // For now, conversations are not implemented in MongoDB
@@ -102,6 +127,102 @@ export function AppNav() {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   }
+
+  const handleImpersonate = async (targetUserId: string) => {
+    try {
+      setIsImpersonating(true);
+
+      // Store current admin session
+      if (userProfile && user) {
+        setAdminSession({
+          id: user.uid,
+          email: userProfile.email,
+          name: userProfile.name,
+        });
+      }
+
+      // Call impersonation API to verify permissions
+      const response = await fetch('/api/auth/impersonate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: targetUserId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Impersonation failed');
+      }
+
+      // Use NextAuth signIn with impersonateUserId
+      const signInResult = await signIn('credentials', {
+        impersonateUserId: targetUserId,
+        redirect: false,
+      });
+
+      if (signInResult?.error) {
+        throw new Error(signInResult.error);
+      }
+
+      toast({
+        title: 'Sukces!',
+        description: 'Zalogowano jako wybrany użytkownik.',
+      });
+
+      setIsImpersonationDialogOpen(false);
+      setSearchQuery('');
+
+      // Refresh the page to update the session
+      router.refresh();
+    } catch (error) {
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się zalogować jako wybrany użytkownik.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsImpersonating(false);
+    }
+  };
+
+  const handleRestoreAdmin = async () => {
+    try {
+      setIsImpersonating(true);
+
+      if (!adminSession?.id) {
+        throw new Error('No admin session to restore');
+      }
+
+      // Use NextAuth signIn to restore admin session
+      const signInResult = await signIn('credentials', {
+        impersonateUserId: adminSession.id,
+        redirect: false,
+      });
+
+      if (signInResult?.error) {
+        throw new Error(signInResult.error);
+      }
+
+      toast({
+        title: 'Sukces!',
+        description: 'Powrócono do konta administratora.',
+      });
+
+      setAdminSession(null);
+      router.refresh();
+    } catch (error) {
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się powrócić do konta administratora.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsImpersonating(false);
+    }
+  };
+
+  const filteredUsers = allUsers?.filter((u: any) =>
+    u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    u.email.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
 
   const isTrainer = userProfile?.role === 'trainer';
   const isAdmin = userProfile?.role === 'admin';
@@ -144,6 +265,22 @@ export function AppNav() {
       </SidebarContent>
       <SidebarFooter className="space-y-2">
          <SidebarMenu>
+            {adminSession && (
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip={{ children: 'Powrót do konta admina' }} onClick={handleRestoreAdmin} disabled={isImpersonating}>
+                   <ArrowLeft />
+                   <span>Powrót do admina</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
+            {isAdmin && !adminSession && (
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip={{ children: 'Zaloguj się jako inny użytkownik' }} onClick={() => setIsImpersonationDialogOpen(true)}>
+                   <Users />
+                   <span>Zaloguj się jako...</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip={{ children: 'Profil' }} isActive={pathname === profileHref} onClick={() => setOpenMobile(false)}>
                  <Link href={profileHref}>
@@ -172,6 +309,48 @@ export function AppNav() {
             </div>
          </div>
       </SidebarFooter>
+
+      <Dialog open={isImpersonationDialogOpen} onOpenChange={setIsImpersonationDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Zaloguj się jako użytkownik</DialogTitle>
+            <DialogDescription>
+              Wyszukaj i wybierz użytkownika, na którego konto chcesz się zalogować.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              placeholder="Wyszukaj po nazwie lub emailu..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              disabled={isImpersonating}
+            />
+            <div className="max-h-64 overflow-y-auto space-y-2">
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map((u: any) => (
+                  <Button
+                    key={u.id}
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => handleImpersonate(u.id)}
+                    disabled={isImpersonating || u.id === user?.uid}
+                  >
+                    {isImpersonating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium">{u.name}</span>
+                      <span className="text-xs text-muted-foreground">{u.email}</span>
+                    </div>
+                  </Button>
+                ))
+              ) : (
+                <p className="text-center text-sm text-muted-foreground py-4">
+                  Brak użytkowników spełniających kryteria wyszukiwania.
+                </p>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Sidebar>
   );
 }
