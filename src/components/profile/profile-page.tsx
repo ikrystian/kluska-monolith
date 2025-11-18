@@ -5,7 +5,6 @@ import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Instagram, Facebook, Twitter, Loader2 } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -15,7 +14,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { placeholderImages } from '@/lib/placeholder-images';
 import { useDoc, useUser, useCollection, useUpdateDoc } from '@/lib/db-hooks';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +22,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Switch } from '@/components/ui/switch';
+import { AvatarUpload } from '@/components/avatar-upload';
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Imię jest wymagane.'),
@@ -41,9 +40,8 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 export function ProfilePage() {
   const { toast } = useToast();
   const { user } = useUser();
-  const avatarImage = placeholderImages.find((img) => img.id === 'avatar-male');
 
-  const { data: userProfile, isLoading: profileLoading } = useDoc<UserProfile>('users', user?.uid || null);
+  const { data: userProfile, isLoading: profileLoading, refetch } = useDoc<UserProfile>('users', user?.uid || null);
 
   const { data: allGyms, isLoading: gymsLoading } = useCollection<Gym>('gyms');
 
@@ -87,13 +85,14 @@ export function ProfilePage() {
     }
   };
 
-  const getInitials = (name: string | undefined) => {
-    if (!name) return 'U';
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase();
+  const handleAvatarUploadSuccess = (photoURL: string) => {
+    // Refetch user profile to get updated photoURL
+    refetch();
+  };
+
+  const handleAvatarDeleteSuccess = () => {
+    // Refetch user profile to remove photoURL
+    refetch();
   };
 
   return (
@@ -103,28 +102,25 @@ export function ProfilePage() {
         <div className="md:col-span-1">
           <Card>
             <CardContent className="flex flex-col items-center p-6 text-center">
-              <Avatar className="mb-4 h-24 w-24 border-2 border-primary">
-                {avatarImage && (
-                  <AvatarImage src={avatarImage.imageUrl} alt="Awatar użytkownika" />
-                )}
-                <AvatarFallback>
-                  {isLoading ? <Skeleton className="h-full w-full" /> : getInitials(userProfile?.name)}
-                </AvatarFallback>
-              </Avatar>
               {isLoading ? (
                 <>
+                  <Skeleton className="mb-4 h-24 w-24 rounded-full" />
                   <Skeleton className="h-8 w-3/4" />
                   <Skeleton className="mt-2 h-5 w-1/2" />
+                  <Skeleton className="mt-4 h-9 w-32" />
                 </>
               ) : (
                 <>
-                  <h2 className="font-headline text-2xl font-semibold">{userProfile?.name}</h2>
+                  <AvatarUpload
+                    currentPhotoURL={userProfile?.photoURL}
+                    userName={userProfile?.name}
+                    onUploadSuccess={handleAvatarUploadSuccess}
+                    onDeleteSuccess={handleAvatarDeleteSuccess}
+                  />
+                  <h2 className="mt-4 font-headline text-2xl font-semibold">{userProfile?.name}</h2>
                   <p className="text-muted-foreground capitalize">{userProfile?.role}</p>
                 </>
               )}
-              <Button variant="outline" size="sm" className="mt-4" disabled>
-                Zmień zdjęcie
-              </Button>
             </CardContent>
           </Card>
         </div>

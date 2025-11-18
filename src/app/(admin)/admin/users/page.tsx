@@ -59,6 +59,7 @@ interface UserProfile {
   name: string;
   email: string;
   role: 'athlete' | 'trainer' | 'admin';
+  photoURL?: string;
   location?: string;
   socialLinks?: {
     instagram?: string;
@@ -101,7 +102,7 @@ export default function AdminUsersPage() {
   const { updateDoc, isLoading: isUpdating } = useUpdateDoc();
   const { deleteDoc, isLoading: isDeleting } = useDeleteDoc();
 
-  const avatarImage = placeholderImages.find((img) => img.id === 'avatar-male');
+  const avatarPlaceholder = placeholderImages.find((img) => img.id === 'avatar-male');
 
   const form = useForm<EditUserFormValues>({
     resolver: zodResolver(editUserSchema),
@@ -235,7 +236,11 @@ export default function AdminUsersPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar>
-                          {avatarImage && <AvatarImage src={avatarImage.imageUrl} alt={user.name} />}
+                          {user.photoURL ? (
+                            <AvatarImage src={user.photoURL} alt={user.name} />
+                          ) : (
+                            avatarPlaceholder && <AvatarImage src={avatarPlaceholder.imageUrl} alt={user.name} />
+                          )}
                           <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                         </Avatar>
                         <span className="font-medium">{user.name}</span>

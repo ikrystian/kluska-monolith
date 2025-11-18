@@ -69,6 +69,7 @@ interface UserProfile {
   name: string;
   email: string;
   role: 'athlete' | 'trainer' | 'admin';
+  photoURL?: string;
   trainerId?: string;
 }
 
@@ -180,7 +181,11 @@ function NewConversationDialog({ existingConversationIds, onConversationCreated 
                onClick={() => setSelectedUserId(contact.id)}
              >
                <Avatar>
-                 <AvatarImage src={placeholderImages.find(p => p.id === 'avatar-male')?.imageUrl} />
+                 {contact.photoURL ? (
+                   <AvatarImage src={contact.photoURL} />
+                 ) : (
+                   <AvatarImage src={placeholderImages.find(p => p.id === 'avatar-male')?.imageUrl} />
+                 )}
                  <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
                </Avatar>
                <div>
@@ -292,7 +297,11 @@ function ChatView({ conversation, onBack }: { conversation: Conversation, onBack
           <ArrowLeft className="h-6 w-6" />
         </Button>
         <Avatar>
-          <AvatarImage src={placeholderImages.find(p => p.id === 'avatar-male')?.imageUrl} />
+          {otherParticipant?.photoURL ? (
+            <AvatarImage src={otherParticipant.photoURL} />
+          ) : (
+            <AvatarImage src={placeholderImages.find(p => p.id === 'avatar-male')?.imageUrl} />
+          )}
           <AvatarFallback>{otherParticipant?.name.charAt(0)}</AvatarFallback>
         </Avatar>
         <div>

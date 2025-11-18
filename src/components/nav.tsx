@@ -93,7 +93,6 @@ const adminNavItems = [
 
 export function AppNav() {
   const pathname = usePathname();
-  const avatarImage = placeholderImages.find(img => img.id === 'avatar-male');
   const { user } = useUser();
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
@@ -108,6 +107,8 @@ export function AppNav() {
     user ? 'users' : null,
     user?.uid || null
   );
+
+  const avatarPlaceholder = placeholderImages.find(img => img.id === 'avatar-male');
 
   // Fetch all users for impersonation
   const { data: allUsers } = useCollection<any>(
@@ -300,7 +301,11 @@ export function AppNav() {
          </SidebarMenu>
          <div className="flex items-center gap-3 p-2">
             <Avatar className="h-10 w-10">
-              {avatarImage && <AvatarImage src={avatarImage.imageUrl} alt="Awatar użytkownika" />}
+              {userProfile?.photoURL ? (
+                <AvatarImage src={userProfile.photoURL} alt="Awatar użytkownika" />
+              ) : (
+                avatarPlaceholder && <AvatarImage src={avatarPlaceholder.imageUrl} alt="Awatar użytkownika" />
+              )}
               <AvatarFallback>{getInitials(userProfile?.name)}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col">

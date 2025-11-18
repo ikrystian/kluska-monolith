@@ -7,6 +7,7 @@ export type UserProfile = {
   name: string;
   email: string;
   role: 'athlete' | 'trainer' | 'admin';
+  photoURL?: string;
   location?: string;
   socialLinks?: {
     instagram?: string;

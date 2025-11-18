@@ -7,6 +7,7 @@ export interface IUser extends Document {
   email: string;
   password: string;
   role: 'athlete' | 'trainer' | 'admin';
+  photoURL?: string;
   location?: string;
   socialLinks?: {
     instagram?: string;
@@ -26,6 +27,7 @@ const UserSchema = new Schema<IUser>(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['athlete', 'trainer', 'admin'], required: true },
+    photoURL: { type: String },
     location: { type: String },
     socialLinks: {
       instagram: { type: String },
