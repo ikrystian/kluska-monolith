@@ -114,10 +114,13 @@ function GoalForm({ onFormSubmit, goal, onDialogClose }: { onFormSubmit: (data: 
   });
 
   const handleSubmit = async (data: GoalFormValues) => {
-    await onFormSubmit(data);
-    if (!form.formState.isSubmitting) {
-        form.reset();
-        onDialogClose();
+    try {
+      await onFormSubmit(data);
+      form.reset();
+      onDialogClose();
+    } catch (error) {
+      // Error is already handled by onFormSubmit, just prevent dialog from closing
+      console.error('Error submitting goal:', error);
     }
   }
 
@@ -706,43 +709,44 @@ export default function GoalsAndAchievementsPage() {
   const handleGoalFormSubmit = async (data: GoalFormValues) => {
     if (!user || !firestore) return;
 
-    if (editingGoal) {
-      // Update
-      const goalDocRef = doc(firestore, `users/${user.uid}/goals`, editingGoal.id);
-      const updatedGoalData = {
-        ...data,
-        deadline: Timestamp.fromDate(data.deadline),
-      };
-      await updateDoc(goalDocRef, updatedGoalData)
-        .then(() => {
-          toast({ title: 'Cel Zaktualizowany!', description: `Twój cel "${data.title}" został zmieniony.` });
-        })
-        .catch((serverError) => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: goalDocRef.path,
-            operation: 'update',
-            requestResourceData: updatedGoalData,
-          }));
-        });
-    } else {
-      // Create
-      const goalsCollection = collection(firestore, `users/${user.uid}/goals`);
-      const newGoalData = {
-        ...data,
-        deadline: Timestamp.fromDate(data.deadline),
-        ownerId: user.uid,
-      };
-      await addDoc(goalsCollection, newGoalData)
-        .then(() => {
-          toast({ title: 'Cel Ustawiony!', description: `Twój nowy cel "${data.title}" został dodany.` });
-        })
-        .catch((serverError) => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: goalsCollection.path,
-            operation: 'create',
-            requestResourceData: newGoalData,
-          }));
-        });
+    try {
+      if (editingGoal) {
+        // Update
+        const goalDocRef = doc(firestore, `users/${user.uid}/goals`, editingGoal.id);
+        const updatedGoalData = {
+          ...data,
+          deadline: Timestamp.fromDate(data.deadline),
+        };
+        await updateDoc(goalDocRef, updatedGoalData);
+        toast({ title: 'Cel Zaktualizowany!', description: `Twój cel "${data.title}" został zmieniony.` });
+      } else {
+        // Create
+        const goalsCollection = collection(firestore, `users/${user.uid}/goals`);
+        const newGoalData = {
+          ...data,
+          deadline: Timestamp.fromDate(data.deadline),
+          ownerId: user.uid,
+        };
+        await addDoc(goalsCollection, newGoalData);
+        toast({ title: 'Cel Ustawiony!', description: `Twój nowy cel "${data.title}" został dodany.` });
+      }
+    } catch (serverError) {
+      const path = editingGoal
+        ? `users/${user.uid}/goals/${editingGoal.id}`
+        : `users/${user.uid}/goals`;
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path,
+        operation: editingGoal ? 'update' : 'create',
+        requestResourceData: editingGoal ? {
+          ...data,
+          deadline: Timestamp.fromDate(data.deadline),
+        } : {
+          ...data,
+          deadline: Timestamp.fromDate(data.deadline),
+          ownerId: user.uid,
+        },
+      }));
+      throw serverError; // Re-throw to prevent dialog from closing
     }
   };
 
