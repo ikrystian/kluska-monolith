@@ -263,4 +263,6 @@ export * from './RunningSession';
 export * from './Goal';
 export * from './MuscleGroup';
 export * from './Gym';
+export * from './Meal';
+export * from './NutritionGoal';
 
