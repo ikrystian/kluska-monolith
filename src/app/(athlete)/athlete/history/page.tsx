@@ -157,7 +157,7 @@ export default function HistoryPage() {
                         <AlertDialogHeader>
                             <AlertDialogTitle>Czy na pewno chcesz usunąć ten trening?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Tej operacji nie można cofnąć. To spowoduje trwałe usunięcie treningu "{log.workoutName}" z dnia {format(log.endTime.toDate(), 'd.MM.yyyy')}.
+                                Tej operacji nie można cofnąć. To spowoduje trwałe usunięcie treningu "{log.workoutName}" z dnia {format(log.endTime, 'd.MM.yyyy')}.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
