@@ -217,6 +217,15 @@ function ChatView({ conversation, onBack }: { conversation: Conversation, onBack
     { sort: { createdAt: 1 } }
   );
 
+  // Auto-refresh messages to simulate real-time
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      refetch();
+    }, 3000); // Poll every 3 seconds
+
+    return () => clearInterval(intervalId);
+  }, [refetch]);
+
   const { data: userProfile } = useDoc<UserProfile>('users', user?.uid || '');
 
   const otherParticipantId = userProfile?.role === 'trainer' ? conversation.athleteId : conversation.trainerId;

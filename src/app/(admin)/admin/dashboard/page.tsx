@@ -137,6 +137,18 @@ export default function AdminDashboardPage() {
                 <p className="font-medium">Zarządzaj artykułami</p>
                 <p className="text-xs text-muted-foreground">Publikuj i moderuj treści</p>
               </a>
+              <a href="/admin/gyms" className="block rounded-lg border p-3 hover:bg-accent">
+                <p className="font-medium">Zarządzaj siłowniami</p>
+                <p className="text-xs text-muted-foreground">Dodaj lub usuń siłownie</p>
+              </a>
+              <a href="/admin/muscle-groups" className="block rounded-lg border p-3 hover:bg-accent">
+                <p className="font-medium">Grupy mięśniowe</p>
+                <p className="text-xs text-muted-foreground">Konfiguracja grup mięśniowych</p>
+              </a>
+              <a href="/admin/workout-plans" className="block rounded-lg border p-3 hover:bg-accent">
+                <p className="font-medium">Plany treningowe</p>
+                <p className="text-xs text-muted-foreground">Przeglądaj wszystkie plany</p>
+              </a>
             </div>
           </CardContent>
         </Card>
