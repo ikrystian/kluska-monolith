@@ -33,9 +33,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PlusCircle, Loader2, Footprints, TrendingUp, Route, Timer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, useUser, useMemoFirebase, collection, addDoc, Timestamp, query, orderBy } from '@/firebase';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { errorEmitter } from '@/firebase/error-emitter';
+import { useCollection, useCreateDoc, useUser } from '@/lib/db-hooks';
 import type { RunningSession } from '@/lib/types';
 
 const runSchema = z.object({
@@ -60,16 +58,15 @@ const StatCard = ({ title, value, icon: Icon, isLoading }: { title: string; valu
 
 export default function RunningPage() {
   const { user } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
+  const { createDoc, isLoading: isCreating } = useCreateDoc();
   const [isDialogOpen, setDialogOpen] = useState(false);
 
-  const runningSessionsRef = useMemoFirebase(() => 
-    user ? query(collection(firestore, `users/${user.uid}/runningSessions`), orderBy('date', 'desc')) : null,
-    [user, firestore]
+  const { data: runningSessions, isLoading, refetch } = useCollection<RunningSession>(
+    user ? 'runningSessions' : null,
+    { userId: user?.uid },
+    { sort: { date: -1 } }
   );
-  
-  const { data: runningSessions, isLoading } = useCollection<RunningSession>(runningSessionsRef);
 
   const stats = useMemo(() => {
     if (!runningSessions) {
@@ -100,38 +97,32 @@ export default function RunningPage() {
   });
 
   const onSubmit = async (data: RunFormValues) => {
-    if (!user || !firestore) return;
+    if (!user) return;
 
     const avgPace = data.duration / data.distance;
 
-    const newRun: Omit<RunningSession, 'id'> = {
-      date: Timestamp.now(),
+    const newRun = {
+      date: new Date().toISOString(),
       distance: data.distance,
       duration: data.duration,
       avgPace: avgPace,
       notes: data.notes,
-      ownerId: user.uid,
+      userId: user.uid,
     };
 
-    const runCollection = collection(firestore, `users/${user.uid}/runningSessions`);
-
-    addDoc(runCollection, newRun)
-      .then(() => {
-        toast({
-          title: 'Bieg Zapisany!',
-          description: 'Twoja sesja biegowa została dodana do historii.',
-        });
-        form.reset();
-        setDialogOpen(false);
-      })
-      .catch((serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: runCollection.path,
-          operation: 'create',
-          requestResourceData: newRun,
-        });
-        errorEmitter.emit('permission-error', permissionError);
+    try {
+      await createDoc('runningSessions', newRun);
+      toast({
+        title: 'Bieg Zapisany!',
+        description: 'Twoja sesja biegowa została dodana do historii.',
       });
+      form.reset();
+      setDialogOpen(false);
+      refetch();
+    } catch (error) {
+      console.error("Error saving run:", error);
+      toast({ title: "Błąd", description: "Nie udało się zapisać biegu.", variant: "destructive" });
+    }
   };
 
   return (
@@ -197,8 +188,8 @@ export default function RunningPage() {
                   <DialogClose asChild>
                     <Button type="button" variant="secondary" disabled={form.formState.isSubmitting}>Anuluj</Button>
                   </DialogClose>
-                  <Button type="submit" disabled={form.formState.isSubmitting}>
-                    {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <Button type="submit" disabled={isCreating}>
+                    {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Zapisz Bieg
                   </Button>
                 </DialogFooter>
@@ -246,7 +237,7 @@ export default function RunningPage() {
                 runningSessions.map((session) => {
                   return (
                     <TableRow key={session.id}>
-                      <TableCell className="font-medium">{format(session.date.toDate(), 'd MMM yyyy, HH:mm', { locale: pl })}</TableCell>
+                      <TableCell className="font-medium">{format(new Date(session.date), 'd MMM yyyy, HH:mm', { locale: pl })}</TableCell>
                       <TableCell>{session.distance.toFixed(2)} km</TableCell>
                       <TableCell>{session.duration.toFixed(1)} min</TableCell>
                       <TableCell>{formatPace(session.avgPace)}</TableCell>

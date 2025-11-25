@@ -49,7 +49,7 @@ export default function ArticlePage() {
       <header className="mb-8 text-center">
         <h1 className="font-headline text-4xl font-bold mb-2">{article.title}</h1>
         <p className="text-muted-foreground">
-          Autor: {article.authorName} &bull; Opublikowano: {format(article.createdAt.toDate(), 'd MMMM yyyy', { locale: pl })}
+          Autor: {article.authorName} &bull; Opublikowano: {format(new Date(article.createdAt), 'd MMMM yyyy', { locale: pl })}
         </p>
       </header>
       <div className="prose prose-invert max-w-none prose-lg" dangerouslySetInnerHTML={{ __html: article.content }} />

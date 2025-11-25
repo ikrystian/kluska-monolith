@@ -42,9 +42,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PlusCircle, Loader2, Weight, Ruler, BarChart, Armchair, Upload, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, useUser, useMemoFirebase, collection, addDoc, Timestamp, query, orderBy, getStorage, ref as storageRef, uploadBytes, getDownloadURL } from '@/firebase';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { errorEmitter } from '@/firebase/error-emitter';
+import { useCollection, useCreateDoc, useUser } from '@/lib/db-hooks';
 import type { BodyMeasurement } from '@/lib/types';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -145,34 +143,31 @@ const MeasurementChart = ({ data, dataKey, title, unit }: { data: any[], dataKey
 
 export default function MeasurementsPage() {
   const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
+  const { createDoc, isLoading: isCreating } = useCreateDoc();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
 
-  const measurementsRef = useMemoFirebase(() =>
-    !isUserLoading && user ? query(collection(firestore, `users/${user.uid}/bodyMeasurements`), orderBy('date', 'desc')) : null,
-    [user, isUserLoading, firestore]
+  const { data: measurements, isLoading: measurementsLoading, refetch } = useCollection<BodyMeasurement>(
+    user ? 'bodyMeasurements' : null,
+    { userId: user?.uid },
+    { sort: { date: -1 } }
   );
 
-  const { data: measurements, isLoading } = useCollection<BodyMeasurement>(measurementsRef);
-
   // Combine local isLoading with useCollection's isLoading
-  const combinedLoading = isLoading || isUserLoading;
+  const combinedLoading = measurementsLoading || isUserLoading;
 
   // If user is loading, or no user, prevent UI from showing data, but do show skeletons
   // This ensures that the UI correctly reflects the loading state during auth checks
   const displayMeasurements = isUserLoading ? null : measurements;
 
-
-
   const chartData = useMemo(() => {
     if (!measurements) return [];
     return measurements.slice().reverse().map(m => ({
         ...m,
-        formattedDate: format(m.date.toDate(), 'dd MMM', { locale: pl }),
-        formattedDateFull: format(m.date.toDate(), 'd MMMM yyyy', { locale: pl }),
+        formattedDate: format(new Date(m.date), 'dd MMM', { locale: pl }),
+        formattedDateFull: format(new Date(m.date), 'd MMMM yyyy', { locale: pl }),
     }));
   }, [measurements]);
 
@@ -186,12 +181,12 @@ export default function MeasurementsPage() {
   const form = useForm<MeasurementFormValues>({
     resolver: zodResolver(measurementSchema),
     defaultValues: {
-      weight: 0,
-      biceps: 0,
-      chest: 0,
-      waist: 0,
-      hips: 0,
-      thigh: 0,
+      weight: undefined,
+      biceps: undefined,
+      chest: undefined,
+      waist: undefined,
+      hips: undefined,
+      thigh: undefined,
       sharedWithTrainer: false,
       photos: [],
     },
@@ -213,17 +208,21 @@ export default function MeasurementsPage() {
 
   const uploadPhotos = async (photos: File[]): Promise<string[]> => {
     if (!user) return [];
-    const storage = getStorage();
-    const uploadPromises = photos.map(photo => {
-      const filePath = `measurement-photos/${user.uid}/${new Date().getTime()}-${photo.name}`;
-      const fileRef = storageRef(storage, filePath);
-      return uploadBytes(fileRef, photo).then(snapshot => getDownloadURL(snapshot.ref));
+    const uploadPromises = photos.map(async (photo) => {
+      const formData = new FormData();
+      formData.append('file', photo);
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      return `/api/images/${data.fileId}`;
     });
     return Promise.all(uploadPromises);
   };
 
   const onSubmit = async (data: MeasurementFormValues) => {
-    if (!user || !firestore) return;
+    if (!user) return;
 
     let photoURLs: string[] = [];
     if (data.photos && data.photos.length > 0) {
@@ -241,7 +240,7 @@ export default function MeasurementsPage() {
     }
 
     const newMeasurement = {
-      date: Timestamp.now(),
+      date: new Date().toISOString(),
       weight: data.weight,
       circumferences: {
         biceps: data.biceps || 0,
@@ -252,29 +251,23 @@ export default function MeasurementsPage() {
       },
       sharedWithTrainer: data.sharedWithTrainer,
       photoURLs,
-      ownerId: user.uid,
+      userId: user.uid,
     };
 
-    const measurementCollection = collection(firestore, `users/${user.uid}/bodyMeasurements`);
-
-    addDoc(measurementCollection, newMeasurement)
-      .then(() => {
-        toast({
-          title: 'Pomiar Zapisany!',
-          description: 'Twoje najnowsze pomiary zostały dodane do historii.',
-        });
-        form.reset();
-        setPhotoPreviews([]);
-        setDialogOpen(false);
-      })
-      .catch((serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: measurementCollection.path,
-          operation: 'create',
-          requestResourceData: newMeasurement,
-        });
-        errorEmitter.emit('permission-error', permissionError);
+    try {
+      await createDoc('bodyMeasurements', newMeasurement);
+      toast({
+        title: 'Pomiar Zapisany!',
+        description: 'Twoje najnowsze pomiary zostały dodane do historii.',
       });
+      form.reset();
+      setPhotoPreviews([]);
+      setDialogOpen(false);
+      refetch();
+    } catch (error) {
+      console.error("Error saving measurement:", error);
+      toast({ title: "Błąd", description: "Nie udało się zapisać pomiaru.", variant: "destructive" });
+    }
   };
 
   const chartTabs = [
@@ -322,7 +315,7 @@ export default function MeasurementsPage() {
                   <FormField control={form.control} name="chest" render={({ field }) => (<FormItem><FormLabel>Klatka (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...field} /></FormControl><FormMessage /></FormItem>)} />
                   <FormField control={form.control} name="waist" render={({ field }) => (<FormItem><FormLabel>Talia (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...field} /></FormControl><FormMessage /></FormItem>)} />
                   <FormField control={form.control} name="hips" render={({ field }) => (<FormItem><FormLabel>Biodra (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                  <FormField control={form.control} name="thigh" render={({ field }) => (<FormItem className="col-span-2"><FormLabel>Udo (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                  <FormField control={form.control} name="thigh" render={({ field }) => (<FormItem className="col-span-2"><FormLabel>Udo (cm)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="np. 60.5" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 </div>
                  <div className="space-y-2">
                     <FormLabel>Zdjęcia (opcjonalnie)</FormLabel>
@@ -385,8 +378,8 @@ export default function MeasurementsPage() {
                   <DialogClose asChild>
                     <Button type="button" variant="secondary" disabled={form.formState.isSubmitting}>Anuluj</Button>
                   </DialogClose>
-                  <Button type="submit" disabled={form.formState.isSubmitting}>
-                    {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <Button type="submit" disabled={isCreating}>
+                    {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Zapisz Pomiar
                   </Button>
                 </DialogFooter>
@@ -467,7 +460,7 @@ export default function MeasurementsPage() {
               ) : displayMeasurements && displayMeasurements.length > 0 ? (
                 displayMeasurements.map((session) => (
                     <TableRow key={session.id}>
-                      <TableCell className="font-medium">{format(session.date.toDate(), 'd MMM yyyy', { locale: pl })}</TableCell>
+                      <TableCell className="font-medium">{format(new Date(session.date), 'd MMM yyyy', { locale: pl })}</TableCell>
                       <TableCell className="font-bold">{session.weight.toFixed(1)}</TableCell>
                       <TableCell>{session.circumferences.biceps?.toFixed(1) || '-'}</TableCell>
                       <TableCell>{session.circumferences.chest?.toFixed(1) || '-'}</TableCell>

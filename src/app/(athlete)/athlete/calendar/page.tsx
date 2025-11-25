@@ -8,41 +8,33 @@ import { pl } from 'date-fns/locale';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useCollection, useFirestore, useUser, useMemoFirebase, collection, query, where } from '@/firebase';
+import { useCollection, useUser } from '@/lib/db-hooks';
 import type { Exercise, PlannedWorkout, WorkoutLog } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function CalendarPage() {
     const [date, setDate] = useState<Date | undefined>(new Date());
     const { user } = useUser();
-    const firestore = useFirestore();
 
-    const sessionsRef = useMemoFirebase(() => 
-      user ? collection(firestore, `users/${user.uid}/workoutSessions`) : null,
-      [user, firestore]
+    const { data: workoutHistory, isLoading: sessionsLoading } = useCollection<WorkoutLog>(
+        user ? 'workoutSessions' : null,
+        { userId: user?.uid }
     );
-    const plannedRef = useMemoFirebase(() =>
-      user ? collection(firestore, `users/${user.uid}/plannedWorkouts`) : null,
-      [user, firestore]
+    const { data: plannedWorkouts, isLoading: plannedLoading } = useCollection<PlannedWorkout>(
+        user ? 'plannedWorkouts' : null,
+        { userId: user?.uid }
     );
-    const exercisesRef = useMemoFirebase(() =>
-        firestore ? collection(firestore, 'exercises') : null,
-        [firestore]
-    );
-    
-    const { data: workoutHistory, isLoading: sessionsLoading } = useCollection<WorkoutLog>(sessionsRef);
-    const { data: plannedWorkouts, isLoading: plannedLoading } = useCollection<PlannedWorkout>(plannedRef);
-    const { data: exercises, isLoading: exercisesLoading } = useCollection<Exercise>(exercisesRef);
+    const { data: exercises, isLoading: exercisesLoading } = useCollection<Exercise>('exercises');
 
-    const workoutDates = new Set(workoutHistory?.filter(wh => wh.endTime).map(wh => format(wh.endTime.toDate(), 'yyyy-MM-dd')) || []);
-    const plannedDates = new Set(plannedWorkouts?.filter(pw => pw.date).map(pw => format(pw.date.toDate(), 'yyyy-MM-dd')) || []);
+    const workoutDates = new Set(workoutHistory?.filter(wh => wh.endTime).map(wh => format(new Date(wh.endTime), 'yyyy-MM-dd')) || []);
+    const plannedDates = new Set(plannedWorkouts?.filter(pw => pw.date).map(pw => format(new Date(pw.date), 'yyyy-MM-dd')) || []);
 
     const selectedDayWorkouts = date && workoutHistory
-      ? workoutHistory.filter(workout => workout.endTime && isSameDay(workout.endTime.toDate(), date))
+      ? workoutHistory.filter(workout => workout.endTime && isSameDay(new Date(workout.endTime), date))
       : [];
 
     const selectedDayPlanned = date && plannedWorkouts
-      ? plannedWorkouts.filter(plan => plan.date && isSameDay(plan.date.toDate(), date))
+      ? plannedWorkouts.filter(plan => plan.date && isSameDay(new Date(plan.date), date))
       : [];
 
     const isLoading = sessionsLoading || plannedLoading || exercisesLoading;

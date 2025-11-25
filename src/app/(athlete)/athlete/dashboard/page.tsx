@@ -10,8 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useCollection, useFirestore, useUser, useMemoFirebase, collection, query, orderBy, where, doc, limit } from '@/firebase';
-import { useDoc } from '@/firebase';
+import { useCollection, useDoc, useUser } from '@/lib/db-hooks';
 import type { WorkoutLog, Goal, BodyMeasurement, RunningSession, LoggedMeal, PlannedWorkout, UserProfile, WorkoutPlan } from '@/lib/types';
 import { Activity, Target, Weight, Footprints, ChefHat, Calendar as CalendarIcon, TrendingUp, Dumbbell, Clock, Award } from 'lucide-react';
 
@@ -59,90 +58,71 @@ const StatCard = ({
 
 export default function AthleteDashboardPage() {
   const { user } = useUser();
-  const firestore = useFirestore();
 
   // User profile
-  const userProfileRef = useMemoFirebase(() => (user ? doc(firestore, `users/${user.uid}`) : null), [user, firestore]);
-  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
+  const { data: userProfile } = useDoc<UserProfile>(user ? 'users' : null, user?.uid || null);
 
-  // Recent workouts (last 5)
-  const workoutSessionsRef = useMemoFirebase(() =>
-    user ? query(collection(firestore, `users/${user.uid}/workoutSessions`), where('status', '==', 'completed'), orderBy('endTime', 'desc'), limit(5)) : null,
-    [user, firestore]
-  );
-  const { data: recentWorkouts, isLoading: workoutsLoading } = useCollection<WorkoutLog>(workoutSessionsRef);
-
-  // Active goals
-  const goalsRef = useMemoFirebase(() =>
-    user ? collection(firestore, `users/${user.uid}/goals`) : null,
-    [user, firestore]
-  );
-  const { data: goals, isLoading: goalsLoading } = useCollection<Goal>(goalsRef);
-
-  // Latest body measurement
-  const measurementsRef = useMemoFirebase(() =>
-    user ? query(collection(firestore, `users/${user.uid}/bodyMeasurements`), orderBy('date', 'desc'), limit(1)) : null,
-    [user, firestore]
-  );
-  const { data: latestMeasurements, isLoading: measurementsLoading } = useCollection<BodyMeasurement>(measurementsRef);
-
-  // Recent running sessions (last 30 days)
+  // Date ranges
+  const weekStart = startOfWeek(new Date(), { locale: pl });
+  const weekEnd = endOfWeek(new Date(), { locale: pl });
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-  const runningSessionsRef = useMemoFirebase(() =>
-    user ? query(
-      collection(firestore, `users/${user.uid}/runningSessions`),
-      where('date', '>=', thirtyDaysAgo),
-      orderBy('date', 'desc')
-    ) : null,
-    [user, firestore]
-  );
-  const { data: runningSessions, isLoading: runningLoading } = useCollection<RunningSession>(runningSessionsRef);
-
-  // Recent meals (today)
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   const todayEnd = new Date();
   todayEnd.setHours(23, 59, 59, 999);
 
-  const todayMealsRef = useMemoFirebase(() =>
-    user ? query(
-      collection(firestore, `users/${user.uid}/meals`),
-      where('date', '>=', todayStart),
-      where('date', '<=', todayEnd)
-    ) : null,
-    [user, firestore]
+  // Recent workouts (last 5)
+  const { data: recentWorkouts, isLoading: workoutsLoading } = useCollection<WorkoutLog>(
+    user ? 'workoutSessions' : null,
+    { userId: user?.uid, status: 'completed' },
+    { sort: { endTime: -1 }, limit: 5 }
   );
-  const { data: todayMeals, isLoading: mealsLoading } = useCollection<LoggedMeal>(todayMealsRef);
+
+  // Active goals
+  const { data: goals, isLoading: goalsLoading } = useCollection<Goal>(
+    user ? 'goals' : null,
+    { userId: user?.uid }
+  );
+
+  // Latest body measurement
+  const { data: latestMeasurements, isLoading: measurementsLoading } = useCollection<BodyMeasurement>(
+    user ? 'bodyMeasurements' : null,
+    { userId: user?.uid },
+    { sort: { date: -1 }, limit: 1 }
+  );
+
+  // Recent running sessions (last 30 days)
+  const { data: runningSessions, isLoading: runningLoading } = useCollection<RunningSession>(
+    user ? 'runningSessions' : null,
+    { userId: user?.uid, date: { $gte: thirtyDaysAgo.toISOString() } },
+    { sort: { date: -1 } }
+  );
+
+  // Recent meals (today)
+  const { data: todayMeals, isLoading: mealsLoading } = useCollection<LoggedMeal>(
+    user ? 'meals' : null,
+    { userId: user?.uid, date: { $gte: todayStart.toISOString(), $lte: todayEnd.toISOString() } }
+  );
 
   // This week's planned workouts
-  const weekStart = startOfWeek(new Date(), { locale: pl });
-  const weekEnd = endOfWeek(new Date(), { locale: pl });
-
-  const plannedWorkoutsRef = useMemoFirebase(() =>
-    user ? query(
-      collection(firestore, `users/${user.uid}/plannedWorkouts`),
-      where('date', '>=', weekStart),
-      where('date', '<=', weekEnd)
-    ) : null,
-    [user, firestore]
+  const { data: plannedWorkouts, isLoading: plannedLoading } = useCollection<PlannedWorkout>(
+    user ? 'plannedWorkouts' : null,
+    { userId: user?.uid, date: { $gte: weekStart.toISOString(), $lte: weekEnd.toISOString() } }
   );
-  const { data: plannedWorkouts, isLoading: plannedLoading } = useCollection<PlannedWorkout>(plannedWorkoutsRef);
 
   // Assigned workout plans
-  const assignedPlansQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(collection(firestore, 'workoutPlans'), where('assignedAthleteIds', 'array-contains', user.uid));
-  }, [firestore, user]);
-  const { data: assignedPlans } = useCollection<WorkoutPlan>(assignedPlansQuery);
+  const { data: assignedPlans, isLoading: assignedPlansLoading } = useCollection<WorkoutPlan>(
+    user ? 'workoutPlans' : null,
+    { assignedAthleteIds: user?.uid }
+  );
 
   // Calculate stats
   const stats = useMemo(() => {
     // Workout stats
     const totalWorkouts = recentWorkouts?.length || 0;
     const thisWeekWorkouts = recentWorkouts?.filter(w =>
-      isWithinInterval(w.endTime.toDate(), { start: weekStart, end: weekEnd })
+      isWithinInterval(new Date(w.endTime), { start: weekStart, end: weekEnd })
     ).length || 0;
 
     // Goals progress
@@ -163,7 +143,7 @@ export default function AthleteDashboardPage() {
 
     // This week's training volume
     const thisWeekVolume = recentWorkouts?.filter(w =>
-      isWithinInterval(w.endTime.toDate(), { start: weekStart, end: weekEnd })
+      isWithinInterval(new Date(w.endTime), { start: weekStart, end: weekEnd })
     ).reduce((acc, w) => {
       return acc + w.exercises.reduce((exAcc, ex) => {
         return exAcc + ex.sets.reduce((setAcc, set) => setAcc + set.reps * (set.weight || 0), 0);
@@ -183,7 +163,7 @@ export default function AthleteDashboardPage() {
     };
   }, [recentWorkouts, goals, latestMeasurements, runningSessions, todayMeals, weekStart, weekEnd]);
 
-  const isLoading = workoutsLoading || goalsLoading || measurementsLoading || runningLoading || mealsLoading;
+  const isLoading = workoutsLoading || goalsLoading || measurementsLoading || runningLoading || mealsLoading || assignedPlansLoading;
 
   return (
     <div className="container mx-auto p-4 md:p-8">
@@ -253,7 +233,7 @@ export default function AthleteDashboardPage() {
           title="Zaplanowane na dziś"
           value={plannedWorkouts?.filter(p => {
             const today = new Date();
-            return format(p.date.toDate(), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
+            return format(new Date(p.date), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
           }).length || 0}
           icon={CalendarIcon}
           isLoading={plannedLoading}
@@ -300,7 +280,7 @@ export default function AthleteDashboardPage() {
                         <div>
                           <p className="font-semibold">{workout.workoutName}</p>
                           <p className="text-sm text-muted-foreground">
-                            {format(workout.endTime.toDate(), 'd MMM yyyy', { locale: pl })} • {workout.duration} min
+                            {format(new Date(workout.endTime), 'd MMM yyyy', { locale: pl })} • {workout.duration} min
                           </p>
                         </div>
                         <div className="text-right">

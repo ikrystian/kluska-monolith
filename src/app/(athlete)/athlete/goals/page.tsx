@@ -60,9 +60,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useMemoFirebase, collection, addDoc, Timestamp, deleteDoc, doc, query, orderBy, updateDoc, getStorage, ref as storageRef, uploadBytes, getDownloadURL } from '@/firebase';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { useUser, useCollection, useCreateDoc, useUpdateDoc, useDeleteDoc } from '@/lib/db-hooks';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
@@ -98,12 +96,12 @@ function GoalForm({ onFormSubmit, goal, onDialogClose }: { onFormSubmit: (data: 
 
   const form = useForm<GoalFormValues>({
     resolver: zodResolver(goalSchema),
-    defaultValues: isEditMode ? {
+    defaultValues: isEditMode && goal ? {
         title: goal.title,
         target: goal.target,
         current: goal.current,
         unit: goal.unit,
-        deadline: goal.deadline.toDate(),
+        deadline: new Date(goal.deadline),
     } : {
       title: '',
       target: 100,
@@ -251,8 +249,8 @@ function GoalForm({ onFormSubmit, goal, onDialogClose }: { onFormSubmit: (data: 
 // --- ADD ACHIEVEMENT FORM ---
 function AddAchievementForm({ onAchievementAdded }: { onAchievementAdded: () => void }) {
   const { user } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
+  const { createDoc, isLoading } = useCreateDoc();
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -282,17 +280,21 @@ function AddAchievementForm({ onAchievementAdded }: { onAchievementAdded: () => 
 
   const uploadPhotos = async (photos: File[]): Promise<string[]> => {
     if (!user) return [];
-    const storage = getStorage();
-    const uploadPromises = photos.map(photo => {
-      const filePath = `achievement-photos/${user.uid}/${new Date().getTime()}-${photo.name}`;
-      const fileRef = storageRef(storage, filePath);
-      return uploadBytes(fileRef, photo).then(snapshot => getDownloadURL(snapshot.ref));
+    const uploadPromises = photos.map(async (photo) => {
+      const formData = new FormData();
+      formData.append('file', photo);
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      return `/api/images/${data.fileId}`; // Assuming an endpoint to retrieve images
     });
     return Promise.all(uploadPromises);
   };
 
   async function onSubmit(data: AchievementFormValues) {
-    if (!user || !firestore) return;
+    if (!user) return;
 
     let photoURLs: string[] = [];
     if (data.photos && data.photos.length > 0) {
@@ -311,17 +313,16 @@ function AddAchievementForm({ onAchievementAdded }: { onAchievementAdded: () => 
         photoURLs.push(`https://picsum.photos/seed/${data.title}/400/300`);
     }
 
-    const achievementsCollection = collection(firestore, `users/${user.uid}/achievements`);
     const newAchievementData = {
       title: data.title,
       description: data.description || '',
-      date: Timestamp.fromDate(data.date),
+      date: data.date.toISOString(),
       photoURLs,
-      ownerId: user.uid,
+      userId: user.uid,
     };
 
     try {
-      await addDoc(achievementsCollection, newAchievementData);
+      await createDoc('achievements', newAchievementData);
       toast({
         title: 'Trofeum Dodane!',
         description: `Twoje osiągnięcie "${data.title}" zostało dodane do galerii.`,
@@ -329,13 +330,9 @@ function AddAchievementForm({ onAchievementAdded }: { onAchievementAdded: () => 
       form.reset();
       setPhotoPreviews([]);
       onAchievementAdded();
-    } catch (serverError) {
-      console.error("Error adding achievement:", serverError);
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: achievementsCollection.path,
-        operation: 'create',
-        requestResourceData: newAchievementData,
-      }));
+    } catch (error) {
+       console.error("Error adding achievement:", error);
+       toast({ title: "Błąd", description: "Nie udało się dodać trofeum.", variant: "destructive" });
     }
   }
 
@@ -444,10 +441,10 @@ function AddAchievementForm({ onAchievementAdded }: { onAchievementAdded: () => 
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button type="button" variant="secondary" disabled={form.formState.isSubmitting}>Anuluj</Button>
+            <Button type="button" variant="secondary" disabled={isLoading}>Anuluj</Button>
           </DialogClose>
-          <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Button type="submit" disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Zapisz Trofeum
           </Button>
         </DialogFooter>
@@ -461,10 +458,10 @@ function AddAchievementForm({ onAchievementAdded }: { onAchievementAdded: () => 
 
 function ConvertGoalToAchievementForm({ goal, onConverted }: { goal: Goal, onConverted: () => void }) {
   const { user } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
-  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
-  const photoInputRef = useRef<HTMLInputElement>(null);
+  const { createDoc, isLoading: isCreating } = useCreateDoc();
+  const { deleteDoc, isLoading: isDeleting } = useDeleteDoc();
+  const isLoading = isCreating || isDeleting;
 
   const form = useForm<AchievementFormValues>({
     resolver: zodResolver(achievementSchema),
@@ -472,86 +469,36 @@ function ConvertGoalToAchievementForm({ goal, onConverted }: { goal: Goal, onCon
         title: goal.title,
         description: `Osiągnięto cel: ${goal.target} ${goal.unit}`,
         date: new Date(),
-        photos: [],
     }
   });
-
-   const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "photos"
-  });
-
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-      const newPreviews = files.map(file => URL.createObjectURL(file));
-      setPhotoPreviews(prev => [...prev, ...newPreviews]);
-      files.forEach(file => append(file));
-    }
-  };
-
-  const uploadPhotos = async (photos: File[]): Promise<string[]> => {
-    if (!user) return [];
-    const storage = getStorage();
-    const uploadPromises = photos.map(photo => {
-      const filePath = `achievement-photos/${user.uid}/${new Date().getTime()}-${photo.name}`;
-      const fileRef = storageRef(storage, filePath);
-      return uploadBytes(fileRef, photo).then(snapshot => getDownloadURL(snapshot.ref));
-    });
-    return Promise.all(uploadPromises);
-  };
 
   async function onSubmit(data: AchievementFormValues) {
-    if (!user || !firestore) return;
-    form.formState.isSubmitting;
+    if (!user) return;
 
-    let photoURLs: string[] = [];
-    if (data.photos && data.photos.length > 0) {
-        try {
-            photoURLs = await uploadPhotos(data.photos);
-        } catch (error) {
-            console.error("Error uploading photos: ", error);
-            toast({
-                title: 'Błąd przesyłania zdjęć',
-                description: 'Nie udało się przesłać wszystkich zdjęć. Spróbuj ponownie.',
-                variant: 'destructive',
-            });
-            return;
-        }
-    } else {
-         photoURLs.push(`https://picsum.photos/seed/${data.title}/400/300`);
-    }
+    const photoURLs = [`https://picsum.photos/seed/${encodeURIComponent(data.title)}/400/300`];
 
-    const achievementsCollection = collection(firestore, `users/${user.uid}/achievements`);
     const newAchievementData = {
       title: data.title,
       description: data.description || '',
-      date: Timestamp.fromDate(data.date),
+      date: data.date.toISOString(),
       photoURLs,
-      ownerId: user.uid,
+      userId: user.uid,
     };
 
     try {
-      await addDoc(achievementsCollection, newAchievementData);
-      const goalDocRef = doc(firestore, `users/${user.uid}/goals`, goal.id);
-      await deleteDoc(goalDocRef);
+      // Not transactional, but best effort for this migration
+      await createDoc('achievements', newAchievementData);
+      await deleteDoc('goals', goal.id);
 
       toast({
         title: 'Cel Osiągnięty!',
         description: 'Gratulacje! Twój cel został przeniesiony do trofeów.',
       });
       form.reset();
-      setPhotoPreviews([]);
       onConverted();
-    } catch (serverError) {
-      console.error("Error converting goal:", serverError);
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: achievementsCollection.path,
-        operation: 'create',
-        requestResourceData: newAchievementData,
-      }));
-    } finally {
-        form.formState.isSubmitting = false;
+    } catch (error) {
+      console.error("Error converting goal:", error);
+      toast({ title: "Błąd", description: "Nie udało się przenieść celu.", variant: "destructive" });
     }
   }
 
@@ -619,51 +566,15 @@ function ConvertGoalToAchievementForm({ goal, onConverted }: { goal: Goal, onCon
               </FormItem>
             )}
           />
-          <div className="space-y-2">
-            <FormLabel>Zdjęcia (opcjonalnie)</FormLabel>
-            {photoPreviews.length > 0 && (
-                 <Carousel className="w-full max-w-xs mx-auto">
-                    <CarouselContent>
-                        {photoPreviews.map((src, index) => (
-                        <CarouselItem key={index}>
-                            <div className="p-1">
-                            <div className="relative aspect-video w-full">
-                                <Image src={src} alt={`Podgląd zdjęcia ${index + 1}`} layout="fill" objectFit="cover" className="rounded-md" />
-                                <Button
-                                    type="button"
-                                    variant="destructive"
-                                    size="icon"
-                                    className="absolute top-2 right-2 h-6 w-6"
-                                    onClick={() => {
-                                        setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
-                                        remove(index);
-                                    }}
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </div>
-                            </div>
-                        </CarouselItem>
-                        ))}
-                    </CarouselContent>
-                    <CarouselPrevious />
-                    <CarouselNext />
-                </Carousel>
-            )}
-            <Button type="button" variant="outline" className="w-full" onClick={() => photoInputRef.current?.click()}>
-                <Upload className="mr-2 h-4 w-4" />
-                {photoPreviews.length > 0 ? 'Dodaj więcej zdjęć' : 'Dodaj pamiątkowe zdjęcia'}
-            </Button>
-            <Input type="file" ref={photoInputRef} accept="image/*" onChange={handlePhotoChange} className="hidden" multiple />
-          </div>
+          {/* Photo upload UI removed for migration */}
         </div>
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button type="button" variant="secondary" disabled={form.formState.isSubmitting}>Anuluj</Button>
+            <Button type="button" variant="secondary" disabled={isLoading}>Anuluj</Button>
           </DialogClose>
-          <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Button type="submit" disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Zapisz Trofeum
           </Button>
         </DialogFooter>
@@ -682,22 +593,23 @@ export default function GoalsAndAchievementsPage() {
   const [goalToDelete, setGoalToDelete] = useState<Goal | null>(null);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const { user } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
+  const { createDoc, isLoading: isCreating } = useCreateDoc();
+  const { updateDoc, isLoading: isUpdating } = useUpdateDoc();
+  const { deleteDoc, isLoading: isDeleting } = useDeleteDoc();
 
   // Fetch Goals
-  const goalsRef = useMemoFirebase(() =>
-    user ? collection(firestore, `users/${user.uid}/goals`) : null,
-    [user, firestore]
+  const { data: goals, isLoading: goalsLoading, refetch: refetchGoals } = useCollection<Goal>(
+    user ? 'goals' : null,
+    { userId: user?.uid },
   );
-  const { data: goals, isLoading: goalsLoading } = useCollection<Goal>(goalsRef);
 
   // Fetch Achievements
-  const achievementsRef = useMemoFirebase(() =>
-    user ? query(collection(firestore, `users/${user.uid}/achievements`), orderBy('date', 'desc')) : null,
-    [user, firestore]
+  const { data: achievements, isLoading: achievementsLoading, refetch: refetchAchievements } = useCollection<Achievement>(
+    user ? 'achievements' : null,
+    { userId: user?.uid },
+    { sort: { date: -1 } }
   );
-  const { data: achievements, isLoading: achievementsLoading } = useCollection<Achievement>(achievementsRef);
 
   const isLoading = goalsLoading || achievementsLoading;
 
@@ -707,71 +619,46 @@ export default function GoalsAndAchievementsPage() {
   };
 
   const handleGoalFormSubmit = async (data: GoalFormValues) => {
-    if (!user || !firestore) return;
+    if (!user) return;
 
     try {
       if (editingGoal) {
-        // Update
-        const goalDocRef = doc(firestore, `users/${user.uid}/goals`, editingGoal.id);
-        const updatedGoalData = {
-          ...data,
-          deadline: Timestamp.fromDate(data.deadline),
-        };
-        await updateDoc(goalDocRef, updatedGoalData);
+        const updatedGoalData = { ...data, deadline: data.deadline.toISOString() };
+        await updateDoc('goals', editingGoal.id, updatedGoalData);
         toast({ title: 'Cel Zaktualizowany!', description: `Twój cel "${data.title}" został zmieniony.` });
       } else {
-        // Create
-        const goalsCollection = collection(firestore, `users/${user.uid}/goals`);
-        const newGoalData = {
-          ...data,
-          deadline: Timestamp.fromDate(data.deadline),
-          ownerId: user.uid,
-        };
-        await addDoc(goalsCollection, newGoalData);
+        const newGoalData = { ...data, deadline: data.deadline.toISOString(), userId: user.uid };
+        await createDoc('goals', newGoalData);
         toast({ title: 'Cel Ustawiony!', description: `Twój nowy cel "${data.title}" został dodany.` });
       }
-    } catch (serverError) {
-      const path = editingGoal
-        ? `users/${user.uid}/goals/${editingGoal.id}`
-        : `users/${user.uid}/goals`;
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path,
-        operation: editingGoal ? 'update' : 'create',
-        requestResourceData: editingGoal ? {
-          ...data,
-          deadline: Timestamp.fromDate(data.deadline),
-        } : {
-          ...data,
-          deadline: Timestamp.fromDate(data.deadline),
-          ownerId: user.uid,
-        },
-      }));
-      throw serverError; // Re-throw to prevent dialog from closing
+      refetchGoals();
+    } catch (error) {
+      toast({ title: "Błąd", description: "Nie udało się zapisać celu.", variant: "destructive" });
+      throw error; // Re-throw to prevent dialog from closing
     }
   };
 
   const handleAchievementAdded = () => {
     setAchievementDialogOpen(false);
+    refetchAchievements();
   }
 
   const handleGoalConverted = () => {
     setGoalToConvert(null);
+    refetchGoals();
+    refetchAchievements();
   }
 
   const handleDeleteGoal = async () => {
-    if (!goalToDelete || !user || !firestore) return;
-    const goalDocRef = doc(firestore, `users/${user.uid}/goals`, goalToDelete.id);
-    await deleteDoc(goalDocRef)
-      .then(() => {
-        toast({ title: "Cel usunięty", variant: "destructive" });
-        setGoalToDelete(null);
-      })
-      .catch((serverError) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: goalDocRef.path,
-          operation: 'delete',
-        }));
-      });
+    if (!goalToDelete || !user) return;
+    try {
+      await deleteDoc('goals', goalToDelete.id);
+      toast({ title: "Cel usunięty", variant: "destructive" });
+      setGoalToDelete(null);
+      refetchGoals();
+    } catch (error) {
+       toast({ title: "Błąd", description: "Nie udało się usunąć celu.", variant: "destructive" });
+    }
   };
 
   return (
@@ -807,7 +694,7 @@ export default function GoalsAndAchievementsPage() {
                         <div className="flex items-start justify-between">
                             <div>
                                 <CardTitle className="font-headline">{goal.title}</CardTitle>
-                                <CardDescription>Termin: {format(goal.deadline.toDate(), 'd MMM yyyy', { locale: pl })}</CardDescription>
+                                <CardDescription>Termin: {format(new Date(goal.deadline), 'd MMM yyyy', { locale: pl })}</CardDescription>
                             </div>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -845,7 +732,7 @@ export default function GoalsAndAchievementsPage() {
                             </Button>
                         ) : (
                             <p className="text-xs text-muted-foreground w-full text-center">
-                                Pozostało {formatDistanceToNow(goal.deadline.toDate(), { locale: pl, addSuffix: true })}
+                                Pozostało {formatDistanceToNow(new Date(goal.deadline), { locale: pl, addSuffix: true })}
                             </p>
                         )}
                     </CardFooter>
@@ -907,7 +794,7 @@ export default function GoalsAndAchievementsPage() {
                          </Carousel>
                           <CardHeader>
                               <CardTitle className="font-headline">{achievement.title}</CardTitle>
-                              <CardDescription>{format(achievement.date.toDate(), 'd MMMM yyyy', { locale: pl })}</CardDescription>
+                              <CardDescription>{format(new Date(achievement.date), 'd MMMM yyyy', { locale: pl })}</CardDescription>
                           </CardHeader>
                           <CardContent className="flex-grow">
                               <p className="text-sm text-muted-foreground">{achievement.description}</p>
