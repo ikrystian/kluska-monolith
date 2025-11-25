@@ -38,9 +38,9 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { placeholderImages } from '@/lib/placeholder-images';
-import { useDoc, useUser, signOut } from '@/firebase';
+import { useDoc, useUser } from '@/lib/db-hooks';
+import { signOut, signIn } from 'next-auth/react';
 import { Badge } from '@/components/ui/badge';
-import { signIn } from 'next-auth/react';
 import {
   Dialog,
   DialogContent,

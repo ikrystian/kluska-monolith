@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, collection, query, where, doc, setDoc, addDoc, serverTimestamp, orderBy, getDoc, Timestamp, deleteDoc, getDocs, writeBatch, increment } from '@/firebase';
-import type { Conversation, Message, UserProfile, WorkoutPlan, AthleteProfile } from '@/lib/types';
+import { useUser, useCollection, useDoc, useCreateDoc, useUpdateDoc, useDeleteDoc } from '@/lib/db-hooks';
+import type { Conversation, Message, UserProfile, AthleteProfile } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,8 +15,6 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { placeholderImages } from '@/lib/placeholder-images';
 import {
   Dialog,
@@ -43,27 +41,25 @@ import {
 
 function NewConversationDialog({ existingConversationIds }: { existingConversationIds: string[] }) {
     const { user } = useUser();
-    const firestore = useFirestore();
     const router = useRouter();
     const { toast } = useToast();
     const [open, setOpen] = useState(false);
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-    const [isCreating, setIsCreating] = useState(false);
+    const { createDoc, isLoading: isCreating } = useCreateDoc();
 
-    const userProfileRef = useMemoFirebase(() => (user ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
-    const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+    const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(user ? 'users' : null, user?.uid || null);
 
-    const athletesRef = useMemoFirebase(() => {
-        if (!user || userProfile?.role !== 'trainer') return null;
-        return collection(firestore, `trainers/${user.uid}/athletes`);
-    }, [user, userProfile, firestore]);
-    const { data: athletes, isLoading: athletesLoading } = useCollection<UserProfile>(athletesRef);
+    // Get trainer's athletes
+    const { data: athletes, isLoading: athletesLoading } = useCollection<UserProfile>(
+        userProfile?.role === 'trainer' ? 'users' : null,
+        { trainerId: user?.uid }
+    );
 
-    const trainerProfileRef = useMemoFirebase(() => {
-        if (!user || userProfile?.role !== 'athlete' || !(userProfile as AthleteProfile).trainerId) return null;
-        return doc(firestore, 'users', (userProfile as AthleteProfile).trainerId);
-    }, [user, userProfile, firestore]);
-    const { data: trainerProfile, isLoading: trainerLoading } = useDoc<UserProfile>(trainerProfileRef);
+    // Get athlete's trainer
+    const { data: trainerProfile, isLoading: trainerLoading } = useDoc<UserProfile>(
+        userProfile?.role === 'athlete' && (userProfile as AthleteProfile).trainerId ? 'users' : null,
+        (userProfile as AthleteProfile)?.trainerId || null
+    );
 
     const potentialContacts = useMemo(() => {
         let contacts: UserProfile[] = [];
@@ -88,37 +84,25 @@ function NewConversationDialog({ existingConversationIds }: { existingConversati
         const otherUser = potentialContacts.find(c => c.id === selectedUserId);
         if (!otherUser) return;
 
-        setIsCreating(true);
-
         const conversationId = [user.uid, selectedUserId].sort().join('_');
 
-        const batch = writeBatch(firestore);
-
-        const mainConversationRef = doc(firestore, 'conversations', conversationId);
-        const userConversationRef = doc(firestore, `users/${user.uid}/conversations`, conversationId);
-        const otherUserConversationRef = doc(firestore, `users/${selectedUserId}/conversations`, conversationId);
-
-        const newConversation: Conversation = {
-            id: conversationId,
-            participants: [user.uid, selectedUserId],
+        const newConversation: Omit<Conversation, 'id'> = {
+            participantIds: [user.uid, selectedUserId],
             trainerId: userProfile.role === 'trainer' ? user.uid : selectedUserId,
             athleteId: userProfile.role === 'athlete' ? user.uid : selectedUserId,
             trainerName: userProfile.role === 'trainer' ? userProfile.name : otherUser.name,
             athleteName: userProfile.role === 'athlete' ? userProfile.name : otherUser.name,
             lastMessage: null,
-            updatedAt: Timestamp.now(),
+            updatedAt: new Date().toISOString(),
             unreadCount: {
                 [user.uid]: 0,
                 [selectedUserId]: 0,
-            }
+            },
+            _id: conversationId,
         };
 
-        batch.set(mainConversationRef, newConversation);
-        batch.set(userConversationRef, newConversation);
-        batch.set(otherUserConversationRef, newConversation);
-
         try {
-            await batch.commit();
+            await createDoc('conversations', newConversation);
             setOpen(false);
             router.push(`/athlete/chat?conversationId=${conversationId}`);
         } catch (e) {
@@ -128,8 +112,6 @@ function NewConversationDialog({ existingConversationIds }: { existingConversati
                 description: "Nie udało się rozpocząć konwersacji.",
                 variant: "destructive"
             });
-        } finally {
-            setIsCreating(false);
         }
     };
 
@@ -183,48 +165,45 @@ function NewConversationDialog({ existingConversationIds }: { existingConversati
 
 function ChatView({ conversation, onBack }: { conversation: Conversation, onBack: () => void }) {
     const { user } = useUser();
-    const firestore = useFirestore();
     const [newMessage, setNewMessage] = useState('');
     const { toast } = useToast();
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const { createDoc } = useCreateDoc();
+    const { updateDoc } = useUpdateDoc();
 
-    const messagesQuery = useMemoFirebase(
-        () => firestore ? query(collection(firestore, `conversations/${conversation.id}/messages`), orderBy('createdAt', 'asc')) : null,
-        [firestore, conversation.id]
+    const { data: messages, isLoading, refetch: refetchMessages } = useCollection<Message>(
+        conversation ? 'messages' : null,
+        { conversationId: conversation.id },
+        { sort: { createdAt: 1 } }
     );
 
-    const { data: messages, isLoading } = useCollection<Message>(messagesQuery);
+    // Poll for new messages
+    useEffect(() => {
+      const interval = setInterval(() => {
+        refetchMessages();
+      }, 5000); // Poll every 5 seconds
+      return () => clearInterval(interval);
+    }, [refetchMessages]);
 
-    const userProfileRef = useMemoFirebase(() => {
-        if (!user) return null;
-        return doc(firestore, 'users', user.uid);
-      }, [user, firestore]);
-    const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
+    const { data: userProfile } = useDoc<UserProfile>(user ? 'users' : null, user?.uid || null);
 
-    const otherParticipantId = userProfile?.role === 'trainer' ? conversation.athleteId : conversation.trainerId;
+    const otherParticipantId = useMemo(() => {
+        return conversation.participantIds.find(id => id !== user?.uid);
+    }, [conversation, user]);
 
-    const otherParticipantProfileRef = useMemoFirebase(() => {
-        if (!otherParticipantId) return null;
-        return doc(firestore, 'users', otherParticipantId);
-      }, [otherParticipantId, firestore]);
-
-    const { data: otherParticipant } = useDoc<UserProfile>(otherParticipantProfileRef);
+    const { data: otherParticipant } = useDoc<UserProfile>(
+        otherParticipantId ? 'users' : null,
+        otherParticipantId || null
+    );
 
     // Effect to mark messages as read
     useEffect(() => {
-        if (user && firestore && conversation.unreadCount?.[user.uid] > 0) {
-            const batch = writeBatch(firestore);
-            const mainConvRef = doc(firestore, 'conversations', conversation.id);
-            const userConvRef = doc(firestore, `users/${user.uid}/conversations`, conversation.id);
-
+        if (user && conversation && conversation.unreadCount?.[user.uid] > 0) {
             const updateField = `unreadCount.${user.uid}`;
-
-            batch.update(mainConvRef, { [updateField]: 0 });
-            batch.update(userConvRef, { [updateField]: 0 });
-
-            batch.commit().catch(e => console.error("Could not mark messages as read", e));
+            updateDoc('conversations', conversation.id, { [updateField]: 0 })
+                .catch(e => console.error("Could not mark messages as read", e));
         }
-    }, [conversation, user, firestore]);
+    }, [conversation, user, updateDoc]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -236,48 +215,39 @@ function ChatView({ conversation, onBack }: { conversation: Conversation, onBack
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!user || !newMessage.trim() || !firestore) return;
+        if (!user || !newMessage.trim() || !otherParticipantId) return;
 
         const messageText = newMessage.trim();
         setNewMessage('');
 
-        const messagesRef = collection(firestore, `conversations/${conversation.id}/messages`);
+        const now = new Date();
+
+        const newMessageData: Omit<Message, 'id'> = {
+            text: messageText,
+            senderId: user.uid,
+            createdAt: now.toISOString(),
+            conversationId: conversation.id,
+        };
 
         const lastMessageData = {
             text: messageText,
             senderId: user.uid,
-            createdAt: Timestamp.now(),
+            createdAt: now.toISOString(),
         };
 
-        const updateData = {
+        const updateConversationData = {
             lastMessage: lastMessageData,
-            updatedAt: Timestamp.now(),
-            [`unreadCount.${otherParticipantId}`]: increment(1)
+            updatedAt: now.toISOString(),
+            $inc: { [`unreadCount.${otherParticipantId}`]: 1 }
         };
-
-        const batch = writeBatch(firestore);
-
-        // Create new message
-        batch.set(doc(messagesRef), {
-            text: messageText,
-            senderId: user.uid,
-            createdAt: Timestamp.now(),
-            conversationId: conversation.id,
-        });
-
-        // Update metadata on all conversation docs
-        batch.update(doc(firestore, 'conversations', conversation.id), updateData);
-        batch.update(doc(firestore, `users/${user.uid}/conversations`, conversation.id), updateData);
-        batch.update(doc(firestore, `users/${otherParticipantId}/conversations`, conversation.id), updateData);
 
         try {
-            await batch.commit();
+            // This is not transactional, but it's the best we can do with this API structure.
+            // In a real app, this would be a single server-side operation.
+            await createDoc('messages', newMessageData);
+            await updateDoc('conversations', conversation.id, updateConversationData);
+            refetchMessages(); // Refetch immediately after sending
         } catch (e) {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: messagesRef.path,
-                operation: 'create',
-                requestResourceData: { text: messageText }
-            }));
             toast({ title: "Błąd", description: "Nie udało się wysłać wiadomości.", variant: 'destructive' });
             setNewMessage(messageText); // Restore message on failure
         }
@@ -315,7 +285,7 @@ function ChatView({ conversation, onBack }: { conversation: Conversation, onBack
                                 )}>
                                     <p>{message.text}</p>
                                     <p className={cn("text-xs mt-1", isMe ? 'text-primary-foreground/70' : 'text-muted-foreground')}>
-                                        {message.createdAt ? formatDistanceToNow(message.createdAt.toDate(), { addSuffix: true, locale: pl }) : 'teraz'}
+                                        {message.createdAt ? formatDistanceToNow(new Date(message.createdAt), { addSuffix: true, locale: pl }) : 'teraz'}
                                     </p>
                                 </div>
                             </div>
@@ -344,22 +314,19 @@ function ChatView({ conversation, onBack }: { conversation: Conversation, onBack
 
 export default function ChatPage() {
     const { user } = useUser();
-    const firestore = useFirestore();
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
     const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+    const { deleteDoc } = useDeleteDoc();
 
-    const conversationsQuery = useMemoFirebase(
-        () => user ? query(collection(firestore, `users/${user.uid}/conversations`), orderBy('updatedAt', 'desc')) : null,
-        [user, firestore]
+    const { data: conversations, isLoading, refetch: refetchConversations } = useCollection<Conversation>(
+        user ? 'conversations' : null,
+        { participantIds: user?.uid },
+        { sort: { updatedAt: -1 } }
     );
 
-    const { data: conversations, isLoading } = useCollection<Conversation>(conversationsQuery);
-
-    const { data: userProfile } = useDoc<UserProfile>(
-        useMemoFirebase(() => (user ? doc(firestore, 'users', user.uid) : null), [user, firestore])
-    );
+    const { data: userProfile } = useDoc<UserProfile>(user ? 'users' : null, user?.uid || null);
 
     useEffect(() => {
         const conversationIdFromUrl = searchParams.get('conversationId');
@@ -376,39 +343,23 @@ export default function ChatPage() {
     };
 
     const handleDeleteConversation = async (conversation: Conversation) => {
-        if (!user || !firestore) return;
-
-        const otherParticipantId = conversation.participants.find(p => p !== user.uid);
-        if (!otherParticipantId) return;
-
-        const batch = writeBatch(firestore);
-
-        // 1. Delete user's copy
-        const userConvRef = doc(firestore, `users/${user.uid}/conversations`, conversation.id);
-        batch.delete(userConvRef);
-
-        // 2. Delete other participant's copy
-        const otherUserConvRef = doc(firestore, `users/${otherParticipantId}/conversations`, conversation.id);
-        batch.delete(otherUserConvRef);
-
-        // 3. Delete messages subcollection (requires fetching all docs)
-        const messagesRef = collection(firestore, `conversations/${conversation.id}/messages`);
-        const messagesSnapshot = await getDocs(messagesRef);
-        messagesSnapshot.forEach(messageDoc => {
-            batch.delete(messageDoc.ref);
-        });
-
-        // 4. Delete the main conversation document
-        const mainConvRef = doc(firestore, 'conversations', conversation.id);
-        batch.delete(mainConvRef);
+        if (!user) return;
 
         try {
-            await batch.commit();
+            const response = await fetch(`/api/conversations/${conversation.id}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete conversation');
+            }
+
             toast({
                 title: "Konwersacja Usunięta",
-                description: "Cała historia czatu została usunięta.",
+                description: "Historia czatu została usunięta.",
                 variant: 'destructive',
             });
+            refetchConversations();
             if (selectedConversationId === conversation.id) {
                 handleBackToList();
             }

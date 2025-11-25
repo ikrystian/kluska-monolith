@@ -6,8 +6,8 @@ import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc, collection, query, where, doc } from '@/firebase';
-import type { Article, ArticleCategory } from '@/lib/types';
+import { useCollection, useUser, useDoc } from '@/lib/db-hooks';
+import type { Article, ArticleCategory, UserProfile } from '@/lib/types';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
@@ -18,26 +18,16 @@ interface ArticlesByCategory {
 }
 
 export default function KnowledgeZonePage() {
-  const firestore = useFirestore();
   const { user } = useUser();
 
-  const userProfileRef = useMemoFirebase(
-    () => (user ? doc(firestore, `users/${user.uid}`) : null),
-    [user, firestore]
-  );
-  const { data: userProfile } = useDoc(userProfileRef);
+  const { data: userProfile } = useDoc<UserProfile>(user ? 'users' : null, user?.uid || null);
 
-  const categoriesQuery = useMemoFirebase(
-    () => query(collection(firestore, 'articleCategories')),
-    [firestore]
-  );
-  const { data: categories, isLoading: categoriesLoading } = useCollection<ArticleCategory>(categoriesQuery);
+  const { data: categories, isLoading: categoriesLoading } = useCollection<ArticleCategory>('articleCategories');
 
-  const articlesQuery = useMemoFirebase(
-    () => query(collection(firestore, 'articles'), where('status', '==', 'published')),
-    [firestore]
+  const { data: articles, isLoading: articlesLoading } = useCollection<Article>(
+    'articles',
+    { status: 'published' }
   );
-  const { data: articles, isLoading: articlesLoading } = useCollection<Article>(articlesQuery);
 
   const canManage = userProfile?.role === 'admin' || userProfile?.role === 'trainer';
 
@@ -112,7 +102,7 @@ export default function KnowledgeZonePage() {
                     <CardContent className="flex-grow"></CardContent>
                     <CardFooter className="flex justify-between text-sm text-muted-foreground">
                       <span>{article.authorName}</span>
-                      <span>{format(article.createdAt.toDate(), 'd MMM yyyy', { locale: pl })}</span>
+                      <span>{format(new Date(article.createdAt), 'd MMM yyyy', { locale: pl })}</span>
                     </CardFooter>
                   </Card>
                 </Link>
