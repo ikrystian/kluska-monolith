@@ -63,14 +63,22 @@ export default function AthleteDashboardPage() {
   const { data: userProfile } = useDoc<UserProfile>(user ? 'users' : null, user?.uid || null);
 
   // Date ranges
-  const weekStart = startOfWeek(new Date(), { locale: pl });
-  const weekEnd = endOfWeek(new Date(), { locale: pl });
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  const todayEnd = new Date();
-  todayEnd.setHours(23, 59, 59, 999);
+  const { weekStart, weekEnd, thirtyDaysAgo, todayStart, todayEnd } = useMemo(() => {
+    const now = new Date();
+    const weekStart = startOfWeek(now, { locale: pl });
+    const weekEnd = endOfWeek(now, { locale: pl });
+
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(now.getDate() - 30);
+
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+
+    const todayEnd = new Date(now);
+    todayEnd.setHours(23, 59, 59, 999);
+
+    return { weekStart, weekEnd, thirtyDaysAgo, todayStart, todayEnd };
+  }, []);
 
   // Recent workouts (last 5)
   const { data: recentWorkouts, isLoading: workoutsLoading } = useCollection<WorkoutLog>(
