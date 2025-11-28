@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 
-export async function DELETE(req: Request, { params }: { params: { conversationId: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ conversationId: string }> }) {
   try {
+    const { conversationId } = await params;
     const db = await getMongoDb();
-    const conversationId = params.conversationId;
 
     // Start a session for the transaction
     const session = db.client.startSession();

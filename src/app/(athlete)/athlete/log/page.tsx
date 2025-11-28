@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { PlusCircle, Trash2, Save, Loader2, Dumbbell, Upload, Search, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, Clock, History, LayoutList, RotateCcw } from 'lucide-react';
+import { PlusCircle, Trash2, Save, Loader2, Dumbbell, Upload, Search, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, Clock, History, LayoutList, RotateCcw, CheckCircle2, Circle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
@@ -31,6 +31,7 @@ const setSchema = z.object({
   reps: z.coerce.number().min(0, 'Powtórzenia muszą być dodatnie.').optional(),
   weight: z.coerce.number().min(0, 'Ciężar musi być dodatni.').optional(),
   duration: z.coerce.number().min(0, 'Czas musi być dodatni.').optional(),
+  completed: z.boolean().optional(),
 });
 
 const exerciseLogSchema = z.object({
@@ -591,55 +592,91 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
             )}
             {exerciseDetails?.type === 'weight' && <Label className="col-span-5 text-sm text-muted-foreground">Ciężar (kg)</Label>}
           </div>
-          {fields.map((setField, setIndex) => (
-            <div
-              key={setField.id}
-              className={`grid grid-cols-12 gap-2 items-center ${newSetId === setField.id ? 'animate-fade-in' : ''
-                }`}
-            >
-              <p className="font-medium text-sm text-center col-span-1">{setIndex + 1}</p>
+          {fields.map((setField, setIndex) => {
+            const isCompleted = watch(`exercises.${index}.sets.${setIndex}.completed`);
+            const sets = watch(`exercises.${index}.sets`);
+            // Find the first uncompleted set to mark as active
+            // If all are completed, activeSetIndex will be -1
+            const firstUncompletedIndex = sets?.findIndex((s: any) => !s.completed);
+            const isActive = firstUncompletedIndex === setIndex;
 
-              {exerciseDetails?.type === 'duration' ? (
-                <FormField
-                  control={control}
-                  name={`exercises.${index}.sets.${setIndex}.duration`}
-                  render={({ field }) => (
-                    <FormItem className="col-span-5">
-                      <FormControl><Input type="number" placeholder="0" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ) : (
-                <FormField
-                  control={control}
-                  name={`exercises.${index}.sets.${setIndex}.reps`}
-                  render={({ field }) => (
-                    <FormItem className="col-span-5">
-                      <FormControl><Input type="number" placeholder="0" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
+            return (
+              <div
+                key={setField.id}
+                className={`grid grid-cols-12 gap-2 items-center p-2 rounded-md transition-all ${newSetId === setField.id ? 'animate-fade-in' : ''
+                  } ${isCompleted
+                    ? 'opacity-50 bg-secondary/30'
+                    : isActive
+                      ? 'border-2 border-primary bg-primary/5 shadow-sm scale-[1.01]'
+                      : 'bg-transparent'
+                  }`}
+              >
+                <div className="col-span-1 flex justify-center">
+                  <FormField
+                    control={control}
+                    name={`exercises.${index}.sets.${setIndex}.completed`}
+                    render={({ field }) => (
+                      <FormItem className="space-y-0">
+                        <FormControl>
+                          <button
+                            type="button"
+                            onClick={() => field.onChange(!field.value)}
+                            className={`focus:outline-none transition-transform ${isActive ? 'scale-110' : ''}`}
+                          >
+                            {field.value ? (
+                              <CheckCircle2 className="h-6 w-6 text-green-500" />
+                            ) : (
+                              <Circle className={`h-6 w-6 ${isActive ? 'text-primary fill-primary/20' : 'text-muted-foreground'}`} />
+                            )}
+                          </button>
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-              {exerciseDetails?.type === 'weight' && (
-                <FormField
-                  control={control}
-                  name={`exercises.${index}.sets.${setIndex}.weight`}
-                  render={({ field }) => (
-                    <FormItem className="col-span-5">
-                      <FormControl><Input type="number" step="0.5" placeholder="0" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-              <Button type="button" variant="ghost" size="icon" onClick={() => remove(setIndex)} className="col-span-1">
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            </div>
-          ))}
+                {exerciseDetails?.type === 'duration' ? (
+                  <FormField
+                    control={control}
+                    name={`exercises.${index}.sets.${setIndex}.duration`}
+                    render={({ field }) => (
+                      <FormItem className="col-span-5">
+                        <FormControl><Input type="number" placeholder="0" {...field} className={isActive ? "border-primary font-semibold" : ""} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <FormField
+                    control={control}
+                    name={`exercises.${index}.sets.${setIndex}.reps`}
+                    render={({ field }) => (
+                      <FormItem className="col-span-5">
+                        <FormControl><Input type="number" placeholder="0" {...field} className={isActive ? "border-primary font-semibold" : ""} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {exerciseDetails?.type === 'weight' && (
+                  <FormField
+                    control={control}
+                    name={`exercises.${index}.sets.${setIndex}.weight`}
+                    render={({ field }) => (
+                      <FormItem className="col-span-5">
+                        <FormControl><Input type="number" step="0.5" placeholder="0" {...field} className={isActive ? "border-primary font-semibold" : ""} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+                <Button type="button" variant="ghost" size="icon" onClick={() => remove(setIndex)} className="col-span-1">
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+            )
+          })}
           <Button type="button" variant="outline" size="sm" className="w-full" onClick={handleAddSet}>
             <PlusCircle className="mr-2 h-4 w-4" /> Dodaj serię
           </Button>
@@ -685,7 +722,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
       workoutName: workoutDay.dayName,
       exercises: workoutDay.exercises.map(ex => ({
         exerciseId: ex.exerciseId,
-        sets: ex.sets?.map(s => ({ reps: s.reps, weight: s.weight, duration: s.duration })) || [],
+        sets: ex.sets?.map(s => ({ reps: s.reps, weight: s.weight, duration: s.duration, completed: false })) || [],
         duration: ex.duration || 0,
       })),
     };
@@ -697,7 +734,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
       workoutName: log.workoutName,
       exercises: log.exercises.map(ex => ({
         exerciseId: ex.exerciseId,
-        sets: ex.sets.map(s => ({ reps: s.reps, weight: s.weight, duration: s.duration })),
+        sets: ex.sets.map(s => ({ reps: s.reps, weight: s.weight, duration: s.duration, completed: false })),
         duration: ex.duration || 0
       }))
     };

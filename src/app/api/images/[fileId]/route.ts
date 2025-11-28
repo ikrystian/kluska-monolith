@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
-import { GridFSBucket, ObjectId } from 'mongodb';
+import mongoose from 'mongoose';
 
-export async function GET(req: Request, { params }: { params: { fileId: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ fileId: string }> }) {
   try {
+    const { fileId: id } = await params;
     const db = await getMongoDb();
-    const bucket = new GridFSBucket(db, { bucketName: 'images' });
-    const fileId = new ObjectId(params.fileId);
+    const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: 'images' });
+    const fileId = new mongoose.mongo.ObjectId(id);
 
     const downloadStream = bucket.openDownloadStream(fileId);
 

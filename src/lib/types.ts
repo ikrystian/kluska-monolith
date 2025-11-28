@@ -53,6 +53,7 @@ export type WorkoutExerciseLog = {
     reps?: number;
     weight?: number;
     duration?: number;
+    completed?: boolean;
   }[];
   duration?: number; // Actual duration in seconds for time-based exercises
 };
@@ -102,6 +103,7 @@ export type WorkoutDayExercise = {
     reps?: number;
     weight?: number;
     duration?: number;
+    completed?: boolean;
   }[];
   duration?: number; // Duration in seconds for time-based exercises
 };

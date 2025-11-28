@@ -61,6 +61,38 @@ export default function MuscleGroupsPage() {
   const { createDoc, isLoading: isCreating } = useCreateDoc();
   const { updateDoc, isLoading: isUpdating } = useUpdateDoc();
   const { deleteDoc, isLoading: isDeleting } = useDeleteDoc();
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingImage(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error('Upload failed');
+
+      const data = await res.json();
+      const imageUrl = `/api/images/${data.fileId}`;
+      form.setValue('imageUrl', imageUrl);
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się wysłać obrazka.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
 
   const isSubmitting = isCreating || isUpdating;
 
@@ -75,8 +107,8 @@ export default function MuscleGroupsPage() {
   const handleOpenEditDialog = (group: MuscleGroup) => {
     setEditingGroup(group);
     form.reset({
-        name: group.name,
-        imageUrl: group.imageUrl || '',
+      name: group.name,
+      imageUrl: group.imageUrl || '',
     });
     setIsDialogOpen(true);
   };
@@ -193,26 +225,40 @@ export default function MuscleGroupsPage() {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="imageUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>URL Obrazka (opcjonalnie)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://example.com/image.jpg" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+
+                <div className="space-y-2">
+                  <FormLabel>Obrazek</FormLabel>
+                  <div className="flex items-center gap-4">
+                    {form.watch('imageUrl') && (
+                      <div className="relative h-20 w-20 overflow-hidden rounded-md border">
+                        <Image
+                          src={form.watch('imageUrl') || ''}
+                          alt="Preview"
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        disabled={isUploadingImage}
+                      />
+                      {isUploadingImage && <p className="text-xs text-muted-foreground mt-1">Wysyłanie...</p>}
+                    </div>
+                  </div>
+                  <input type="hidden" {...form.register('imageUrl')} />
+                </div>
+
                 <DialogFooter>
                   <DialogClose asChild>
-                    <Button type="button" variant="secondary" disabled={isSubmitting}>
+                    <Button type="button" variant="secondary" disabled={isSubmitting || isUploadingImage}>
                       Anuluj
                     </Button>
                   </DialogClose>
-                  <Button type="submit" disabled={isSubmitting}>
+                  <Button type="submit" disabled={isSubmitting || isUploadingImage}>
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {editingGroup ? 'Zapisz zmiany' : 'Dodaj'}
                   </Button>

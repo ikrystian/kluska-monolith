@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { Readable } from 'stream';
 import { getMongoDb } from '@/lib/mongodb';
-import { GridFSBucket } from 'mongodb';
+import mongoose from 'mongoose';
 
 export async function POST(req: Request) {
   try {
     const db = await getMongoDb();
-    const bucket = new GridFSBucket(db, { bucketName: 'images' });
+    const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: 'images' });
 
     const formData = await req.formData();
     const file = formData.get('file') as File;
