@@ -149,9 +149,20 @@ function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkou
     if (!user || workoutLogId) return;
 
     const createInitialWorkoutLog = async () => {
+      // Map exercises to include exerciseName
+      const exercisesWithNames = initialWorkout.exercises.map(exercise => {
+        const exerciseDetails = allExercises?.find(ex => ex.id === exercise.exerciseId);
+        return {
+          exerciseId: exercise.exerciseId,
+          exerciseName: exerciseDetails?.name || 'Unknown Exercise',
+          sets: exercise.sets || [],
+          duration: exercise.duration,
+        };
+      });
+
       const initialLogData = {
         workoutName: initialWorkout.workoutName,
-        exercises: initialWorkout.exercises,
+        exercises: exercisesWithNames,
         status: 'in-progress',
         startTime: startTime,
         athleteId: user.uid,
@@ -178,7 +189,7 @@ function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkou
     };
 
     createInitialWorkoutLog();
-  }, [user, initialWorkout, onFinishWorkout, workoutLogId, startTime, toast]);
+  }, [user, initialWorkout, onFinishWorkout, workoutLogId, startTime, toast, allExercises]);
 
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -249,9 +260,20 @@ function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkou
       const endTime = new Date();
       const duration = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
 
+      // Map exercises to include exerciseName
+      const exercisesWithNames = data.exercises.map(exercise => {
+        const exerciseDetails = allExercises?.find(ex => ex.id === exercise.exerciseId);
+        return {
+          exerciseId: exercise.exerciseId,
+          exerciseName: exerciseDetails?.name || 'Unknown Exercise',
+          sets: exercise.sets || [],
+          duration: exercise.duration,
+        };
+      });
+
       const finalLogData = {
           workoutName: data.workoutName,
-          exercises: data.exercises,
+          exercises: exercisesWithNames,
           duration: duration,
           endTime: endTime,
           status: 'completed',

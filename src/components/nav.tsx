@@ -62,33 +62,32 @@ const athleteNavItems = [
   { href: '/athlete/templates', icon: Library, label: 'Plany Treningowe' },
   { href: '/athlete/exercises', icon: Dumbbell, label: 'Ćwiczenia' },
   { href: '/athlete/running', icon: Footprints, label: 'Bieganie' },
-  { href: '/athlete/diet', icon: Salad, label: 'Dieta' },
   { href: '/athlete/measurements', icon: Ruler, label: 'Pomiary' },
   { href: '/athlete/history', icon: History, label: 'Historia' },
   { href: '/athlete/goals', icon: Trophy, label: 'Cele i Trofea' },
   { href: '/athlete/knowledge-zone', icon: BookOpen, label: 'Strefa Wiedzy' },
   { href: '/athlete/map', icon: Map, label: 'Mapa' },
+  { href: '/athlete/consultations', icon: MessageSquare, label: 'Konsultacje' },
 ];
 
 const trainerNavItems = [
-    { href: '/trainer/dashboard', icon: LayoutDashboard, label: 'Panel Trenera' },
-    { href: '/trainer/my-athletes', icon: Users, label: 'Moi Sportowcy' },
-    { href: '/trainer/chat', icon: MessageSquare, label: 'Czat' },
-    { href: '/trainer/templates', icon: Library, label: 'Plany Treningowe' },
-    { href: '/trainer/exercises', icon: Dumbbell, label: 'Ćwiczenia' },
-    { href: '/trainer/diet', icon: Salad, label: 'Diety' },
-    { href: '/trainer/knowledge-zone', icon: BookOpen, label: 'Strefa Wiedzy' },
-    { href: '/trainer/map', icon: Map, label: 'Mapa Siłowni' },
+  { href: '/trainer/dashboard', icon: LayoutDashboard, label: 'Panel Trenera' },
+  { href: '/trainer/my-athletes', icon: Users, label: 'Moi Sportowcy' },
+  { href: '/trainer/chat', icon: MessageSquare, label: 'Czat' },
+  { href: '/trainer/templates', icon: Library, label: 'Plany Treningowe' },
+  { href: '/trainer/exercises', icon: Dumbbell, label: 'Ćwiczenia' },
+  { href: '/trainer/knowledge-zone', icon: BookOpen, label: 'Strefa Wiedzy' },
+  { href: '/trainer/map', icon: Map, label: 'Mapa Siłowni' },
 ]
 
 const adminNavItems = [
-    { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { href: '/admin/users', icon: Users, label: 'Użytkownicy' },
-    { href: '/admin/exercises', icon: Dumbbell, label: 'Wszystkie Ćwiczenia' },
-    { href: '/admin/workout-plans', icon: ClipboardList, label: 'Wszystkie Plany' },
-    { href: '/admin/articles', icon: BookMarked, label: 'Wszystkie Artykuły' },
-    { href: '/admin/muscle-groups', icon: RectangleEllipsis, label: 'Grupy Mięśniowe' },
-    { href: '/admin/gyms', icon: Building2, label: 'Siłownie' },
+  { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { href: '/admin/users', icon: Users, label: 'Użytkownicy' },
+  { href: '/admin/exercises', icon: Dumbbell, label: 'Wszystkie Ćwiczenia' },
+  { href: '/admin/workout-plans', icon: ClipboardList, label: 'Wszystkie Plany' },
+  { href: '/admin/articles', icon: BookMarked, label: 'Wszystkie Artykuły' },
+  { href: '/admin/muscle-groups', icon: RectangleEllipsis, label: 'Grupy Mięśniowe' },
+  { href: '/admin/gyms', icon: Building2, label: 'Siłownie' },
 ]
 
 export function AppNav() {
@@ -253,9 +252,9 @@ export function AppNav() {
                   <item.icon />
                   <span>{item.label}</span>
                   {item.href.endsWith('/chat') && totalUnreadCount > 0 && (
-                      <Badge className="absolute right-2 top-1/2 -translate-y-1/2 h-5 min-w-[1.25rem] justify-center px-1.5 group-data-[state=collapsed]:right-auto group-data-[state=collapsed]:left-1/2 group-data-[state=collapsed]:-top-1">
-                          {totalUnreadCount}
-                      </Badge>
+                    <Badge className="absolute right-2 top-1/2 -translate-y-1/2 h-5 min-w-[1.25rem] justify-center px-1.5 group-data-[state=collapsed]:right-auto group-data-[state=collapsed]:left-1/2 group-data-[state=collapsed]:-top-1">
+                      {totalUnreadCount}
+                    </Badge>
                   )}
                 </Link>
               </SidebarMenuButton>
@@ -264,50 +263,50 @@ export function AppNav() {
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter className="space-y-2">
-         <SidebarMenu>
-            {adminSession && (
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip={{ children: 'Powrót do konta admina' }} onClick={handleRestoreAdmin} disabled={isImpersonating}>
-                   <ArrowLeft />
-                   <span>Powrót do admina</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            )}
-            {isAdmin && !adminSession && (
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip={{ children: 'Zaloguj się jako inny użytkownik' }} onClick={() => setIsImpersonationDialogOpen(true)}>
-                   <Users />
-                   <span>Zaloguj się jako...</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            )}
+        <SidebarMenu>
+          {adminSession && (
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip={{ children: 'Profil' }} isActive={pathname === profileHref} onClick={() => setOpenMobile(false)}>
-                 <Link href={profileHref}>
-                    <User />
-                    <span>Profil</span>
-                 </Link>
+              <SidebarMenuButton tooltip={{ children: 'Powrót do konta admina' }} onClick={handleRestoreAdmin} disabled={isImpersonating}>
+                <ArrowLeft />
+                <span>Powrót do admina</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
+          )}
+          {isAdmin && !adminSession && (
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip={{ children: 'Wyloguj' }} onClick={handleLogout}>
-                 <button>
-                    <LogOut />
-                    <span>Wyloguj</span>
-                 </button>
+              <SidebarMenuButton tooltip={{ children: 'Zaloguj się jako inny użytkownik' }} onClick={() => setIsImpersonationDialogOpen(true)}>
+                <Users />
+                <span>Zaloguj się jako...</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
-         </SidebarMenu>
-         <div className="flex items-center gap-3 p-2">
-            <Avatar className="h-10 w-10">
-              {avatarImage && <AvatarImage src={avatarImage.imageUrl} alt="Awatar użytkownika" />}
-              <AvatarFallback>{getInitials(userProfile?.name)}</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col">
-                <span className="font-semibold text-sm">{userProfile?.name || 'Użytkownik'}</span>
-                <span className="text-xs text-muted-foreground capitalize">{userProfile?.role || '...'}</span>
-            </div>
-         </div>
+          )}
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip={{ children: 'Profil' }} isActive={pathname === profileHref} onClick={() => setOpenMobile(false)}>
+              <Link href={profileHref}>
+                <User />
+                <span>Profil</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip={{ children: 'Wyloguj' }} onClick={handleLogout}>
+              <button>
+                <LogOut />
+                <span>Wyloguj</span>
+              </button>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+        <div className="flex items-center gap-3 p-2">
+          <Avatar className="h-10 w-10">
+            {avatarImage && <AvatarImage src={avatarImage.imageUrl} alt="Awatar użytkownika" />}
+            <AvatarFallback>{getInitials(userProfile?.name)}</AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col">
+            <span className="font-semibold text-sm">{userProfile?.name || 'Użytkownik'}</span>
+            <span className="text-xs text-muted-foreground capitalize">{userProfile?.role || '...'}</span>
+          </div>
+        </div>
       </SidebarFooter>
 
       <Dialog open={isImpersonationDialogOpen} onOpenChange={setIsImpersonationDialogOpen}>

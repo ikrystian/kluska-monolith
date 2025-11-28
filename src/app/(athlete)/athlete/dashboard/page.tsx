@@ -223,14 +223,6 @@ export default function AthleteDashboardPage() {
           href="/athlete/running"
         />
         <StatCard
-          title="Kalorie dzisiaj"
-          value={stats.todayCalories}
-          unit="kcal"
-          icon={ChefHat}
-          isLoading={isLoading}
-          href="/athlete/diet"
-        />
-        <StatCard
           title="Przypisane plany"
           value={assignedPlans?.length || 0}
           icon={Award}
@@ -393,12 +385,6 @@ export default function AthleteDashboardPage() {
               <Link href="/athlete/running">
                 <Footprints className="h-8 w-8 mb-2" />
                 <span>Zapisz Bieg</span>
-              </Link>
-            </Button>
-            <Button variant="outline" asChild className="h-auto p-4 flex-col">
-              <Link href="/athlete/diet">
-                <ChefHat className="h-8 w-8 mb-2" />
-                <span>Dodaj Posiłek</span>
               </Link>
             </Button>
           </div>

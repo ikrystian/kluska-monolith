@@ -32,8 +32,8 @@ export type Article = {
 };
 
 export type ArticleCategory = {
-    id: string;
-    name: string;
+  id: string;
+  name: string;
 };
 
 export type Exercise = {
@@ -85,7 +85,7 @@ export type AiWorkoutPlan = {
   description: string;
   workoutDays: {
     day: string;
-    name:string;
+    name: string;
     exercises: {
       name: string;
       sets: string;
@@ -123,11 +123,11 @@ export type PlannedWorkout = {
   date: Timestamp;
   workoutName: string;
   exercises: {
-      name: string;
-      sets?: string;
-      reps?: string;
-      rest?: string;
-      duration?: string;
+    name: string;
+    sets?: string;
+    reps?: string;
+    rest?: string;
+    duration?: string;
   }[];
   ownerId: string;
 };
@@ -159,21 +159,21 @@ export type RunningSession = {
 };
 
 export type FoodItem = {
-    name: string;
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
 };
 
 export type MealType = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
 
 export type Meal = {
-    id: string;
-    ownerId: string;
-    date: Timestamp;
-    type: MealType;
-    foodItems: FoodItem[];
+  id: string;
+  ownerId: string;
+  date: Timestamp;
+  type: MealType;
+  foodItems: FoodItem[];
 };
 
 export type LoggedMeal = {
@@ -210,9 +210,9 @@ export type BodyMeasurement = {
 };
 
 export type Gym = {
-    id: string;
-    name: string;
-    address: string;
+  id: string;
+  name: string;
+  address: string;
 };
 
 export type Conversation = {
@@ -245,5 +245,17 @@ export type Message = {
 export interface AthleteProfile extends UserProfile {
   role: 'athlete';
   trainerId: string;
+}
+
+export interface DietPlan {
+  id: string;
+  name: string;
+  description?: string;
+  trainerId: string;
+  days: {
+    dayNumber: number;
+    meals: Meal[];
+  }[];
+  createdAt: Timestamp;
 }
 
