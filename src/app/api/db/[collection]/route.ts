@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Model } from 'mongoose';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/mongodb';
@@ -24,7 +25,7 @@ import {
   Achievement
 } from '@/models';
 
-const modelMap: Record<string, any> = {
+const modelMap: Record<string, Model<any>> = {
   users: User,
   articles: Article,
   articleCategories: ArticleCategory,
@@ -52,14 +53,18 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
 
-    // Some collections might be public, adjust as needed
-    // if (!session) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
+    const { collection } = await params;
+
+    // Public collections that don't require authentication
+    const PUBLIC_COLLECTIONS = ['articles', 'articleCategories', 'muscleGroups', 'gyms'];
+
+    if (!PUBLIC_COLLECTIONS.includes(collection) && !session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     await connectToDatabase();
 
-    const { collection } = await params;
+
     const Model = modelMap[collection];
 
     if (!Model) {

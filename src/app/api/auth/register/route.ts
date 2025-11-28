@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
   try {
     const { name, email, password, role } = await request.json();
 
-    console.log('Registration attempt:', { name, email, role }); // Debug log
+
 
     if (!name || !email || !password || !role) {
       return NextResponse.json(
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     });
 
     await user.save();
-    console.log('User created successfully:', user._id); // Debug log
+
 
     return NextResponse.json(
       {

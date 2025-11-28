@@ -3,6 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { connectToDatabase } from '@/lib/mongodb';
 import { User } from '@/models/User';
+import { env } from '@/lib/env';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -87,11 +88,11 @@ export const authOptions: NextAuthOptions = {
   jwt: {
     maxAge: 30 * 24 * 60 * 60, // 30 dni dla "Zapamiętaj mnie"
   },
-  secret: process.env.NEXTAUTH_SECRET || 'your-secret-key-change-this-in-production',
+  secret: env.NEXTAUTH_SECRET,
   events: {
     async signIn({ user, account, profile, isNewUser }) {
       // Logowanie dla debugowania
-      console.log('User signed in:', user.email);
+      // console.log('User signed in:', user.email);
     },
   },
 };

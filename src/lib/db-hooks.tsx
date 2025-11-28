@@ -20,7 +20,7 @@ export interface UseDocResult<T> {
 /**
  * Hook to fetch a collection from MongoDB via API
  */
-export function useCollection<T = any>(
+export function useCollection<T>(
   collection: string | null,
   query?: Record<string, any>,
   options?: { sort?: Record<string, 1 | -1>; limit?: number }
@@ -73,7 +73,7 @@ export function useCollection<T = any>(
 /**
  * Hook to fetch a single document from MongoDB via API
  */
-export function useDoc<T = any>(
+export function useDoc<T>(
   collection: string | null,
   id: string | null
 ): UseDocResult<T> {
