@@ -117,6 +117,8 @@ export default function MyAthletesPage() {
   };
 
   const openDietDialog = (athleteId: string) => {
+    const athlete = athletes?.find(a => a.id === athleteId);
+    setSelectedDietId(athlete?.assignedDietPlanId || 'unassign');
     setCurrentAthleteId(athleteId);
     setIsDietDialogOpen(true);
   };
@@ -130,7 +132,7 @@ export default function MyAthletesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           athleteId: currentAthleteId,
-          dietPlanId: selectedDietId || null, // Allow unassigning
+          dietPlanId: selectedDietId === 'unassign' ? null : (selectedDietId || null), // Allow unassigning
         }),
       });
 
@@ -433,7 +435,7 @@ export default function MyAthletesPage() {
                   <SelectValue placeholder="Wybierz dietę" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Brak (Usuń przypisanie)</SelectItem>
+                  <SelectItem value="unassign">Brak (Usuń przypisanie)</SelectItem>
                   {diets.map((diet) => (
                     <SelectItem key={diet._id} value={diet._id}>
                       {diet.name}

@@ -22,6 +22,7 @@ import {
   ClipboardList,
   BookMarked,
   ArrowLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -35,6 +36,9 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   useSidebar,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { placeholderImages } from '@/lib/placeholder-images';
@@ -53,6 +57,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection } from '@/lib/db-hooks';
 import { Loader2 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 export const athleteNavItems = [
   { href: '/athlete/dashboard', icon: LayoutDashboard, label: 'Panel Sportowca' },
@@ -74,6 +79,16 @@ const trainerNavItems = [
   { href: '/trainer/dashboard', icon: LayoutDashboard, label: 'Panel Trenera' },
   { href: '/trainer/my-athletes', icon: Users, label: 'Moi Sportowcy' },
   { href: '/trainer/chat', icon: MessageSquare, label: 'Czat' },
+  {
+    label: 'Dieta',
+    icon: Salad,
+    items: [
+      { href: '/trainer/diet/plans', label: 'Plany Dietetyczne' },
+      { href: '/trainer/diet/plans/create', label: 'Utwórz Plan' },
+      { href: '/trainer/diet/meals', label: 'Posiłki' },
+      { href: '/trainer/diet/meals/create', label: 'Utwórz Posiłek' },
+    ]
+  },
   { href: '/trainer/templates', icon: Library, label: 'Plany Treningowe' },
   { href: '/trainer/exercises', icon: Dumbbell, label: 'Ćwiczenia' },
   { href: '/trainer/knowledge-zone', icon: BookOpen, label: 'Strefa Wiedzy' },
@@ -240,25 +255,52 @@ export function AppNav() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {itemsToRender.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname.startsWith(item.href) && (item.href !== '/athlete/dashboard' && item.href !== '/trainer/dashboard' && item.href !== '/admin/dashboard' || pathname === item.href)}
-                tooltip={{ children: item.label }}
-                onClick={() => setOpenMobile(false)}
-              >
-                <Link href={item.href} className="relative">
-                  <item.icon />
-                  <span>{item.label}</span>
-                  {item.href.endsWith('/chat') && totalUnreadCount > 0 && (
-                    <Badge className="absolute right-2 top-1/2 -translate-y-1/2 h-5 min-w-[1.25rem] justify-center px-1.5 group-data-[state=collapsed]:right-auto group-data-[state=collapsed]:left-1/2 group-data-[state=collapsed]:-top-1">
-                      {totalUnreadCount}
-                    </Badge>
-                  )}
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+          {itemsToRender.map((item: any) => (
+            item.items ? (
+              <Collapsible key={item.label} asChild defaultOpen={item.items.some((subItem: any) => pathname.startsWith(subItem.href))} className="group/collapsible">
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton tooltip={item.label}>
+                      <item.icon />
+                      <span>{item.label}</span>
+                      <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {item.items.map((subItem: any) => (
+                        <SidebarMenuSubItem key={subItem.href}>
+                          <SidebarMenuSubButton asChild isActive={pathname === subItem.href}>
+                            <Link href={subItem.href}>
+                              <span>{subItem.label}</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+            ) : (
+              <SidebarMenuItem key={item.href}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname.startsWith(item.href) && (item.href !== '/athlete/dashboard' && item.href !== '/trainer/dashboard' && item.href !== '/admin/dashboard' || pathname === item.href)}
+                  tooltip={{ children: item.label }}
+                  onClick={() => setOpenMobile(false)}
+                >
+                  <Link href={item.href} className="relative">
+                    <item.icon />
+                    <span>{item.label}</span>
+                    {item.href.endsWith('/chat') && totalUnreadCount > 0 && (
+                      <Badge className="absolute right-2 top-1/2 -translate-y-1/2 h-5 min-w-[1.25rem] justify-center px-1.5 group-data-[state=collapsed]:right-auto group-data-[state=collapsed]:left-1/2 group-data-[state=collapsed]:-top-1">
+                        {totalUnreadCount}
+                      </Badge>
+                    )}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
           ))}
         </SidebarMenu>
       </SidebarContent>
