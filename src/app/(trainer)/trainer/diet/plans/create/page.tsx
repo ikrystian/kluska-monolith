@@ -59,7 +59,7 @@ export default function CreateDietPage() {
             }
         } catch (error) {
             console.error('Error fetching meals:', error);
-            toast({ title: 'Error', description: 'Failed to load saved meals', variant: 'destructive' });
+            toast({ title: 'Błąd', description: 'Nie udało się pobrać zapisanych posiłków', variant: 'destructive' });
         }
     };
 
@@ -96,7 +96,7 @@ export default function CreateDietPage() {
         });
         setDays(newDays);
         setIsMealSelectorOpen(false);
-        toast({ title: 'Added', description: `${meal.name} added to Day ${days[currentDayIndex].dayNumber}` });
+        toast({ title: 'Dodano', description: `${meal.name} dodano do Dnia ${days[currentDayIndex].dayNumber}` });
     };
 
     const removeMealFromDay = (dayIndex: number, mealIndex: number) => {
@@ -107,14 +107,14 @@ export default function CreateDietPage() {
 
     const handleSaveDiet = async () => {
         if (!dietName) {
-            toast({ title: 'Error', description: 'Please enter a diet name', variant: 'destructive' });
+            toast({ title: 'Błąd', description: 'Proszę podać nazwę diety', variant: 'destructive' });
             return;
         }
 
         // Validate that at least one day has meals? Maybe not strictly required but good practice.
         const hasMeals = days.some(d => d.meals.length > 0);
         if (!hasMeals) {
-            toast({ title: 'Warning', description: 'Your diet has no meals. Are you sure?', variant: 'destructive' });
+            toast({ title: 'Ostrzeżenie', description: 'Twoja dieta nie ma posiłków. Jesteś pewien?', variant: 'destructive' });
             // Allow saving empty diets? Let's say yes for now but warn.
         }
 
@@ -137,54 +137,54 @@ export default function CreateDietPage() {
             });
 
             if (res.ok) {
-                toast({ title: 'Success', description: 'Diet plan saved successfully' });
+                toast({ title: 'Sukces', description: 'Plan diety zapisany pomyślnie' });
                 router.push('/trainer/diet/plans');
             } else {
-                toast({ title: 'Error', description: 'Failed to save diet plan', variant: 'destructive' });
+                toast({ title: 'Błąd', description: 'Nie udało się zapisać planu diety', variant: 'destructive' });
             }
         } catch (error) {
             console.error('Save error:', error);
-            toast({ title: 'Error', description: 'Failed to save diet plan', variant: 'destructive' });
+            toast({ title: 'Błąd', description: 'Nie udało się zapisać planu diety', variant: 'destructive' });
         }
     };
 
     return (
         <div className="container mx-auto p-6 space-y-8">
             <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold">Create Diet Plan</h1>
+                <h1 className="text-3xl font-bold">Utwórz Plan Dietetyczny</h1>
                 <Button onClick={handleSaveDiet} className="gap-2">
-                    <Save className="w-4 h-4" /> Save Plan
+                    <Save className="w-4 h-4" /> Zapisz Plan
                 </Button>
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Plan Details</CardTitle>
+                    <CardTitle>Szczegóły Planu</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
-                        <Label>Diet Name</Label>
-                        <Input value={dietName} onChange={(e) => setDietName(e.target.value)} placeholder="e.g., 4-Week Cutting Plan" />
+                        <Label>Nazwa Diety</Label>
+                        <Input value={dietName} onChange={(e) => setDietName(e.target.value)} placeholder="np. Plan Redukcyjny 4 Tygodnie" />
                     </div>
                     <div className="space-y-2">
-                        <Label>Description</Label>
-                        <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Brief description of the diet plan..." />
+                        <Label>Opis</Label>
+                        <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Krótki opis planu diety..." />
                     </div>
                 </CardContent>
             </Card>
 
             <div className="space-y-6">
                 <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-semibold">Days</h2>
+                    <h2 className="text-2xl font-semibold">Dni</h2>
                     <Button onClick={addDay} variant="outline" className="gap-2">
-                        <Plus className="w-4 h-4" /> Add Day
+                        <Plus className="w-4 h-4" /> Dodaj Dzień
                     </Button>
                 </div>
 
                 {days.map((day, dayIndex) => (
                     <Card key={dayIndex}>
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-lg">Day {day.dayNumber}</CardTitle>
+                            <CardTitle className="text-lg">Dzień {day.dayNumber}</CardTitle>
                             {days.length > 1 && (
                                 <Button size="icon" variant="ghost" className="text-destructive" onClick={() => removeDay(dayIndex)}>
                                     <Trash2 className="w-4 h-4" />
@@ -193,20 +193,22 @@ export default function CreateDietPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {day.meals.length === 0 ? (
-                                <p className="text-sm text-muted-foreground italic">No meals added yet.</p>
+                                <p className="text-sm text-muted-foreground italic">Brak dodanych posiłków.</p>
                             ) : (
                                 <div className="space-y-2">
                                     {day.meals.map((meal, mealIndex) => (
                                         <div key={mealIndex} className="flex justify-between items-center p-3 border rounded bg-card">
                                             <div className="flex items-center gap-4">
                                                 <div className="bg-primary/10 p-2 rounded text-primary font-bold text-xs w-20 text-center">
-                                                    {meal.type}
+                                                    {meal.type === 'Breakfast' ? 'Śniadanie' :
+                                                        meal.type === 'Lunch' ? 'Obiad' :
+                                                            meal.type === 'Dinner' ? 'Kolacja' : 'Przekąska'}
                                                     {meal.time && <div className="font-normal text-[10px] flex items-center justify-center gap-1 mt-1"><Clock className="w-3 h-3" /> {meal.time}</div>}
                                                 </div>
                                                 <div>
                                                     <p className="font-medium">{meal.mealName}</p>
                                                     <p className="text-xs text-muted-foreground">
-                                                        {meal.macros.calories.toFixed(0)} kcal | P: {meal.macros.protein.toFixed(0)} | C: {meal.macros.carbs.toFixed(0)} | F: {meal.macros.fat.toFixed(0)}
+                                                        {meal.macros.calories.toFixed(0)} kcal | B: {meal.macros.protein.toFixed(0)} | W: {meal.macros.carbs.toFixed(0)} | T: {meal.macros.fat.toFixed(0)}
                                                     </p>
                                                 </div>
                                             </div>
@@ -218,7 +220,7 @@ export default function CreateDietPage() {
                                 </div>
                             )}
                             <Button variant="secondary" size="sm" className="w-full" onClick={() => openMealSelector(dayIndex)}>
-                                <Plus className="w-4 h-4 mr-2" /> Add Meal
+                                <Plus className="w-4 h-4 mr-2" /> Dodaj Posiłek
                             </Button>
                         </CardContent>
                     </Card>
@@ -228,7 +230,7 @@ export default function CreateDietPage() {
             <Dialog open={isMealSelectorOpen} onOpenChange={setIsMealSelectorOpen}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Select Meal</DialogTitle>
+                        <DialogTitle>Wybierz Posiłek</DialogTitle>
                     </DialogHeader>
                     <MealSelector
                         meals={savedMeals}
@@ -255,10 +257,10 @@ function MealSelector({ meals, onSelect }: { meals: SavedMeal[], onSelect: (meal
     return (
         <div className="space-y-4 py-4">
             <div className="space-y-2">
-                <Label>Meal</Label>
+                <Label>Posiłek</Label>
                 <Select onValueChange={setSelectedMealId}>
                     <SelectTrigger>
-                        <SelectValue placeholder="Select a saved meal" />
+                        <SelectValue placeholder="Wybierz zapisany posiłek" />
                     </SelectTrigger>
                     <SelectContent>
                         {meals.map(meal => (
@@ -272,27 +274,27 @@ function MealSelector({ meals, onSelect }: { meals: SavedMeal[], onSelect: (meal
 
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label>Type</Label>
+                    <Label>Typ</Label>
                     <Select value={type} onValueChange={(v: any) => setType(v)}>
                         <SelectTrigger>
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="Breakfast">Breakfast</SelectItem>
-                            <SelectItem value="Lunch">Lunch</SelectItem>
-                            <SelectItem value="Dinner">Dinner</SelectItem>
-                            <SelectItem value="Snack">Snack</SelectItem>
+                            <SelectItem value="Breakfast">Śniadanie</SelectItem>
+                            <SelectItem value="Lunch">Obiad</SelectItem>
+                            <SelectItem value="Dinner">Kolacja</SelectItem>
+                            <SelectItem value="Snack">Przekąska</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
                 <div className="space-y-2">
-                    <Label>Time (Optional)</Label>
+                    <Label>Godzina (Opcjonalnie)</Label>
                     <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
                 </div>
             </div>
 
             <Button onClick={handleAdd} disabled={!selectedMealId} className="w-full">
-                Add to Day
+                Dodaj do Dnia
             </Button>
         </div>
     );

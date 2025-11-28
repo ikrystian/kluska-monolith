@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const query = searchParams.get('query');
     const foodId = searchParams.get('foodId');
+    const isAutocomplete = searchParams.get('autocomplete') === 'true';
 
     if (foodId) {
         try {
@@ -29,10 +30,16 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        console.log(`[API] Searching for: ${query}`);
-        const foods = await searchFatSecretFood(query);
-        console.log(`[API] Found ${foods.length} items`);
-        return NextResponse.json({ foods });
+        if (isAutocomplete) {
+            const { getFatSecretAutocomplete } = await import('@/lib/fatsecret');
+            const suggestions = await getFatSecretAutocomplete(query);
+            return NextResponse.json({ suggestions });
+        } else {
+            console.log(`[API] Searching for: ${query}`);
+            const foods = await searchFatSecretFood(query);
+            console.log(`[API] Found ${foods.length} items`);
+            return NextResponse.json({ foods });
+        }
     } catch (error) {
         console.error('Error searching foods:', error);
         return NextResponse.json({ error: 'Failed to search foods' }, { status: 500 });

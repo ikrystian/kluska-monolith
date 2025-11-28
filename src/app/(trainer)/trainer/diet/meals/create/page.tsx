@@ -19,6 +19,8 @@ interface Ingredient {
     fat: number;
     source: 'fatsecret' | 'manual';
     fatSecretId?: string;
+    amount: number;
+    unit: string;
     baseValues: {
         amount: number;
         calories: number;
@@ -52,7 +54,7 @@ export default function CreateMealPage() {
             }
         } catch (error) {
             console.error('Search error:', error);
-            toast({ title: 'Error', description: 'Failed to search foods', variant: 'destructive' });
+            toast({ title: 'Błąd', description: 'Nie udało się wyszukać produktów', variant: 'destructive' });
         } finally {
             setIsSearching(false);
         }
@@ -93,13 +95,13 @@ export default function CreateMealPage() {
                     }
                 };
                 setIngredients([...ingredients, newIngredient]);
-                toast({ title: 'Added', description: `${food.food_name} added to meal.` });
+                toast({ title: 'Dodano', description: `${food.food_name} dodano do posiłku.` });
             } else {
-                toast({ title: 'Error', description: 'No serving information found', variant: 'destructive' });
+                toast({ title: 'Błąd', description: 'Brak informacji o porcji', variant: 'destructive' });
             }
         } catch (error) {
             console.error('Add food error:', error);
-            toast({ title: 'Error', description: 'Failed to add food details', variant: 'destructive' });
+            toast({ title: 'Błąd', description: 'Nie udało się pobrać szczegółów produktu', variant: 'destructive' });
         }
     };
 
@@ -128,7 +130,7 @@ export default function CreateMealPage() {
 
         setIngredients([...ingredients, newIngredient]);
         reset();
-        toast({ title: 'Added', description: 'Manual ingredient added.' });
+        toast({ title: 'Dodano', description: 'Składnik dodany ręcznie.' });
     };
 
     const removeIngredient = (index: number) => {
@@ -170,11 +172,11 @@ export default function CreateMealPage() {
 
     const handleSaveMeal = async () => {
         if (!mealName) {
-            toast({ title: 'Error', description: 'Please enter a meal name', variant: 'destructive' });
+            toast({ title: 'Błąd', description: 'Proszę podać nazwę posiłku', variant: 'destructive' });
             return;
         }
         if (ingredients.length === 0) {
-            toast({ title: 'Error', description: 'Please add at least one ingredient', variant: 'destructive' });
+            toast({ title: 'Błąd', description: 'Proszę dodać przynajmniej jeden składnik', variant: 'destructive' });
             return;
         }
 
@@ -193,23 +195,23 @@ export default function CreateMealPage() {
             });
 
             if (res.ok) {
-                toast({ title: 'Success', description: 'Meal saved successfully' });
+                toast({ title: 'Sukces', description: 'Posiłek zapisany pomyślnie' });
                 router.push('/trainer/diet/meals'); // Redirect to list
             } else {
-                toast({ title: 'Error', description: 'Failed to save meal', variant: 'destructive' });
+                toast({ title: 'Błąd', description: 'Nie udało się zapisać posiłku', variant: 'destructive' });
             }
         } catch (error) {
             console.error('Save error:', error);
-            toast({ title: 'Error', description: 'Failed to save meal', variant: 'destructive' });
+            toast({ title: 'Błąd', description: 'Nie udało się zapisać posiłku', variant: 'destructive' });
         }
     };
 
     return (
         <div className="container mx-auto p-6 space-y-8">
             <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold">Create New Meal</h1>
+                <h1 className="text-3xl font-bold">Utwórz Nowy Posiłek</h1>
                 <Button onClick={handleSaveMeal} className="gap-2">
-                    <Save className="w-4 h-4" /> Save Meal
+                    <Save className="w-4 h-4" /> Zapisz Posiłek
                 </Button>
             </div>
 
@@ -218,42 +220,75 @@ export default function CreateMealPage() {
                 <div className="lg:col-span-2 space-y-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Add Ingredients</CardTitle>
+                            <CardTitle>Dodaj Składniki</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <Tabs defaultValue="search">
                                 <TabsList className="grid w-full grid-cols-2">
-                                    <TabsTrigger value="search">Search FatSecret</TabsTrigger>
-                                    <TabsTrigger value="manual">Manual Entry</TabsTrigger>
+                                    <TabsTrigger value="search">Szukaj w FatSecret</TabsTrigger>
+                                    <TabsTrigger value="manual">Ręczne Wprowadzanie</TabsTrigger>
                                 </TabsList>
 
                                 <TabsContent value="search" className="space-y-4">
-                                    <div className="flex gap-2">
-                                        <Input
-                                            placeholder="Search for food (e.g., Chicken Breast)"
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                        />
+                                    <div className="flex gap-2 relative">
+                                        <div className="relative w-full">
+                                            <Input
+                                                placeholder="Szukaj produktu (np. Chicken Breast)"
+                                                value={searchQuery}
+                                                onChange={(e) => {
+                                                    setSearchQuery(e.target.value);
+                                                    if (e.target.value.length > 2) {
+                                                        // Debounce could be added here, but for now direct call
+                                                        fetch(`/api/fatsecret/search?query=${encodeURIComponent(e.target.value)}&autocomplete=true`)
+                                                            .then(res => res.json())
+                                                            .then(data => {
+                                                                if (data.suggestions) {
+                                                                    setSearchResults(data.suggestions.map((s: string) => ({ food_name: s, isSuggestion: true })));
+                                                                }
+                                                            });
+                                                    }
+                                                }}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                                            />
+                                            {/* Suggestions Dropdown (simplified as list below for now) */}
+                                        </div>
                                         <Button onClick={handleSearch} disabled={isSearching}>
-                                            {isSearching ? 'Searching...' : <Search className="w-4 h-4" />}
+                                            {isSearching ? 'Szukanie...' : <Search className="w-4 h-4" />}
                                         </Button>
                                     </div>
 
                                     <div className="space-y-2 max-h-96 overflow-y-auto">
-                                        {searchResults.map((food) => (
-                                            <div key={food.food_id} className="flex justify-between items-center p-3 border rounded hover:bg-accent">
+                                        {searchResults.map((item, idx) => (
+                                            <div key={idx} className="flex justify-between items-center p-3 border rounded hover:bg-accent cursor-pointer"
+                                                onClick={() => {
+                                                    if (item.isSuggestion) {
+                                                        setSearchQuery(item.food_name);
+                                                        handleSearch(); // Trigger full search
+                                                    }
+                                                }}
+                                            >
                                                 <div>
-                                                    <p className="font-medium">{food.food_name}</p>
-                                                    <p className="text-sm text-muted-foreground">{food.food_description}</p>
+                                                    <p className="font-medium">{item.food_name}</p>
+                                                    {!item.isSuggestion && <p className="text-sm text-muted-foreground">{item.food_description}</p>}
                                                 </div>
-                                                <Button size="sm" variant="outline" onClick={() => addFatSecretFood(food)}>
-                                                    <Plus className="w-4 h-4" />
-                                                </Button>
+                                                {!item.isSuggestion && (
+                                                    <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); addFatSecretFood(item); }}>
+                                                        <Plus className="w-4 h-4" />
+                                                    </Button>
+                                                )}
+                                                {item.isSuggestion && (
+                                                    <Button size="sm" variant="ghost" onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSearchQuery(item.food_name);
+                                                        handleSearch();
+                                                    }}>
+                                                        <Search className="w-4 h-4" />
+                                                    </Button>
+                                                )}
                                             </div>
                                         ))}
                                         {searchResults.length === 0 && !isSearching && searchQuery && (
-                                            <p className="text-center text-muted-foreground py-4">No results found.</p>
+                                            <p className="text-center text-muted-foreground py-4">Brak wyników.</p>
                                         )}
                                     </div>
                                 </TabsContent>
@@ -262,34 +297,34 @@ export default function CreateMealPage() {
                                     <form onSubmit={handleSubmit(onManualSubmit)} className="space-y-4">
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <Label>Name</Label>
-                                                <Input {...register('name', { required: true })} placeholder="Ingredient Name" />
+                                                <Label>Nazwa</Label>
+                                                <Input {...register('name', { required: true })} placeholder="Nazwa składnika" />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label>Amount</Label>
+                                                <Label>Ilość</Label>
                                                 <div className="flex gap-2">
                                                     <Input type="number" step="0.1" {...register('amount', { valueAsNumber: true })} placeholder="100" defaultValue={100} />
                                                     <Input {...register('unit')} placeholder="g" defaultValue="g" className="w-20" />
                                                 </div>
                                             </div>
                                             <div className="space-y-2">
-                                                <Label>Calories</Label>
+                                                <Label>Kalorie</Label>
                                                 <Input type="number" step="0.1" {...register('calories', { required: true, valueAsNumber: true })} placeholder="kcal" />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label>Protein (g)</Label>
+                                                <Label>Białko (g)</Label>
                                                 <Input type="number" step="0.1" {...register('protein', { required: true, valueAsNumber: true })} placeholder="g" />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label>Carbs (g)</Label>
+                                                <Label>Węglowodany (g)</Label>
                                                 <Input type="number" step="0.1" {...register('carbs', { required: true, valueAsNumber: true })} placeholder="g" />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label>Fat (g)</Label>
+                                                <Label>Tłuszcz (g)</Label>
                                                 <Input type="number" step="0.1" {...register('fat', { required: true, valueAsNumber: true })} placeholder="g" />
                                             </div>
                                         </div>
-                                        <Button type="submit" className="w-full">Add Ingredient</Button>
+                                        <Button type="submit" className="w-full">Dodaj Składnik</Button>
                                     </form>
                                 </TabsContent>
                             </Tabs>
@@ -301,20 +336,20 @@ export default function CreateMealPage() {
                 <div className="space-y-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Meal Details</CardTitle>
+                            <CardTitle>Szczegóły Posiłku</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Meal Name</Label>
+                                <Label>Nazwa Posiłku</Label>
                                 <Input
                                     value={mealName}
                                     onChange={(e) => setMealName(e.target.value)}
-                                    placeholder="e.g., High Protein Breakfast"
+                                    placeholder="np. Wysokobiałkowe Śniadanie"
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <h3 className="font-semibold">Ingredients ({ingredients.length})</h3>
+                                <h3 className="font-semibold">Składniki ({ingredients.length})</h3>
                                 <div className="space-y-2 max-h-60 overflow-y-auto">
                                     {ingredients.map((ing, idx) => (
                                         <div key={idx} className="flex flex-col p-3 bg-muted rounded gap-2">
@@ -322,7 +357,7 @@ export default function CreateMealPage() {
                                                 <div>
                                                     <p className="font-medium">{ing.name}</p>
                                                     <p className="text-xs text-muted-foreground">
-                                                        {ing.calories.toFixed(1)} kcal | P: {ing.protein.toFixed(1)}g | C: {ing.carbs.toFixed(1)}g | F: {ing.fat.toFixed(1)}g
+                                                        {ing.calories.toFixed(1)} kcal | B: {ing.protein.toFixed(1)}g | W: {ing.carbs.toFixed(1)}g | T: {ing.fat.toFixed(1)}g
                                                     </p>
                                                 </div>
                                                 <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => removeIngredient(idx)}>
@@ -330,7 +365,7 @@ export default function CreateMealPage() {
                                                 </Button>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <Label className="text-xs">Amount:</Label>
+                                                <Label className="text-xs">Ilość:</Label>
                                                 <Input
                                                     type="number"
                                                     className="h-7 w-20 text-xs"
@@ -346,19 +381,19 @@ export default function CreateMealPage() {
 
                             <div className="pt-4 border-t space-y-2">
                                 <div className="flex justify-between font-bold">
-                                    <span>Total Calories</span>
+                                    <span>Kalorie Całkowite</span>
                                     <span>{totals.calories.toFixed(1)} kcal</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span>Protein</span>
+                                    <span>Białko</span>
                                     <span>{totals.protein.toFixed(1)} g</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span>Carbs</span>
+                                    <span>Węglowodany</span>
                                     <span>{totals.carbs.toFixed(1)} g</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span>Fat</span>
+                                    <span>Tłuszcz</span>
                                     <span>{totals.fat.toFixed(1)} g</span>
                                 </div>
                             </div>

@@ -135,10 +135,43 @@ export async function searchFatSecretFood(query: string): Promise<FatSecretFood[
     const foods = data.foods_search?.results?.food || data.foods?.food || [];
     // Ensure it's always an array (API might return single object if only one result)
     return Array.isArray(foods) ? foods : [foods];
-    // } catch (error) {
-    //     console.error('Error searching FatSecret:', error);
-    //     return [];
-    // }
+}
+
+export async function getFatSecretAutocomplete(query: string): Promise<string[]> {
+    try {
+        const token = await getAccessToken();
+        const params = new URLSearchParams({
+            expression: query,
+            format: 'json',
+        });
+
+        const response = await fetch(`https://platform.fatsecret.com/rest/food/autocomplete/v1?${params.toString()}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            cache: 'no-store',
+        });
+
+        if (!response.ok) {
+            throw new Error(`FatSecret API error: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+            // Error 101 means no results/API not resolved usually, but let's handle gracefully
+            return [];
+        }
+
+        const suggestions = data.suggestions?.suggestion || [];
+        return Array.isArray(suggestions) ? suggestions : [suggestions];
+
+    } catch (error) {
+        console.error('Error getting FatSecret autocomplete:', error);
+        return [];
+    }
 }
 
 export async function getFatSecretFoodDetails(foodId: string): Promise<FatSecretServing[]> {
