@@ -105,10 +105,32 @@ export default function CreateMealPage() {
         }
     };
 
-    const onManualSubmit = (data: any) => {
-        // Assume manual entry is for 100g if not specified, but let's add fields for it
+    const onManualSubmit = async (data: any) => {
+        // Assume manual entry is for 100g if not specified
         const amount = data.amount || 100;
         const unit = data.unit || 'g';
+
+        // Save to DB
+        try {
+            const res = await fetch('/api/trainer/products', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: data.name,
+                    calories: data.calories,
+                    protein: data.protein,
+                    carbs: data.carbs,
+                    fat: data.fat,
+                    unit: unit
+                })
+            });
+
+            if (res.ok) {
+                toast({ title: 'Zapisano', description: 'Produkt został zapisany w Twojej bazie.' });
+            }
+        } catch (error) {
+            console.error('Failed to save custom product', error);
+        }
 
         const newIngredient: Ingredient = {
             name: data.name,
@@ -238,19 +260,41 @@ export default function CreateMealPage() {
                                                 onChange={(e) => {
                                                     setSearchQuery(e.target.value);
                                                     if (e.target.value.length > 2) {
-                                                        // Debounce could be added here, but for now direct call
-                                                        fetch(`/api/fatsecret/search?query=${encodeURIComponent(e.target.value)}&autocomplete=true`)
-                                                            .then(res => res.json())
-                                                            .then(data => {
-                                                                if (data.suggestions) {
-                                                                    setSearchResults(data.suggestions.map((s: string) => ({ food_name: s, isSuggestion: true })));
-                                                                }
-                                                            });
+                                                        const query = encodeURIComponent(e.target.value);
+
+                                                        // Fetch both local and FatSecret suggestions
+                                                        Promise.all([
+                                                            fetch(`/api/trainer/products?query=${query}`).then(res => res.json()),
+                                                            fetch(`/api/fatsecret/search?query=${query}&autocomplete=true`).then(res => res.json())
+                                                        ]).then(([localData, fatSecretData]) => {
+                                                            let combinedResults: any[] = [];
+
+                                                            // Add Local Results
+                                                            if (localData.products) {
+                                                                combinedResults = [...combinedResults, ...localData.products.map((p: any) => ({
+                                                                    ...p,
+                                                                    food_name: p.name,
+                                                                    food_description: `${p.calories} kcal | B: ${p.protein} | W: ${p.carbs} | T: ${p.fat}`,
+                                                                    isLocal: true,
+                                                                    isSuggestion: false // Local products are full items, not just suggestions
+                                                                }))];
+                                                            }
+
+                                                            // Add FatSecret Suggestions
+                                                            if (fatSecretData.suggestions) {
+                                                                combinedResults = [...combinedResults, ...fatSecretData.suggestions.map((s: string) => ({
+                                                                    food_name: s,
+                                                                    isSuggestion: true,
+                                                                    isLocal: false
+                                                                }))];
+                                                            }
+
+                                                            setSearchResults(combinedResults);
+                                                        });
                                                     }
                                                 }}
                                                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                                             />
-                                            {/* Suggestions Dropdown (simplified as list below for now) */}
                                         </div>
                                         <Button onClick={handleSearch} disabled={isSearching}>
                                             {isSearching ? 'Szukanie...' : <Search className="w-4 h-4" />}
@@ -259,20 +303,72 @@ export default function CreateMealPage() {
 
                                     <div className="space-y-2 max-h-96 overflow-y-auto">
                                         {searchResults.map((item, idx) => (
-                                            <div key={idx} className="flex justify-between items-center p-3 border rounded hover:bg-accent cursor-pointer"
+                                            <div key={idx} className={`flex justify-between items-center p-3 border rounded hover:bg-accent cursor-pointer ${item.isLocal ? 'bg-green-50/50 border-green-200' : ''}`}
                                                 onClick={() => {
                                                     if (item.isSuggestion) {
                                                         setSearchQuery(item.food_name);
-                                                        handleSearch(); // Trigger full search
+                                                        handleSearch(); // Trigger full search for FatSecret suggestion
+                                                    } else if (item.isLocal) {
+                                                        // Directly add local product
+                                                        const baseAmount = 100; // Default for local products
+                                                        const newIngredient: Ingredient = {
+                                                            name: item.name,
+                                                            calories: item.calories,
+                                                            protein: item.protein,
+                                                            carbs: item.carbs,
+                                                            fat: item.fat,
+                                                            source: 'manual', // Treat as manual/custom
+                                                            amount: baseAmount,
+                                                            unit: item.unit || 'g',
+                                                            baseValues: {
+                                                                amount: baseAmount,
+                                                                calories: item.calories,
+                                                                protein: item.protein,
+                                                                carbs: item.carbs,
+                                                                fat: item.fat,
+                                                            }
+                                                        };
+                                                        setIngredients([...ingredients, newIngredient]);
+                                                        toast({ title: 'Dodano', description: `${item.name} dodano do posiłku.` });
                                                     }
                                                 }}
                                             >
                                                 <div>
-                                                    <p className="font-medium">{item.food_name}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-medium">{item.food_name}</p>
+                                                        {item.isLocal && <span className="text-[10px] bg-green-100 text-green-800 px-1 rounded">Moje</span>}
+                                                    </div>
                                                     {!item.isSuggestion && <p className="text-sm text-muted-foreground">{item.food_description}</p>}
                                                 </div>
                                                 {!item.isSuggestion && (
-                                                    <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); addFatSecretFood(item); }}>
+                                                    <Button size="sm" variant="outline" onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (item.isLocal) {
+                                                            // Duplicate logic from onClick above, refactor ideally
+                                                            const baseAmount = 100;
+                                                            const newIngredient: Ingredient = {
+                                                                name: item.name,
+                                                                calories: item.calories,
+                                                                protein: item.protein,
+                                                                carbs: item.carbs,
+                                                                fat: item.fat,
+                                                                source: 'manual',
+                                                                amount: baseAmount,
+                                                                unit: item.unit || 'g',
+                                                                baseValues: {
+                                                                    amount: baseAmount,
+                                                                    calories: item.calories,
+                                                                    protein: item.protein,
+                                                                    carbs: item.carbs,
+                                                                    fat: item.fat,
+                                                                }
+                                                            };
+                                                            setIngredients([...ingredients, newIngredient]);
+                                                            toast({ title: 'Dodano', description: `${item.name} dodano do posiłku.` });
+                                                        } else {
+                                                            addFatSecretFood(item);
+                                                        }
+                                                    }}>
                                                         <Plus className="w-4 h-4" />
                                                     </Button>
                                                 )}
