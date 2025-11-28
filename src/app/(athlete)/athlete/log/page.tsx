@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { PlusCircle, Trash2, Save, Loader2, Dumbbell, Upload, Search, ArrowLeft, ArrowRight } from 'lucide-react';
+import { PlusCircle, Trash2, Save, Loader2, Dumbbell, Upload, Search, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
@@ -23,6 +23,7 @@ import type { WorkoutPlan, Exercise, WorkoutLog, WorkoutDay } from '@/lib/types'
 import { useCollection, useUser } from '@/lib/db-hooks';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetFooter, SheetClose } from '@/components/ui/sheet';
 
 // --- SCHEMA DEFINITIONS ---
 const setSchema = z.object({
@@ -45,7 +46,8 @@ type LogFormValues = z.infer<typeof logSchema>;
 
 
 // --- ADD EXERCISE DIALOG ---
-function AddExerciseDialog({ allExercises, onAddExercise, planExerciseIds }: { allExercises: Exercise[] | null; onAddExercise: (exerciseId: string) => void; planExerciseIds?: string[] }) {
+// --- ADD EXERCISE SHEET ---
+function AddExerciseSheet({ allExercises, onAddExercise, planExerciseIds }: { allExercises: Exercise[] | null; onAddExercise: (exerciseId: string) => void; planExerciseIds?: string[] }) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -66,53 +68,58 @@ function AddExerciseDialog({ allExercises, onAddExercise, planExerciseIds }: { a
 
   const handleSelectExercise = (exerciseId: string) => {
     onAddExercise(exerciseId);
-    setOpen(false); // Close the dialog after adding
+    setOpen(false); // Close the sheet after adding
     setSearchTerm('');
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="w-full border-dashed">
-          <PlusCircle className="mr-2 h-4 w-4" /> Dodaj ćwiczenie do treningu
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button variant="outline" size="icon" className="h-12 w-12 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90">
+          <PlusCircle className="h-6 w-6" />
         </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Wybierz Ćwiczenie</DialogTitle>
-        </DialogHeader>
-        <div className="flex items-center space-x-2">
-          <Input
-            placeholder="Szukaj ćwiczenia..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <ScrollArea className="h-72">
-          <div className="space-y-2 pr-4">
-            {filteredExercises?.map(ex => (
-              <div
-                key={ex.id}
-                onClick={() => handleSelectExercise(ex.id)}
-                className="flex justify-between items-center p-3 rounded-md border cursor-pointer hover:bg-secondary"
-              >
-                <div>
-                  <p className="font-semibold">{ex.name}</p>
-                  <p className="text-sm text-muted-foreground">{ex.muscleGroup}</p>
-                </div>
-                <Button variant="ghost" size="icon"><PlusCircle className="h-5 w-5 text-primary"/></Button>
-              </div>
-            ))}
+      </SheetTrigger>
+      <SheetContent side="bottom" className="h-[85vh]">
+        <SheetHeader>
+          <SheetTitle>Wybierz Ćwiczenie</SheetTitle>
+          <SheetDescription>Znajdź i dodaj ćwiczenie do swojego treningu.</SheetDescription>
+        </SheetHeader>
+        <div className="py-4">
+          <div className="flex items-center space-x-2 mb-4">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Szukaj ćwiczenia..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1"
+            />
           </div>
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
+          <ScrollArea className="h-[60vh]">
+            <div className="space-y-2 pr-4">
+              {filteredExercises?.map(ex => (
+                <div
+                  key={ex.id}
+                  onClick={() => handleSelectExercise(ex.id)}
+                  className="flex justify-between items-center p-3 rounded-md border cursor-pointer hover:bg-secondary"
+                >
+                  <div>
+                    <p className="font-semibold">{ex.name}</p>
+                    <p className="text-sm text-muted-foreground">{ex.muscleGroup}</p>
+                  </div>
+                  <Button variant="ghost" size="icon"><PlusCircle className="h-5 w-5 text-primary" /></Button>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 
 
-// --- ACTIVE WORKOUT - "FROM SCRATCH" ---
-function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkout, planExerciseIds }: { initialWorkout: LogFormValues; allExercises: Exercise[] | null; onFinishWorkout: () => void; planExerciseIds?: string[] }) {
+// --- ACTIVE WORKOUT VIEW ---
+function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, planExerciseIds }: { initialWorkout: LogFormValues; allExercises: Exercise[] | null; onFinishWorkout: () => void; planExerciseIds?: string[] }) {
   const [startTime] = useState(new Date());
   const [workoutLogId, setWorkoutLogId] = useState<string | null>(null);
   const [isFinished, setIsFinished] = useState(false);
@@ -227,85 +234,85 @@ function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkou
 
 
   const handleSaveWorkout = async (data: LogFormValues) => {
-      if (!user || !workoutLogId) return;
+    if (!user || !workoutLogId) return;
 
-      setIsSaving(true);
+    setIsSaving(true);
 
-      let photoURL: string | undefined = undefined;
-      if (photoFile) {
-        try {
-          const formData = new FormData();
-          formData.append('file', photoFile);
-          formData.append('userId', user.uid);
+    let photoURL: string | undefined = undefined;
+    if (photoFile) {
+      try {
+        const formData = new FormData();
+        formData.append('file', photoFile);
+        formData.append('userId', user.uid);
 
-          const uploadResponse = await fetch('/api/upload', {
-            method: 'POST',
-            body: formData,
-          });
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
 
-          if (uploadResponse.ok) {
-            const uploadResult = await uploadResponse.json();
-            photoURL = uploadResult.url;
-          }
-        } catch (error) {
-          console.error("Error uploading photo: ", error);
-          toast({
-            title: 'Błąd przesyłania zdjęcia',
-            description: 'Nie udało się przesłać zdjęcia. Trening zostanie zapisany bez niego.',
-            variant: 'destructive',
-          });
+        if (uploadResponse.ok) {
+          const uploadResult = await uploadResponse.json();
+          photoURL = uploadResult.url;
         }
+      } catch (error) {
+        console.error("Error uploading photo: ", error);
+        toast({
+          title: 'Błąd przesyłania zdjęcia',
+          description: 'Nie udało się przesłać zdjęcia. Trening zostanie zapisany bez niego.',
+          variant: 'destructive',
+        });
       }
+    }
 
-      const endTime = new Date();
-      const duration = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
+    const endTime = new Date();
+    const duration = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
 
-      // Map exercises to include exerciseName
-      const exercisesWithNames = data.exercises.map(exercise => {
-        const exerciseDetails = allExercises?.find(ex => ex.id === exercise.exerciseId);
-        return {
-          exerciseId: exercise.exerciseId,
-          exerciseName: exerciseDetails?.name || 'Unknown Exercise',
-          sets: exercise.sets || [],
-          duration: exercise.duration,
-        };
+    // Map exercises to include exerciseName
+    const exercisesWithNames = data.exercises.map(exercise => {
+      const exerciseDetails = allExercises?.find(ex => ex.id === exercise.exerciseId);
+      return {
+        exerciseId: exercise.exerciseId,
+        exerciseName: exerciseDetails?.name || 'Unknown Exercise',
+        sets: exercise.sets || [],
+        duration: exercise.duration,
+      };
+    });
+
+    const finalLogData = {
+      workoutName: data.workoutName,
+      exercises: data.exercises,
+      duration: duration,
+      endTime: endTime,
+      status: 'completed',
+      ...(photoURL && { photoURL }),
+    };
+
+    try {
+      const response = await fetch(`/api/db/workoutLogs/${workoutLogId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(finalLogData),
       });
 
-      const finalLogData = {
-          workoutName: data.workoutName,
-          exercises: exercisesWithNames,
-          duration: duration,
-          endTime: endTime,
-          status: 'completed',
-          ...(photoURL && { photoURL }),
-      };
-
-      try {
-        const response = await fetch(`/api/db/workoutLogs/${workoutLogId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(finalLogData),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to save workout');
-        }
-
-        toast({
-            title: 'Trening Zapisany!',
-            description: `${data.workoutName} został zapisany w Twojej historii.`,
-        });
-        router.push(`/athlete/history/${workoutLogId}`);
-      } catch (error) {
-        console.error('Error saving workout:', error);
-        toast({
-            title: 'Błąd',
-            description: 'Nie udało się zapisać treningu.',
-            variant: 'destructive',
-        });
-      } finally {
-        setIsSaving(false);
+      if (!response.ok) {
+        throw new Error('Failed to save workout');
       }
+
+      toast({
+        title: 'Trening Zapisany!',
+        description: `${data.workoutName} został zapisany w Twojej historii.`,
+      });
+      router.push(`/athlete/history/${workoutLogId}`);
+    } catch (error) {
+      console.error('Error saving workout:', error);
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się zapisać treningu.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (isFinished) {
@@ -316,30 +323,30 @@ function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkou
           <CardDescription className="text-center">Przejrzyj podsumowanie i zapisz swoją sesję.</CardDescription>
         </CardHeader>
         <CardContent className="text-center space-y-4">
-            <p><span className="font-semibold">Nazwa:</span> {form.getValues('workoutName')}</p>
-            <p><span className="font-semibold">Ćwiczenia:</span> {form.getValues('exercises').length}</p>
-            <p><span className="font-semibold">Czas trwania:</span> {Math.round((new Date().getTime() - startTime.getTime()) / (1000 * 60))} minut</p>
+          <p><span className="font-semibold">Nazwa:</span> {form.getValues('workoutName')}</p>
+          <p><span className="font-semibold">Ćwiczenia:</span> {form.getValues('exercises').length}</p>
+          <p><span className="font-semibold">Czas trwania:</span> {Math.round((new Date().getTime() - startTime.getTime()) / (1000 * 60))} minut</p>
 
-            <div className="pt-4 space-y-4">
-                {photoPreview && (
-                  <div className="relative w-full aspect-video rounded-md overflow-hidden mb-2">
-                    <Image src={photoPreview} alt="Podgląd zdjęcia" layout="fill" objectFit="cover" />
-                  </div>
-                )}
-                <Button variant="outline" className="w-full" onClick={() => photoInputRef.current?.click()}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    {photoFile ? 'Zmień zdjęcie' : 'Dodaj zdjęcie'}
-                </Button>
-                <input type="file" ref={photoInputRef} accept="image/*" onChange={handlePhotoChange} className="hidden" />
-            </div>
+          <div className="pt-4 space-y-4">
+            {photoPreview && (
+              <div className="relative w-full aspect-video rounded-md overflow-hidden mb-2">
+                <Image src={photoPreview} alt="Podgląd zdjęcia" layout="fill" objectFit="cover" />
+              </div>
+            )}
+            <Button variant="outline" className="w-full" onClick={() => photoInputRef.current?.click()}>
+              <Upload className="mr-2 h-4 w-4" />
+              {photoFile ? 'Zmień zdjęcie' : 'Dodaj zdjęcie'}
+            </Button>
+            <input type="file" ref={photoInputRef} accept="image/*" onChange={handlePhotoChange} className="hidden" />
+          </div>
 
         </CardContent>
         <CardFooter className="flex-col gap-2">
-            <Button onClick={form.handleSubmit(handleSaveWorkout)} className="w-full" disabled={isSaving}>
-                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
-                Zapisz i Zakończ
-            </Button>
-            <Button onClick={() => setIsFinished(false)} variant="outline" className="w-full" disabled={isSaving}>Wróć do treningu</Button>
+          <Button onClick={form.handleSubmit(handleSaveWorkout)} className="w-full" disabled={isSaving}>
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            Zapisz i Zakończ
+          </Button>
+          <Button onClick={onFinishWorkout} variant="destructive" className="w-full">Anuluj Trening</Button>
         </CardFooter>
       </Card>
     )
@@ -350,95 +357,116 @@ function ActiveWorkoutFromScratch({ initialWorkout, allExercises, onFinishWorkou
   const exerciseDetails = allExercises?.find(ex => ex.id === selectedExerciseId);
 
   return (
-    <Card>
+    <div className="flex flex-col h-[calc(100vh-6rem)] md:h-auto relative">
       <FormProvider {...form}>
-        <form onSubmit={form.handleSubmit(() => setIsFinished(true))}>
-          <CardHeader>
-            <FormField
-              control={form.control}
-              name="workoutName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input {...field} className="text-xl font-headline font-bold border-0 shadow-none p-0 focus-visible:ring-0" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <CardDescription>{format(new Date(), "EEEE, d MMMM", { locale: pl })}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-             {currentExercise ? (
-                <div className={newExerciseId === currentExercise.exerciseId ? 'animate-slide-in-up' : ''}>
-                  <ExerciseCard
-                      key={currentExercise.id}
-                      index={activeExerciseIndex}
-                      exerciseDetails={exerciseDetails}
-                      onRemoveExercise={() => handleRemoveExercise(activeExerciseIndex)}
-                  />
-                </div>
+        <form onSubmit={form.handleSubmit(() => setIsFinished(true))} className="flex flex-col h-full">
+
+          {/* Header Section */}
+          <div className="flex justify-between items-center mb-4 px-1">
+            <div className="flex-1">
+              <FormField
+                control={form.control}
+                name="workoutName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input {...field} className="text-xl font-headline font-bold border-0 shadow-none p-0 focus-visible:ring-0 bg-transparent" />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <p className="text-xs text-muted-foreground">{format(new Date(), "EEEE, d MMMM", { locale: pl })}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center text-sm font-mono bg-secondary px-2 py-1 rounded">
+                <Clock className="h-3 w-3 mr-1" />
+                {Math.round((new Date().getTime() - startTime.getTime()) / (1000 * 60))}m
+              </div>
+              <Button type="submit" size="sm" disabled={fields.length === 0}>
+                Zakończ
+              </Button>
+            </div>
+          </div>
+
+          {/* Main Content - Scrollable */}
+          <div className="flex-1 overflow-y-auto pb-24 px-1 scrollbar-hide">
+            {currentExercise ? (
+              <div className={newExerciseId === currentExercise.exerciseId ? 'animate-slide-in-up' : ''}>
+                <ExerciseCard
+                  key={currentExercise.id}
+                  index={activeExerciseIndex}
+                  exerciseDetails={exerciseDetails}
+                  onRemoveExercise={() => handleRemoveExercise(activeExerciseIndex)}
+                />
+              </div>
             ) : (
-              <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center">
+              <div className="flex flex-col items-center justify-center h-64 rounded-lg border-2 border-dashed p-8 text-center">
                 <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-4 text-xl font-semibold">Rozpocznij trening</h3>
                 <p className="mt-1 text-sm text-muted-foreground mb-4">Dodaj pierwsze ćwiczenie, aby zacząć.</p>
               </div>
             )}
 
-            <div className="flex items-center gap-2">
-                <div className="flex-1">
-                    <AddExerciseDialog
-                        allExercises={allExercises}
-                        onAddExercise={handleAddExercise}
-                        planExerciseIds={planExerciseIds}
-                    />
-                </div>
-                {fields.length > 0 && (
-                    <>
-                        <Button type="button" variant="outline" size="icon" disabled={activeExerciseIndex === 0} onClick={() => setActiveExerciseIndex(prev => prev - 1)}>
-                            <ArrowLeft className="h-4 w-4" />
-                        </Button>
-                        <span className="text-sm font-medium text-muted-foreground">
-                            {activeExerciseIndex + 1} / {fields.length}
-                        </span>
-                        <Button type="button" variant="outline" size="icon" disabled={activeExerciseIndex === fields.length - 1} onClick={() => setActiveExerciseIndex(prev => prev + 1)}>
-                            <ArrowRight className="h-4 w-4" />
-                        </Button>
-                    </>
-                )}
+            {/* Spacer for bottom bar */}
+            <div className="h-20"></div>
+          </div>
+
+          {/* Bottom Navigation Bar */}
+          <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t p-4 flex justify-between items-center z-50 md:absolute md:rounded-b-lg">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              disabled={activeExerciseIndex === 0 || fields.length === 0}
+              onClick={() => setActiveExerciseIndex(prev => prev - 1)}
+            >
+              <ArrowLeft className="h-6 w-6" />
+            </Button>
+
+            <div className="-mt-8">
+              <AddExerciseSheet
+                allExercises={allExercises}
+                onAddExercise={handleAddExercise}
+                planExerciseIds={planExerciseIds}
+              />
             </div>
 
-          </CardContent>
-          <CardFooter className="flex-col gap-2">
-            <Button type="submit" className="w-full" disabled={fields.length === 0}>Zakończ Trening</Button>
-            <Button onClick={onFinishWorkout} variant="destructive" className="w-full">Anuluj Trening</Button>
-          </CardFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              disabled={activeExerciseIndex === fields.length - 1 || fields.length === 0}
+              onClick={() => setActiveExerciseIndex(prev => prev + 1)}
+            >
+              <ArrowRight className="h-6 w-6" />
+            </Button>
+          </div>
+
         </form>
       </FormProvider>
-    </Card>
+    </div>
   )
 }
 
 function ExerciseCard({ index, exerciseDetails, onRemoveExercise }: { index: number, exerciseDetails: Exercise | undefined, onRemoveExercise: () => void }) {
-   const { control, watch } = useFormContext<LogFormValues>();
-   const { fields, append, remove } = useFieldArray({
-     control,
-     name: `exercises.${index}.sets`
-   });
-   const [newSetId, setNewSetId] = useState<string | null>(null);
+  const { control, watch } = useFormContext<LogFormValues>();
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: `exercises.${index}.sets`
+  });
+  const [newSetId, setNewSetId] = useState<string | null>(null);
 
-   const handleAddSet = () => {
-     // Clone values from the last set if it exists, otherwise use defaults
-     if (fields.length > 0) {
-       const lastSetIndex = fields.length - 1;
-       const lastReps = watch(`exercises.${index}.sets.${lastSetIndex}.reps`);
-       const lastWeight = watch(`exercises.${index}.sets.${lastSetIndex}.weight`);
-       append({ reps: lastReps, weight: lastWeight });
-     } else {
-       append({ reps: 0, weight: 0 });
-     }
-   };
+  const handleAddSet = () => {
+    // Clone values from the last set if it exists, otherwise use defaults
+    if (fields.length > 0) {
+      const lastSetIndex = fields.length - 1;
+      const lastReps = watch(`exercises.${index}.sets.${lastSetIndex}.reps`);
+      const lastWeight = watch(`exercises.${index}.sets.${lastSetIndex}.weight`);
+      append({ reps: lastReps, weight: lastWeight });
+    } else {
+      append({ reps: 0, weight: 0 });
+    }
+  };
 
   return (
     <Card className="bg-secondary/50">
@@ -469,9 +497,8 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise }: { index: num
             {fields.map((setField, setIndex) => (
               <div
                 key={setField.id}
-                className={`grid grid-cols-12 gap-2 items-center ${
-                  newSetId === setField.id ? 'animate-fade-in' : ''
-                }`}
+                className={`grid grid-cols-12 gap-2 items-center ${newSetId === setField.id ? 'animate-fade-in' : ''
+                  }`}
               >
                 <p className="font-medium text-sm text-center col-span-1">{setIndex + 1}</p>
                 <FormField
@@ -512,137 +539,145 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise }: { index: num
 }
 
 // --- FROM TEMPLATE COMPONENT ---
-function FromTemplateForm({ onStartWorkout, allExercises }: { onStartWorkout: (template: LogFormValues, exerciseIds?: string[]) => void; allExercises: Exercise[] | null; }) {
-    const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-    const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
+// --- SELECTION VIEW COMPONENT ---
+function WorkoutSelectionView({ onStartEmpty, onStartFromPlan, allExercises }: { onStartEmpty: (name: string) => void; onStartFromPlan: (template: LogFormValues, exerciseIds?: string[]) => void; allExercises: Exercise[] | null }) {
+  const { user } = useUser();
+  const [selectedPlan, setSelectedPlan] = useState<WorkoutPlan | null>(null);
 
-    const { user } = useUser();
+  // Fetch plans assigned to the athlete
+  const { data: assignedPlans, isLoading: assignedPlansLoading } = useCollection<WorkoutPlan>(
+    user?.uid ? 'workoutPlans' : null,
+    user?.uid ? { assignedAthleteIds: { $in: [user.uid] } } : undefined
+  );
 
-    // Fetch plans assigned to the athlete
-    const { data: assignedPlans, isLoading: assignedPlansLoading } = useCollection<WorkoutPlan>(
-        user?.uid ? 'workoutPlans' : null,
-        user?.uid ? { assignedAthleteIds: { $in: [user.uid] } } : undefined
-    );
+  // Fetch plans created by the athlete (if they're also a trainer)
+  const { data: myPlans, isLoading: myPlansLoading } = useCollection<WorkoutPlan>(
+    user?.uid ? 'workoutPlans' : null,
+    user?.uid ? { trainerId: user.uid } : undefined
+  );
 
-    // Fetch plans created by the athlete (if they're also a trainer)
-    const { data: myPlans, isLoading: myPlansLoading } = useCollection<WorkoutPlan>(
-        user?.uid ? 'workoutPlans' : null,
-        user?.uid ? { trainerId: user.uid } : undefined
-    );
+  const workoutPlans = useMemo(() => {
+    const plansMap = new Map<string, WorkoutPlan>();
+    assignedPlans?.forEach(plan => plansMap.set(plan.id, plan));
+    myPlans?.forEach(plan => plansMap.set(plan.id, plan));
+    return Array.from(plansMap.values());
+  }, [assignedPlans, myPlans]);
 
-    const workoutPlans = useMemo(() => {
-        const plansMap = new Map<string, WorkoutPlan>();
-        assignedPlans?.forEach(plan => plansMap.set(plan.id, plan));
-        myPlans?.forEach(plan => plansMap.set(plan.id, plan));
-        return Array.from(plansMap.values());
-    }, [assignedPlans, myPlans]);
-
-    const handleSelectPlan = (planId: string) => {
-        setSelectedPlanId(planId);
-        setSelectedDayIndex(null); // Reset day selection when plan changes
+  const handleStartPlanDay = (plan: WorkoutPlan, dayIndex: number) => {
+    const workoutDay = plan.workoutDays[dayIndex];
+    const workoutData: LogFormValues = {
+      workoutName: workoutDay.dayName,
+      exercises: workoutDay.exercises.map(ex => ({
+        exerciseId: ex.exerciseId,
+        sets: ex.sets?.map(s => ({ reps: s.reps, weight: s.weight })) || [],
+        duration: ex.duration || 0,
+      })),
     };
+    const exerciseIds = workoutDay.exercises.map(ex => ex.exerciseId);
+    onStartFromPlan(workoutData, exerciseIds);
+  };
 
-    const handleStartWorkout = () => {
-        if (selectedPlanId === null || selectedDayIndex === null) return;
-        const plan = workoutPlans?.find(p => p.id === selectedPlanId);
-        if (!plan) return;
+  const isLoading = assignedPlansLoading || myPlansLoading;
 
-        const workoutDay = plan.workoutDays[selectedDayIndex];
-
-        const workoutData: LogFormValues = {
-            workoutName: workoutDay.dayName,
-            exercises: workoutDay.exercises.map(ex => ({
-                exerciseId: ex.exerciseId,
-                sets: ex.sets?.map(s => ({ reps: s.reps, weight: s.weight })) || [],
-                duration: ex.duration || 0,
-            })),
-        };
-
-        // Extract exercise IDs from the plan
-        const exerciseIds = workoutDay.exercises.map(ex => ex.exerciseId);
-
-        onStartWorkout(workoutData, exerciseIds);
-        setSelectedPlanId(null);
-        setSelectedDayIndex(null);
-    };
-
-    const anyLoading = assignedPlansLoading || myPlansLoading;
-    const selectedPlan = workoutPlans?.find(p => p.id === selectedPlanId);
-    const selectedDay = selectedPlan && selectedDayIndex !== null ? selectedPlan.workoutDays[selectedDayIndex] : null;
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="font-headline">Zaloguj z planu</CardTitle>
-                <CardDescription>Wybierz jeden ze swoich planów i dzień treningowy, aby szybko rozpocząć.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                 <Select onValueChange={handleSelectPlan} value={selectedPlanId || ''}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="1. Wybierz plan treningu" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {anyLoading && <SelectItem value="loading" disabled>Ładowanie planów...</SelectItem>}
-                        {!anyLoading && workoutPlans && workoutPlans.map(plan => (
-                            <SelectItem key={plan.id} value={plan.id}>{plan.name}</SelectItem>
-                        ))}
-                         {!anyLoading && workoutPlans?.length === 0 && (
-                            <SelectItem value="no-plans" disabled>Brak dostępnych planów.</SelectItem>
-                        )}
-                    </SelectContent>
-                </Select>
-
-                {selectedPlan && (
-                    <Select onValueChange={(val) => setSelectedDayIndex(Number(val))} value={selectedDayIndex !== null ? String(selectedDayIndex) : ''}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="2. Wybierz dzień treningowy" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {selectedPlan.workoutDays.map((day, index) => (
-                                <SelectItem key={index} value={String(index)}>{day.dayName}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                )}
-
-                {selectedDay && allExercises && (
-                    <Card className="p-4 bg-secondary/50">
-                        <CardHeader className="p-2">
-                           <CardTitle className="text-lg">Podgląd ćwiczeń:</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-2 space-y-2">
-                             {selectedDay.exercises.map((exercise, index) => {
-                                 const exerciseDetails = allExercises.find(e => e.id === exercise.exerciseId);
-                                 return (
-                                    <div key={index} className="flex justify-between items-center text-sm">
-                                        <span className="font-medium">{exerciseDetails?.name || 'Nieznane ćwiczenie'}</span>
-                                        <span className="text-muted-foreground">
-                                            {exercise.sets?.map(s => s.reps).join('/')}
-                                        </span>
-                                    </div>
-                                 )
-                             })}
-                        </CardContent>
-                    </Card>
-                )}
-
-            </CardContent>
-            {selectedPlan && selectedDayIndex !== null && (
-                 <CardFooter>
-                    <Button onClick={handleStartWorkout} className="w-full">
-                        Rozpocznij Trening: '{selectedPlan.workoutDays[selectedDayIndex].dayName}'
-                    </Button>
-                </CardFooter>
-            )}
+  return (
+    <div className="space-y-6">
+      <section>
+        <h2 className="text-lg font-semibold mb-3">Szybki Start</h2>
+        <Card
+          className="cursor-pointer hover:bg-secondary/50 transition-colors border-dashed"
+          onClick={() => onStartEmpty(`Trening ${format(new Date(), 'd.MM')}`)}
+        >
+          <CardContent className="flex items-center p-6 gap-4">
+            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <PlusCircle className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg">Pusty Trening</h3>
+              <p className="text-sm text-muted-foreground">Rozpocznij bez planu i dodawaj ćwiczenia</p>
+            </div>
+            <ChevronRight className="ml-auto h-5 w-5 text-muted-foreground" />
+          </CardContent>
         </Card>
-    )
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold mb-3">Twoje Plany</h2>
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2].map(i => (
+              <div key={i} className="h-24 rounded-lg bg-secondary animate-pulse" />
+            ))}
+          </div>
+        ) : workoutPlans.length === 0 ? (
+          <div className="text-center p-8 border rounded-lg bg-secondary/20">
+            <p className="text-muted-foreground">Nie masz jeszcze żadnych planów.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {workoutPlans.map(plan => (
+              <Sheet key={plan.id}>
+                <SheetTrigger asChild>
+                  <Card className="cursor-pointer hover:bg-secondary/50 transition-colors">
+                    <CardContent className="flex items-center p-6 gap-4">
+                      <div className="h-12 w-12 rounded-full bg-blue-500/10 flex items-center justify-center">
+                        <Calendar className="h-6 w-6 text-blue-500" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg">{plan.name}</h3>
+                        <p className="text-sm text-muted-foreground">{plan.workoutDays.length} dni treningowych</p>
+                      </div>
+                      <ChevronRight className="ml-auto h-5 w-5 text-muted-foreground" />
+                    </CardContent>
+                  </Card>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="h-[85vh]">
+                  <SheetHeader className="text-left mb-4">
+                    <SheetTitle>{plan.name}</SheetTitle>
+                    <SheetDescription>Wybierz dzień treningowy, aby rozpocząć.</SheetDescription>
+                  </SheetHeader>
+                  <ScrollArea className="h-full pb-20">
+                    <div className="space-y-4">
+                      {plan.workoutDays.map((day, index) => (
+                        <Card key={index} className="overflow-hidden">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-base flex justify-between items-center">
+                              {day.dayName}
+                              <Button size="sm" onClick={() => handleStartPlanDay(plan, index)}>
+                                Rozpocznij <Play className="ml-2 h-3 w-3" />
+                              </Button>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="pb-3">
+                            <div className="space-y-1">
+                              {day.exercises.map((ex, i) => {
+                                const exDetails = allExercises?.find(e => e.id === ex.exerciseId);
+                                return (
+                                  <div key={i} className="text-sm text-muted-foreground flex justify-between">
+                                    <span>{i + 1}. {exDetails?.name || 'Ćwiczenie'}</span>
+                                    <span>{ex.sets?.length || 0} serii</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </SheetContent>
+              </Sheet>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
 }
 
 // --- MAIN PAGE COMPONENT ---
 export default function LogWorkoutPage() {
   const [activeWorkout, setActiveWorkout] = useState<LogFormValues | null>(null);
   const [planExerciseIds, setPlanExerciseIds] = useState<string[] | undefined>(undefined);
-  const [currentTab, setCurrentTab] = useState("from-template");
   const { user } = useUser();
 
   // Fetch exercises (public and user's own)
@@ -657,8 +692,8 @@ export default function LogWorkoutPage() {
   };
 
   const handleFinishWorkout = () => {
-      setActiveWorkout(null);
-      setPlanExerciseIds(undefined);
+    setActiveWorkout(null);
+    setPlanExerciseIds(undefined);
   }
 
   const startFromScratch = (workoutName: string) => {
@@ -666,40 +701,25 @@ export default function LogWorkoutPage() {
   }
 
   if (activeWorkout) {
-      return (
-          <div className="container mx-auto p-4 md:p-8 flex justify-center">
-             <div className="w-full max-w-lg">
-                <ActiveWorkoutFromScratch initialWorkout={activeWorkout} onFinishWorkout={handleFinishWorkout} allExercises={allExercises} planExerciseIds={planExerciseIds} />
-             </div>
+    return (
+      <div className="container mx-auto p-4 md:p-8 flex justify-center">
+        <div className="w-full max-w-lg">
+          <div className="w-full max-w-lg">
+            <ActiveWorkoutView initialWorkout={activeWorkout} onFinishWorkout={handleFinishWorkout} allExercises={allExercises} planExerciseIds={planExerciseIds} />
           </div>
-      )
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="container mx-auto p-4 md:p-8">
       <h1 className="mb-6 font-headline text-3xl font-bold">Zapisz Trening</h1>
-       <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
-          <TabsTrigger value="from-template">Z Planu</TabsTrigger>
-          <TabsTrigger value="from-scratch">Od Podstaw</TabsTrigger>
-        </TabsList>
-        <TabsContent value="from-template">
-          <FromTemplateForm onStartWorkout={(data, exerciseIds) => handleStartWorkout(data, exerciseIds)} allExercises={allExercises} />
-        </TabsContent>
-        <TabsContent value="from-scratch">
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-headline">Rozpocznij Trening od Podstaw</CardTitle>
-                <CardDescription>Nadaj nazwę swojej sesji i zacznij od razu, dodając ćwiczenia na bieżąco.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button onClick={() => startFromScratch(`Trening ${format(new Date(), 'd.MM')}`)} className="w-full">
-                    Rozpocznij Pusty Trening
-                </Button>
-              </CardContent>
-            </Card>
-        </TabsContent>
-      </Tabs>
+      <WorkoutSelectionView
+        onStartEmpty={startFromScratch}
+        onStartFromPlan={handleStartWorkout}
+        allExercises={allExercises}
+      />
     </div>
   );
 }
