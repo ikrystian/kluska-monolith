@@ -30,7 +30,7 @@ async function getAccessToken(): Promise<string> {
                 'Authorization': `Basic ${auth}`,
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: 'grant_type=client_credentials',
+            body: 'grant_type=client_credentials&scope=premier',
         });
 
         if (!response.ok) {
@@ -61,14 +61,19 @@ export interface FatSecretFood {
     food_url: string;
     brand_name?: string;
     food_description: string;
+    servings?: {
+        serving: FatSecretServing[] | FatSecretServing;
+    };
 }
 
 export interface FatSecretSearchResponse {
-    foods: {
-        food: FatSecretFood[];
+    foods_search: {
         max_results: string;
-        page_number: string;
         total_results: string;
+        page_number: string;
+        results: {
+            food: FatSecretFood[];
+        };
     };
 }
 
@@ -97,39 +102,43 @@ export interface FatSecretFoodDetails {
 }
 
 export async function searchFatSecretFood(query: string): Promise<FatSecretFood[]> {
-    try {
-        const token = await getAccessToken();
-        const params = new URLSearchParams({
-            search_expression: query,
-            format: 'json',
-            max_results: '20',
-        });
+    // try { // Removed try-catch to allow error propagation
+    const token = await getAccessToken();
+    const params = new URLSearchParams({
+        search_expression: query,
+        format: 'json',
+        max_results: '20',
+    });
 
-        const response = await fetch(`https://platform.fatsecret.com/rest/foods/search/v4?${params.toString()}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-        });
+    const response = await fetch(`https://platform.fatsecret.com/rest/foods/search/v4?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        cache: 'no-store', // Disable caching
+    });
 
-        if (!response.ok) {
-            throw new Error(`FatSecret API error: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-
-        if (data.error) {
-            throw new Error(`FatSecret API error: ${data.error.message}`);
-        }
-
-        const foods = data.foods?.food || [];
-        // Ensure it's always an array (API might return single object if only one result)
-        return Array.isArray(foods) ? foods : [foods];
-    } catch (error) {
-        console.error('Error searching FatSecret:', error);
-        return [];
+    if (!response.ok) {
+        const text = await response.text();
+        console.error(`[Lib] FatSecret API Error: ${response.status} - ${text}`);
+        throw new Error(`FatSecret API error: ${response.statusText}`);
     }
+
+    const data = await response.json();
+    console.log('[Lib] Raw FatSecret Response:', JSON.stringify(data, null, 2));
+
+    if (data.error) {
+        throw new Error(`FatSecret API error: ${data.error.message}`);
+    }
+
+    const foods = data.foods_search?.results?.food || data.foods?.food || [];
+    // Ensure it's always an array (API might return single object if only one result)
+    return Array.isArray(foods) ? foods : [foods];
+    // } catch (error) {
+    //     console.error('Error searching FatSecret:', error);
+    //     return [];
+    // }
 }
 
 export async function getFatSecretFoodDetails(foodId: string): Promise<FatSecretServing[]> {
@@ -146,6 +155,7 @@ export async function getFatSecretFoodDetails(foodId: string): Promise<FatSecret
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
+            cache: 'no-store',
         });
 
         if (!response.ok) {

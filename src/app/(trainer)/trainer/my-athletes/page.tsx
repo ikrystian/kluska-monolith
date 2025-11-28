@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -39,6 +39,24 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import { Utensils } from 'lucide-react';
 
 interface UserProfile {
   id: string;
@@ -46,6 +64,7 @@ interface UserProfile {
   email: string;
   role: 'athlete' | 'trainer' | 'admin';
   trainerId?: string;
+  assignedDietPlanId?: string;
 }
 
 
@@ -62,6 +81,11 @@ type FoundUser = {
   role: string;
 };
 
+interface DietPlan {
+  _id: string;
+  name: string;
+}
+
 export default function MyAthletesPage() {
   const { toast } = useToast();
   const { user } = useUser();
@@ -70,6 +94,60 @@ export default function MyAthletesPage() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [diets, setDiets] = useState<DietPlan[]>([]);
+  const [selectedDietId, setSelectedDietId] = useState<string>('');
+  const [assigningDietId, setAssigningDietId] = useState<string | null>(null);
+  const [isDietDialogOpen, setIsDietDialogOpen] = useState(false);
+  const [currentAthleteId, setCurrentAthleteId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchDiets();
+  }, []);
+
+  const fetchDiets = async () => {
+    try {
+      const res = await fetch('/api/trainer/diets');
+      const data = await res.json();
+      if (data.diets) {
+        setDiets(data.diets);
+      }
+    } catch (error) {
+      console.error('Error fetching diets:', error);
+    }
+  };
+
+  const openDietDialog = (athleteId: string) => {
+    setCurrentAthleteId(athleteId);
+    setIsDietDialogOpen(true);
+  };
+
+  const handleAssignDiet = async () => {
+    if (!currentAthleteId) return;
+    setAssigningDietId(currentAthleteId);
+    try {
+      const res = await fetch('/api/trainer/assign-diet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          athleteId: currentAthleteId,
+          dietPlanId: selectedDietId || null, // Allow unassigning
+        }),
+      });
+
+      if (res.ok) {
+        toast({ title: 'Success', description: 'Diet assigned successfully' });
+        setIsDietDialogOpen(false);
+        refetchAthletes();
+      } else {
+        toast({ title: 'Error', description: 'Failed to assign diet', variant: 'destructive' });
+      }
+    } catch (error) {
+      console.error('Assign diet error:', error);
+      toast({ title: 'Error', description: 'Failed to assign diet', variant: 'destructive' });
+    } finally {
+      setAssigningDietId(null);
+    }
+  };
 
   const avatarImage = placeholderImages.find((img) => img.id === 'avatar-male');
 
@@ -127,12 +205,12 @@ export default function MyAthletesPage() {
     if (!foundUser || !user) return;
 
     if (athletes?.some(athlete => athlete.id === foundUser.id)) {
-        toast({
-            title: 'Sportowiec jest już przypisany',
-            description: `${foundUser.name} jest już na Twojej liście.`,
-            variant: 'destructive',
-        });
-        return;
+      toast({
+        title: 'Sportowiec jest już przypisany',
+        description: `${foundUser.name} jest już na Twojej liście.`,
+        variant: 'destructive',
+      });
+      return;
     }
 
     setAddLoading(true);
@@ -227,7 +305,7 @@ export default function MyAthletesPage() {
                   )}
                 />
                 <Button type="submit" disabled={searchLoading}>
-                  {searchLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Search className="h-4 w-4" />}
+                  {searchLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                   <span className='hidden sm:inline ml-2'>{searchLoading ? 'Szukanie...' : 'Szukaj'}</span>
                 </Button>
               </form>
@@ -235,7 +313,7 @@ export default function MyAthletesPage() {
 
             {searchError && (
               <Alert variant="destructive" className="mt-4">
-                 <AlertTriangle className="h-4 w-4" />
+                <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Błąd</AlertTitle>
                 <AlertDescription>{searchError}</AlertDescription>
               </Alert>
@@ -246,7 +324,7 @@ export default function MyAthletesPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <Avatar>
-                       {avatarImage && <AvatarImage src={avatarImage.imageUrl} alt={foundUser.name} />}
+                      {avatarImage && <AvatarImage src={avatarImage.imageUrl} alt={foundUser.name} />}
                       <AvatarFallback>
                         {foundUser.name.charAt(0).toUpperCase()}
                       </AvatarFallback>
@@ -257,7 +335,7 @@ export default function MyAthletesPage() {
                     </div>
                   </div>
                   <Button onClick={handleAddAthlete} disabled={addLoading}>
-                     <PlusCircle className="mr-2 h-4 w-4" />
+                    <PlusCircle className="mr-2 h-4 w-4" />
                     {addLoading ? 'Dodawanie...' : 'Dodaj'}
                   </Button>
                 </div>
@@ -281,42 +359,46 @@ export default function MyAthletesPage() {
               <ul className="space-y-3">
                 {athletes.map((athlete: UserProfile) => (
                   <li key={athlete.id} className="flex items-center justify-between rounded-md border p-3">
-                     <div className="flex items-center gap-4">
-                        <Avatar>
-                           {avatarImage && <AvatarImage src={avatarImage.imageUrl} alt={athlete.name} />}
-                            <AvatarFallback>{athlete.name.charAt(0).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                            <p className="font-semibold">{athlete.name}</p>
-                            <p className="text-sm text-muted-foreground">{athlete.email}</p>
-                        </div>
-                     </div>
-                      <div className="flex items-center gap-2">
-                        <Button asChild variant="outline" size="sm">
-                            <Link href={`/trainer/my-athletes/${athlete.id}`}>Zobacz Profil</Link>
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="icon" className='h-9 w-9'>
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Czy na pewno chcesz usunąć sportowca?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                Tej operacji nie można cofnąć. Spowoduje to usunięcie sportowca <span className='font-bold'>{athlete.name}</span> z Twojej listy. Nie usunie to jego konta.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleRemoveAthlete(athlete.id)} className="bg-destructive hover:bg-destructive/90">
-                                    Usuń
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                    <div className="flex items-center gap-4">
+                      <Avatar>
+                        {avatarImage && <AvatarImage src={avatarImage.imageUrl} alt={athlete.name} />}
+                        <AvatarFallback>{athlete.name.charAt(0).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-semibold">{athlete.name}</p>
+                        <p className="text-sm text-muted-foreground">{athlete.email}</p>
                       </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/trainer/my-athletes/${athlete.id}`}>Zobacz Profil</Link>
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => openDietDialog(athlete.id)}>
+                        <Utensils className="w-4 h-4 mr-2" />
+                        {athlete.assignedDietPlanId ? 'Zmień Dietę' : 'Przypisz Dietę'}
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="icon" className='h-9 w-9'>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Czy na pewno chcesz usunąć sportowca?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tej operacji nie można cofnąć. Spowoduje to usunięcie sportowca <span className='font-bold'>{athlete.name}</span> z Twojej listy. Nie usunie to jego konta.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleRemoveAthlete(athlete.id)} className="bg-destructive hover:bg-destructive/90">
+                              Usuń
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -332,6 +414,42 @@ export default function MyAthletesPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={isDietDialogOpen} onOpenChange={setIsDietDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Przypisz Dietę</DialogTitle>
+            <DialogDescription>
+              Wybierz plan dietetyczny dla tego sportowca.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="diet" className="text-right">
+                Dieta
+              </Label>
+              <Select onValueChange={setSelectedDietId} value={selectedDietId}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Wybierz dietę" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Brak (Usuń przypisanie)</SelectItem>
+                  {diets.map((diet) => (
+                    <SelectItem key={diet._id} value={diet._id}>
+                      {diet.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleAssignDiet} disabled={assigningDietId === currentAthleteId}>
+              {assigningDietId === currentAthleteId ? 'Zapisywanie...' : 'Zapisz'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

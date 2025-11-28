@@ -15,6 +15,7 @@ export interface IUser extends Document {
   };
   trainerId?: string;
   favoriteGymIds?: string[];
+  assignedDietPlanId?: string;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -34,6 +35,7 @@ const UserSchema = new Schema<IUser>(
     },
     trainerId: { type: String },
     favoriteGymIds: [{ type: String }],
+    assignedDietPlanId: { type: String },
   },
   {
     timestamps: true,
