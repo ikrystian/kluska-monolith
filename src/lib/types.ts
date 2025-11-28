@@ -50,8 +50,9 @@ export type Exercise = {
 export type WorkoutExerciseLog = {
   exerciseId: string;
   sets: {
-    reps: number;
+    reps?: number;
     weight?: number;
+    duration?: number;
   }[];
   duration?: number; // Actual duration in seconds for time-based exercises
 };
@@ -98,8 +99,9 @@ export type AiWorkoutPlan = {
 export type WorkoutDayExercise = {
   exerciseId: string;
   sets: {
-    reps: number;
+    reps?: number;
     weight?: number;
+    duration?: number;
   }[];
   duration?: number; // Duration in seconds for time-based exercises
 };

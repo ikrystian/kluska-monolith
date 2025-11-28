@@ -4,8 +4,9 @@ export interface IWorkoutExercise {
   exerciseId: string;
   exerciseName: string;
   sets: {
-    reps: number;
+    reps?: number;
     weight?: number;
+    duration?: number;
     completed: boolean;
   }[];
   duration?: number;
@@ -39,8 +40,9 @@ const WorkoutLogSchema = new Schema<IWorkoutLog>(
         exerciseName: { type: String, required: true },
         sets: [
           {
-            reps: { type: Number, required: true },
+            reps: { type: Number },
             weight: { type: Number },
+            duration: { type: Number },
             completed: { type: Boolean, default: false },
           },
         ],

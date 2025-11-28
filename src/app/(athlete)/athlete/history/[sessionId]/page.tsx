@@ -69,114 +69,109 @@ export default function SessionSummaryPage() {
   const totalVolume = workoutLog.exercises.reduce((acc, ex) => {
     const exerciseDetails = exercises?.find(e => e.id === ex.exerciseId);
     if (exerciseDetails?.type !== 'weight') return acc;
-    const exVolume = ex.sets.reduce((setAcc, set) => setAcc + set.reps * (set.weight || 0), 0);
+    const exVolume = ex.sets.reduce((setAcc, set) => setAcc + (set.reps || 0) * (set.weight || 0), 0);
     return acc + exVolume;
   }, 0);
 
   return (
     <div className="container mx-auto max-w-3xl p-4 md:p-8">
-        <Button onClick={() => router.push('/history')} variant="ghost" className="mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Wróć do Historii
-        </Button>
-        <Card>
-            <CardHeader>
-                <CardTitle className="font-headline text-3xl">{workoutLog.workoutName}</CardTitle>
-                <CardDescription className="text-lg">
-                  {workoutLog.endTime ? format(new Date(workoutLog.endTime), 'd MMMM yyyy, HH:mm', { locale: pl }) : '...'}
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                {workoutLog.photoURL && (
-                  <div className="relative aspect-video w-full overflow-hidden rounded-lg">
-                    <Image src={workoutLog.photoURL} alt={`Zdjęcie z treningu ${workoutLog.workoutName}`} layout="fill" objectFit="cover" />
+      <Button onClick={() => router.push('/history')} variant="ghost" className="mb-4">
+        <ArrowLeft className="mr-2 h-4 w-4" /> Wróć do Historii
+      </Button>
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-headline text-3xl">{workoutLog.workoutName}</CardTitle>
+          <CardDescription className="text-lg">
+            {workoutLog.endTime ? format(new Date(workoutLog.endTime), 'd MMMM yyyy, HH:mm', { locale: pl }) : '...'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {workoutLog.photoURL && (
+            <div className="relative aspect-video w-full overflow-hidden rounded-lg">
+              <Image src={workoutLog.photoURL} alt={`Zdjęcie z treningu ${workoutLog.workoutName}`} layout="fill" objectFit="cover" />
+            </div>
+          )}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Card className="bg-secondary/30">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Całkowita objętość</CardTitle>
+                <Activity className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalVolume.toLocaleString()} kg</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-secondary/30">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Czas trwania</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{workoutLog.duration || '-'} min</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-secondary/30">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Ćwiczenia</CardTitle>
+                <Dumbbell className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{workoutLog.exercises.length}</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div>
+            <h3 className="mb-4 font-headline text-xl">Szczegóły sesji</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[200px]">Ćwiczenie</TableHead>
+                  <TableHead>Seria</TableHead>
+                  <TableHead className="text-right">Wynik</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {workoutLog.exercises.map((ex, exIndex) => {
+                  const exerciseDetails = exercises?.find(e => e.id === ex.exerciseId);
+
+                  return ex.sets.map((set, setIndex) => (
+                    <TableRow key={`${exIndex}-${setIndex}`}>
+                      {setIndex === 0 ? (
+                        <TableCell rowSpan={ex.sets.length} className="font-medium align-top">
+                          {exerciseDetails?.name || 'Nieznane Ćwiczenie'}
+                        </TableCell>
+                      ) : null}
+                      <TableCell>{setIndex + 1}</TableCell>
+                      <TableCell className="text-right">
+                        {exerciseDetails?.type === 'duration'
+                          ? `${set.duration || 0} sek.`
+                          : `${set.reps || 0} ${exerciseDetails?.type === 'weight' ? `x ${set.weight || 0}kg` : 'powt.'}`
+                        }
+                      </TableCell>
+                    </TableRow>
+                  ));
+                })}
+              </TableBody>
+            </Table>
+          </div>
+
+          {workoutLog.feedback && (
+            <div>
+              <h3 className="mb-4 font-headline text-xl">Feedback od Trenera</h3>
+              <Card className="bg-secondary/30">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <MessageSquare className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                    <p className="text-muted-foreground italic">"{workoutLog.feedback}"</p>
                   </div>
-                )}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                    <Card className="bg-secondary/30">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Całkowita objętość</CardTitle>
-                        <Activity className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                        <div className="text-2xl font-bold">{totalVolume.toLocaleString()} kg</div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-secondary/30">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Czas trwania</CardTitle>
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                        <div className="text-2xl font-bold">{workoutLog.duration || '-'} min</div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-secondary/30">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Ćwiczenia</CardTitle>
-                        <Dumbbell className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                        <div className="text-2xl font-bold">{workoutLog.exercises.length}</div>
-                        </CardContent>
-                    </Card>
-                </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
-                <div>
-                <h3 className="mb-4 font-headline text-xl">Szczegóły sesji</h3>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                        <TableHead className="w-[200px]">Ćwiczenie</TableHead>
-                        <TableHead>Seria</TableHead>
-                        <TableHead className="text-right">Wynik</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {workoutLog.exercises.map((ex, exIndex) => {
-                          const exerciseDetails = exercises?.find(e => e.id === ex.exerciseId);
-                          if (exerciseDetails?.type === 'duration') {
-                             return (
-                                <TableRow key={`${exIndex}-duration`}>
-                                   <TableCell className="font-medium">{exerciseDetails?.name || 'Nieznane Ćwiczenie'}</TableCell>
-                                   <TableCell>1</TableCell>
-                                   <TableCell className="text-right">{ex.duration} sek.</TableCell>
-                                </TableRow>
-                             )
-                          }
-                          return ex.sets.map((set, setIndex) => (
-                              <TableRow key={`${exIndex}-${setIndex}`}>
-                              {setIndex === 0 ? (
-                                  <TableCell rowSpan={ex.sets.length} className="font-medium align-top">
-                                  {exerciseDetails?.name || 'Nieznane Ćwiczenie'}
-                                  </TableCell>
-                              ) : null}
-                              <TableCell>{setIndex + 1}</TableCell>
-                              <TableCell className="text-right">
-                                {set.reps} {exerciseDetails?.type === 'weight' ? `x ${set.weight || 0}kg` : 'powt.'}
-                              </TableCell>
-                              </TableRow>
-                          ));
-                        })}
-                    </TableBody>
-                </Table>
-                </div>
-
-                {workoutLog.feedback && (
-                  <div>
-                    <h3 className="mb-4 font-headline text-xl">Feedback od Trenera</h3>
-                    <Card className="bg-secondary/30">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                            <MessageSquare className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                            <p className="text-muted-foreground italic">"{workoutLog.feedback}"</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-
-            </CardContent>
-        </Card>
+        </CardContent>
+      </Card>
     </div>
   );
 }
