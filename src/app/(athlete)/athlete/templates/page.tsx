@@ -45,13 +45,13 @@ const templateSchema = z.object({
 type TemplateFormValues = z.infer<typeof templateSchema>;
 
 function TemplateForm({
-    onSave,
-    allExercises,
-    editingPlan
+  onSave,
+  allExercises,
+  editingPlan
 }: {
-    onSave: () => void,
-    allExercises: Exercise[] | null,
-    editingPlan: WorkoutPlan | null
+  onSave: () => void,
+  allExercises: Exercise[] | null,
+  editingPlan: WorkoutPlan | null
 }) {
   const { toast } = useToast();
   const { user } = useUser();
@@ -64,16 +64,16 @@ function TemplateForm({
   const form = useForm<TemplateFormValues>({
     resolver: zodResolver(templateSchema),
     defaultValues: isEditMode && editingPlan ? {
-        name: editingPlan.name,
-        description: editingPlan.description,
-        workoutDays: editingPlan.workoutDays.map(day => ({
-            ...day,
-            exercises: day.exercises.map(ex => ({
-                exerciseId: ex.exerciseId,
-                sets: ex.sets || [],
-                duration: ex.duration || 0,
-            }))
-        })),
+      name: editingPlan.name,
+      description: editingPlan.description,
+      workoutDays: editingPlan.workoutDays.map(day => ({
+        ...day,
+        exercises: day.exercises.map(ex => ({
+          exerciseId: ex.exerciseId,
+          sets: ex.sets || [],
+          duration: ex.duration || 0,
+        }))
+      })),
     } : {
       name: '',
       description: '',
@@ -87,20 +87,20 @@ function TemplateForm({
         name: editingPlan.name,
         description: editingPlan.description,
         workoutDays: editingPlan.workoutDays.map(day => ({
-            ...day,
-            exercises: day.exercises.map(ex => ({
-                exerciseId: ex.exerciseId,
-                sets: ex.sets || [],
-                duration: ex.duration || 0,
-            }))
+          ...day,
+          exercises: day.exercises.map(ex => ({
+            exerciseId: ex.exerciseId,
+            sets: ex.sets || [],
+            duration: ex.duration || 0,
+          }))
         })),
       });
     } else {
-        form.reset({
-            name: '',
-            description: '',
-            workoutDays: [],
-        });
+      form.reset({
+        name: '',
+        description: '',
+        workoutDays: [],
+      });
     }
   }, [editingPlan, isEditMode, form]);
 
@@ -257,30 +257,30 @@ function TemplateForm({
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Dni Treningowe</h3>
               <Accordion type="multiple" className="w-full space-y-4">
-              {dayFields.map((dayField, dayIndex) => (
-                <AccordionItem value={`day-${dayIndex}`} key={dayField.id} className="border rounded-md px-4 bg-secondary/30">
-                  <AccordionTrigger>
-                    <div className="flex items-center justify-between w-full">
-                      <FormField
-                        control={form.control}
-                        name={`workoutDays.${dayIndex}.dayName`}
-                        render={({ field }) => (
-                          <FormItem onClick={(e) => e.stopPropagation()}>
-                            <FormControl><Input placeholder={`Dzień ${dayIndex + 1}: np. Trening A: Push`} {...field} className="text-base font-semibold border-0 bg-transparent" /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <DayFormContent dayIndex={dayIndex} allExercises={allExercises} />
-                    <Button type="button" variant="destructive" size="sm" className="mt-4" onClick={() => removeDay(dayIndex)}>
-                      <Trash2 className="mr-2 h-4 w-4" /> Usuń Dzień Treningowy
-                    </Button>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
+                {dayFields.map((dayField, dayIndex) => (
+                  <AccordionItem value={`day-${dayIndex}`} key={dayField.id} className="border rounded-md px-4 bg-secondary/30">
+                    <AccordionTrigger>
+                      <div className="flex items-center justify-between w-full">
+                        <FormField
+                          control={form.control}
+                          name={`workoutDays.${dayIndex}.dayName`}
+                          render={({ field }) => (
+                            <FormItem onClick={(e) => e.stopPropagation()}>
+                              <FormControl><Input placeholder={`Dzień ${dayIndex + 1}: np. Trening A: Push`} {...field} className="text-base font-semibold border-0 bg-transparent" /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <DayFormContent dayIndex={dayIndex} allExercises={allExercises} />
+                      <Button type="button" variant="destructive" size="sm" className="mt-4" onClick={() => removeDay(dayIndex)}>
+                        <Trash2 className="mr-2 h-4 w-4" /> Usuń Dzień Treningowy
+                      </Button>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
               </Accordion>
               <Button
                 type="button"
@@ -295,8 +295,8 @@ function TemplateForm({
           </CardContent>
           <CardFooter>
             <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
-                {isEditMode ? 'Zapisz Zmiany' : 'Zapisz Plan'}
+              {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              {isEditMode ? 'Zapisz Zmiany' : 'Zapisz Plan'}
             </Button>
           </CardFooter>
         </form>
@@ -323,50 +323,50 @@ function DayFormContent({ dayIndex, allExercises }: { dayIndex: number; allExerc
         const exerciseType = getExerciseType(exerciseId);
 
         return (
-            <Card key={field.id} className="p-4 bg-background">
-               <div className="flex items-end gap-4 mb-4">
-                  <FormField
-                    control={control}
-                    name={`workoutDays.${dayIndex}.exercises.${exIndex}.exerciseId`}
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel>Ćwiczenie</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger><SelectValue placeholder="Wybierz ćwiczenie" /></SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {allExercises?.map((ex) => (<SelectItem key={ex.id} value={ex.id}>{ex.name}</SelectItem>))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="button" variant="ghost" size="icon" onClick={() => remove(exIndex)}>
-                    <Trash2 className="h-4 w-4 text-destructive"/>
-                  </Button>
-                </div>
-                {exerciseType === 'weight' && (
-                  <ExerciseSets fieldNamePrefix={`workoutDays.${dayIndex}.exercises.${exIndex}`} showWeight={true} />
+          <Card key={field.id} className="p-4 bg-background">
+            <div className="flex items-end gap-4 mb-4">
+              <FormField
+                control={control}
+                name={`workoutDays.${dayIndex}.exercises.${exIndex}.exerciseId`}
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel>Ćwiczenie</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger><SelectValue placeholder="Wybierz ćwiczenie" /></SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {allExercises?.map((ex) => (<SelectItem key={ex.id} value={ex.id}>{ex.name}</SelectItem>))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
                 )}
-                {exerciseType === 'reps' && (
-                  <ExerciseSets fieldNamePrefix={`workoutDays.${dayIndex}.exercises.${exIndex}`} showWeight={false} />
+              />
+              <Button type="button" variant="ghost" size="icon" onClick={() => remove(exIndex)}>
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+            {exerciseType === 'weight' && (
+              <ExerciseSets fieldNamePrefix={`workoutDays.${dayIndex}.exercises.${exIndex}`} showWeight={true} />
+            )}
+            {exerciseType === 'reps' && (
+              <ExerciseSets fieldNamePrefix={`workoutDays.${dayIndex}.exercises.${exIndex}`} showWeight={false} />
+            )}
+            {exerciseType === 'duration' && (
+              <FormField
+                control={control}
+                name={`workoutDays.${dayIndex}.exercises.${exIndex}.duration`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Czas trwania (sekundy)</FormLabel>
+                    <FormControl><Input type="number" placeholder="np. 60" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-                {exerciseType === 'duration' && (
-                  <FormField
-                    control={control}
-                    name={`workoutDays.${dayIndex}.exercises.${exIndex}.duration`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Czas trwania (sekundy)</FormLabel>
-                        <FormControl><Input type="number" placeholder="np. 60" {...field} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-            </Card>
+              />
+            )}
+          </Card>
         )
       })}
       <Button
@@ -406,7 +406,7 @@ const ExerciseSets = ({ fieldNamePrefix, showWeight }: { fieldNamePrefix: `worko
             render={({ field }) => (
               <FormItem className="col-span-5">
                 <FormControl><Input type="number" placeholder="Powt." {...field} /></FormControl>
-                <FormMessage/>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -417,13 +417,13 @@ const ExerciseSets = ({ fieldNamePrefix, showWeight }: { fieldNamePrefix: `worko
               render={({ field }) => (
                 <FormItem className="col-span-5">
                   <FormControl><Input type="number" placeholder="Ciężar" {...field} /></FormControl>
-                  <FormMessage/>
+                  <FormMessage />
                 </FormItem>
               )}
             />
           )}
           <Button type="button" variant="ghost" size="icon" onClick={() => remove(setIndex)} className="col-span-1">
-            <Trash2 className="h-4 w-4 text-destructive"/>
+            <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
         </div>
       ))}
@@ -478,10 +478,10 @@ function AssignPlanDialog({ plan }: { plan: WorkoutPlan }) {
   };
 
   const handleCheckboxChange = (athleteId: string, checked: boolean | "indeterminate") => {
-    if(checked) {
-        setSelectedAthletes(prev => [...prev, athleteId]);
+    if (checked) {
+      setSelectedAthletes(prev => [...prev, athleteId]);
     } else {
-        setSelectedAthletes(prev => prev.filter(id => id !== athleteId));
+      setSelectedAthletes(prev => prev.filter(id => id !== athleteId));
     }
   }
 
@@ -511,14 +511,14 @@ function AssignPlanDialog({ plan }: { plan: WorkoutPlan }) {
               </Label>
             </div>
           ))}
-           {athletes?.length === 0 && <p className="text-center text-sm text-muted-foreground">Nie masz jeszcze przypisanych żadnych sportowców.</p>}
+          {athletes?.length === 0 && <p className="text-center text-sm text-muted-foreground">Nie masz jeszcze przypisanych żadnych sportowców.</p>}
         </div>
         <DialogFooter>
           <DialogClose asChild>
             <Button type="button" variant="secondary" disabled={isAssigning}>Anuluj</Button>
           </DialogClose>
           <Button onClick={handleAssign} disabled={isAssigning}>
-            {isAssigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+            {isAssigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Zapisz Przypisania
           </Button>
         </DialogFooter>
@@ -529,208 +529,212 @@ function AssignPlanDialog({ plan }: { plan: WorkoutPlan }) {
 
 
 export default function TemplatesPage() {
-    const { user } = useUser();
-    const { toast } = useToast();
-    const { deleteDoc } = useDeleteDoc();
+  const { user } = useUser();
+  const { toast } = useToast();
+  const { deleteDoc } = useDeleteDoc();
 
-    const [view, setView] = useState<'list' | 'form'>('list');
-    const [editingPlan, setEditingPlan] = useState<WorkoutPlan | null>(null);
+  const [view, setView] = useState<'list' | 'form'>('list');
+  const [editingPlan, setEditingPlan] = useState<WorkoutPlan | null>(null);
 
-    // Fetch assigned workout plans (plans where user is in assignedAthleteIds)
-    const { data: assignedPlans, isLoading: assignedPlansLoading } = useCollection<WorkoutPlan>(
-        user?.uid ? 'workoutPlans' : null,
-        user?.uid ? { assignedAthleteIds: { $in: [user.uid] } } : undefined
-    );
+  // Fetch assigned workout plans (plans where user is in assignedAthleteIds)
+  const { data: assignedPlans, isLoading: assignedPlansLoading } = useCollection<WorkoutPlan>(
+    user?.uid ? 'workoutPlans' : null,
+    user?.uid ? { assignedAthleteIds: { $in: [user.uid] } } : undefined
+  );
 
-    // Fetch user's own workout plans (plans where user is trainerId)
-    const { data: myPlans, isLoading: myPlansLoading } = useCollection<WorkoutPlan>(
-        user?.uid ? 'workoutPlans' : null,
-        user?.uid ? { trainerId: user.uid } : undefined
-    );
+  // Fetch user's own workout plans (plans where user is trainerId)
+  const { data: myPlans, isLoading: myPlansLoading } = useCollection<WorkoutPlan>(
+    user?.uid ? 'workoutPlans' : null,
+    user?.uid ? { trainerId: user.uid } : undefined
+  );
 
-    const workoutPlans = useMemo(() => {
-        const plansMap = new Map<string, WorkoutPlan>();
-        assignedPlans?.forEach(plan => plansMap.set(plan.id, plan));
-        myPlans?.forEach(plan => plansMap.set(plan.id, plan));
-        return Array.from(plansMap.values());
-    }, [assignedPlans, myPlans]);
+  const workoutPlans = useMemo(() => {
+    const plansMap = new Map<string, WorkoutPlan>();
+    assignedPlans?.forEach(plan => plansMap.set(plan.id, plan));
+    myPlans?.forEach(plan => plansMap.set(plan.id, plan));
+    return Array.from(plansMap.values());
+  }, [assignedPlans, myPlans]);
 
-    // Fetch all exercises (we'll filter them in useMemo)
-    const { data: fetchedExercises, isLoading: exercisesLoading } = useCollection<Exercise>('exercises');
+  // Fetch all exercises (we'll filter them in useMemo)
+  const { data: fetchedExercises, isLoading: exercisesLoading } = useCollection<Exercise>('exercises');
 
-    // Filter exercises: public exercises + exercises from assigned workout plans
-    const allExercises = useMemo(() => {
-        if (!fetchedExercises) return null;
+  // Filter exercises: public exercises + exercises from assigned workout plans
+  const allExercises = useMemo(() => {
+    if (!fetchedExercises) return null;
 
-        const exercisesMap = new Map<string, Exercise>();
+    const exercisesMap = new Map<string, Exercise>();
 
-        // Collect exercise IDs from assigned workout plans
-        const exerciseIdsFromPlans = new Set<string>();
-        assignedPlans?.forEach(plan => {
-            plan.workoutDays?.forEach(day => {
-                day.exercises?.forEach(ex => {
-                    if (ex.exerciseId) {
-                        exerciseIdsFromPlans.add(ex.exerciseId);
-                    }
-                });
-            });
+    // Collect exercise IDs from assigned workout plans
+    const exerciseIdsFromPlans = new Set<string>();
+    assignedPlans?.forEach(plan => {
+      plan.workoutDays?.forEach(day => {
+        day.exercises?.forEach(ex => {
+          if (ex.exerciseId) {
+            exerciseIdsFromPlans.add(ex.exerciseId);
+          }
         });
+      });
+    });
 
-        // Add exercises that are either public or used in assigned plans
-        fetchedExercises.forEach(ex => {
-            if (ex.ownerId === 'public' || exerciseIdsFromPlans.has(ex.id)) {
-                exercisesMap.set(ex.id, ex);
-            }
-        });
-
-        return Array.from(exercisesMap.values());
-    }, [fetchedExercises, assignedPlans]);
-
-    const isLoading = assignedPlansLoading || myPlansLoading || exercisesLoading;
-
-    const handleBackToList = () => {
-        setEditingPlan(null);
-        setView('list');
-    };
-
-    const handleEditClick = (plan: WorkoutPlan) => {
-        setEditingPlan(plan);
-        setView('form');
-    };
-
-    const handleCreateClick = () => {
-        setEditingPlan(null);
-        setView('form');
-    }
-
-    const handleDelete = async (planId: string) => {
-      if (!user) return;
-
-      try {
-        await deleteDoc('workoutPlans', planId);
-        toast({
-          title: "Plan Usunięty",
-          description: "Plan treningowy został pomyślnie usunięty.",
-          variant: "destructive",
-        })
-      } catch (error) {
-        toast({
-          title: 'Błąd',
-          description: error instanceof Error ? error.message : 'Nie udało się usunąć planu.',
-          variant: 'destructive',
-        });
+    // Add exercises that are either public or used in assigned plans
+    fetchedExercises.forEach(ex => {
+      if (ex.ownerId === 'public' || exerciseIdsFromPlans.has(ex.id)) {
+        exercisesMap.set(ex.id, ex);
       }
-    }
+    });
 
-    if (view === 'form') {
-        return (
-            <div className="container mx-auto p-4 md:p-8">
-                 <Button variant="outline" onClick={handleBackToList} className="mb-6">
-                    &larr; Wróć do planów
-                </Button>
-                <TemplateForm onSave={handleBackToList} allExercises={allExercises} editingPlan={editingPlan}/>
-            </div>
-        );
+    return Array.from(exercisesMap.values());
+  }, [fetchedExercises, assignedPlans]);
+
+  const isLoading = assignedPlansLoading || myPlansLoading || exercisesLoading;
+
+  const handleBackToList = () => {
+    setEditingPlan(null);
+    setView('list');
+  };
+
+  const handleEditClick = (plan: WorkoutPlan) => {
+    setEditingPlan(plan);
+    setView('form');
+  };
+
+  const handleCreateClick = () => {
+    setEditingPlan(null);
+    setView('form');
+  }
+
+  const handleDelete = async (planId: string) => {
+    if (!user) return;
+
+    try {
+      await deleteDoc('workoutPlans', planId);
+      toast({
+        title: "Plan Usunięty",
+        description: "Plan treningowy został pomyślnie usunięty.",
+        variant: "destructive",
+      })
+    } catch (error) {
+      toast({
+        title: 'Błąd',
+        description: error instanceof Error ? error.message : 'Nie udało się usunąć planu.',
+        variant: 'destructive',
+      });
     }
+  }
+
+  if (view === 'form') {
+    return (
+      <div className="container mx-auto p-4 md:p-8">
+        <Button variant="outline" onClick={handleBackToList} className="mb-6">
+          &larr; Wróć do planów
+        </Button>
+        <TemplateForm onSave={handleBackToList} allExercises={allExercises} editingPlan={editingPlan} />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-4 md:p-8">
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="font-headline text-3xl font-bold">
-            Plany Treningowe
+          Plany Treningowe
         </h1>
         <Button onClick={handleCreateClick}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Stwórz Nowy Plan
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Stwórz Nowy Plan
         </Button>
       </div>
 
-       <Card>
+      <Card>
         <CardHeader>
-            <CardTitle className="font-headline">
-                Twoje Plany
-            </CardTitle>
-            <CardDescription>
-                Oto Twoje zapisane plany treningowe. Możesz ich użyć do szybkiego zapisywania treningu lub przypisać je swoim sportowcom.
-            </CardDescription>
+          <CardTitle className="font-headline">
+            Twoje Plany
+          </CardTitle>
+          <CardDescription>
+            Oto Twoje zapisane plany treningowe. Możesz ich użyć do szybkiego zapisywania treningu lub przypisać je swoim sportowcom.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-            {isLoading && <p>Ładowanie planów...</p>}
-            {!isLoading && workoutPlans && workoutPlans.length > 0 ? (
-                 <Accordion type="single" collapsible className="w-full">
-                 {workoutPlans.map((plan) => {
-                    const isMyPlan = plan.trainerId === user?.uid;
-                    return (
-                        <AccordionItem value={plan.id} key={plan.id}>
-                            <div className="flex items-center">
-                            <AccordionTrigger className="flex-grow p-4 hover:no-underline">
-                                    <div className="flex flex-col items-start gap-1 text-left">
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-semibold text-lg">{plan.name}</span>
-                                            {!isMyPlan && <span className="text-xs text-white px-2 py-0.5 rounded-full bg-primary/80">Od trenera</span>}
-                                            {isMyPlan && <span className="text-xs text-white px-2 py-0.5 rounded-full bg-accent-foreground/60">Własny</span>}
-                                        </div>
-                                        <span className="text-sm text-muted-foreground">{plan.workoutDays.length} dni treningowych</span>
-                                    </div>
-                                </AccordionTrigger>
-                                {isMyPlan && (
-                                    <div className="flex items-center gap-2 pr-4">
-                                    <AssignPlanDialog plan={plan} />
-                                    <Button size="sm" variant="outline" onClick={() => handleEditClick(plan)}>
-                                        <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <Button size="sm" variant="destructive" onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDelete(plan.id);
-                                    }}>
-                                        <Trash2 className="h-4 w-4"/>
-                                    </Button>
-                                </div>
-                                )}
+          {isLoading && <p>Ładowanie planów...</p>}
+          {!isLoading && workoutPlans && workoutPlans.length > 0 ? (
+            <Accordion type="single" collapsible className="w-full">
+              {workoutPlans.map((plan) => {
+                const isMyPlan = plan.trainerId === user?.uid;
+                const isTrainer = user?.role === 'trainer';
+                return (
+                  <AccordionItem value={plan.id} key={plan.id}>
+                    <div className="flex w-full items-center">
+                      <AccordionTrigger className="flex-grow p-4 hover:no-underline">
+                        <div className="flex flex-col items-start gap-1 text-left">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-lg">{plan.name}</span>
+                            {!isMyPlan && <span className="text-xs text-white px-2 py-0.5 rounded-full bg-primary/80">Od trenera</span>}
+                            {isMyPlan && <span className="text-xs text-white px-2 py-0.5 rounded-full bg-accent-foreground/60">Własny</span>}
+                          </div>
+                          <span className="text-sm text-muted-foreground">{plan.workoutDays.length} dni treningowych</span>
                         </div>
-                            <AccordionContent>
-                                <div className="p-4 bg-secondary/30 rounded-md m-4 mt-0 space-y-4">
-                                    {plan.workoutDays.map((day, dayIndex) => (
-                                        <div key={dayIndex}>
-                                            <h4 className="font-bold mb-2">{day.dayName}</h4>
-                                            <ul className="space-y-3 pl-4 border-l-2">
-                                                {day.exercises.map((ex, exIndex) => {
-                                                    const details = allExercises?.find(e => e.id === ex.exerciseId);
-                                                    return (
-                                                        <li key={exIndex} className="rounded-md bg-background p-3 shadow-sm">
-                                                            <p className="font-semibold">{details?.name || 'Nieznane Ćwiczenie'}</p>
-                                                            <div className="text-sm text-muted-foreground mt-1">
-                                                                {(details?.type === 'weight' || details?.type === 'reps') && ex.sets?.map((s, i) => (
-                                                                    <span key={i} className="mr-4">Seria {i+1}: {s.reps} {details?.type === 'weight' ? `x ${s.weight || 0}kg` : 'powt.'}</span>
-                                                                ))}
-                                                                {details?.type === 'duration' && (
-                                                                    <span><Timer className="inline h-4 w-4 mr-1"/>{ex.duration} sekund</span>
-                                                                )}
-                                                            </div>
-                                                        </li>
-                                                    )
-                                                })}
-                                            </ul>
-                                        </div>
-                                    ))}
-                            </div>
-                            </AccordionContent>
-                        </AccordionItem>
-                    )
-                 })}
-                </Accordion>
-            ) : (
-                 !isLoading && (
-                    <div className="text-center py-12 border-2 border-dashed rounded-lg">
-                        <Library className="mx-auto h-12 w-12 text-muted-foreground mb-4"/>
-                        <h3 className="font-headline text-xl font-semibold mb-2">Brak Planów</h3>
-                        <p className="text-muted-foreground mb-4">
-                             Nie masz jeszcze żadnych planów treningowych.
-                        </p>
-                        <Button variant="outline" onClick={handleCreateClick}>Stwórz pierwszy plan</Button>
+                      </AccordionTrigger>
+                      {isMyPlan && (
+                        <div className="flex items-center gap-2 pr-4">
+                          {isTrainer && (
+                            <AssignPlanDialog plan={plan} />
+                          )}
+                          <Button size="sm" variant="outline" onClick={() => handleEditClick(plan)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+
+                          <Button size="sm" variant="destructive" onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(plan.id);
+                          }}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                 )
-            )}
+                    <AccordionContent>
+                      <div className="p-4 bg-secondary/30 rounded-md m-4 mt-0 space-y-4">
+                        {plan.workoutDays.map((day, dayIndex) => (
+                          <div key={dayIndex}>
+                            <h4 className="font-bold mb-2">{day.dayName}</h4>
+                            <ul className="space-y-3 pl-4 border-l-2">
+                              {day.exercises.map((ex, exIndex) => {
+                                const details = allExercises?.find(e => e.id === ex.exerciseId);
+                                return (
+                                  <li key={exIndex} className="rounded-md bg-background p-3 shadow-sm">
+                                    <p className="font-semibold">{details?.name || 'Nieznane Ćwiczenie'}</p>
+                                    <div className="text-sm text-muted-foreground mt-1">
+                                      {(details?.type === 'weight' || details?.type === 'reps') && ex.sets?.map((s, i) => (
+                                        <span key={i} className="mr-4">Seria {i + 1}: {s.reps} {details?.type === 'weight' ? `x ${s.weight || 0}kg` : 'powt.'}</span>
+                                      ))}
+                                      {details?.type === 'duration' && (
+                                        <span><Timer className="inline h-4 w-4 mr-1" />{ex.duration} sekund</span>
+                                      )}
+                                    </div>
+                                  </li>
+                                )
+                              })}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                )
+              })}
+            </Accordion>
+          ) : (
+            !isLoading && (
+              <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                <Library className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="font-headline text-xl font-semibold mb-2">Brak Planów</h3>
+                <p className="text-muted-foreground mb-4">
+                  Nie masz jeszcze żadnych planów treningowych.
+                </p>
+                <Button variant="outline" onClick={handleCreateClick}>Stwórz pierwszy plan</Button>
+              </div>
+            )
+          )}
         </CardContent>
       </Card>
     </div>

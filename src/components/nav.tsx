@@ -54,7 +54,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCollection } from '@/lib/db-hooks';
 import { Loader2 } from 'lucide-react';
 
-const athleteNavItems = [
+export const athleteNavItems = [
   { href: '/athlete/dashboard', icon: LayoutDashboard, label: 'Panel Sportowca' },
   { href: '/athlete/log', icon: PlusSquare, label: 'Zapisz Trening' },
   { href: '/athlete/calendar', icon: CalendarDays, label: 'Kalendarz' },

@@ -82,8 +82,8 @@ export default function AthleteDashboardPage() {
 
   // Recent workouts (last 5)
   const { data: recentWorkouts, isLoading: workoutsLoading } = useCollection<WorkoutLog>(
-    user ? 'workoutSessions' : null,
-    { userId: user?.uid, status: 'completed' },
+    user ? 'workoutLogs' : null,
+    { athleteId: user?.uid, status: 'completed' },
     { sort: { endTime: -1 }, limit: 5 }
   );
 
@@ -256,7 +256,7 @@ export default function AthleteDashboardPage() {
           <CardContent>
             {isLoading ? (
               <div className="space-y-3">
-                {Array.from({length: 3}).map((_, i) => (
+                {Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="flex items-center justify-between p-3 rounded-md border">
                     <div className="space-y-1">
                       <Skeleton className="h-4 w-32" />
@@ -318,7 +318,7 @@ export default function AthleteDashboardPage() {
           <CardContent>
             {isLoading ? (
               <div className="space-y-4">
-                {Array.from({length: 3}).map((_, i) => (
+                {Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="space-y-2">
                     <Skeleton className="h-4 w-full" />
                     <Skeleton className="h-2 w-full" />
