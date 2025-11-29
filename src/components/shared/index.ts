@@ -10,3 +10,7 @@ export type { KnowledgeZoneViewProps } from './KnowledgeZoneView';
 
 export { WorkoutPlansListView } from './WorkoutPlansListView';
 export type { WorkoutPlansListViewProps, WorkoutPlansRole } from './WorkoutPlansListView';
+
+// Exercises components
+export { ExercisesListView, ExerciseCard, ExerciseFilters, ExerciseFormDialog, ProgressDialog } from './exercises';
+export type { ExercisesListViewProps, ExercisesRole, ExerciseFormData } from './exercises';
