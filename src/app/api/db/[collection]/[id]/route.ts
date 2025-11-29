@@ -23,7 +23,9 @@ import {
   TrainerRequest,
   Meal,
   Achievement,
-  Workout
+  Workout,
+  SocialProfile,
+  SocialPost
 } from '@/models';
 
 const modelMap: Record<string, any> = {
@@ -45,6 +47,8 @@ const modelMap: Record<string, any> = {
   achievements: Achievement,
   gyms: Gym,
   workouts: Workout,
+  socialProfiles: SocialProfile,
+  socialPosts: SocialPost,
 };
 
 // GET - Fetch single document by ID
@@ -143,6 +147,29 @@ export async function PATCH(
           { status: 400 }
         );
       }
+    }
+
+    // Special handling for socialPosts - toggle like functionality
+    if (collection === 'socialPosts' && body.toggleLike && body.userId) {
+      const post = await Model.findById(id).exec();
+      if (!post) {
+        return NextResponse.json({ error: 'Post not found' }, { status: 404 });
+      }
+
+      const userId = body.userId;
+      const likes = post.likes || [];
+      const isLiked = likes.includes(userId);
+
+      if (isLiked) {
+        // Remove like
+        post.likes = likes.filter((id: string) => id !== userId);
+      } else {
+        // Add like
+        post.likes = [...likes, userId];
+      }
+
+      await post.save();
+      return NextResponse.json({ data: post.toJSON() });
     }
 
     const doc = await Model.findByIdAndUpdate(id, body, { new: true }).exec();

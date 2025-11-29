@@ -23,6 +23,7 @@ import {
   BookMarked,
   ArrowLeft,
   ChevronRight,
+  Users2,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -64,6 +65,7 @@ export const athleteNavItems = [
   { href: '/athlete/log', icon: PlusSquare, label: 'Zapisz Trening' },
   { href: '/athlete/calendar', icon: CalendarDays, label: 'Kalendarz' },
   { href: '/athlete/chat', icon: MessageSquare, label: 'Czat' },
+  { href: '/athlete/social', icon: Users2, label: 'Social' },
   { href: '/athlete/workout-plans', icon: Library, label: 'Plany Treningowe' },
   { href: '/athlete/exercises', icon: Dumbbell, label: 'Ćwiczenia' },
   { href: '/athlete/running', icon: Footprints, label: 'Bieganie' },
@@ -79,6 +81,7 @@ const trainerNavItems = [
   { href: '/trainer/dashboard', icon: LayoutDashboard, label: 'Panel Trenera' },
   { href: '/trainer/my-athletes', icon: Users, label: 'Moi Sportowcy' },
   { href: '/trainer/chat', icon: MessageSquare, label: 'Czat' },
+  { href: '/trainer/social', icon: Users2, label: 'Social' },
   {
     label: 'Dieta',
     icon: Salad,

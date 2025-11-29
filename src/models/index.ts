@@ -18,3 +18,6 @@ export * from './PlannedWorkout';
 export * from './TrainerRequest';
 export * from './Achievement';
 export * from './Workout';
+export * from './PersonalRecord';
+export * from './SocialProfile';
+export * from './SocialPost';

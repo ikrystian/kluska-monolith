@@ -22,7 +22,9 @@ import {
   TrainerRequest,
   Meal,
   Achievement,
-  Workout
+  Workout,
+  SocialProfile,
+  SocialPost
 } from '@/models';
 
 const modelMap: Record<string, any> = {
@@ -44,6 +46,8 @@ const modelMap: Record<string, any> = {
   achievements: Achievement,
   gyms: Gym,
   workouts: Workout,
+  socialProfiles: SocialProfile,
+  socialPosts: SocialPost,
 };
 
 // GET - Fetch collection
@@ -57,7 +61,7 @@ export async function GET(
     const { collection } = await params;
 
     // Public collections that don't require authentication
-    const PUBLIC_COLLECTIONS = ['articles', 'articleCategories', 'muscleGroups', 'gyms'];
+    const PUBLIC_COLLECTIONS = ['articles', 'articleCategories', 'muscleGroups', 'gyms', 'socialPosts'];
 
     if (!PUBLIC_COLLECTIONS.includes(collection) && !session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
