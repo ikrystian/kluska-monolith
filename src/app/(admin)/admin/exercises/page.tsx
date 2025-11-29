@@ -24,15 +24,16 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Exercise, MuscleGroupName, MuscleGroup } from '@/lib/types';
-import { Search, Loader2, Edit, Trash2, Filter, PlayCircle, PlusCircle } from 'lucide-react';
+import { Search, Loader2, Edit, Trash2, Filter, PlayCircle, PlusCircle, Dumbbell, Repeat, Timer, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useUpdateDoc, useDeleteDoc, useCreateDoc } from '@/lib/db-hooks';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 const exerciseSchema = z.object({
   name: z.string().min(1, 'Nazwa jest wymagana.'),
@@ -291,6 +292,15 @@ export default function AdminExercisesPage() {
                   {!exercise.mainMuscleGroups?.length && exercise.muscleGroup && (
                     <Badge variant="secondary" className="text-[10px]">{exercise.muscleGroup}</Badge>
                   )}
+                  {/* Exercise type badge */}
+                  {exercise.type && (
+                    <Badge variant="outline" className="text-[10px] gap-1">
+                      {exercise.type === 'weight' && <Dumbbell className="h-2.5 w-2.5" />}
+                      {exercise.type === 'reps' && <Repeat className="h-2.5 w-2.5" />}
+                      {exercise.type === 'duration' && <Timer className="h-2.5 w-2.5" />}
+                      {exercise.type === 'weight' ? 'Ciężar' : exercise.type === 'reps' ? 'Powt.' : 'Czas'}
+                    </Badge>
+                  )}
                   {getOwnerBadge(exercise.ownerId)}
                 </div>
               </CardHeader>
@@ -379,20 +389,95 @@ export default function AdminExercisesPage() {
                 control={form.control}
                 name="type"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="space-y-3">
                     <FormLabel>Typ ćwiczenia</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isUpdating || isCreating}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Wybierz typ ćwiczenia" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="weight">Na wagę</SelectItem>
-                        <SelectItem value="duration">Na czas</SelectItem>
-                        <SelectItem value="reps">Na powtórzenia</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormDescription className="text-xs">
+                      Wybierz jak mierzone będą serie tego ćwiczenia
+                    </FormDescription>
+                    <FormControl>
+                      <div className="grid grid-cols-1 gap-3">
+                        {/* Weight option */}
+                        <div
+                          onClick={() => !isUpdating && !isCreating && field.onChange('weight')}
+                          className={cn(
+                            "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
+                            field.value === 'weight'
+                              ? "border-primary bg-primary/5"
+                              : "border-muted hover:border-muted-foreground/50"
+                          )}
+                        >
+                          <div className={cn(
+                            "flex items-center justify-center h-10 w-10 rounded-full shrink-0",
+                            field.value === 'weight' ? "bg-primary text-primary-foreground" : "bg-muted"
+                          )}>
+                            <Dumbbell className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium">Na ciężar (kg)</span>
+                              {field.value === 'weight' && <Check className="h-4 w-4 text-primary" />}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Ćwiczenia z obciążeniem - np. wyciskanie sztangi, przysiady ze sztangą
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Reps option */}
+                        <div
+                          onClick={() => !isUpdating && !isCreating && field.onChange('reps')}
+                          className={cn(
+                            "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
+                            field.value === 'reps'
+                              ? "border-primary bg-primary/5"
+                              : "border-muted hover:border-muted-foreground/50"
+                          )}
+                        >
+                          <div className={cn(
+                            "flex items-center justify-center h-10 w-10 rounded-full shrink-0",
+                            field.value === 'reps' ? "bg-primary text-primary-foreground" : "bg-muted"
+                          )}>
+                            <Repeat className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium">Na powtórzenia</span>
+                              {field.value === 'reps' && <Check className="h-4 w-4 text-primary" />}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Ćwiczenia z masą ciała - np. podciąganie, pompki, dipy
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Duration option */}
+                        <div
+                          onClick={() => !isUpdating && !isCreating && field.onChange('duration')}
+                          className={cn(
+                            "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
+                            field.value === 'duration'
+                              ? "border-primary bg-primary/5"
+                              : "border-muted hover:border-muted-foreground/50"
+                          )}
+                        >
+                          <div className={cn(
+                            "flex items-center justify-center h-10 w-10 rounded-full shrink-0",
+                            field.value === 'duration' ? "bg-primary text-primary-foreground" : "bg-muted"
+                          )}>
+                            <Timer className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium">Na czas</span>
+                              {field.value === 'duration' && <Check className="h-4 w-4 text-primary" />}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Ćwiczenia czasowe - np. plank, izometria, rozciąganie
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

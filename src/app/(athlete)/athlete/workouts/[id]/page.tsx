@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Clock, Signal, Dumbbell, Play, Calendar, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Clock, Signal, Dumbbell, Play, Calendar, ArrowRight, Repeat, Timer } from 'lucide-react';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -19,6 +19,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { type ExerciseType } from '@/lib/set-type-config';
 
 export default function WorkoutDetailsPage() {
     const params = useParams();
@@ -194,15 +195,64 @@ export default function WorkoutDetailsPage() {
                                             <p className="text-xs text-muted-foreground uppercase">Tempo</p>
                                             <p className="font-semibold">{series.tempo || '-'}</p>
                                         </div>
-                                        <div className="bg-secondary/20 p-2 rounded text-center col-span-2 sm:col-span-2">
-                                            <p className="text-xs text-muted-foreground uppercase">Zakres powtórzeń</p>
-                                            <p className="font-semibold">
-                                                {series.sets.length > 0
-                                                    ? `${Math.min(...series.sets.map(s => s.reps))} - ${Math.max(...series.sets.map(s => s.reps))}`
-                                                    : '-'
-                                                }
-                                            </p>
-                                        </div>
+                                        {/* Dynamic display based on exercise type */}
+                                        {(() => {
+                                            const exerciseType: ExerciseType = series.exercise.type || 'weight';
+
+                                            if (exerciseType === 'weight') {
+                                                return (
+                                                    <div className="bg-secondary/20 p-2 rounded text-center col-span-2 sm:col-span-2">
+                                                        <p className="text-xs text-muted-foreground uppercase flex items-center justify-center gap-1">
+                                                            <Dumbbell className="h-3 w-3" /> Zakres powtórzeń
+                                                        </p>
+                                                        <p className="font-semibold">
+                                                            {series.sets.length > 0 && series.sets.some(s => s.reps !== undefined)
+                                                                ? `${Math.min(...series.sets.filter(s => s.reps !== undefined).map(s => s.reps!))} - ${Math.max(...series.sets.filter(s => s.reps !== undefined).map(s => s.reps!))}`
+                                                                : '-'
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                );
+                                            } else if (exerciseType === 'reps') {
+                                                return (
+                                                    <div className="bg-secondary/20 p-2 rounded text-center col-span-2 sm:col-span-2">
+                                                        <p className="text-xs text-muted-foreground uppercase flex items-center justify-center gap-1">
+                                                            <Repeat className="h-3 w-3" /> Zakres powtórzeń
+                                                        </p>
+                                                        <p className="font-semibold">
+                                                            {series.sets.length > 0 && series.sets.some(s => s.reps !== undefined)
+                                                                ? `${Math.min(...series.sets.filter(s => s.reps !== undefined).map(s => s.reps!))} - ${Math.max(...series.sets.filter(s => s.reps !== undefined).map(s => s.reps!))}`
+                                                                : '-'
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                );
+                                            } else {
+                                                return (
+                                                    <div className="bg-secondary/20 p-2 rounded text-center col-span-2 sm:col-span-2">
+                                                        <p className="text-xs text-muted-foreground uppercase flex items-center justify-center gap-1">
+                                                            <Timer className="h-3 w-3" /> Zakres czasu
+                                                        </p>
+                                                        <p className="font-semibold">
+                                                            {series.sets.length > 0 && series.sets.some(s => s.duration !== undefined)
+                                                                ? `${Math.min(...series.sets.filter(s => s.duration !== undefined).map(s => s.duration!))} - ${Math.max(...series.sets.filter(s => s.duration !== undefined).map(s => s.duration!))} sek.`
+                                                                : '-'
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                );
+                                            }
+                                        })()}
+                                    </div>
+
+                                    {/* Exercise type badge */}
+                                    <div className="mt-2">
+                                        <Badge variant="outline" className="text-xs gap-1">
+                                            {series.exercise.type === 'weight' && <Dumbbell className="h-3 w-3" />}
+                                            {series.exercise.type === 'reps' && <Repeat className="h-3 w-3" />}
+                                            {series.exercise.type === 'duration' && <Timer className="h-3 w-3" />}
+                                            {series.exercise.type === 'weight' ? 'Na ciężar' : series.exercise.type === 'reps' ? 'Na powtórzenia' : series.exercise.type === 'duration' ? 'Na czas' : 'Na ciężar'}
+                                        </Badge>
                                     </div>
 
                                     {series.tip && (

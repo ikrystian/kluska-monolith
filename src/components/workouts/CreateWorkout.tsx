@@ -10,17 +10,21 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { TrainingLevel, SetType, Exercise, Workout } from '@/lib/types';
 import { useCollection, useCreateDoc, useUser } from '@/lib/db-hooks';
-import { Loader2, Plus, Trash2, GripVertical } from 'lucide-react';
+import { Loader2, Plus, Trash2, Dumbbell, Repeat, Timer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { SetTypeButton } from '@/components/workout/SetTypeModal';
+import { type ExerciseType, getExerciseTypeConfig } from '@/lib/set-type-config';
 
 // --- SCHEMA ---
 const workoutSetSchema = z.object({
     type: z.nativeEnum(SetType),
-    reps: z.coerce.number().min(0),
-    weight: z.coerce.number().min(0),
+    reps: z.coerce.number().min(0).optional(),
+    weight: z.coerce.number().min(0).optional(),
+    duration: z.coerce.number().min(0).optional(),
     restTimeSeconds: z.coerce.number().min(0),
 });
 
@@ -193,6 +197,11 @@ function ExerciseSeriesItem({ index, form, remove, exercises }: { index: number,
         name: `exerciseSeries.${index}.sets`,
     });
 
+    // Get the selected exercise ID and find the exercise type
+    const selectedExerciseId = form.watch(`exerciseSeries.${index}.exerciseId`);
+    const selectedExercise = exercises.find(e => e.id === selectedExerciseId);
+    const exerciseType: ExerciseType = selectedExercise?.type || 'weight';
+
     return (
         <Card className="relative">
             <Button
@@ -250,36 +259,97 @@ function ExerciseSeriesItem({ index, form, remove, exercises }: { index: number,
                     </div>
 
                     <div className="space-y-2">
+                        {/* Header row */}
+                        <div className="grid grid-cols-12 gap-2 items-center text-center">
+                            <Label className="col-span-1 text-[10px] text-muted-foreground">#</Label>
+                            <Label className="col-span-2 text-[10px] text-muted-foreground">Typ</Label>
+                            {exerciseType === 'weight' ? (
+                                <>
+                                    <Label className="col-span-2 text-[10px] text-muted-foreground">kg</Label>
+                                    <Label className="col-span-2 text-[10px] text-muted-foreground">Powt.</Label>
+                                </>
+                            ) : exerciseType === 'reps' ? (
+                                <Label className="col-span-4 text-[10px] text-muted-foreground">Powtórzenia</Label>
+                            ) : (
+                                <Label className="col-span-4 text-[10px] text-muted-foreground">Czas (sek.)</Label>
+                            )}
+                            <Label className="col-span-3 text-[10px] text-muted-foreground">Przerwa</Label>
+                            <Label className="col-span-1 text-[10px] text-muted-foreground"></Label>
+                        </div>
+
                         {setFields.map((setField: any, setIndex: number) => (
-                            <div key={setField.id} className="grid grid-cols-12 gap-2 items-end">
-                                <div className="col-span-4 md:col-span-3">
-                                    <Label className="text-[10px] mb-1 block">Typ</Label>
-                                    <Select
-                                        onValueChange={(val) => form.setValue(`exerciseSeries.${index}.sets.${setIndex}.type`, val)}
-                                        defaultValue={form.getValues(`exerciseSeries.${index}.sets.${setIndex}.type`)}
-                                    >
-                                        <SelectTrigger className="h-8 text-xs">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {Object.values(SetType).map(t => (
-                                                <SelectItem key={t} value={t}>{t}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                            <div key={setField.id} className="grid grid-cols-12 gap-2 items-center">
+                                {/* Set number */}
+                                <div className="col-span-1 flex justify-center text-sm font-mono text-muted-foreground">
+                                    {setIndex + 1}
                                 </div>
+
+                                {/* Set type button with modal */}
                                 <div className="col-span-2">
-                                    <Label className="text-[10px] mb-1 block">Powt.</Label>
-                                    <Input type="number" className="h-8 text-xs" {...form.register(`exerciseSeries.${index}.sets.${setIndex}.reps`)} />
+                                    <SetTypeButton
+                                        value={form.watch(`exerciseSeries.${index}.sets.${setIndex}.type`) || SetType.WorkingSet}
+                                        onChange={(val) => form.setValue(`exerciseSeries.${index}.sets.${setIndex}.type`, val)}
+                                    />
                                 </div>
-                                <div className="col-span-2">
-                                    <Label className="text-[10px] mb-1 block">kg</Label>
-                                    <Input type="number" className="h-8 text-xs" {...form.register(`exerciseSeries.${index}.sets.${setIndex}.weight`)} />
+
+                                {/* Conditional fields based on exercise type */}
+                                {exerciseType === 'weight' ? (
+                                    <>
+                                        <div className="col-span-2">
+                                            <Input
+                                                type="number"
+                                                step="0.5"
+                                                className="h-8 text-xs text-center"
+                                                placeholder="0"
+                                                {...form.register(`exerciseSeries.${index}.sets.${setIndex}.weight`)}
+                                            />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <Input
+                                                type="number"
+                                                className="h-8 text-xs text-center"
+                                                placeholder="0"
+                                                {...form.register(`exerciseSeries.${index}.sets.${setIndex}.reps`)}
+                                            />
+                                        </div>
+                                    </>
+                                ) : exerciseType === 'reps' ? (
+                                    <div className="col-span-4">
+                                        <Input
+                                            type="number"
+                                            className="h-8 text-xs text-center"
+                                            placeholder="0"
+                                            {...form.register(`exerciseSeries.${index}.sets.${setIndex}.reps`)}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="col-span-4">
+                                        <div className="relative">
+                                            <Input
+                                                type="number"
+                                                className="h-8 text-xs text-center pr-6"
+                                                placeholder="0"
+                                                {...form.register(`exerciseSeries.${index}.sets.${setIndex}.duration`)}
+                                            />
+                                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Rest time */}
+                                <div className="col-span-3">
+                                    <div className="relative">
+                                        <Input
+                                            type="number"
+                                            className="h-8 text-xs text-center pr-6"
+                                            placeholder="60"
+                                            {...form.register(`exerciseSeries.${index}.sets.${setIndex}.restTimeSeconds`)}
+                                        />
+                                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
+                                    </div>
                                 </div>
-                                <div className="col-span-3 md:col-span-2">
-                                    <Label className="text-[10px] mb-1 block">Przerwa (s)</Label>
-                                    <Input type="number" className="h-8 text-xs" {...form.register(`exerciseSeries.${index}.sets.${setIndex}.restTimeSeconds`)} />
-                                </div>
+
+                                {/* Delete button */}
                                 <div className="col-span-1">
                                     <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => removeSet(setIndex)}>
                                         <Trash2 className="h-3 w-3" />

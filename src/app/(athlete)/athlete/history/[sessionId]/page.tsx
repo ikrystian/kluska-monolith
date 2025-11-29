@@ -10,14 +10,17 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Dumbbell, Activity, Clock, MessageSquare, Building2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Dumbbell, Activity, Clock, MessageSquare, Building2, Repeat, Timer, Trophy } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { useDoc, useCollection, useUser } from '@/lib/db-hooks';
-import type { WorkoutLog, Exercise, Gym } from '@/lib/types';
+import type { WorkoutLog, Exercise, Gym, PersonalRecord } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
+import { type ExerciseType } from '@/lib/set-type-config';
+import { SetTypeBadge } from '@/components/workout/SetTypeModal';
 
 export default function SessionSummaryPage() {
   const { user } = useUser();
@@ -119,6 +122,33 @@ export default function SessionSummaryPage() {
             </Card>
           </div>
 
+          {/* New Personal Records Section */}
+          {workoutLog.newRecords && workoutLog.newRecords.length > 0 && (
+            <div>
+              <h3 className="mb-4 font-headline text-xl flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-yellow-500" />
+                Nowe Rekordy!
+              </h3>
+              <div className="grid gap-2">
+                {workoutLog.newRecords.map((record, idx) => (
+                  <Card key={idx} className="bg-yellow-500/10 border-yellow-500/30">
+                    <CardContent className="p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Trophy className="h-4 w-4 text-yellow-500" />
+                        <span className="font-medium">{record.exerciseName}</span>
+                      </div>
+                      <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700">
+                        {record.type === 'max_weight' && `${record.value} kg @ ${record.reps} powt.`}
+                        {record.type === 'max_reps' && `${record.value} powtórzeń`}
+                        {record.type === 'max_duration' && `${record.value} sek.`}
+                      </Badge>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div>
             <h3 className="mb-4 font-headline text-xl">Szczegóły sesji</h3>
             <Table>
@@ -126,25 +156,40 @@ export default function SessionSummaryPage() {
                 <TableRow>
                   <TableHead className="w-[200px]">Ćwiczenie</TableHead>
                   <TableHead>Seria</TableHead>
+                  <TableHead>Typ</TableHead>
                   <TableHead className="text-right">Wynik</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {workoutLog.exercises.map((ex, exIndex) => {
                   const exerciseDetails = ex.exercise;
+                  const exerciseType: ExerciseType = exerciseDetails?.type || 'weight';
 
                   return ex.sets.map((set, setIndex) => (
                     <TableRow key={`${exIndex}-${setIndex}`}>
                       {setIndex === 0 ? (
                         <TableCell rowSpan={ex.sets.length} className="font-medium align-top">
-                          {exerciseDetails?.name || 'Nieznane Ćwiczenie'}
+                          <div className="flex flex-col gap-1">
+                            <span>{exerciseDetails?.name || 'Nieznane Ćwiczenie'}</span>
+                            <Badge variant="outline" className="w-fit text-[10px] gap-1">
+                              {exerciseType === 'weight' && <Dumbbell className="h-2.5 w-2.5" />}
+                              {exerciseType === 'reps' && <Repeat className="h-2.5 w-2.5" />}
+                              {exerciseType === 'duration' && <Timer className="h-2.5 w-2.5" />}
+                              {exerciseType === 'weight' ? 'Ciężar' : exerciseType === 'reps' ? 'Powt.' : 'Czas'}
+                            </Badge>
+                          </div>
                         </TableCell>
                       ) : null}
                       <TableCell>{setIndex + 1}</TableCell>
-                      <TableCell className="text-right">
-                        {exerciseDetails?.type === 'duration'
+                      <TableCell>
+                        <SetTypeBadge type={set.type} />
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {exerciseType === 'duration'
                           ? `${set.duration || 0} sek.`
-                          : `${set.reps || 0} ${exerciseDetails?.type === 'weight' ? `x ${set.weight || 0}kg` : 'powt.'}`
+                          : exerciseType === 'weight'
+                            ? `${set.weight || 0}kg × ${set.reps || 0}`
+                            : `${set.reps || 0} powt.`
                         }
                       </TableCell>
                     </TableRow>

@@ -38,14 +38,16 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { CarouselWorkoutView } from '@/components/workout/CarouselWorkoutView';
+import { SetTypeButton } from '@/components/workout/SetTypeModal';
+import { type ExerciseType } from '@/lib/set-type-config';
 
 
 // --- SCHEMA DEFINITIONS ---
 const setSchema = z.object({
   number: z.number().optional(),
   type: z.nativeEnum(SetType).default(SetType.WorkingSet),
-  reps: z.coerce.number().min(0, 'Powtórzenia muszą być dodatnie.').default(0),
-  weight: z.coerce.number().min(0, 'Ciężar musi być dodatni.').default(0),
+  reps: z.coerce.number().min(0, 'Powtórzenia muszą być dodatnie.').optional(),
+  weight: z.coerce.number().min(0, 'Ciężar musi być dodatni.').optional(),
   restTimeSeconds: z.coerce.number().min(0).default(60),
   duration: z.coerce.number().min(0, 'Czas musi być dodatni.').optional(),
   completed: z.boolean().optional(),
@@ -711,19 +713,33 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
   const [validationErrors, setValidationErrors] = useState<Record<number, string>>({});
   const { toast } = useToast();
 
-  // Validation function for a set
+  // Get exercise type from exercise details
+  const exerciseType: ExerciseType = exerciseDetails?.type || 'weight';
+
+  // Validation function for a set - depends on exercise type
   const validateSet = (setIndex: number): { valid: boolean; error?: string } => {
     const reps = watch(`exerciseSeries.${index}.sets.${setIndex}.reps`);
     const weight = watch(`exerciseSeries.${index}.sets.${setIndex}.weight`);
+    const duration = watch(`exerciseSeries.${index}.sets.${setIndex}.duration`);
 
-    // Reps must be greater than 0
-    if (!reps || reps <= 0) {
-      return { valid: false, error: 'Uzupełnij liczbę powtórzeń' };
-    }
-
-    // Weight must be defined (can be 0 for bodyweight exercises)
-    if (weight === undefined || weight === null || weight === '' as any) {
-      return { valid: false, error: 'Uzupełnij ciężar' };
+    if (exerciseType === 'weight') {
+      // Weight exercises need both reps and weight
+      if (!reps || reps <= 0) {
+        return { valid: false, error: 'Uzupełnij liczbę powtórzeń' };
+      }
+      if (weight === undefined || weight === null || weight === '' as any) {
+        return { valid: false, error: 'Uzupełnij ciężar' };
+      }
+    } else if (exerciseType === 'reps') {
+      // Reps-only exercises just need reps
+      if (!reps || reps <= 0) {
+        return { valid: false, error: 'Uzupełnij liczbę powtórzeń' };
+      }
+    } else if (exerciseType === 'duration') {
+      // Duration exercises need duration
+      if (!duration || duration <= 0) {
+        return { valid: false, error: 'Uzupełnij czas trwania' };
+      }
     }
 
     return { valid: true };
@@ -815,12 +831,21 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
+          {/* Dynamic header based on exercise type */}
           <div className="grid grid-cols-12 gap-2 items-center text-center">
             <Label className="col-span-1 text-xs text-muted-foreground">#</Label>
             <Label className="col-span-2 text-xs text-muted-foreground">Typ</Label>
-            <Label className="col-span-2 text-xs text-muted-foreground">kg</Label>
-            <Label className="col-span-2 text-xs text-muted-foreground">Reps</Label>
-            <Label className="col-span-3 text-xs text-muted-foreground">Przerwa (s)</Label>
+            {exerciseType === 'weight' ? (
+              <>
+                <Label className="col-span-2 text-xs text-muted-foreground">kg</Label>
+                <Label className="col-span-2 text-xs text-muted-foreground">Powt.</Label>
+              </>
+            ) : exerciseType === 'reps' ? (
+              <Label className="col-span-4 text-xs text-muted-foreground">Powtórzenia</Label>
+            ) : (
+              <Label className="col-span-4 text-xs text-muted-foreground">Czas (sek.)</Label>
+            )}
+            <Label className="col-span-3 text-xs text-muted-foreground">Przerwa</Label>
             <Label className="col-span-2 text-xs text-muted-foreground">✓</Label>
           </div>
           {fields.map((setField, setIndex) => {
@@ -845,6 +870,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                   {setIndex + 1}
                 </div>
 
+                {/* Set type button with modal */}
                 <div className="col-span-2">
                   <FormField
                     control={control}
@@ -852,64 +878,108 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                     render={({ field }) => (
                       <FormItem className="space-y-0">
                         <FormControl>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <SelectTrigger className="h-8 text-xs px-1">
-                              <SelectValue placeholder="Typ" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Object.values(SetType).map((type) => (
-                                <SelectItem key={type} value={type} className="text-xs">{type}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <SetTypeButton
+                            value={field.value || SetType.WorkingSet}
+                            onChange={field.onChange}
+                          />
                         </FormControl>
                       </FormItem>
                     )}
                   />
                 </div>
 
-                <FormField
-                  control={control}
-                  name={`exerciseSeries.${index}.sets.${setIndex}.weight`}
-                  render={({ field }) => (
-                    <FormItem className="col-span-2 space-y-0">
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.5"
-                          placeholder="0"
-                          {...field}
-                          onChange={(e) => {
-                            field.onChange(e);
-                            clearValidationError(setIndex);
-                          }}
-                          className={`h-8 text-center ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (field.value === undefined || field.value === null || field.value === '') ? "border-destructive ring-destructive/20 ring-1" : ""}`}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+                {/* Conditional fields based on exercise type */}
+                {exerciseType === 'weight' ? (
+                  <>
+                    <FormField
+                      control={control}
+                      name={`exerciseSeries.${index}.sets.${setIndex}.weight`}
+                      render={({ field }) => (
+                        <FormItem className="col-span-2 space-y-0">
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.5"
+                              placeholder="0"
+                              {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                clearValidationError(setIndex);
+                              }}
+                              className={`h-8 text-center ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (field.value === undefined || field.value === null || field.value === '') ? "border-destructive ring-destructive/20 ring-1" : ""}`}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={control}
-                  name={`exerciseSeries.${index}.sets.${setIndex}.reps`}
-                  render={({ field }) => (
-                    <FormItem className="col-span-2 space-y-0">
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="0"
-                          {...field}
-                          onChange={(e) => {
-                            field.onChange(e);
-                            clearValidationError(setIndex);
-                          }}
-                          className={`h-8 text-center ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={control}
+                      name={`exerciseSeries.${index}.sets.${setIndex}.reps`}
+                      render={({ field }) => (
+                        <FormItem className="col-span-2 space-y-0">
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="0"
+                              {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                clearValidationError(setIndex);
+                              }}
+                              className={`h-8 text-center ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                ) : exerciseType === 'reps' ? (
+                  <FormField
+                    control={control}
+                    name={`exerciseSeries.${index}.sets.${setIndex}.reps`}
+                    render={({ field }) => (
+                      <FormItem className="col-span-4 space-y-0">
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              clearValidationError(setIndex);
+                            }}
+                            className={`h-8 text-center ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <FormField
+                    control={control}
+                    name={`exerciseSeries.${index}.sets.${setIndex}.duration`}
+                    render={({ field }) => (
+                      <FormItem className="col-span-4 space-y-0">
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              placeholder="0"
+                              {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                clearValidationError(setIndex);
+                              }}
+                              className={`h-8 text-center pr-6 ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
+                            />
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
+                          </div>
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 <FormField
                   control={control}

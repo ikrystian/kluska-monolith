@@ -65,11 +65,11 @@ export interface Exercise {
 export interface WorkoutSet {
   number: number;
   type: SetType;
-  reps: number;
-  weight: number;
+  reps?: number; // Optional for duration-based exercises
+  weight?: number; // Optional for reps-only exercises (bodyweight)
+  duration?: number; // For duration-based exercises
   restTimeSeconds: number;
-  completed?: boolean; // Added for tracking state
-  duration?: number; // Added to support duration-based sets if needed
+  completed?: boolean; // For tracking state during workout
 }
 
 export interface ExerciseSeries {
@@ -162,7 +162,21 @@ export type WorkoutLog = {
   status?: 'in-progress' | 'completed';
   startTime?: Timestamp;
   feedback?: string;
+  newRecords?: PersonalRecord[]; // New records achieved in this workout
 };
+
+// Personal Record for tracking athlete's best performances
+export interface PersonalRecord {
+  id: string;
+  athleteId: string;
+  exerciseId: string;
+  exerciseName: string; // Snapshot of exercise name at time of record
+  type: 'max_weight' | 'max_reps' | 'max_duration';
+  value: number; // The record value (kg, reps, or seconds)
+  reps?: number; // For max_weight - at how many reps was this achieved
+  achievedAt: Timestamp;
+  workoutLogId: string; // Reference to the workout where this was achieved
+}
 
 export type Goal = {
   id: string;

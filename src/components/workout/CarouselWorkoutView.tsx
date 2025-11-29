@@ -13,6 +13,7 @@ import { RestTimerSlide } from './RestTimerSlide';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { type Exercise, SetType } from '@/lib/types';
+import { type ExerciseType } from '@/lib/set-type-config';
 
 // Type for form values (matching the log page schema)
 interface LogFormValues {
@@ -115,23 +116,38 @@ export function CarouselWorkoutView({
     return count;
   }, [completedStates]);
 
-  // Validation function for a set
+  // Validation function for a set - depends on exercise type
   const validateSet = useCallback((exerciseIndex: number, setIndex: number): { valid: boolean; error?: string } => {
     const set = exerciseSeries[exerciseIndex]?.sets[setIndex];
     if (!set) return { valid: false, error: 'Seria nie istnieje' };
 
-    // Reps must be greater than 0
-    if (!set.reps || set.reps <= 0) {
-      return { valid: false, error: 'Uzupełnij liczbę powtórzeń (musi być większa od 0)' };
-    }
+    // Get exercise type
+    const exerciseId = exerciseSeries[exerciseIndex]?.exerciseId;
+    const exerciseDetails = allExercises?.find(ex => ex.id === exerciseId);
+    const exerciseType: ExerciseType = exerciseDetails?.type || 'weight';
 
-    // Weight must be defined (can be 0 for bodyweight exercises)
-    if (set.weight === undefined || set.weight === null || set.weight === '' as any) {
-      return { valid: false, error: 'Uzupełnij ciężar (0 dla ćwiczeń z masą ciała)' };
+    if (exerciseType === 'weight') {
+      // Weight exercises need both reps and weight
+      if (!set.reps || set.reps <= 0) {
+        return { valid: false, error: 'Uzupełnij liczbę powtórzeń (musi być większa od 0)' };
+      }
+      if (set.weight === undefined || set.weight === null || set.weight === '' as any) {
+        return { valid: false, error: 'Uzupełnij ciężar (0 dla ćwiczeń z masą ciała)' };
+      }
+    } else if (exerciseType === 'reps') {
+      // Reps-only exercises just need reps
+      if (!set.reps || set.reps <= 0) {
+        return { valid: false, error: 'Uzupełnij liczbę powtórzeń (musi być większa od 0)' };
+      }
+    } else if (exerciseType === 'duration') {
+      // Duration exercises need duration
+      if (!set.duration || set.duration <= 0) {
+        return { valid: false, error: 'Uzupełnij czas trwania (musi być większy od 0)' };
+      }
     }
 
     return { valid: true };
-  }, [exerciseSeries]);
+  }, [exerciseSeries, allExercises]);
 
   // Get current slide data
   const currentSlide = slides[currentSlideIndex];
@@ -270,6 +286,10 @@ export function CarouselWorkoutView({
     form.setValue(`exerciseSeries.${exerciseIndex}.sets.${setIndex}.weight`, value);
   }, [form]);
 
+  const handleDurationChange = useCallback((exerciseIndex: number, setIndex: number, value: number) => {
+    form.setValue(`exerciseSeries.${exerciseIndex}.sets.${setIndex}.duration`, value);
+  }, [form]);
+
   if (slides.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-center">
@@ -330,12 +350,15 @@ export function CarouselWorkoutView({
                       setType={setData.type}
                       targetReps={setData.reps}
                       targetWeight={setData.weight}
+                      targetDuration={setData.duration}
                       actualReps={setData.reps}
                       actualWeight={setData.weight}
+                      actualDuration={setData.duration}
                       tempo={exerciseData.tempo}
                       tip={exerciseData.tip}
                       onRepsChange={(value) => handleRepsChange(slide.exerciseIndex, slide.setIndex, value)}
                       onWeightChange={(value) => handleWeightChange(slide.exerciseIndex, slide.setIndex, value)}
+                      onDurationChange={(value) => handleDurationChange(slide.exerciseIndex, slide.setIndex, value)}
                       isCompleted={setData.completed}
                       validationError={showError}
                     />
