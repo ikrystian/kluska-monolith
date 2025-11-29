@@ -89,9 +89,9 @@ function ProgressDialog({ exercise, userId, open, onOpenChange }: { exercise: Ex
     if (!logs || !exercise) return [];
 
     return logs
-      .filter(log => log.exercises.some(ex => ex.exercise.id === exercise.id))
+      .filter(log => log.exercises.some(ex => ex.exercise?.id === exercise.id))
       .map(log => {
-        const exLog = log.exercises.find(ex => ex.exercise.id === exercise.id);
+        const exLog = log.exercises.find(ex => ex.exercise?.id === exercise.id);
         // Calculate max weight for weight-based, or max reps/duration
         let value = 0;
         if (exercise.type === 'weight' || !exercise.type) {

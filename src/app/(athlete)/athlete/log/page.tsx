@@ -296,6 +296,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
         };
 
         return {
+          exerciseId: series.exerciseId,
           exercise: exerciseSnapshot,
           sets: series.sets || [],
           tempo: series.tempo,
@@ -415,6 +416,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
         type: 'weight'
       };
       return {
+        exerciseId: series.exerciseId,
         exercise: exerciseSnapshot,
         sets: series.sets || [],
         tempo: series.tempo,
@@ -886,7 +888,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
                         </div>
                         <div>
                           <h3 className="font-semibold text-lg">{plan.name}</h3>
-                          <p className="text-sm text-muted-foreground">{plan.stages.length} etapów</p>
+                          <p className="text-sm text-muted-foreground">{plan.stages?.length || 0} etapów</p>
                         </div>
                         <ChevronRight className="ml-auto h-5 w-5 text-muted-foreground" />
                       </CardContent>
@@ -899,16 +901,16 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
                     </SheetHeader>
                     <ScrollArea className="h-full pb-20">
                       <Accordion type="single" collapsible className="w-full">
-                        {plan.stages.map((stage, stageIndex) => (
+                        {plan.stages?.map((stage, stageIndex) => (
                           <AccordionItem value={`stage-${stageIndex}`} key={stageIndex}>
                             <AccordionTrigger className="font-semibold">{stage.name}</AccordionTrigger>
                             <AccordionContent>
                               <div className="space-y-4 pl-2">
-                                {stage.weeks.map((week, weekIndex) => (
+                                {stage.weeks?.map((week, weekIndex) => (
                                   <div key={weekIndex} className="border-l-2 pl-4">
                                     <h4 className="text-sm font-medium text-muted-foreground mb-2">Tydzień {weekIndex + 1}</h4>
                                     <div className="grid gap-2">
-                                      {week.days.map((day, dayIndex) => {
+                                      {week.days?.map((day, dayIndex) => {
                                         if (day === 'Rest Day') {
                                           return (
                                             <div key={dayIndex} className="p-2 rounded bg-secondary/20 text-sm text-muted-foreground flex justify-between">
@@ -923,7 +925,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
                                             <CardContent className="p-3 flex justify-between items-center">
                                               <div>
                                                 <p className="font-medium text-sm">Dzień {dayIndex + 1}: {day.name}</p>
-                                                <p className="text-xs text-muted-foreground">{day.exerciseSeries.length} ćwiczeń</p>
+                                                <p className="text-xs text-muted-foreground">{day.exerciseSeries?.length || 0} ćwiczeń</p>
                                               </div>
                                               <Play className="h-4 w-4 text-primary" />
                                             </CardContent>

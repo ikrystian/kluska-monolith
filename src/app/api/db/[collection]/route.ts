@@ -4,28 +4,28 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/mongodb';
 
-// Import all models
-import { User } from '@/models/User';
-import { Article } from '@/models/Article';
-import { Exercise } from '@/models/Exercise';
-import { WorkoutLog } from '@/models/WorkoutLog';
-import { WorkoutPlan } from '@/models/WorkoutPlan';
-import { Conversation } from '@/models/Conversation';
-import { Message } from '@/models/Message';
-import { BodyMeasurement } from '@/models/BodyMeasurement';
-import { RunningSession } from '@/models/RunningSession';
-import { Goal } from '@/models/Goal';
-import { MuscleGroup } from '@/models/MuscleGroup';
-import { Gym } from '@/models/Gym';
 import {
+  User,
+  Article,
   ArticleCategory,
+  Exercise,
+  WorkoutLog,
+  WorkoutPlan,
+  Conversation,
+  Message,
+  BodyMeasurement,
+  RunningSession,
+  Goal,
+  MuscleGroup,
+  Gym,
   PlannedWorkout,
   TrainerRequest,
   Meal,
-  Achievement
+  Achievement,
+  Workout
 } from '@/models';
 
-const modelMap: Record<string, Model<any>> = {
+const modelMap: Record<string, any> = {
   users: User,
   articles: Article,
   articleCategories: ArticleCategory,
@@ -43,6 +43,7 @@ const modelMap: Record<string, Model<any>> = {
   runningSessions: RunningSession,
   achievements: Achievement,
   gyms: Gym,
+  workouts: Workout,
 };
 
 // GET - Fetch collection
@@ -119,7 +120,12 @@ export async function POST(
     await connectToDatabase();
 
     const { collection } = await params;
-    const Model = modelMap[collection];
+    let Model = modelMap[collection];
+
+    // Robust lookup fallback
+    if (!Model && collection === 'workoutPlans') {
+      Model = WorkoutPlan;
+    }
 
     if (!Model) {
       return NextResponse.json({ error: 'Collection not found' }, { status: 404 });

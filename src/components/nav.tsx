@@ -64,7 +64,7 @@ export const athleteNavItems = [
   { href: '/athlete/log', icon: PlusSquare, label: 'Zapisz Trening' },
   { href: '/athlete/calendar', icon: CalendarDays, label: 'Kalendarz' },
   { href: '/athlete/chat', icon: MessageSquare, label: 'Czat' },
-  { href: '/athlete/templates', icon: Library, label: 'Plany Treningowe' },
+  { href: '/athlete/workout-plans', icon: Library, label: 'Plany Treningowe' },
   { href: '/athlete/exercises', icon: Dumbbell, label: 'Ćwiczenia' },
   { href: '/athlete/running', icon: Footprints, label: 'Bieganie' },
   { href: '/athlete/measurements', icon: Ruler, label: 'Pomiary' },

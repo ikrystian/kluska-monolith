@@ -17,3 +17,4 @@ export * from './NutritionGoal';
 export * from './PlannedWorkout';
 export * from './TrainerRequest';
 export * from './Achievement';
+export * from './Workout';
