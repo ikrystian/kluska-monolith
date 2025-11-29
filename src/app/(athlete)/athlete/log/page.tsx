@@ -61,6 +61,7 @@ const logSchema = z.object({
   exerciseSeries: z.array(exerciseSeriesSchema),
   level: z.nativeEnum(TrainingLevel).default(TrainingLevel.Beginner),
   durationMinutes: z.number().optional(),
+  startTime: z.any().optional(), // Allow passing start time for resume
 });
 
 type LogFormValues = z.infer<typeof logSchema>;
@@ -247,9 +248,9 @@ function WorkoutBuilderView({ initialData, onStart, onCancel, allExercises, isLo
 
 
 // --- ACTIVE WORKOUT VIEW ---
-function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLoadingExercises }: { initialWorkout: LogFormValues; allExercises: Exercise[] | null; onFinishWorkout: () => void; isLoadingExercises: boolean }) {
-  const [startTime] = useState(new Date());
-  const [workoutLogId, setWorkoutLogId] = useState<string | null>(null);
+function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLoadingExercises, initialLogId }: { initialWorkout: LogFormValues; allExercises: Exercise[] | null; onFinishWorkout: () => void; isLoadingExercises: boolean; initialLogId?: string | null }) {
+  const [startTime] = useState(initialWorkout.startTime ? new Date(initialWorkout.startTime) : new Date());
+  const [workoutLogId, setWorkoutLogId] = useState<string | null>(initialLogId || null);
   const [isFinished, setIsFinished] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -278,7 +279,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
     }
   }, [fields.length, activeExerciseIndex]);
 
-  // Effect to create the workout document on start
+  // Effect to create the workout document on start (only if not resuming)
   useEffect(() => {
     if (!user || workoutLogId) return;
 
@@ -334,6 +335,66 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
 
     createInitialWorkoutLog();
   }, [user, initialWorkout, onFinishWorkout, workoutLogId, startTime, toast, allExercises]);
+
+  // Effect to update URL with logId
+  useEffect(() => {
+    if (workoutLogId) {
+      const url = new URL(window.location.href);
+      const currentLogId = url.searchParams.get('logId');
+      if (currentLogId !== workoutLogId) {
+        url.searchParams.set('logId', workoutLogId);
+        // Clean up workoutId if present as we are now in a specific log
+        if (url.searchParams.has('workoutId')) {
+          url.searchParams.delete('workoutId');
+        }
+        router.replace(url.pathname + url.search);
+      }
+    }
+  }, [workoutLogId, router]);
+
+  // Auto-save effect
+  useEffect(() => {
+    if (!workoutLogId || !user || isFinished) return;
+
+    const saveTimeout = setTimeout(async () => {
+      const currentData = form.getValues();
+      const exercisesWithNames = currentData.exerciseSeries.map(series => {
+        const exerciseDetails = allExercises?.find(ex => ex.id === series.exerciseId);
+        const exerciseSnapshot: Exercise = exerciseDetails || {
+          id: series.exerciseId,
+          name: 'Unknown Exercise',
+          mainMuscleGroups: [],
+          secondaryMuscleGroups: [],
+          type: 'weight'
+        };
+        return {
+          exerciseId: series.exerciseId,
+          exercise: exerciseSnapshot,
+          sets: series.sets || [],
+          tempo: series.tempo,
+          tip: series.tip
+        };
+      });
+
+      const updateData = {
+        exercises: exercisesWithNames,
+        // Don't update status or endTime here
+      };
+
+      try {
+        await fetch(`/api/db/workoutLogs/${workoutLogId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updateData),
+        });
+        console.log('Auto-saved workout progress');
+      } catch (error) {
+        console.error('Error auto-saving workout:', error);
+      }
+    }, 2000); // Debounce for 2 seconds
+
+    return () => clearTimeout(saveTimeout);
+  }, [form.watch(), workoutLogId, user, allExercises, isFinished]);
 
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -521,7 +582,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
                   </FormItem>
                 )}
               />
-              <p className="text-xs text-muted-foreground">{format(new Date(), "EEEE, d MMMM", { locale: pl })}</p>
+              <p className="text-xs text-muted-foreground">{format(startTime, "EEEE, d MMMM, HH:mm", { locale: pl })}</p>
             </div>
             <div className="flex items-center gap-2">
               <div className="flex items-center text-sm font-mono bg-secondary px-2 py-1 rounded">
@@ -983,7 +1044,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
                     </div>
                     <div className="flex-1">
                       <h3 className="font-semibold">{log.workoutName}</h3>
-                      <p className="text-xs text-muted-foreground">{format(new Date(log.endTime), 'd MMMM yyyy', { locale: pl })}</p>
+                      <p className="text-xs text-muted-foreground">{format(new Date(log.endTime as unknown as string | number | Date), 'd MMMM yyyy', { locale: pl })}</p>
                     </div>
                     <Button size="sm" variant="ghost">Powtórz</Button>
                   </CardContent>
@@ -1001,6 +1062,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
 export default function LogWorkoutPage() {
   const [view, setView] = useState<'selection' | 'builder' | 'active'>('selection');
   const [builderData, setBuilderData] = useState<LogFormValues | null>(null);
+  const [activeLogId, setActiveLogId] = useState<string | null>(null);
   const { user } = useUser();
   const { data: userProfile } = useDoc<UserProfile>('users', user?.uid || null);
 
@@ -1017,12 +1079,70 @@ export default function LogWorkoutPage() {
     user?.uid ? { ownerId: { $in: ownerIds } } : undefined
   );
 
+  // Check for active workout
+  const { data: activeWorkouts, isLoading: isLoadingActive } = useCollection<WorkoutLog>(
+    user?.uid ? 'workoutLogs' : null,
+    user?.uid ? { athleteId: user.uid, status: 'in-progress' } : undefined
+  );
+
   const searchParams = useSearchParams();
   const workoutId = searchParams.get('workoutId');
+  const logId = searchParams.get('logId');
   const { data: preselectedWorkout, isLoading: isLoadingPreselected } = useDoc<Workout>('workouts', workoutId);
+  const { toast } = useToast();
 
-  // Auto-start builder if workoutId is present and workout is loaded
+  // Handle Active Workout Resume
   useEffect(() => {
+    if (activeWorkouts && activeWorkouts.length > 0) {
+      const activeLog = logId
+        ? activeWorkouts.find(l => l.id === logId) || activeWorkouts[0]
+        : activeWorkouts[0];
+
+      // If user tried to start a new workout via URL but has an active one
+      if (workoutId && activeLog.id !== workoutId) { // Note: workoutId param is a Workout ID, activeLog.id is Log ID. We can't easily compare, but existence of activeLog takes precedence.
+        // Ideally we'd check if they are trying to start the SAME workout, but for now strict single-session policy.
+        // We can show a toast only if we haven't already set up the view
+        if (view !== 'active') {
+          toast({
+            title: "Wznowiono trening",
+            description: "Masz niezakończony trening. Został on przywrócony.",
+          });
+        }
+      }
+
+      const resumedData: LogFormValues = {
+        workoutName: activeLog.workoutName,
+        exerciseSeries: activeLog.exercises.map(ex => ({
+          exerciseId: ex.exercise.id,
+          sets: ex.sets.map(s => ({
+            number: s.number,
+            type: s.type,
+            reps: s.reps,
+            weight: s.weight,
+            restTimeSeconds: s.restTimeSeconds || 60,
+            completed: s.completed,
+            duration: s.duration
+          })),
+          tempo: ex.tempo || "2-0-2-0",
+          tip: ex.tip
+        })),
+        level: TrainingLevel.Intermediate, // Default or fetch from somewhere if needed
+        // We might want to pass startTime too if we want correct timer
+      };
+      // Hack to pass start time via the form values or separate prop? 
+      // Let's add it to LogFormValues temporarily or handle in ActiveWorkoutView
+      // For now, let's assume we can pass it via a hidden field or just use the prop in ActiveWorkoutView
+
+      setActiveLogId(activeLog.id);
+      setBuilderData({ ...resumedData, startTime: activeLog.startTime } as any); // Type assertion if we don't update schema yet
+      setView('active');
+    }
+  }, [activeWorkouts, workoutId, view]);
+
+  // Auto-start builder if workoutId is present and workout is loaded AND NO ACTIVE WORKOUT
+  useEffect(() => {
+    if (activeWorkouts && activeWorkouts.length > 0) return; // Don't auto-start if active exists
+
     if (workoutId && preselectedWorkout && !builderData && view === 'selection') {
       const workoutData: LogFormValues = {
         workoutName: preselectedWorkout.name,
@@ -1075,6 +1195,7 @@ export default function LogWorkoutPage() {
             onFinishWorkout={handleFinishWorkout}
             allExercises={allExercises}
             isLoadingExercises={exercisesLoading}
+            initialLogId={activeLogId}
           />
         </div>
       </div>

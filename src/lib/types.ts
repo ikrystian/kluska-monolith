@@ -305,6 +305,14 @@ export type Gym = {
   id: string;
   name: string;
   address: string;
+  location?: {
+    lat: number;
+    lng: number;
+  };
+  description?: string;
+  amenities?: string[];
+  rating?: number;
+  photoUrls?: string[];
 };
 
 export type Conversation = {
