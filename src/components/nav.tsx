@@ -103,7 +103,6 @@ const adminNavItems = [
   { href: '/admin/workout-plans', icon: ClipboardList, label: 'Wszystkie Plany' },
   { href: '/admin/workouts', icon: Dumbbell, label: 'Wszystkie Treningi' },
   { href: '/admin/articles', icon: BookMarked, label: 'Wszystkie Artykuły' },
-  { href: '/admin/muscle-groups', icon: RectangleEllipsis, label: 'Grupy Mięśniowe' },
   { href: '/admin/gyms', icon: Building2, label: 'Siłownie' },
 ]
 
