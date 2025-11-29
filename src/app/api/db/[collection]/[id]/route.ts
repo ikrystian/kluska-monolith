@@ -22,7 +22,8 @@ import {
   PlannedWorkout,
   TrainerRequest,
   Meal,
-  Achievement
+  Achievement,
+  Workout
 } from '@/models';
 
 const modelMap: Record<string, any> = {
@@ -43,6 +44,7 @@ const modelMap: Record<string, any> = {
   runningSessions: RunningSession,
   achievements: Achievement,
   gyms: Gym,
+  workouts: Workout,
 };
 
 // GET - Fetch single document by ID

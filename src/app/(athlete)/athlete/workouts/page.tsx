@@ -89,7 +89,9 @@ export default function AthleteWorkoutsPage() {
                                 </p>
                             </CardContent>
                             <CardFooter>
-                                <Button variant="outline" className="w-full">Szczegóły</Button>
+                                <Link href={`/athlete/workouts/${workout.id}`} className="w-full">
+                                    <Button variant="outline" className="w-full">Szczegóły</Button>
+                                </Link>
                             </CardFooter>
                         </Card>
                     ))

@@ -4,7 +4,7 @@ import { Timestamp } from "mongodb";
 
 // --- Enums from data.ts ---
 export enum MuscleGroupName {
-  Back = 'Back',
+  Back = 'Plecy',
   Biceps = 'Biceps',
   Calves = 'Calves',
   Chest = 'Chest',
