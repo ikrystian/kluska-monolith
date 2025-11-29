@@ -39,9 +39,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Exercise, MuscleGroupName, MuscleGroup, WorkoutPlan, WorkoutLog } from '@/lib/types';
-import { PlusCircle, Search, Loader2, Dumbbell, MoreVertical, Edit, Trash2, LineChart as ChartIcon } from 'lucide-react';
+import { Search, Loader2, Dumbbell, MoreVertical, Edit, Trash2, LineChart as ChartIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useCollection, useUser, useCreateDoc, useUpdateDoc, useDeleteDoc } from '@/lib/db-hooks';
+import { useCollection, useUser, useUpdateDoc, useDeleteDoc } from '@/lib/db-hooks';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   DropdownMenu,
@@ -157,11 +157,10 @@ function ProgressDialog({ exercise, userId, open, onOpenChange }: { exercise: Ex
 export default function ExercisesPage() {
   const { user } = useUser();
   const { toast } = useToast();
-  const { createDoc } = useCreateDoc();
   const { updateDoc } = useUpdateDoc();
   const { deleteDoc } = useDeleteDoc();
   const [searchTerm, setSearchTerm] = useState('');
-  const [isAddDialogOpen, setAddDialogOpen] = useState(false);
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string>('all');
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [isProgressDialogOpen, setProgressDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -209,10 +208,17 @@ export default function ExercisesPage() {
   const isLoading = assignedLoading || publicAndUserLoading;
 
   const filteredExercises = allExercises?.filter(
-    (exercise) =>
-      exercise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      exercise.mainMuscleGroups?.some(mg => mg.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      exercise.muscleGroup?.toLowerCase().includes(searchTerm.toLowerCase())
+    (exercise) => {
+      const matchesSearch = exercise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        exercise.mainMuscleGroups?.some(mg => mg.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        exercise.muscleGroup?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesMuscleGroup = selectedMuscleGroup === 'all' ||
+        exercise.mainMuscleGroups?.some(mg => mg.name === selectedMuscleGroup) ||
+        exercise.muscleGroup === selectedMuscleGroup;
+
+      return matchesSearch && matchesMuscleGroup;
+    }
   );
 
   const form = useForm<ExerciseFormValues>({
@@ -255,26 +261,6 @@ export default function ExercisesPage() {
         toast({ title: "Sukces!", description: "Ćwiczenie zostało zaktualizowane." });
         setEditDialogOpen(false);
         setSelectedExercise(null);
-        refetchExercises();
-      } else {
-        // Add new exercise
-        const newExerciseData = {
-          name: data.name,
-          mainMuscleGroups,
-          secondaryMuscleGroups,
-          instructions: data.instructions,
-          mediaUrl: data.mediaUrl,
-          type: data.type,
-          description: data.description,
-          ownerId: user.uid,
-          // Legacy support
-          muscleGroup: data.mainMuscleGroups[0],
-          image: data.mediaUrl || `https://picsum.photos/seed/${encodeURIComponent(data.name)}/400/300`,
-          imageHint: data.name.toLowerCase(),
-        };
-        await createDoc('exercises', newExerciseData);
-        toast({ title: "Sukces!", description: "Nowe ćwiczenie zostało dodane." });
-        setAddDialogOpen(false);
         refetchExercises();
       }
     } catch (error) {
@@ -441,21 +427,19 @@ export default function ExercisesPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Dialog open={isAddDialogOpen} onOpenChange={(isOpen) => { setAddDialogOpen(isOpen); if (!isOpen) { setSelectedExercise(null); form.reset(); } }}>
-              <DialogTrigger asChild>
-                <Button>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Dodaj ćwiczenie
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="font-headline">Dodaj Nowe Ćwiczenie</DialogTitle>
-                  <DialogDescription>Wprowadź szczegóły nowego ćwiczenia.</DialogDescription>
-                </DialogHeader>
-                <ExerciseFormContent isEditMode={false} />
-              </DialogContent>
-            </Dialog>
+            <Select value={selectedMuscleGroup} onValueChange={setSelectedMuscleGroup}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Partia mięśniowa" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Wszystkie</SelectItem>
+                {Object.values(MuscleGroupName).map((name) => (
+                  <SelectItem key={name} value={name}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -542,10 +526,7 @@ export default function ExercisesPage() {
                 <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="font-headline text-xl font-semibold mb-2">Brak ćwiczeń</h3>
                 <p className="text-muted-foreground mb-4">Nie znaleziono żadnych ćwiczeń.</p>
-                <Button variant="outline" onClick={() => { setSelectedExercise(null); setAddDialogOpen(true); }}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Dodaj Ćwiczenie
-                </Button>
+                <p className="text-muted-foreground mb-4">Nie znaleziono żadnych ćwiczeń.</p>
               </CardContent>
             </Card>
           )}
@@ -589,6 +570,6 @@ export default function ExercisesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </div>
-    </AlertDialog>
+    </AlertDialog >
   );
 }

@@ -24,9 +24,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Exercise, MuscleGroupName, MuscleGroup } from '@/lib/types';
-import { Search, Loader2, Edit, Trash2, Filter, PlayCircle } from 'lucide-react';
+import { Search, Loader2, Edit, Trash2, Filter, PlayCircle, PlusCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useCollection, useUpdateDoc, useDeleteDoc } from '@/lib/db-hooks';
+import { useCollection, useUpdateDoc, useDeleteDoc, useCreateDoc } from '@/lib/db-hooks';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -58,6 +58,7 @@ export default function AdminExercisesPage() {
   const muscleGroupOptions = Object.values(MuscleGroupName).map(name => ({ label: name, value: name }));
 
   const { updateDoc, isLoading: isUpdating } = useUpdateDoc();
+  const { createDoc, isLoading: isCreating } = useCreateDoc();
   const { deleteDoc, isLoading: isDeleting } = useDeleteDoc();
 
   const isLoading = exercisesLoading;
@@ -88,27 +89,44 @@ export default function AdminExercisesPage() {
   );
 
   const handleFormSubmit = async (data: ExerciseFormValues) => {
-    if (!selectedExercise) return;
-
     const mainMuscleGroups: MuscleGroup[] = data.mainMuscleGroups.map(name => ({ name: name as MuscleGroupName }));
     const secondaryMuscleGroups: MuscleGroup[] = (data.secondaryMuscleGroups || []).map(name => ({ name: name as MuscleGroupName }));
 
-    const updatedData: Partial<Exercise> = {
-      name: data.name,
-      mainMuscleGroups,
-      secondaryMuscleGroups,
-      instructions: data.instructions || data.description,
-      mediaUrl: data.mediaUrl || data.image,
-      type: data.type,
-      muscleGroup: data.mainMuscleGroups[0], // Legacy
-      description: data.instructions || data.description, // Legacy
-      image: data.mediaUrl || data.image, // Legacy
-      imageHint: data.name.toLowerCase(),
-    };
-
     try {
-      await updateDoc('exercises', selectedExercise.id, updatedData);
-      toast({ title: "Sukces!", description: "Ćwiczenie zostało zaktualizowane." });
+      if (selectedExercise) {
+        // Update existing
+        const updatedData: Partial<Exercise> = {
+          name: data.name,
+          mainMuscleGroups,
+          secondaryMuscleGroups,
+          instructions: data.instructions || data.description,
+          mediaUrl: data.mediaUrl || data.image,
+          type: data.type,
+          muscleGroup: data.mainMuscleGroups[0], // Legacy
+          description: data.instructions || data.description, // Legacy
+          image: data.mediaUrl || data.image, // Legacy
+          imageHint: data.name.toLowerCase(),
+        };
+        await updateDoc('exercises', selectedExercise.id, updatedData);
+        toast({ title: "Sukces!", description: "Ćwiczenie zostało zaktualizowane." });
+      } else {
+        // Create new
+        const newExerciseData = {
+          name: data.name,
+          mainMuscleGroups,
+          secondaryMuscleGroups,
+          instructions: data.instructions || data.description,
+          mediaUrl: data.mediaUrl || data.image,
+          type: data.type,
+          muscleGroup: data.mainMuscleGroups[0], // Legacy
+          description: data.instructions || data.description, // Legacy
+          image: data.mediaUrl || data.image, // Legacy
+          imageHint: data.name.toLowerCase(),
+          ownerId: 'public', // Admin creates public exercises
+        };
+        await createDoc('exercises', newExerciseData);
+        toast({ title: "Sukces!", description: "Nowe ćwiczenie zostało dodane." });
+      }
       setEditDialogOpen(false);
       setSelectedExercise(null);
       refetchExercises();
@@ -116,7 +134,7 @@ export default function AdminExercisesPage() {
       console.error(error);
       toast({
         title: "Błąd",
-        description: "Nie udało się zaktualizować ćwiczenia.",
+        description: "Wystąpił błąd podczas zapisywania ćwiczenia.",
         variant: "destructive"
       });
     }
@@ -133,6 +151,21 @@ export default function AdminExercisesPage() {
       type: exercise.type || 'weight',
       description: exercise.description || '',
       image: exercise.image || '',
+    });
+    setEditDialogOpen(true);
+  };
+
+  const openAddDialog = () => {
+    setSelectedExercise(null);
+    form.reset({
+      name: '',
+      mainMuscleGroups: [],
+      secondaryMuscleGroups: [],
+      instructions: '',
+      mediaUrl: '',
+      type: 'weight',
+      description: '',
+      image: '',
     });
     setEditDialogOpen(true);
   };
@@ -178,6 +211,10 @@ export default function AdminExercisesPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+          <Button onClick={openAddDialog}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Dodaj ćwiczenie
+          </Button>
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className={muscleGroupFilter ? "bg-secondary" : ""}>
@@ -281,9 +318,9 @@ export default function AdminExercisesPage() {
       <Dialog open={isEditDialogOpen} onOpenChange={(isOpen) => { setEditDialogOpen(isOpen); if (!isOpen) setSelectedExercise(null); }}>
         <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-headline">Edytuj Ćwiczenie</DialogTitle>
+            <DialogTitle className="font-headline">{selectedExercise ? 'Edytuj Ćwiczenie' : 'Dodaj Nowe Ćwiczenie'}</DialogTitle>
             <DialogDescription>
-              Zaktualizuj szczegóły tego ćwiczenia.
+              {selectedExercise ? 'Zaktualizuj szczegóły tego ćwiczenia.' : 'Wprowadź szczegóły nowego ćwiczenia.'}
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -294,7 +331,7 @@ export default function AdminExercisesPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Nazwa</FormLabel>
-                    <FormControl><Input {...field} disabled={isUpdating} /></FormControl>
+                    <FormControl><Input {...field} disabled={isUpdating || isCreating} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -344,7 +381,7 @@ export default function AdminExercisesPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Typ ćwiczenia</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isUpdating}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isUpdating || isCreating}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Wybierz typ ćwiczenia" />
@@ -366,7 +403,7 @@ export default function AdminExercisesPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Instrukcje</FormLabel>
-                    <FormControl><Textarea {...field} disabled={isUpdating} /></FormControl>
+                    <FormControl><Textarea {...field} disabled={isUpdating || isCreating} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -377,7 +414,7 @@ export default function AdminExercisesPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>URL Multimediów (Zdjęcie/Wideo)</FormLabel>
-                    <FormControl><Input {...field} disabled={isUpdating} /></FormControl>
+                    <FormControl><Input {...field} disabled={isUpdating || isCreating} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -386,9 +423,9 @@ export default function AdminExercisesPage() {
                 <DialogClose asChild>
                   <Button type="button" variant="secondary" disabled={isUpdating}>Anuluj</Button>
                 </DialogClose>
-                <Button type="submit" disabled={isUpdating}>
-                  {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Zapisz zmiany
+                <Button type="submit" disabled={isUpdating || isCreating}>
+                  {(isUpdating || isCreating) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {selectedExercise ? 'Zapisz zmiany' : 'Dodaj ćwiczenie'}
                 </Button>
               </DialogFooter>
             </form>
