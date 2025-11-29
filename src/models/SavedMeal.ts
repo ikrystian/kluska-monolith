@@ -18,6 +18,7 @@ export interface ISavedMeal extends Document {
     totalProtein: number;
     totalCarbs: number;
     totalFat: number;
+    category: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
     createdAt: Date;
     updatedAt: Date;
 }
@@ -41,13 +42,14 @@ const SavedMealSchema = new Schema<ISavedMeal>(
         totalProtein: { type: Number, required: true },
         totalCarbs: { type: Number, required: true },
         totalFat: { type: Number, required: true },
+        category: { type: String, enum: ['Breakfast', 'Lunch', 'Dinner', 'Snack'], default: 'Breakfast' },
     },
     {
         timestamps: true,
         toJSON: {
             transform: (_, ret) => {
                 ret.id = ret._id.toString();
-                delete ret.__v;
+                delete (ret as any).__v;
                 return ret;
             },
         },

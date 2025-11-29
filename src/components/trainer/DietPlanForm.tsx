@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Trash2, Save, Clock } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -19,6 +19,7 @@ interface SavedMeal {
     totalProtein: number;
     totalCarbs: number;
     totalFat: number;
+    category?: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
 }
 
 interface DietDay {
@@ -273,16 +274,36 @@ function MealSelector({ meals, onSelect }: { meals: SavedMeal[], onSelect: (meal
         <div className="space-y-4 py-4">
             <div className="space-y-2">
                 <Label>Posiłek</Label>
-                <Select onValueChange={setSelectedMealId}>
+                <Select onValueChange={(val) => {
+                    setSelectedMealId(val);
+                    const meal = meals.find(m => m._id === val);
+                    if (meal && meal.category) {
+                        setType(meal.category);
+                    }
+                }}>
                     <SelectTrigger>
                         <SelectValue placeholder="Wybierz zapisany posiłek" />
                     </SelectTrigger>
                     <SelectContent>
-                        {meals.map(meal => (
-                            <SelectItem key={meal._id} value={meal._id}>
-                                {meal.name} ({meal.totalCalories.toFixed(0)} kcal)
-                            </SelectItem>
-                        ))}
+                        {['Breakfast', 'Lunch', 'Dinner', 'Snack'].map((category) => {
+                            const categoryMeals = meals.filter(m => (m.category || 'Breakfast') === category);
+                            if (categoryMeals.length === 0) return null;
+
+                            const categoryLabel = category === 'Breakfast' ? 'Śniadanie' :
+                                category === 'Lunch' ? 'Obiad' :
+                                    category === 'Dinner' ? 'Kolacja' : 'Przekąska';
+
+                            return (
+                                <SelectGroup key={category}>
+                                    <SelectLabel>{categoryLabel}</SelectLabel>
+                                    {categoryMeals.map(meal => (
+                                        <SelectItem key={meal._id} value={meal._id}>
+                                            {meal.name} ({meal.totalCalories.toFixed(0)} kcal)
+                                        </SelectItem>
+                                    ))}
+                                </SelectGroup>
+                            );
+                        })}
                     </SelectContent>
                 </Select>
             </div>

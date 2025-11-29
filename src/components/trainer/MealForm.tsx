@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, Search, Save } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
@@ -35,12 +36,14 @@ interface MealFormProps {
         _id?: string;
         name: string;
         ingredients: Ingredient[];
+        category?: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
     };
 }
 
 export default function MealForm({ initialData }: MealFormProps) {
     const router = useRouter();
     const [mealName, setMealName] = useState(initialData?.name || '');
+    const [category, setCategory] = useState<'Breakfast' | 'Lunch' | 'Dinner' | 'Snack'>(initialData?.category || 'Breakfast');
     const [ingredients, setIngredients] = useState<Ingredient[]>(initialData?.ingredients || []);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -228,6 +231,7 @@ export default function MealForm({ initialData }: MealFormProps) {
                     totalProtein: totals.protein,
                     totalCarbs: totals.carbs,
                     totalFat: totals.fat,
+                    category,
                 }),
             });
 
@@ -458,6 +462,21 @@ export default function MealForm({ initialData }: MealFormProps) {
                                     onChange={(e) => setMealName(e.target.value)}
                                     placeholder="np. Wysokobiałkowe Śniadanie"
                                 />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Kategoria</Label>
+                                <Select value={category} onValueChange={(v: any) => setCategory(v)}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Breakfast">Śniadanie</SelectItem>
+                                        <SelectItem value="Lunch">Obiad</SelectItem>
+                                        <SelectItem value="Dinner">Kolacja</SelectItem>
+                                        <SelectItem value="Snack">Przekąska</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div className="space-y-2">

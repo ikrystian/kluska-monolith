@@ -33,7 +33,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         }
 
         const body = await req.json();
-        const { name, ingredients, totalCalories, totalProtein, totalCarbs, totalFat } = body;
+        const { name, ingredients, totalCalories, totalProtein, totalCarbs, totalFat, category } = body;
 
         await connectToDatabase();
         const updatedMeal = await SavedMeal.findOneAndUpdate(
@@ -45,6 +45,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
                 totalProtein,
                 totalCarbs,
                 totalFat,
+                category: category || 'Breakfast',
             },
             { new: true }
         );

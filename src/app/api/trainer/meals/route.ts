@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { name, ingredients, totalCalories, totalProtein, totalCarbs, totalFat } = body;
+        const { name, ingredients, totalCalories, totalProtein, totalCarbs, totalFat, category } = body;
 
         if (!name || !ingredients || ingredients.length === 0) {
             return NextResponse.json({ error: 'Invalid meal data' }, { status: 400 });
@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
             totalProtein,
             totalCarbs,
             totalFat,
+            category: category || 'Breakfast',
         });
 
         return NextResponse.json({ meal: newMeal }, { status: 201 });

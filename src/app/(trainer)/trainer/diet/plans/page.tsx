@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Plus, Calendar, Pencil } from 'lucide-react';
 import { redirect } from 'next/navigation';
+import DeleteButton from '@/components/trainer/DeleteButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -62,11 +63,14 @@ export default async function DietPlansPage() {
                             <CardHeader className="pb-2">
                                 <CardTitle className="flex justify-between items-start">
                                     <span className="truncate" title={plan.name}>{plan.name}</span>
-                                    <Link href={`/trainer/diet/plans/${plan._id}/edit`}>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                            <Pencil className="w-4 h-4" />
-                                        </Button>
-                                    </Link>
+                                    <div className="flex gap-1">
+                                        <Link href={`/trainer/diet/plans/${plan._id}/edit`}>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                <Pencil className="w-4 h-4" />
+                                            </Button>
+                                        </Link>
+                                        <DeleteButton id={plan._id} resource="diets" resourceName="Plan" />
+                                    </div>
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
