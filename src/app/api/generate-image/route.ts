@@ -14,9 +14,9 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
         }
 
-        const apiKey = process.env.GOOGLE_AI_API_KEY;
+        const apiKey = process.env.GEMINI_IMAGE_API_KEY;
         if (!apiKey) {
-            return NextResponse.json({ error: 'Missing GOOGLE_AI_API_KEY' }, { status: 500 });
+            return NextResponse.json({ error: 'Missing GEMINI_IMAGE_API_KEY' }, { status: 500 });
         }
 
         // Use Gemini 2.5 Flash Image model for image generation

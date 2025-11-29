@@ -24,7 +24,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Exercise, MuscleGroupName, MuscleGroup } from '@/lib/types';
-import { Search, Loader2, Edit, Trash2, Filter, PlayCircle, PlusCircle, Dumbbell, Repeat, Timer, Check } from 'lucide-react';
+import { Search, Loader2, Edit, Trash2, Filter, PlayCircle, PlusCircle, Dumbbell, Repeat, Timer, Check, Upload, Sparkles, Link, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useUpdateDoc, useDeleteDoc, useCreateDoc } from '@/lib/db-hooks';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -34,6 +34,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { MultiSelect } from '@/components/ui/multi-select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { UploadButton } from '@/lib/uploadthing';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const exerciseSchema = z.object({
   name: z.string().min(1, 'Nazwa jest wymagana.'),
@@ -54,6 +56,9 @@ export default function AdminExercisesPage() {
   const [muscleGroupFilter, setMuscleGroupFilter] = useState<string | null>(null);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [imageSourceTab, setImageSourceTab] = useState<string>('upload');
 
   const { data: allExercises, isLoading: exercisesLoading, refetch: refetchExercises } = useCollection<Exercise>('exercises');
   const muscleGroupOptions = Object.values(MuscleGroupName).map(name => ({ label: name, value: name }));
@@ -89,9 +94,59 @@ export default function AdminExercisesPage() {
     }
   );
 
+  const generateAiImage = async (prompt: string): Promise<string> => {
+    setIsGeneratingImage(true);
+    try {
+      const res = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt }),
+      });
+      if (!res.ok) {
+        throw new Error('Failed to generate image');
+      }
+      const data = await res.json();
+      return data.imageUrl;
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
+  const handleGenerateImage = async () => {
+    const exerciseName = form.getValues('name');
+    if (!exerciseName) {
+      toast({
+        title: "Błąd",
+        description: "Wprowadź najpierw nazwę ćwiczenia.",
+        variant: "destructive"
+      });
+      return;
+    }
+    try {
+      const imageUrl = await generateAiImage(exerciseName);
+      setUploadedImageUrl(imageUrl);
+      form.setValue('mediaUrl', imageUrl);
+      toast({ title: "Sukces!", description: "Obrazek został wygenerowany." });
+    } catch (error) {
+      toast({
+        title: "Błąd",
+        description: "Nie udało się wygenerować obrazka.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const clearImage = () => {
+    setUploadedImageUrl('');
+    form.setValue('mediaUrl', '');
+  };
+
   const handleFormSubmit = async (data: ExerciseFormValues) => {
     const mainMuscleGroups: MuscleGroup[] = data.mainMuscleGroups.map(name => ({ name: name as MuscleGroupName }));
     const secondaryMuscleGroups: MuscleGroup[] = (data.secondaryMuscleGroups || []).map(name => ({ name: name as MuscleGroupName }));
+
+    // Use uploaded/generated image URL if available, otherwise use form mediaUrl
+    const finalImageUrl = uploadedImageUrl || data.mediaUrl || data.image;
 
     try {
       if (selectedExercise) {
@@ -101,11 +156,11 @@ export default function AdminExercisesPage() {
           mainMuscleGroups,
           secondaryMuscleGroups,
           instructions: data.instructions || data.description,
-          mediaUrl: data.mediaUrl || data.image,
+          mediaUrl: finalImageUrl,
           type: data.type,
           muscleGroup: data.mainMuscleGroups[0], // Legacy
           description: data.instructions || data.description, // Legacy
-          image: data.mediaUrl || data.image, // Legacy
+          image: finalImageUrl, // Legacy
           imageHint: data.name.toLowerCase(),
         };
         await updateDoc('exercises', selectedExercise.id, updatedData);
@@ -117,11 +172,11 @@ export default function AdminExercisesPage() {
           mainMuscleGroups,
           secondaryMuscleGroups,
           instructions: data.instructions || data.description,
-          mediaUrl: data.mediaUrl || data.image,
+          mediaUrl: finalImageUrl,
           type: data.type,
           muscleGroup: data.mainMuscleGroups[0], // Legacy
           description: data.instructions || data.description, // Legacy
-          image: data.mediaUrl || data.image, // Legacy
+          image: finalImageUrl, // Legacy
           imageHint: data.name.toLowerCase(),
           ownerId: 'public', // Admin creates public exercises
         };
@@ -130,6 +185,8 @@ export default function AdminExercisesPage() {
       }
       setEditDialogOpen(false);
       setSelectedExercise(null);
+      setUploadedImageUrl('');
+      setImageSourceTab('upload');
       refetchExercises();
     } catch (error) {
       console.error(error);
@@ -143,12 +200,15 @@ export default function AdminExercisesPage() {
 
   const openEditDialog = (exercise: Exercise) => {
     setSelectedExercise(exercise);
+    const existingImageUrl = exercise.mediaUrl || exercise.image || '';
+    setUploadedImageUrl(existingImageUrl);
+    setImageSourceTab(existingImageUrl ? 'url' : 'upload');
     form.reset({
       name: exercise.name,
       mainMuscleGroups: exercise.mainMuscleGroups?.map(mg => mg.name) || (exercise.muscleGroup ? [exercise.muscleGroup] : []),
       secondaryMuscleGroups: exercise.secondaryMuscleGroups?.map(mg => mg.name) || [],
       instructions: exercise.instructions || exercise.description || '',
-      mediaUrl: exercise.mediaUrl || exercise.image || '',
+      mediaUrl: existingImageUrl,
       type: exercise.type || 'weight',
       description: exercise.description || '',
       image: exercise.image || '',
@@ -158,6 +218,8 @@ export default function AdminExercisesPage() {
 
   const openAddDialog = () => {
     setSelectedExercise(null);
+    setUploadedImageUrl('');
+    setImageSourceTab('upload');
     form.reset({
       name: '',
       mainMuscleGroups: [],
@@ -493,17 +555,121 @@ export default function AdminExercisesPage() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="mediaUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>URL Multimediów (Zdjęcie/Wideo)</FormLabel>
-                    <FormControl><Input {...field} disabled={isUpdating || isCreating} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
+              {/* Image Selection Section */}
+              <FormItem>
+                <FormLabel>Obrazek ćwiczenia</FormLabel>
+
+                {/* Image Preview */}
+                {uploadedImageUrl && (
+                  <div className="relative w-full h-40 mb-3 rounded-lg overflow-hidden bg-muted">
+                    <Image
+                      src={uploadedImageUrl}
+                      alt="Podgląd obrazka"
+                      fill
+                      className="object-cover"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2 h-8 w-8"
+                      onClick={clearImage}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 )}
-              />
+
+                <Tabs value={imageSourceTab} onValueChange={setImageSourceTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="upload" className="text-xs">
+                      <Upload className="h-3 w-3 mr-1" />
+                      Prześlij
+                    </TabsTrigger>
+                    <TabsTrigger value="ai" className="text-xs">
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      Generuj AI
+                    </TabsTrigger>
+                    <TabsTrigger value="url" className="text-xs">
+                      <Link className="h-3 w-3 mr-1" />
+                      URL
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="upload" className="mt-3">
+                    <UploadButton
+                      endpoint="imageUploader"
+                      onClientUploadComplete={(files) => {
+                        if (files && files.length > 0) {
+                          setUploadedImageUrl(files[0].url);
+                          form.setValue('mediaUrl', files[0].url);
+                          toast({ title: "Sukces!", description: "Obrazek został przesłany." });
+                        }
+                      }}
+                      onUploadError={(error) => {
+                        toast({
+                          title: "Błąd",
+                          description: `Nie udało się przesłać obrazka: ${error.message}`,
+                          variant: "destructive"
+                        });
+                      }}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="ai" className="mt-3">
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground">
+                        Wygeneruj obrazek na podstawie nazwy ćwiczenia używając AI.
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={handleGenerateImage}
+                        disabled={isGeneratingImage || isUpdating || isCreating}
+                      >
+                        {isGeneratingImage ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Generowanie...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="mr-2 h-4 w-4" />
+                            Wygeneruj obrazek
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="url" className="mt-3">
+                    <FormField
+                      control={form.control}
+                      name="mediaUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="https://example.com/image.jpg"
+                              disabled={isUpdating || isCreating}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                setUploadedImageUrl(e.target.value);
+                              }}
+                            />
+                          </FormControl>
+                          <FormDescription className="text-xs">
+                            Wprowadź URL do zdjęcia lub wideo
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+                </Tabs>
+              </FormItem>
               <DialogFooter className="pt-4">
                 <DialogClose asChild>
                   <Button type="button" variant="secondary" disabled={isUpdating}>Anuluj</Button>
