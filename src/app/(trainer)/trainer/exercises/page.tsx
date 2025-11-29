@@ -71,9 +71,11 @@ export default function ExercisesPage() {
 
   const { data: userProfile } = useDoc<UserProfile>('users', user?.uid ?? null);
 
-  // Fetch workout plans for athletes
-  const { data: assignedPlans } = useCollection<WorkoutPlan>('workoutPlans',
-    userProfile?.role === 'athlete' && user?.uid ? { assignedAthleteIds: user.uid } : undefined
+  // Fetch workout plans for athletes - only when user is athlete
+  const shouldFetchPlans = userProfile?.role === 'athlete' && user?.uid;
+  const { data: assignedPlans } = useCollection<WorkoutPlan>(
+    shouldFetchPlans ? 'workoutPlans' : null,
+    { assignedAthleteIds: user?.uid }
   );
 
   // Get exercise IDs from assigned plans (optional usage)
@@ -91,10 +93,10 @@ export default function ExercisesPage() {
     return Array.from(ids);
   }, [assignedPlans]);
 
-  // Fetch public and user's own exercises
+  // Fetch public and user's own exercises - only when user is available
   const { data: publicAndUserExercises, isLoading: publicAndUserLoading, refetch: refetchExercises } = useCollection<Exercise>(
-    'exercises',
-    user?.uid ? { ownerId: { $in: ['public', user.uid] } } : undefined
+    user?.uid ? 'exercises' : null,
+    { ownerId: { $in: ['public', user?.uid] } }
   );
 
   // Combine all exercises (currently only public/user ones)

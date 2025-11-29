@@ -154,13 +154,17 @@ export default function MyAthletesPage() {
   const avatarImage = placeholderImages.find((img) => img.id === 'avatar-male');
 
   // Get current user profile
-  const { data: userProfile, isLoading: userProfileLoading } = useDoc<UserProfile>('users', user?.uid || '');
+  const { data: userProfile, isLoading: userProfileLoading } = useDoc<UserProfile>('users', user?.uid || null);
+
+  // Determine if we should fetch athletes
+  // Only fetch when userProfile is loaded and user is a trainer
+  const shouldFetchAthletes = !userProfileLoading && user?.uid && userProfile?.role === 'trainer';
 
   // Get all users with role 'athlete' and trainerId matching current user
-  // Only fetch when userProfile is loaded and user is a trainer
+  // Pass null as collection to skip fetching when conditions aren't met
   const { data: athletes, isLoading: athletesLoading, refetch: refetchAthletes } = useCollection<UserProfile>(
-    'users',
-    !userProfileLoading && user?.uid && userProfile?.role === 'trainer' ? { role: 'athlete', trainerId: user.uid } : undefined
+    shouldFetchAthletes ? 'users' : null,
+    { role: 'athlete', trainerId: user?.uid }
   );
 
   const form = useForm<SearchFormValues>({

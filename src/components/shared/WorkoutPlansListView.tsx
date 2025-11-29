@@ -62,7 +62,22 @@ export function WorkoutPlansListView({
   const { toast } = useToast();
   const { deleteDoc, isLoading: isDeleting } = useDeleteDoc();
 
-  const { data: allPlans, isLoading: plansLoading, refetch: refetchPlans } = useCollection<TrainingPlan>('workoutPlans');
+  // Determine query filter based on role - server-side filtering
+  const getQueryFilter = () => {
+    if (role === 'trainer' && currentUser?.uid) {
+      return { trainerId: currentUser.uid };
+    }
+    return undefined; // Admin sees all
+  };
+
+  // Only fetch when we have a user (for trainer role) or always for admin
+  const shouldFetch = role === 'admin' || (role === 'trainer' && currentUser?.uid);
+
+  const { data: plans, isLoading: plansLoading, refetch: refetchPlans } = useCollection<TrainingPlan>(
+    shouldFetch ? 'workoutPlans' : null,
+    getQueryFilter()
+  );
+
   const { data: users, isLoading: usersLoading } = useCollection<UserProfile>(
     showAuthorColumn ?? role === 'admin' ? 'users' : null
   );
@@ -73,15 +88,6 @@ export function WorkoutPlansListView({
     if (!users) return new Map<string, string>();
     return new Map(users.map(u => [u.id, u.name]));
   }, [users]);
-
-  // Filter plans based on role
-  const plans = useMemo(() => {
-    if (!allPlans) return [];
-    if (role === 'trainer' && currentUser) {
-      return allPlans.filter(plan => plan.trainerId === currentUser.uid);
-    }
-    return allPlans; // Admin sees all
-  }, [allPlans, currentUser, role]);
 
   const isLoading = plansLoading || (showAuthorColumn ?? role === 'admin' ? usersLoading : false);
   const shouldShowAuthor = showAuthorColumn ?? role === 'admin';

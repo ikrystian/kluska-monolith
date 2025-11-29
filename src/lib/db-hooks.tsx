@@ -19,6 +19,13 @@ export interface UseDocResult<T> {
 
 /**
  * Hook to fetch a collection from MongoDB via API
+ *
+ * @param collection - Collection name or null to skip fetching
+ * @param query - MongoDB query filter (optional)
+ * @param options - Sort and limit options (optional)
+ *
+ * IMPORTANT: Pass `null` as collection to skip fetching entirely.
+ * This is useful when you need to wait for other data before fetching.
  */
 export function useCollection<T>(
   collection: string | null,
@@ -30,7 +37,12 @@ export function useCollection<T>(
   const [error, setError] = useState<Error | null>(null);
   const { data: session } = useSession();
 
+  // Serialize query and options for stable dependency comparison
+  const queryString = query ? JSON.stringify(query) : '';
+  const optionsString = options ? JSON.stringify(options) : '';
+
   const fetchData = useCallback(async () => {
+    // If collection is null, clear data and don't fetch
     if (!collection) {
       setData(null);
       setIsLoading(false);
@@ -43,7 +55,9 @@ export function useCollection<T>(
 
     try {
       const params = new URLSearchParams();
-      if (query) params.append('query', JSON.stringify(query));
+      if (query && Object.keys(query).length > 0) {
+        params.append('query', JSON.stringify(query));
+      }
       if (options?.sort) params.append('sort', JSON.stringify(options.sort));
       if (options?.limit) params.append('limit', options.limit.toString());
 
@@ -61,7 +75,8 @@ export function useCollection<T>(
     } finally {
       setIsLoading(false);
     }
-  }, [collection, JSON.stringify(query), JSON.stringify(options)]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collection, queryString, optionsString]);
 
   useEffect(() => {
     fetchData();

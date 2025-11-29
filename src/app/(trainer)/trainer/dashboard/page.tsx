@@ -16,32 +16,63 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useMemo } from 'react';
 
+interface Athlete {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface Conversation {
+  id: string;
+  athleteName: string;
+  lastMessage?: {
+    text: string;
+    createdAt: string;
+  };
+  unreadCount?: Record<string, number>;
+}
+
+interface WorkoutLog {
+  id: string;
+  athleteId: string;
+  workoutName: string;
+  endTime: string;
+  duration: number;
+}
+
+interface WorkoutPlan {
+  id: string;
+  name: string;
+  trainerId: string;
+}
+
 export default function TrainerDashboardPage() {
   const { user } = useUser();
 
-  // Fetch trainer's athletes
-  const { data: athletes, isLoading: athletesLoading } = useCollection(
-    user ? 'users' : null,
+  // Fetch trainer's athletes - only when user is available
+  const { data: athletes, isLoading: athletesLoading } = useCollection<Athlete>(
+    user?.uid ? 'users' : null,
     { trainerId: user?.uid, role: 'athlete' }
   );
 
-  // Fetch conversations
-  const { data: conversations, isLoading: conversationsLoading } = useCollection(
-    user ? 'conversations' : null,
+  // Fetch conversations - only when user is available
+  const { data: conversations, isLoading: conversationsLoading } = useCollection<Conversation>(
+    user?.uid ? 'conversations' : null,
     { trainerId: user?.uid },
     { sort: { updatedAt: -1 }, limit: 5 }
   );
 
-  // Fetch recent workout logs from all athletes
-  const { data: recentWorkouts, isLoading: workoutsLoading } = useCollection(
-    user && athletes ? 'workoutLogs' : null,
-    athletes ? { athleteId: { $in: athletes.map((a: any) => a.id) } } : {},
+  // Fetch recent workout logs from all athletes - only when we have athletes
+  const athleteIds = athletes?.map((a) => a.id) || [];
+  const { data: recentWorkouts, isLoading: workoutsLoading } = useCollection<WorkoutLog>(
+    user?.uid && athleteIds.length > 0 ? 'workoutLogs' : null,
+    { athleteId: { $in: athleteIds } },
     { sort: { endTime: -1 }, limit: 10 }
   );
 
-  // Fetch workout plans
-  const { data: workoutPlans, isLoading: plansLoading } = useCollection(
-    user ? 'workoutPlans' : null,
+  // Fetch workout plans - only when user is available
+  const { data: workoutPlans, isLoading: plansLoading } = useCollection<WorkoutPlan>(
+    user?.uid ? 'workoutPlans' : null,
     { trainerId: user?.uid }
   );
 
