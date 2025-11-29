@@ -8,16 +8,24 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Clock, Signal, Dumbbell, Play, Calendar } from 'lucide-react';
+import { ArrowLeft, Clock, Signal, Dumbbell, Play, Calendar, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
+import { useActiveWorkout } from '@/hooks/useActiveWorkout';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export default function WorkoutDetailsPage() {
     const params = useParams();
     const router = useRouter();
     const { user } = useUser();
     const id = params?.id as string;
+    const { hasActiveWorkout, activeWorkout } = useActiveWorkout();
 
     const { data: workout, isLoading } = useDoc<Workout>('workouts', id);
 
@@ -60,12 +68,40 @@ export default function WorkoutDetailsPage() {
                     >
                         <ArrowLeft className="mr-2 h-4 w-4" /> Wróć do listy
                     </Button>
-                    <Button
-                        onClick={() => router.push(`/athlete/log?workoutId=${id}`)}
-                        className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
-                    >
-                        <Play className="mr-2 h-4 w-4" /> Rozpocznij Trening
-                    </Button>
+                    {hasActiveWorkout ? (
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div className="flex flex-col gap-2">
+                                        <Button
+                                            disabled
+                                            className="bg-muted text-muted-foreground cursor-not-allowed"
+                                        >
+                                            <Play className="mr-2 h-4 w-4" /> Rozpocznij Trening
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => router.push(`/athlete/log?logId=${activeWorkout?.id}`)}
+                                            className="text-primary"
+                                        >
+                                            <ArrowRight className="mr-2 h-4 w-4" /> Wróć do aktywnego treningu
+                                        </Button>
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Masz aktywny trening. Zakończ go przed rozpoczęciem nowego.</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    ) : (
+                        <Button
+                            onClick={() => router.push(`/athlete/log?workoutId=${id}`)}
+                            className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+                        >
+                            <Play className="mr-2 h-4 w-4" /> Rozpocznij Trening
+                        </Button>
+                    )}
                 </div>
 
                 <div className="relative h-48 md:h-64 w-full rounded-xl overflow-hidden bg-muted">

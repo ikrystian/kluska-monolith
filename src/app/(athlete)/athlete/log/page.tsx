@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { PlusCircle, Trash2, Save, Loader2, Dumbbell, Upload, Search, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, Clock, History, LayoutList, RotateCcw, CheckCircle2, Circle, Layers, Timer } from 'lucide-react';
+import { PlusCircle, Trash2, Save, Loader2, Dumbbell, Upload, Search, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, Clock, History, LayoutList, RotateCcw, CheckCircle2, Circle, Layers, Timer, AlertCircle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 
@@ -702,12 +702,73 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
 }
 
 function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExercises }: { index: number, exerciseDetails: Exercise | undefined, onRemoveExercise: () => void, isLoadingExercises: boolean }) {
-  const { control, watch } = useFormContext<LogFormValues>();
+  const { control, watch, setValue } = useFormContext<LogFormValues>();
   const { fields, append, remove } = useFieldArray({
     control,
     name: `exerciseSeries.${index}.sets`
   });
   const [newSetId, setNewSetId] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<number, string>>({});
+  const { toast } = useToast();
+
+  // Validation function for a set
+  const validateSet = (setIndex: number): { valid: boolean; error?: string } => {
+    const reps = watch(`exerciseSeries.${index}.sets.${setIndex}.reps`);
+    const weight = watch(`exerciseSeries.${index}.sets.${setIndex}.weight`);
+
+    // Reps must be greater than 0
+    if (!reps || reps <= 0) {
+      return { valid: false, error: 'Uzupełnij liczbę powtórzeń' };
+    }
+
+    // Weight must be defined (can be 0 for bodyweight exercises)
+    if (weight === undefined || weight === null || weight === '' as any) {
+      return { valid: false, error: 'Uzupełnij ciężar' };
+    }
+
+    return { valid: true };
+  };
+
+  // Handle set completion with validation
+  const handleSetCompletion = (setIndex: number, currentValue: boolean) => {
+    // If trying to mark as complete (not unchecking), validate first
+    if (!currentValue) {
+      const validation = validateSet(setIndex);
+      if (!validation.valid) {
+        setValidationErrors(prev => ({ ...prev, [setIndex]: validation.error || 'Uzupełnij wymagane pola' }));
+        toast({
+          title: "Uzupełnij dane",
+          description: validation.error || "Wprowadź wymagane dane przed zatwierdzeniem serii.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    // Clear validation error for this set
+    setValidationErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[setIndex];
+      return newErrors;
+    });
+
+    // Toggle the completion status
+    setValue(`exerciseSeries.${index}.sets.${setIndex}.completed`, !currentValue);
+  };
+
+  // Clear validation error when user changes input
+  const clearValidationError = (setIndex: number) => {
+    if (validationErrors[setIndex]) {
+      const validation = validateSet(setIndex);
+      if (validation.valid) {
+        setValidationErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[setIndex];
+          return newErrors;
+        });
+      }
+    }
+  };
 
   const handleAddSet = () => {
     if (fields.length > 0) {
@@ -812,7 +873,19 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                   name={`exerciseSeries.${index}.sets.${setIndex}.weight`}
                   render={({ field }) => (
                     <FormItem className="col-span-2 space-y-0">
-                      <FormControl><Input type="number" step="0.5" placeholder="0" {...field} className={`h-8 text-center ${isActive ? "border-primary font-semibold" : ""}`} /></FormControl>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.5"
+                          placeholder="0"
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            clearValidationError(setIndex);
+                          }}
+                          className={`h-8 text-center ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (field.value === undefined || field.value === null || field.value === '') ? "border-destructive ring-destructive/20 ring-1" : ""}`}
+                        />
+                      </FormControl>
                     </FormItem>
                   )}
                 />
@@ -822,7 +895,18 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                   name={`exerciseSeries.${index}.sets.${setIndex}.reps`}
                   render={({ field }) => (
                     <FormItem className="col-span-2 space-y-0">
-                      <FormControl><Input type="number" placeholder="0" {...field} className={`h-8 text-center ${isActive ? "border-primary font-semibold" : ""}`} /></FormControl>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            clearValidationError(setIndex);
+                          }}
+                          className={`h-8 text-center ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
+                        />
+                      </FormControl>
                     </FormItem>
                   )}
                 />
@@ -842,7 +926,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                   )}
                 />
 
-                <div className="col-span-2 flex justify-center">
+                <div className="col-span-2 flex flex-col items-center justify-center">
                   <FormField
                     control={control}
                     name={`exerciseSeries.${index}.sets.${setIndex}.completed`}
@@ -851,11 +935,13 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                         <FormControl>
                           <button
                             type="button"
-                            onClick={() => field.onChange(!field.value)}
-                            className={`focus:outline-none transition-transform ${isActive ? 'scale-110' : ''}`}
+                            onClick={() => handleSetCompletion(setIndex, field.value)}
+                            className={`focus:outline-none transition-transform ${isActive ? 'scale-110' : ''} ${validationErrors[setIndex] ? 'animate-shake' : ''}`}
                           >
                             {field.value ? (
                               <CheckCircle2 className="h-6 w-6 text-green-500" />
+                            ) : validationErrors[setIndex] ? (
+                              <AlertCircle className="h-6 w-6 text-destructive" />
                             ) : (
                               <Circle className={`h-6 w-6 ${isActive ? 'text-primary fill-primary/20' : 'text-muted-foreground'}`} />
                             )}
@@ -864,6 +950,11 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                       </FormItem>
                     )}
                   />
+                  {validationErrors[setIndex] && (
+                    <span className="text-[10px] text-destructive mt-0.5 text-center leading-tight max-w-[60px]">
+                      {validationErrors[setIndex]}
+                    </span>
+                  )}
                 </div>
               </div>
             )

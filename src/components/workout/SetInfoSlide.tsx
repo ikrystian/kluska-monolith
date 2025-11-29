@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dumbbell } from 'lucide-react';
+import { Dumbbell, AlertCircle } from 'lucide-react';
 import { SetType, type Exercise } from '@/lib/types';
 
 interface SetInfoSlideProps {
@@ -22,6 +22,7 @@ interface SetInfoSlideProps {
   onRepsChange: (value: number) => void;
   onWeightChange: (value: number) => void;
   isCompleted?: boolean;
+  validationError?: string | null;
 }
 
 const setTypeColors: Record<SetType, string> = {
@@ -47,6 +48,7 @@ export function SetInfoSlide({
   onRepsChange,
   onWeightChange,
   isCompleted,
+  validationError,
 }: SetInfoSlideProps) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[400px] p-4">
@@ -94,6 +96,14 @@ export function SetInfoSlide({
             </div>
           </div>
 
+          {/* Validation Error */}
+          {validationError && (
+            <div className="flex items-center justify-center gap-2 p-3 bg-destructive/10 text-destructive rounded-lg text-sm">
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              <span>{validationError}</span>
+            </div>
+          )}
+
           {/* Input Fields */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -107,7 +117,9 @@ export function SetInfoSlide({
                 value={actualReps || ''}
                 onChange={(e) => onRepsChange(parseInt(e.target.value) || 0)}
                 placeholder={String(targetReps)}
-                className="text-center text-lg font-semibold h-12"
+                className={`text-center text-lg font-semibold h-12 ${
+                  validationError && actualReps <= 0 ? 'border-destructive ring-destructive/20 ring-2' : ''
+                }`}
                 disabled={isCompleted}
               />
             </div>
@@ -123,7 +135,9 @@ export function SetInfoSlide({
                 value={actualWeight || ''}
                 onChange={(e) => onWeightChange(parseFloat(e.target.value) || 0)}
                 placeholder={String(targetWeight)}
-                className="text-center text-lg font-semibold h-12"
+                className={`text-center text-lg font-semibold h-12 ${
+                  validationError && (actualWeight === undefined || actualWeight === null) ? 'border-destructive ring-destructive/20 ring-2' : ''
+                }`}
                 disabled={isCompleted}
               />
             </div>

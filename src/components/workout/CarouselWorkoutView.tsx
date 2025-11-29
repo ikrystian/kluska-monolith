@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { UseFormReturn, useFormContext } from 'react-hook-form';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useFormContext } from 'react-hook-form';
 import {
   Carousel,
   CarouselContent,
@@ -57,8 +57,17 @@ export function CarouselWorkoutView({
   const form = useFormContext<LogFormValues>();
   const [api, setApi] = useState<CarouselApi>();
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [validationSlideIndex, setValidationSlideIndex] = useState<number | null>(null);
+  const isValidatingRef = useRef(false);
 
+  // Watch the entire exerciseSeries to ensure reactivity
   const exerciseSeries = form.watch('exerciseSeries');
+
+  // Force re-render when any set's completed status changes
+  const completedStates = useMemo(() => {
+    return exerciseSeries.map(ex => ex.sets.map(s => s.completed));
+  }, [exerciseSeries]);
 
   // Generate slide data from exercises
   const slides = useMemo((): SlideData[] => {
@@ -95,11 +104,33 @@ export function CarouselWorkoutView({
     return exerciseSeries.reduce((acc, ex) => acc + ex.sets.length, 0);
   }, [exerciseSeries]);
 
-  // Get completed sets count
+  // Get completed sets count - explicitly depend on completedStates for reactivity
   const completedSets = useMemo(() => {
-    return exerciseSeries.reduce((acc, ex) => {
-      return acc + ex.sets.filter(s => s.completed).length;
-    }, 0);
+    let count = 0;
+    completedStates.forEach(exerciseSets => {
+      exerciseSets.forEach(isCompleted => {
+        if (isCompleted) count++;
+      });
+    });
+    return count;
+  }, [completedStates]);
+
+  // Validation function for a set
+  const validateSet = useCallback((exerciseIndex: number, setIndex: number): { valid: boolean; error?: string } => {
+    const set = exerciseSeries[exerciseIndex]?.sets[setIndex];
+    if (!set) return { valid: false, error: 'Seria nie istnieje' };
+
+    // Reps must be greater than 0
+    if (!set.reps || set.reps <= 0) {
+      return { valid: false, error: 'Uzupełnij liczbę powtórzeń (musi być większa od 0)' };
+    }
+
+    // Weight must be defined (can be 0 for bodyweight exercises)
+    if (set.weight === undefined || set.weight === null || set.weight === '' as any) {
+      return { valid: false, error: 'Uzupełnij ciężar (0 dla ćwiczeń z masą ciała)' };
+    }
+
+    return { valid: true };
   }, [exerciseSeries]);
 
   // Get current slide data
@@ -141,21 +172,64 @@ export function CarouselWorkoutView({
     };
   }, [exerciseSeries, getCurrentExerciseDetails]);
 
+  // Clear validation error when user changes input
+  useEffect(() => {
+    if (validationError && validationSlideIndex !== null) {
+      const slide = slides[validationSlideIndex];
+      if (slide) {
+        const validation = validateSet(slide.exerciseIndex, slide.setIndex);
+        if (validation.valid) {
+          setValidationError(null);
+          setValidationSlideIndex(null);
+        }
+      }
+    }
+  }, [exerciseSeries, validationError, validationSlideIndex, slides, validateSet]);
+
   // Handle slide change
   useEffect(() => {
     if (!api) return;
 
     const onSelect = () => {
+      // Skip if we're in the middle of validation snap-back
+      if (isValidatingRef.current) {
+        return;
+      }
+
       const newIndex = api.selectedScrollSnap();
       const previousIndex = currentSlideIndex;
 
       // Check if we're moving from a set-info slide to a rest-timer slide
-      // This means the user is starting their rest, so mark the set as complete
+      // This means the user is starting their rest, so validate and mark the set as complete
       if (previousIndex < slides.length && newIndex < slides.length) {
         const previousSlide = slides[previousIndex];
         const newSlide = slides[newIndex];
 
         if (previousSlide?.type === 'set-info' && newSlide?.type === 'rest-timer') {
+          // Validate before completing
+          const validation = validateSet(previousSlide.exerciseIndex, previousSlide.setIndex);
+
+          if (!validation.valid) {
+            // Snap back to previous slide
+            isValidatingRef.current = true;
+            setValidationError(validation.error || 'Uzupełnij wymagane pola');
+            setValidationSlideIndex(previousIndex);
+
+            // Use setTimeout to allow the current event to complete
+            setTimeout(() => {
+              api.scrollTo(previousIndex);
+              // Reset the flag after animation completes
+              setTimeout(() => {
+                isValidatingRef.current = false;
+              }, 300);
+            }, 0);
+            return;
+          }
+
+          // Clear any previous error
+          setValidationError(null);
+          setValidationSlideIndex(null);
+
           // Mark the set as complete
           onSetComplete(previousSlide.exerciseIndex, previousSlide.setIndex);
         }
@@ -168,7 +242,7 @@ export function CarouselWorkoutView({
     return () => {
       api.off('select', onSelect);
     };
-  }, [api, currentSlideIndex, slides, onSetComplete]);
+  }, [api, currentSlideIndex, slides, onSetComplete, validateSet]);
 
   // Handle timer complete - auto advance to next slide
   const handleTimerComplete = useCallback(() => {
@@ -243,6 +317,9 @@ export function CarouselWorkoutView({
               if (!setData) return null;
 
               if (slide.type === 'set-info') {
+                // Show validation error only for the slide that failed validation
+                const showError = validationSlideIndex === index ? validationError : null;
+
                 return (
                   <CarouselItem key={`set-${slide.exerciseIndex}-${slide.setIndex}`} className="h-full">
                     <SetInfoSlide
@@ -260,6 +337,7 @@ export function CarouselWorkoutView({
                       onRepsChange={(value) => handleRepsChange(slide.exerciseIndex, slide.setIndex, value)}
                       onWeightChange={(value) => handleWeightChange(slide.exerciseIndex, slide.setIndex, value)}
                       isCompleted={setData.completed}
+                      validationError={showError}
                     />
                   </CarouselItem>
                 );

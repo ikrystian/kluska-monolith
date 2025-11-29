@@ -12,7 +12,7 @@ export enum MuscleGroupName {
   Forearms = 'Przedramiona',
   FullBody = 'Full Body',
   Glutes = 'Pośladki',
-  Hamstrings = '',
+  Hamstrings = 'Dwugłowe uda',
   LowerBack = 'Lower Back',
   Quads = 'Quads',
   RearDelts = 'Rear Delts',

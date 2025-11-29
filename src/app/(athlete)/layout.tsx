@@ -8,6 +8,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { BottomNav } from '@/components/bottom-nav';
+import { ActiveWorkoutProvider } from '@/contexts/ActiveWorkoutContext';
+import { ActiveWorkoutWidget } from '@/components/workout/ActiveWorkoutWidget';
+import { UserProfile } from '@/lib/types';
 
 export default function AthleteLayout({
   children,
@@ -17,7 +20,7 @@ export default function AthleteLayout({
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc(
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(
     user ? 'users' : null,
     user?.uid || null
   );
@@ -64,14 +67,17 @@ export default function AthleteLayout({
   // It is now safe to render the athlete layout and its children.
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <AppNav />
-        <main className="flex-1 flex-col overflow-y-auto bg-secondary/30">
-          <AppHeader />
-          <div className="flex-1 overflow-y-auto pb-16 md:pb-0">{children}</div>
-          <BottomNav />
-        </main>
-      </div>
+      <ActiveWorkoutProvider>
+        <div className="flex min-h-screen w-full">
+          <AppNav />
+          <main className="flex-1 flex-col overflow-y-auto bg-secondary/30">
+            <AppHeader />
+            <div className="flex-1 overflow-y-auto pb-16 md:pb-0">{children}</div>
+            <BottomNav />
+          </main>
+        </div>
+        <ActiveWorkoutWidget />
+      </ActiveWorkoutProvider>
     </SidebarProvider>
   );
 }

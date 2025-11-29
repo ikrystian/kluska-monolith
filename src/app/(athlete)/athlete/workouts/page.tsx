@@ -1,111 +1,44 @@
 'use client';
 
-import { useUser, useCollection } from '@/lib/db-hooks';
-import { Workout, TrainingLevel } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { WorkoutsListView } from '@/components/shared/WorkoutsListView';
+import { useActiveWorkout } from '@/hooks/useActiveWorkout';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { PlusCircle, Dumbbell, Clock, Signal } from 'lucide-react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Badge } from '@/components/ui/badge';
+import { Dumbbell, ArrowRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function AthleteWorkoutsPage() {
-    const { user } = useUser();
-
-    // Fetch workouts where ownerId is 'public' OR ownerId is current user
-    const { data: workouts, isLoading } = useCollection<Workout>(
-        user ? 'workouts' : null,
-        user ? {
-            $or: [
-                { ownerId: 'public' },
-                { ownerId: user.uid }
-            ]
-        } : undefined
-    );
+    const { hasActiveWorkout, activeWorkout } = useActiveWorkout();
+    const router = useRouter();
 
     return (
-        <div className="container mx-auto p-4 md:p-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold font-headline">Moje Treningi</h1>
-                    <p className="text-muted-foreground">Przeglądaj i zarządzaj swoimi planami treningowymi.</p>
+        <div>
+            {hasActiveWorkout && (
+                <div className="container mx-auto px-4 pt-4 md:px-8 md:pt-8">
+                    <Alert className="border-primary/50 bg-primary/5">
+                        <Dumbbell className="h-4 w-4" />
+                        <AlertTitle>Masz aktywny trening</AlertTitle>
+                        <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <span>
+                                Trening &quot;{activeWorkout?.workoutName}&quot; jest w trakcie.
+                                Zakończ go przed rozpoczęciem nowego.
+                            </span>
+                            <Button
+                                size="sm"
+                                onClick={() => router.push(`/athlete/log?logId=${activeWorkout?.id}`)}
+                            >
+                                Wróć do treningu
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        </AlertDescription>
+                    </Alert>
                 </div>
-                <Link href="/athlete/workouts/create">
-                    <Button>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Utwórz Trening
-                    </Button>
-                </Link>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {isLoading ? (
-                    Array.from({ length: 6 }).map((_, i) => (
-                        <Card key={i} className="overflow-hidden">
-                            <Skeleton className="h-48 w-full" />
-                            <CardHeader>
-                                <Skeleton className="h-6 w-3/4" />
-                                <Skeleton className="h-4 w-1/2" />
-                            </CardHeader>
-                        </Card>
-                    ))
-                ) : workouts && workouts.length > 0 ? (
-                    workouts.map((workout) => (
-                        <Card key={workout.id} className="overflow-hidden flex flex-col hover:shadow-lg transition-shadow">
-                            <div className="relative h-48 w-full bg-muted">
-                                {workout.imageUrl ? (
-                                    <Image
-                                        src={workout.imageUrl}
-                                        alt={workout.name}
-                                        fill
-                                        className="object-cover"
-                                    />
-                                ) : (
-                                    <div className="flex items-center justify-center h-full text-muted-foreground">
-                                        <Dumbbell className="h-12 w-12 opacity-20" />
-                                    </div>
-                                )}
-                                <div className="absolute top-2 right-2">
-                                    {workout.ownerId === 'public' ? (
-                                        <Badge variant="secondary">Publiczny</Badge>
-                                    ) : (
-                                        <Badge variant="default">Mój</Badge>
-                                    )}
-                                </div>
-                            </div>
-                            <CardHeader>
-                                <CardTitle className="line-clamp-1">{workout.name}</CardTitle>
-                                <CardDescription className="flex items-center gap-2">
-                                    <Signal className="h-3 w-3" /> {workout.level}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="flex-grow">
-                                <div className="flex items-center text-sm text-muted-foreground mb-2">
-                                    <Clock className="h-4 w-4 mr-1" /> {workout.durationMinutes} min
-                                </div>
-                                <p className="text-sm text-muted-foreground">
-                                    {workout.exerciseSeries.length} ćwiczeń
-                                </p>
-                            </CardContent>
-                            <CardFooter>
-                                <Link href={`/athlete/workouts/${workout.id}`} className="w-full">
-                                    <Button variant="outline" className="w-full">Szczegóły</Button>
-                                </Link>
-                            </CardFooter>
-                        </Card>
-                    ))
-                ) : (
-                    <div className="col-span-full text-center py-12 border-2 border-dashed rounded-lg">
-                        <Dumbbell className="h-12 w-12 mx-auto text-muted-foreground mb-4 opacity-50" />
-                        <h3 className="text-lg font-semibold mb-2">Brak treningów</h3>
-                        <p className="text-muted-foreground mb-4">Nie masz jeszcze żadnych treningów. Utwórz pierwszy!</p>
-                        <Link href="/athlete/workouts/create">
-                            <Button variant="outline">Utwórz Trening</Button>
-                        </Link>
-                    </div>
-                )}
-            </div>
+            )}
+            <WorkoutsListView
+                role="athlete"
+                createHref="/athlete/workouts/create"
+                detailsBasePath="/athlete/workouts"
+            />
         </div>
     );
 }

@@ -69,7 +69,7 @@ export default function ExercisesPage() {
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
 
-  const { data: userProfile } = useDoc<UserProfile>('users', user?.uid);
+  const { data: userProfile } = useDoc<UserProfile>('users', user?.uid ?? null);
 
   // Fetch workout plans for athletes
   const { data: assignedPlans } = useCollection<WorkoutPlan>('workoutPlans',
@@ -215,12 +215,12 @@ export default function ExercisesPage() {
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="muscleGroup" className="text-right">Grupa mięśniowa</Label>
-            <Select name="muscleGroup" defaultValue={isEditMode ? selectedExercise?.muscleGroup : ''} required disabled={isSubmitting || muscleGroupsLoading}>
+            <Select name="muscleGroup" defaultValue={isEditMode && selectedExercise?.muscleGroup ? selectedExercise.muscleGroup : undefined} required disabled={isSubmitting || muscleGroupsLoading}>
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Wybierz grupę mięśniową" />
               </SelectTrigger>
               <SelectContent>
-                {muscleGroups?.map(group => (
+                {muscleGroups?.filter(group => group.name && group.name.trim() !== '').map(group => (
                   <SelectItem key={group.id} value={group.name}>{group.name}</SelectItem>
                 ))}
               </SelectContent>
