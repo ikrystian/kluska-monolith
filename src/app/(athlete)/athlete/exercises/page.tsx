@@ -2,12 +2,16 @@
 
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,8 +38,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import type { Exercise, MuscleGroup, WorkoutPlan, UserProfile } from '@/lib/types';
-import { PlusCircle, Search, Loader2, Dumbbell, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { Exercise, MuscleGroupName, MuscleGroup, WorkoutPlan, WorkoutLog } from '@/lib/types';
+import { PlusCircle, Search, Loader2, Dumbbell, MoreVertical, Edit, Trash2, LineChart as ChartIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useUser, useCreateDoc, useUpdateDoc, useDeleteDoc } from '@/lib/db-hooks';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -47,6 +51,108 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { MultiSelect } from '@/components/ui/multi-select';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
+import { format } from 'date-fns';
+import { pl } from 'date-fns/locale';
+
+// --- SCHEMA ---
+const exerciseSchema = z.object({
+  name: z.string().min(1, 'Nazwa jest wymagana.'),
+  mainMuscleGroups: z.array(z.string()).min(1, 'Przynajmniej jedna główna grupa mięśniowa jest wymagana.'),
+  secondaryMuscleGroups: z.array(z.string()).optional(),
+  instructions: z.string().optional(),
+  mediaUrl: z.string().url('Nieprawidłowy URL multimediów.').optional().or(z.literal('')),
+  type: z.enum(['weight', 'duration', 'reps'], { required_error: "Typ ćwiczenia jest wymagany." }).optional(),
+  description: z.string().optional(),
+});
+
+type ExerciseFormValues = z.infer<typeof exerciseSchema>;
+
+// --- PROGRESS DIALOG ---
+function ProgressDialog({ exercise, userId, open, onOpenChange }: { exercise: Exercise | null, userId: string | undefined, open: boolean, onOpenChange: (open: boolean) => void }) {
+  const { data: logs, isLoading } = useCollection<WorkoutLog>(
+    userId ? 'workoutLogs' : null,
+    userId ? { athleteId: userId, status: 'completed' } : undefined
+  );
+
+  const chartData = useMemo(() => {
+    if (!logs || !exercise) return [];
+
+    return logs
+      .filter(log => log.exercises.some(ex => ex.exercise.id === exercise.id))
+      .map(log => {
+        const exLog = log.exercises.find(ex => ex.exercise.id === exercise.id);
+        // Calculate max weight for weight-based, or max reps/duration
+        let value = 0;
+        if (exercise.type === 'weight' || !exercise.type) {
+          value = Math.max(...(exLog?.sets.map(s => s.weight || 0) || [0]));
+        } else if (exercise.type === 'reps') {
+          value = Math.max(...(exLog?.sets.map(s => s.reps || 0) || [0]));
+        } else if (exercise.type === 'duration') {
+          value = Math.max(...(exLog?.sets.map(s => s.duration || 0) || [0]));
+        }
+
+        return {
+          rawDate: new Date(log.endTime),
+          date: format(new Date(log.endTime), 'd MMM', { locale: pl }),
+          value: value
+        };
+      })
+      .sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime());
+  }, [logs, exercise]);
+
+  if (!exercise) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle className="font-headline">Postęp: {exercise.name}</DialogTitle>
+          <DialogDescription>
+            Twoje najlepsze wyniki w czasie.
+          </DialogDescription>
+        </DialogHeader>
+
+        {isLoading ? (
+          <div className="h-[300px] flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : chartData.length < 2 ? (
+          <div className="h-[300px] flex flex-col items-center justify-center text-center p-4 border-2 border-dashed rounded-lg">
+            <ChartIcon className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">Za mało danych, aby wyświetlić wykres.</p>
+            <p className="text-sm text-muted-foreground">Wykonaj to ćwiczenie w co najmniej dwóch treningach.</p>
+          </div>
+        ) : (
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={10} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={10} />
+                <Tooltip
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                  formatter={(value: number) => [`${value} ${exercise.type === 'duration' ? 's' : (exercise.type === 'reps' ? 'powt.' : 'kg')}`, 'Wynik']}
+                />
+                <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ r: 4, fill: "hsl(var(--primary))" }} activeDot={{ r: 6 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function ExercisesPage() {
   const { user } = useUser();
@@ -57,11 +163,12 @@ export default function ExercisesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
+  const [isProgressDialogOpen, setProgressDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
 
   // Fetch assigned workout plans
-  const { data: assignedPlans, isLoading: assignedPlansLoading } = useCollection<WorkoutPlan>(
+  const { data: assignedPlans } = useCollection<WorkoutPlan>(
     user?.uid ? 'workoutPlans' : null,
     user?.uid ? { assignedAthleteIds: { $in: [user.uid] } } : undefined
   );
@@ -69,13 +176,13 @@ export default function ExercisesPage() {
   const exerciseIds = useMemo(() => {
     const ids = new Set<string>();
     if (assignedPlans) {
-        assignedPlans.forEach(plan => {
-            plan.workoutDays.forEach(day => {
-                day.exercises.forEach(ex => {
-                    if (ex.exerciseId) ids.add(ex.exerciseId);
-                });
-            });
+      assignedPlans.forEach(plan => {
+        plan.workoutDays.forEach(day => {
+          day.exercises.forEach(ex => {
+            if (ex.exerciseId) ids.add(ex.exerciseId);
+          });
         });
+      });
     }
     return Array.from(ids);
   }, [assignedPlans]);
@@ -93,61 +200,80 @@ export default function ExercisesPage() {
   );
 
   const allExercises = useMemo(() => {
-      const combined = new Map<string, Exercise>();
-      publicAndUserExercises?.forEach(ex => combined.set(ex.id, ex));
-      assignedExercises?.forEach(ex => combined.set(ex.id, ex));
-      return Array.from(combined.values());
+    const combined = new Map<string, Exercise>();
+    publicAndUserExercises?.forEach(ex => combined.set(ex.id, ex));
+    assignedExercises?.forEach(ex => combined.set(ex.id, ex));
+    return Array.from(combined.values());
   }, [publicAndUserExercises, assignedExercises]);
 
-  // Fetch muscle groups
-  const { data: muscleGroups, isLoading: muscleGroupsLoading } = useCollection<MuscleGroup>('muscleGroups');
-
-  const isLoading = assignedLoading || publicAndUserLoading || muscleGroupsLoading;
+  const isLoading = assignedLoading || publicAndUserLoading;
 
   const filteredExercises = allExercises?.filter(
     (exercise) =>
       exercise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      exercise.muscleGroup.toLowerCase().includes(searchTerm.toLowerCase())
+      exercise.mainMuscleGroups?.some(mg => mg.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      exercise.muscleGroup?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const form = useForm<ExerciseFormValues>({
+    resolver: zodResolver(exerciseSchema),
+    defaultValues: {
+      name: '',
+      mainMuscleGroups: [],
+      secondaryMuscleGroups: [],
+      instructions: '',
+      mediaUrl: '',
+      type: 'weight',
+      description: '',
+    }
+  });
+
+  const handleFormSubmit = async (data: ExerciseFormValues) => {
     if (!user) return;
     setIsSubmitting(true);
 
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-    const exerciseData = {
-      name: formData.get('name') as string,
-      muscleGroup: formData.get('muscleGroup') as string,
-      description: formData.get('description') as string || '',
-      type: formData.get('type') as 'weight' | 'duration' | 'reps',
-    };
+    // Map strings back to MuscleGroup objects
+    const mainMuscleGroups: MuscleGroup[] = data.mainMuscleGroups.map(name => ({ name: name as MuscleGroupName }));
+    const secondaryMuscleGroups: MuscleGroup[] = (data.secondaryMuscleGroups || []).map(name => ({ name: name as MuscleGroupName }));
 
     try {
-      if(selectedExercise) {
+      if (selectedExercise) {
         // Update existing exercise
         const updatedData = {
-          name: exerciseData.name,
-          muscleGroup: exerciseData.muscleGroup,
-          description: exerciseData.description,
-          type: exerciseData.type,
+          name: data.name,
+          mainMuscleGroups,
+          secondaryMuscleGroups,
+          instructions: data.instructions,
+          mediaUrl: data.mediaUrl,
+          type: data.type,
+          description: data.description,
+          // Legacy support
+          muscleGroup: data.mainMuscleGroups[0],
+          image: data.mediaUrl,
         };
         await updateDoc('exercises', selectedExercise.id, updatedData);
-        toast({ title: "Sukces!", description: "Ćwiczenie zostało zaktualizowane."});
+        toast({ title: "Sukces!", description: "Ćwiczenie zostało zaktualizowane." });
         setEditDialogOpen(false);
         setSelectedExercise(null);
         refetchExercises();
       } else {
         // Add new exercise
         const newExerciseData = {
-          ...exerciseData,
-          image: `https://picsum.photos/seed/${encodeURIComponent(exerciseData.name)}/400/300`,
-          imageHint: exerciseData.name.toLowerCase(),
+          name: data.name,
+          mainMuscleGroups,
+          secondaryMuscleGroups,
+          instructions: data.instructions,
+          mediaUrl: data.mediaUrl,
+          type: data.type,
+          description: data.description,
           ownerId: user.uid,
+          // Legacy support
+          muscleGroup: data.mainMuscleGroups[0],
+          image: data.mediaUrl || `https://picsum.photos/seed/${encodeURIComponent(data.name)}/400/300`,
+          imageHint: data.name.toLowerCase(),
         };
         await createDoc('exercises', newExerciseData);
-        toast({ title: "Sukces!", description: "Nowe ćwiczenie zostało dodane."});
+        toast({ title: "Sukces!", description: "Nowe ćwiczenie zostało dodane." });
         setAddDialogOpen(false);
         refetchExercises();
       }
@@ -164,8 +290,22 @@ export default function ExercisesPage() {
 
   const openEditDialog = (exercise: Exercise) => {
     setSelectedExercise(exercise);
+    form.reset({
+      name: exercise.name,
+      mainMuscleGroups: exercise.mainMuscleGroups?.map(mg => mg.name) || (exercise.muscleGroup ? [exercise.muscleGroup] : []),
+      secondaryMuscleGroups: exercise.secondaryMuscleGroups?.map(mg => mg.name) || [],
+      instructions: exercise.instructions || '',
+      mediaUrl: exercise.mediaUrl || exercise.image || '',
+      type: exercise.type || 'weight',
+      description: exercise.description || '',
+    });
     setEditDialogOpen(true);
   };
+
+  const openProgressDialog = (exercise: Exercise) => {
+    setSelectedExercise(exercise);
+    setProgressDialogOpen(true);
+  }
 
   const handleDeleteExercise = async () => {
     if (!selectedExercise) return;
@@ -173,7 +313,7 @@ export default function ExercisesPage() {
 
     try {
       await deleteDoc('exercises', selectedExercise.id);
-      toast({ title: "Sukces!", description: "Ćwiczenie zostało usunięte."});
+      toast({ title: "Sukces!", description: "Ćwiczenie zostało usunięte." });
       setSelectedExercise(null);
       refetchExercises();
     } catch (error) {
@@ -187,52 +327,91 @@ export default function ExercisesPage() {
     }
   };
 
+  const muscleGroupOptions = Object.values(MuscleGroupName).map(name => ({ label: name, value: name }));
 
-  const ExerciseDialogContent = ({ isEditMode }: { isEditMode: boolean }) => (
-    <>
-      <DialogHeader>
-        <DialogTitle className="font-headline">{isEditMode ? 'Edytuj Ćwiczenie' : 'Dodaj Nowe Ćwiczenie'}</DialogTitle>
-        <DialogDescription>
-          {isEditMode ? 'Zaktualizuj szczegóły tego ćwiczenia.' : 'Wprowadź szczegóły nowego ćwiczenia. Kliknij "Zapisz", gdy skończysz.'}
-        </DialogDescription>
-      </DialogHeader>
-      <form onSubmit={handleFormSubmit}>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">Nazwa</Label>
-            <Input id="name" name="name" defaultValue={isEditMode ? selectedExercise?.name : ''} className="col-span-3" required disabled={isSubmitting} />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="muscleGroup" className="text-right">Grupa mięśniowa</Label>
-            <Select name="muscleGroup" defaultValue={isEditMode ? selectedExercise?.muscleGroup : ''} required disabled={isSubmitting || muscleGroupsLoading}>
-                <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Wybierz grupę mięśniową" />
-                </SelectTrigger>
+  const ExerciseFormContent = ({ isEditMode }: { isEditMode: boolean }) => (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nazwa</FormLabel>
+              <FormControl><Input {...field} disabled={isSubmitting} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="mainMuscleGroups"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Główne grupy mięśniowe</FormLabel>
+              <FormControl>
+                <MultiSelect
+                  selected={field.value}
+                  options={muscleGroupOptions}
+                  onChange={field.onChange}
+                  placeholder="Wybierz grupy mięśniowe"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="secondaryMuscleGroups"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Poboczne grupy mięśniowe</FormLabel>
+              <FormControl>
+                <MultiSelect
+                  selected={field.value || []}
+                  options={muscleGroupOptions}
+                  onChange={field.onChange}
+                  placeholder="Wybierz poboczne grupy"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Typ ćwiczenia</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Wybierz typ ćwiczenia" />
+                  </SelectTrigger>
+                </FormControl>
                 <SelectContent>
-                    {muscleGroups?.map(group => (
-                        <SelectItem key={group.id} value={group.name}>{group.name}</SelectItem>
-                    ))}
+                  <SelectItem value="weight">Na ciężar</SelectItem>
+                  <SelectItem value="duration">Na czas</SelectItem>
+                  <SelectItem value="reps">Na powtórzenia</SelectItem>
                 </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="type" className="text-right">Typ</Label>
-            <Select name="type" defaultValue={isEditMode ? selectedExercise?.type : 'weight'} required disabled={isSubmitting}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Wybierz typ ćwiczenia" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="weight">Na ciężar (serie/powtórzenia)</SelectItem>
-                <SelectItem value="reps">Na powtórzenia (bez ciężaru)</SelectItem>
-                <SelectItem value="duration">Na czas (sekundy)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="description" className="text-right">Opis (opcjonalny)</Label>
-            <Textarea id="description" name="description" defaultValue={isEditMode ? selectedExercise?.description : ''} className="col-span-3" disabled={isSubmitting} />
-          </div>
-        </div>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Opis (opcjonalnie)</FormLabel>
+              <FormControl><Textarea {...field} disabled={isSubmitting} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <DialogFooter>
           <DialogClose asChild>
             <Button type="button" variant="secondary" disabled={isSubmitting}>Anuluj</Button>
@@ -243,7 +422,7 @@ export default function ExercisesPage() {
           </Button>
         </DialogFooter>
       </form>
-    </>
+    </Form>
   );
 
   return (
@@ -262,15 +441,19 @@ export default function ExercisesPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Dialog open={isAddDialogOpen} onOpenChange={(isOpen) => { setAddDialogOpen(isOpen); if(!isOpen) setSelectedExercise(null); }}>
+            <Dialog open={isAddDialogOpen} onOpenChange={(isOpen) => { setAddDialogOpen(isOpen); if (!isOpen) { setSelectedExercise(null); form.reset(); } }}>
               <DialogTrigger asChild>
                 <Button>
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Dodaj ćwiczenie
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <ExerciseDialogContent isEditMode={false} />
+              <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="font-headline">Dodaj Nowe Ćwiczenie</DialogTitle>
+                  <DialogDescription>Wprowadź szczegóły nowego ćwiczenia.</DialogDescription>
+                </DialogHeader>
+                <ExerciseFormContent isEditMode={false} />
               </DialogContent>
             </Dialog>
           </div>
@@ -294,50 +477,63 @@ export default function ExercisesPage() {
           ) : filteredExercises && filteredExercises.length > 0 ? (
             filteredExercises.map((exercise) => (
               <Card key={exercise.id} className="overflow-hidden transition-all hover:shadow-lg flex flex-col">
-                <div className="relative h-48 w-full">
-                  <Image
-                    src={exercise.image}
-                    alt={exercise.name}
-                    fill
-                    className="object-cover"
-                    data-ai-hint={exercise.imageHint}
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
+                <div className="relative h-48 w-full bg-muted flex items-center justify-center">
+                  {(exercise.mediaUrl || exercise.image) ? (
+                    <Image
+                      src={exercise.mediaUrl || exercise.image || ''}
+                      alt={exercise.name}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    />
+                  ) : (
+                    <Dumbbell className="h-12 w-12 text-muted-foreground opacity-20" />
+                  )}
                 </div>
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                      <CardTitle className="font-headline">{exercise.name}</CardTitle>
-                      {exercise.ownerId === user?.uid && (
-                           <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2">
-                                      <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => openEditDialog(exercise)}>
-                                      <Edit className="mr-2 h-4 w-4" />
-                                      <span>Edytuj</span>
-                                  </DropdownMenuItem>
-                                   <AlertDialogTrigger asChild>
-                                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} onClick={() => setSelectedExercise(exercise)}>
-                                          <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-                                          <span className="text-destructive">Usuń</span>
-                                      </DropdownMenuItem>
-                                  </AlertDialogTrigger>
-                              </DropdownMenuContent>
-                          </DropdownMenu>
-                      )}
+                    <CardTitle className="font-headline line-clamp-1">{exercise.name}</CardTitle>
+                    {exercise.ownerId === user?.uid && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openEditDialog(exercise)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            <span>Edytuj</span>
+                          </DropdownMenuItem>
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} onClick={() => setSelectedExercise(exercise)}>
+                              <Trash2 className="mr-2 h-4 w-4 text-destructive" />
+                              <span className="text-destructive">Usuń</span>
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
-                  <div className="flex justify-between items-center pt-1">
-                    <Badge variant="secondary">{exercise.muscleGroup}</Badge>
-                    {exercise.ownerId === user?.uid && <Badge variant="outline">Własne</Badge>}
-                    {exercise.ownerId !== 'public' && exercise.ownerId !== user?.uid && <Badge variant="default" className='bg-green-600'>Z planu</Badge>}
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {exercise.mainMuscleGroups?.map((mg, idx) => (
+                      <Badge key={idx} variant="secondary" className="text-[10px]">{mg.name}</Badge>
+                    ))}
+                    {!exercise.mainMuscleGroups?.length && exercise.muscleGroup && (
+                      <Badge variant="secondary" className="text-[10px]">{exercise.muscleGroup}</Badge>
+                    )}
+                    {exercise.ownerId === user?.uid && <Badge variant="outline" className="text-[10px]">Własne</Badge>}
                   </div>
                 </CardHeader>
                 <CardContent className="flex-grow">
-                  <CardDescription>{exercise.description}</CardDescription>
+                  <CardDescription className="line-clamp-2">{exercise.description || exercise.instructions}</CardDescription>
                 </CardContent>
+                <CardFooter>
+                  <Button variant="ghost" className="w-full" onClick={() => openProgressDialog(exercise)}>
+                    <ChartIcon className="mr-2 h-4 w-4" />
+                    Zobacz Postęp
+                  </Button>
+                </CardFooter>
               </Card>
             ))
           ) : (
@@ -345,7 +541,7 @@ export default function ExercisesPage() {
               <CardContent className="text-center">
                 <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="font-headline text-xl font-semibold mb-2">Brak ćwiczeń</h3>
-                <p className="text-muted-foreground mb-4">Nie znaleziono żadnych ćwiczeń. Dodaj swoje pierwsze ćwiczenie, aby zacząć.</p>
+                <p className="text-muted-foreground mb-4">Nie znaleziono żadnych ćwiczeń.</p>
                 <Button variant="outline" onClick={() => { setSelectedExercise(null); setAddDialogOpen(true); }}>
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Dodaj Ćwiczenie
@@ -356,29 +552,41 @@ export default function ExercisesPage() {
         </div>
 
         {/* Edit Dialog */}
-        <Dialog open={isEditDialogOpen} onOpenChange={(isOpen) => { setEditDialogOpen(isOpen); if(!isOpen) setSelectedExercise(null); }}>
-          <DialogContent className="sm:max-w-[425px]">
-            <ExerciseDialogContent isEditMode={true} />
+        <Dialog open={isEditDialogOpen} onOpenChange={(isOpen) => { setEditDialogOpen(isOpen); if (!isOpen) setSelectedExercise(null); }}>
+          <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="font-headline">Edytuj Ćwiczenie</DialogTitle>
+              <DialogDescription>Zaktualizuj szczegóły ćwiczenia.</DialogDescription>
+            </DialogHeader>
+            <ExerciseFormContent isEditMode={true} />
           </DialogContent>
         </Dialog>
 
+        {/* Progress Dialog */}
+        <ProgressDialog
+          exercise={selectedExercise}
+          userId={user?.uid}
+          open={isProgressDialogOpen}
+          onOpenChange={setProgressDialogOpen}
+        />
+
         {/* Delete Confirmation Dialog Content */}
         <AlertDialogContent>
-            <AlertDialogHeader>
+          <AlertDialogHeader>
             <AlertDialogTitle>Czy na pewno chcesz usunąć to ćwiczenie?</AlertDialogTitle>
             <AlertDialogDescription>
-                Tej operacji nie można cofnąć. To spowoduje trwałe usunięcie ćwiczenia
-                <span className="font-semibold"> "{selectedExercise?.name}" </span>
-                z bazy danych.
+              Tej operacji nie można cofnąć. To spowoduje trwałe usunięcie ćwiczenia
+              <span className="font-semibold"> "{selectedExercise?.name}" </span>
+              z bazy danych.
             </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setSelectedExercise(null)} disabled={isSubmitting}>Anuluj</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteExercise} disabled={isSubmitting} className="bg-destructive hover:bg-destructive/90">
-                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Usuń
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Usuń
             </AlertDialogAction>
-            </AlertDialogFooter>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </div>
     </AlertDialog>

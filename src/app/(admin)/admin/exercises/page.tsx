@@ -23,22 +23,26 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import type { Exercise, MuscleGroup } from '@/lib/types';
-import { Search, Loader2, Edit, Trash2 } from 'lucide-react';
+import { Exercise, MuscleGroupName, MuscleGroup } from '@/lib/types';
+import { Search, Loader2, Edit, Trash2, Filter, PlayCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useUpdateDoc, useDeleteDoc } from '@/lib/db-hooks';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-
+import { MultiSelect } from '@/components/ui/multi-select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const exerciseSchema = z.object({
   name: z.string().min(1, 'Nazwa jest wymagana.'),
-  muscleGroup: z.string().min(1, 'Grupa mięśniowa jest wymagana.'),
+  mainMuscleGroups: z.array(z.string()).min(1, 'Przynajmniej jedna główna grupa mięśniowa jest wymagana.'),
+  secondaryMuscleGroups: z.array(z.string()).optional(),
+  instructions: z.string().optional(),
+  mediaUrl: z.string().url('Nieprawidłowy URL multimediów.').optional().or(z.literal('')),
+  type: z.enum(['weight', 'duration', 'reps'], { required_error: "Typ ćwiczenia jest wymagany." }).optional(),
   description: z.string().optional(),
-  image: z.string().url('Nieprawidłowy URL obrazu.'),
-  type: z.enum(['weight', 'duration', 'reps'], { required_error: "Typ ćwiczenia jest wymagany."}),
+  image: z.string().optional(),
 });
 
 type ExerciseFormValues = z.infer<typeof exerciseSchema>;
@@ -46,41 +50,70 @@ type ExerciseFormValues = z.infer<typeof exerciseSchema>;
 export default function AdminExercisesPage() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const [muscleGroupFilter, setMuscleGroupFilter] = useState<string | null>(null);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
 
   const { data: allExercises, isLoading: exercisesLoading, refetch: refetchExercises } = useCollection<Exercise>('exercises');
-  const { data: muscleGroups, isLoading: muscleGroupsLoading } = useCollection<MuscleGroup>('muscleGroups');
+  const muscleGroupOptions = Object.values(MuscleGroupName).map(name => ({ label: name, value: name }));
+
   const { updateDoc, isLoading: isUpdating } = useUpdateDoc();
   const { deleteDoc, isLoading: isDeleting } = useDeleteDoc();
 
-  const isLoading = exercisesLoading || muscleGroupsLoading;
+  const isLoading = exercisesLoading;
 
   const form = useForm<ExerciseFormValues>({
     resolver: zodResolver(exerciseSchema),
+    defaultValues: {
+      mainMuscleGroups: [],
+      secondaryMuscleGroups: [],
+      mediaUrl: '',
+      instructions: '',
+      name: '',
+      type: 'weight'
+    }
   });
 
   const filteredExercises = allExercises?.filter(
-    (exercise) =>
-      exercise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      exercise.muscleGroup.toLowerCase().includes(searchTerm.toLowerCase())
+    (exercise) => {
+      const matchesSearch = exercise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        exercise.mainMuscleGroups.some(mg => mg.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      const matchesFilter = muscleGroupFilter
+        ? exercise.mainMuscleGroups.some(mg => mg.name === muscleGroupFilter) || exercise.muscleGroup === muscleGroupFilter
+        : true;
+
+      return matchesSearch && matchesFilter;
+    }
   );
 
   const handleFormSubmit = async (data: ExerciseFormValues) => {
     if (!selectedExercise) return;
 
-    const updatedData = {
-        ...data,
-        imageHint: data.name.toLowerCase(),
+    const mainMuscleGroups: MuscleGroup[] = data.mainMuscleGroups.map(name => ({ name: name as MuscleGroupName }));
+    const secondaryMuscleGroups: MuscleGroup[] = (data.secondaryMuscleGroups || []).map(name => ({ name: name as MuscleGroupName }));
+
+    const updatedData: Partial<Exercise> = {
+      name: data.name,
+      mainMuscleGroups,
+      secondaryMuscleGroups,
+      instructions: data.instructions || data.description,
+      mediaUrl: data.mediaUrl || data.image,
+      type: data.type,
+      muscleGroup: data.mainMuscleGroups[0], // Legacy
+      description: data.instructions || data.description, // Legacy
+      image: data.mediaUrl || data.image, // Legacy
+      imageHint: data.name.toLowerCase(),
     };
 
     try {
       await updateDoc('exercises', selectedExercise.id, updatedData);
-      toast({ title: "Sukces!", description: "Ćwiczenie zostało zaktualizowane."});
+      toast({ title: "Sukces!", description: "Ćwiczenie zostało zaktualizowane." });
       setEditDialogOpen(false);
       setSelectedExercise(null);
       refetchExercises();
     } catch (error) {
+      console.error(error);
       toast({
         title: "Błąd",
         description: "Nie udało się zaktualizować ćwiczenia.",
@@ -93,10 +126,13 @@ export default function AdminExercisesPage() {
     setSelectedExercise(exercise);
     form.reset({
       name: exercise.name,
-      muscleGroup: exercise.muscleGroup,
-      description: exercise.description,
-      image: exercise.image,
+      mainMuscleGroups: exercise.mainMuscleGroups?.map(mg => mg.name) || (exercise.muscleGroup ? [exercise.muscleGroup] : []),
+      secondaryMuscleGroups: exercise.secondaryMuscleGroups?.map(mg => mg.name) || [],
+      instructions: exercise.instructions || exercise.description || '',
+      mediaUrl: exercise.mediaUrl || exercise.image || '',
       type: exercise.type || 'weight',
+      description: exercise.description || '',
+      image: exercise.image || '',
     });
     setEditDialogOpen(true);
   };
@@ -104,7 +140,7 @@ export default function AdminExercisesPage() {
   const handleDeleteExercise = async (exercise: Exercise) => {
     try {
       await deleteDoc('exercises', exercise.id);
-      toast({ title: "Sukces!", description: "Ćwiczenie zostało usunięte.", variant: 'destructive'});
+      toast({ title: "Sukces!", description: "Ćwiczenie zostało usunięte.", variant: 'destructive' });
       refetchExercises();
     } catch (error) {
       toast({
@@ -116,28 +152,59 @@ export default function AdminExercisesPage() {
   };
 
   const getOwnerBadge = (ownerId: string | undefined) => {
-    if (ownerId === 'public') {
+    if (ownerId === 'public' || !ownerId) {
       return <Badge variant="secondary">Publiczne</Badge>;
     }
-    if (ownerId) {
-      return <Badge variant="outline">Użytkownika</Badge>;
-    }
-    return null;
+    return <Badge variant="outline">Użytkownika</Badge>;
+  }
+
+  const isVideoUrl = (url: string | undefined) => {
+    if (!url) return false;
+    return url.includes('youtube.com') || url.includes('youtu.be') || url.includes('.mp4') || url.includes('.webm');
   }
 
   return (
     <div className="container mx-auto p-4 md:p-8">
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="font-headline text-3xl font-bold">Wszystkie Ćwiczenia</h1>
-        <div className="relative w-full md:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Szukaj ćwiczeń..."
-            className="pl-9"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="flex gap-2 w-full md:w-auto">
+          <div className="relative flex-grow md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Szukaj ćwiczeń..."
+              className="pl-9"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={muscleGroupFilter ? "bg-secondary" : ""}>
+                <Filter className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Filtruj</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-0" align="end">
+              <div className="p-2">
+                <div className="mb-2 text-xs font-medium text-muted-foreground px-2">Grupa mięśniowa</div>
+                <Select
+                  value={muscleGroupFilter || "all"}
+                  onValueChange={(val) => setMuscleGroupFilter(val === "all" ? null : val)}
+                >
+                  <SelectTrigger className="w-full border-0 shadow-none focus:ring-0">
+                    <SelectValue placeholder="Wszystkie" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Wszystkie</SelectItem>
+                    {muscleGroupOptions.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
@@ -158,45 +225,61 @@ export default function AdminExercisesPage() {
         ) : filteredExercises && filteredExercises.length > 0 ? (
           filteredExercises.map((exercise) => (
             <Card key={exercise.id} className="overflow-hidden transition-all hover:shadow-lg flex flex-col">
-              <div className="relative h-48 w-full">
-                <Image
-                  src={exercise.image}
-                  alt={exercise.name}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                />
+              <div className="relative h-48 w-full bg-muted flex items-center justify-center group">
+                {(exercise.mediaUrl || exercise.image) ? (
+                  isVideoUrl(exercise.mediaUrl || exercise.image) ? (
+                    <div className="relative w-full h-full bg-black flex items-center justify-center">
+                      <PlayCircle className="h-12 w-12 text-white opacity-80" />
+                      <span className="absolute bottom-2 right-2 text-xs text-white bg-black/50 px-1 rounded">Wideo</span>
+                    </div>
+                  ) : (
+                    <Image
+                      src={exercise.mediaUrl || exercise.image || ''}
+                      alt={exercise.name}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    />
+                  )
+                ) : (
+                  <span className="text-muted-foreground">Brak zdjęcia</span>
+                )}
               </div>
               <CardHeader>
-                  <CardTitle className="font-headline">{exercise.name}</CardTitle>
-                <div className="flex justify-between items-center pt-1">
-                  <Badge variant="secondary">{exercise.muscleGroup}</Badge>
+                <CardTitle className="font-headline line-clamp-1">{exercise.name}</CardTitle>
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {exercise.mainMuscleGroups?.map((mg, idx) => (
+                    <Badge key={idx} variant="secondary" className="text-[10px]">{mg.name}</Badge>
+                  ))}
+                  {!exercise.mainMuscleGroups?.length && exercise.muscleGroup && (
+                    <Badge variant="secondary" className="text-[10px]">{exercise.muscleGroup}</Badge>
+                  )}
                   {getOwnerBadge(exercise.ownerId)}
                 </div>
               </CardHeader>
               <CardContent className="flex-grow flex flex-col justify-end">
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="w-full" onClick={() => openEditDialog(exercise)}>
-                        <Edit className="mr-2 h-3 w-3" />
-                        Edytuj
-                    </Button>
-                    <Button variant="destructive" size="sm" className="w-full" onClick={() => handleDeleteExercise(exercise)}>
-                        <Trash2 className="mr-2 h-3 w-3" />
-                        Usuń
-                    </Button>
-                  </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => openEditDialog(exercise)}>
+                    <Edit className="mr-2 h-3 w-3" />
+                    Edytuj
+                  </Button>
+                  <Button variant="destructive" size="sm" className="w-full" onClick={() => handleDeleteExercise(exercise)}>
+                    <Trash2 className="mr-2 h-3 w-3" />
+                    Usuń
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))
         ) : (
           <Card className="sm:col-span-2 lg:col-span-3 xl:col-span-4 text-center py-20">
-              <p>Brak ćwiczeń w systemie.</p>
+            <p>Brak ćwiczeń spełniających kryteria.</p>
           </Card>
         )}
       </div>
 
-      <Dialog open={isEditDialogOpen} onOpenChange={(isOpen) => { setEditDialogOpen(isOpen); if(!isOpen) setSelectedExercise(null); }}>
-        <DialogContent className="sm:max-w-[425px]">
+      <Dialog open={isEditDialogOpen} onOpenChange={(isOpen) => { setEditDialogOpen(isOpen); if (!isOpen) setSelectedExercise(null); }}>
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-headline">Edytuj Ćwiczenie</DialogTitle>
             <DialogDescription>
@@ -216,29 +299,46 @@ export default function AdminExercisesPage() {
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
-                name="muscleGroup"
+                name="mainMuscleGroups"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Grupa mięśniowa</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isUpdating || muscleGroupsLoading}>
-                        <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Wybierz grupę mięśniową" />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            {muscleGroups?.map(group => (
-                                <SelectItem key={group.id} value={group.name}>{group.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <FormLabel>Główne grupy mięśniowe</FormLabel>
+                    <FormControl>
+                      <MultiSelect
+                        selected={field.value}
+                        options={muscleGroupOptions}
+                        onChange={field.onChange}
+                        placeholder="Wybierz grupy mięśniowe"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-               <FormField
+
+              <FormField
+                control={form.control}
+                name="secondaryMuscleGroups"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Poboczne grupy mięśniowe</FormLabel>
+                    <FormControl>
+                      <MultiSelect
+                        selected={field.value || []}
+                        options={muscleGroupOptions}
+                        onChange={field.onChange}
+                        placeholder="Wybierz poboczne grupy"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
                 control={form.control}
                 name="type"
                 render={({ field }) => (
@@ -260,12 +360,12 @@ export default function AdminExercisesPage() {
                   </FormItem>
                 )}
               />
-               <FormField
+              <FormField
                 control={form.control}
-                name="description"
+                name="instructions"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Opis (opcjonalny)</FormLabel>
+                    <FormLabel>Instrukcje</FormLabel>
                     <FormControl><Textarea {...field} disabled={isUpdating} /></FormControl>
                     <FormMessage />
                   </FormItem>
@@ -273,10 +373,10 @@ export default function AdminExercisesPage() {
               />
               <FormField
                 control={form.control}
-                name="image"
+                name="mediaUrl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>URL Obrazu</FormLabel>
+                    <FormLabel>URL Multimediów (Zdjęcie/Wideo)</FormLabel>
                     <FormControl><Input {...field} disabled={isUpdating} /></FormControl>
                     <FormMessage />
                   </FormItem>

@@ -1,31 +1,73 @@
 import mongoose, { Schema, Model, Document } from 'mongoose';
+import { IExercise } from './Exercise';
 
-export interface IWorkoutExercise {
-  exerciseId: string;
-  exerciseName: string;
-  sets: {
-    reps?: number;
-    weight?: number;
-    duration?: number;
-    completed: boolean;
-  }[];
+// Define the nested structures
+export interface IWorkoutSet {
+  number: number;
+  type: string; // SetType enum
+  reps: number;
+  weight: number;
+  restTimeSeconds: number;
   duration?: number;
+  completed: boolean;
+}
+
+export interface IExerciseSeries {
+  exerciseId: string; // Keep ID for reference
+  exercise: IExercise; // Embed full exercise snapshot
+  tempo: string;
+  tip?: string;
+  sets: IWorkoutSet[];
 }
 
 export interface IWorkoutLog extends Document {
-  _id: string;
+  _id: mongoose.Types.ObjectId;
   athleteId: string;
   workoutName: string;
   startTime: Date;
   endTime?: Date;
   duration?: number; // in minutes
-  exercises: IWorkoutExercise[];
+  exercises: IExerciseSeries[];
   photoURL?: string;
   status: 'in-progress' | 'completed' | 'cancelled';
   feedback?: string;
   createdAt: Date;
   updatedAt: Date;
 }
+
+const WorkoutSetSchema = new Schema<IWorkoutSet>({
+  number: { type: Number, required: true },
+  type: { type: String, required: true },
+  reps: { type: Number, default: 0 },
+  weight: { type: Number, default: 0 },
+  restTimeSeconds: { type: Number, default: 60 },
+  duration: { type: Number },
+  completed: { type: Boolean, default: false }
+});
+
+// We need to define a schema for the embedded exercise snapshot
+// We can reuse the schema definition from Exercise.ts or define a subset.
+// Since we want a snapshot, let's define a flexible schema or import it.
+// For simplicity and to avoid circular deps, let's define a schema that matches IExercise structure loosely or use Mixed.
+// But better to be explicit.
+const ExerciseSnapshotSchema = new Schema({
+  _id: { type: String }, // Store as string or ObjectId
+  name: { type: String, required: true },
+  mainMuscleGroups: [{ name: String, imageUrl: String }],
+  secondaryMuscleGroups: [{ name: String, imageUrl: String }],
+  instructions: String,
+  mediaUrl: String,
+  muscleGroup: String, // Legacy
+  type: String
+}, { _id: false }); // Don't create a separate _id for the snapshot if we store the original ID in _id field
+
+const ExerciseSeriesSchema = new Schema<IExerciseSeries>({
+  exerciseId: { type: String, required: true },
+  exercise: { type: ExerciseSnapshotSchema, required: true },
+  tempo: { type: String, default: "2-0-2-0" },
+  tip: { type: String },
+  sets: [WorkoutSetSchema]
+});
 
 const WorkoutLogSchema = new Schema<IWorkoutLog>(
   {
@@ -34,21 +76,7 @@ const WorkoutLogSchema = new Schema<IWorkoutLog>(
     startTime: { type: Date, required: true },
     endTime: { type: Date },
     duration: { type: Number },
-    exercises: [
-      {
-        exerciseId: { type: String, required: true },
-        exerciseName: { type: String, required: true },
-        sets: [
-          {
-            reps: { type: Number },
-            weight: { type: Number },
-            duration: { type: Number },
-            completed: { type: Boolean, default: false },
-          },
-        ],
-        duration: { type: Number },
-      },
-    ],
+    exercises: [ExerciseSeriesSchema],
     photoURL: { type: String },
     status: {
       type: String,
@@ -60,7 +88,7 @@ const WorkoutLogSchema = new Schema<IWorkoutLog>(
   {
     timestamps: true,
     toJSON: {
-      transform: (_, ret) => {
+      transform: (_, ret: any) => {
         ret.id = ret._id.toString();
         delete ret.__v;
         return ret;

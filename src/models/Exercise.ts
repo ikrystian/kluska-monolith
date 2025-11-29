@@ -1,9 +1,20 @@
 import mongoose, { Schema, Model, Document } from 'mongoose';
 
-export interface IExercise extends Document {
-  _id: string;
+export interface IMuscleGroup {
   name: string;
-  muscleGroup: string;
+  imageUrl?: string;
+}
+
+export interface IExercise extends Document {
+  _id: mongoose.Types.ObjectId;
+  name: string;
+  // New fields
+  mainMuscleGroups: IMuscleGroup[];
+  secondaryMuscleGroups: IMuscleGroup[];
+  instructions?: string;
+  mediaUrl?: string;
+  // Legacy fields
+  muscleGroup?: string;
   description?: string;
   image?: string;
   imageHint?: string;
@@ -13,10 +24,21 @@ export interface IExercise extends Document {
   updatedAt: Date;
 }
 
+const MuscleGroupSchema = new Schema<IMuscleGroup>({
+  name: { type: String, required: true },
+  imageUrl: { type: String }
+});
+
 const ExerciseSchema = new Schema<IExercise>(
   {
     name: { type: String, required: true },
-    muscleGroup: { type: String, required: true },
+    // New fields
+    mainMuscleGroups: [MuscleGroupSchema],
+    secondaryMuscleGroups: [MuscleGroupSchema],
+    instructions: { type: String },
+    mediaUrl: { type: String },
+    // Legacy fields
+    muscleGroup: { type: String },
     description: { type: String },
     image: { type: String },
     imageHint: { type: String },
@@ -24,13 +46,14 @@ const ExerciseSchema = new Schema<IExercise>(
     type: {
       type: String,
       enum: ['weight', 'duration', 'reps'],
-      required: true
+      required: true,
+      default: 'weight'
     },
   },
   {
     timestamps: true,
     toJSON: {
-      transform: (_, ret) => {
+      transform: (_, ret: any) => {
         ret.id = ret._id.toString();
         delete ret.__v;
         return ret;

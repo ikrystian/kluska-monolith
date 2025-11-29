@@ -78,66 +78,66 @@ const StatCard = ({ title, value, unit, icon: Icon, isLoading }: { title: string
 
 const MeasurementChart = ({ data, dataKey, title, unit }: { data: any[], dataKey: string, title: string, unit: string }) => {
 
-    const chartConfig = {
-      value: {
-        label: title,
-        color: "hsl(var(--primary))",
-      },
-    } satisfies import('@/components/ui/chart').ChartConfig;
+  const chartConfig = {
+    value: {
+      label: title,
+      color: "hsl(var(--primary))",
+    },
+  } satisfies import('@/components/ui/chart').ChartConfig;
 
-    if (data.length < 2) {
-      return (
-        <div className="text-center text-muted-foreground p-8 h-64 flex flex-col justify-center items-center">
-            <BarChart className="h-8 w-8 mb-2" />
-            <p>Za mało danych, aby narysować wykres dla: {title}.</p>
-            <p className="text-sm">Dodaj co najmniej dwa pomiary.</p>
-        </div>
-      )
-    }
-
+  if (data.length < 2) {
     return (
-        <div className="">
-            <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
-                <LineChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid vertical={false} />
-                    <XAxis
-                        dataKey="formattedDate"
-                        tickLine={false}
-                        axisLine={false}
-                        tickMargin={8}
-                        tickFormatter={(value) => value.slice(0, 6)}
-                    />
-                    <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        tickMargin={8}
-                        tickFormatter={(value) => value.toFixed(1)}
-                        domain={['dataMin - 1', 'dataMax + 1']}
-                    />
-                    <Tooltip
-                        cursor={false}
-                        content={<ChartTooltipContent
-                            indicator="line"
-                            labelKey="value"
-                            formatter={(value, name, props) => (
-                                <div className="flex flex-col">
-                                    <span>{props.payload.formattedDateFull}</span>
-                                    <span>{`${title}: ${Number(value).toFixed(1)} ${unit}`}</span>
-                                </div>
-                            )}
-                        />}
-                    />
-                    <Line
-                        dataKey={dataKey}
-                        type="monotone"
-                        stroke="var(--color-value)"
-                        strokeWidth={2}
-                        dot={true}
-                    />
-                </LineChart>
-            </ChartContainer>
-        </div>
+      <div className="text-center text-muted-foreground p-8 h-64 flex flex-col justify-center items-center">
+        <BarChart className="h-8 w-8 mb-2" />
+        <p>Za mało danych, aby narysować wykres dla: {title}.</p>
+        <p className="text-sm">Dodaj co najmniej dwa pomiary.</p>
+      </div>
     )
+  }
+
+  return (
+    <div className="">
+      <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
+        <LineChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+          <CartesianGrid vertical={false} />
+          <XAxis
+            dataKey="formattedDate"
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            tickFormatter={(value) => value.slice(0, 6)}
+          />
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            tickFormatter={(value) => value.toFixed(1)}
+            domain={['dataMin - 1', 'dataMax + 1']}
+          />
+          <Tooltip
+            cursor={false}
+            content={<ChartTooltipContent
+              indicator="line"
+              labelKey="value"
+              formatter={(value, name, props) => (
+                <div className="flex flex-col">
+                  <span>{props.payload.formattedDateFull}</span>
+                  <span>{`${title}: ${Number(value).toFixed(1)} ${unit}`}</span>
+                </div>
+              )}
+            />}
+          />
+          <Line
+            dataKey={dataKey}
+            type="monotone"
+            stroke="var(--color-value)"
+            strokeWidth={2}
+            dot={true}
+          />
+        </LineChart>
+      </ChartContainer>
+    </div>
+  )
 };
 
 
@@ -151,7 +151,7 @@ export default function MeasurementsPage() {
 
   const { data: measurements, isLoading: measurementsLoading, refetch } = useCollection<BodyMeasurement>(
     user ? 'bodyMeasurements' : null,
-    { userId: user?.uid },
+    { ownerId: user?.uid },
     { sort: { date: -1 } }
   );
 
@@ -165,9 +165,9 @@ export default function MeasurementsPage() {
   const chartData = useMemo(() => {
     if (!measurements) return [];
     return measurements.slice().reverse().map(m => ({
-        ...m,
-        formattedDate: format(new Date(m.date), 'dd MMM', { locale: pl }),
-        formattedDateFull: format(new Date(m.date), 'd MMMM yyyy', { locale: pl }),
+      ...m,
+      formattedDate: format(new Date(m.date), 'dd MMM', { locale: pl }),
+      formattedDateFull: format(new Date(m.date), 'd MMMM yyyy', { locale: pl }),
     }));
   }, [measurements]);
 
@@ -226,17 +226,17 @@ export default function MeasurementsPage() {
 
     let photoURLs: string[] = [];
     if (data.photos && data.photos.length > 0) {
-        try {
-            photoURLs = await uploadPhotos(data.photos);
-        } catch (error) {
-            console.error("Error uploading photos: ", error);
-            toast({
-                title: 'Błąd przesyłania zdjęć',
-                description: 'Nie udało się przesłać wszystkich zdjęć. Spróbuj ponownie.',
-                variant: 'destructive',
-            });
-            return;
-        }
+      try {
+        photoURLs = await uploadPhotos(data.photos);
+      } catch (error) {
+        console.error("Error uploading photos: ", error);
+        toast({
+          title: 'Błąd przesyłania zdjęć',
+          description: 'Nie udało się przesłać wszystkich zdjęć. Spróbuj ponownie.',
+          variant: 'destructive',
+        });
+        return;
+      }
     }
 
     const newMeasurement = {
@@ -251,7 +251,7 @@ export default function MeasurementsPage() {
       },
       sharedWithTrainer: data.sharedWithTrainer,
       photoURLs,
-      userId: user.uid,
+      ownerId: user.uid,
     };
 
     try {
@@ -317,44 +317,44 @@ export default function MeasurementsPage() {
                   <FormField control={form.control} name="hips" render={({ field }) => (<FormItem><FormLabel>Biodra (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...field} /></FormControl><FormMessage /></FormItem>)} />
                   <FormField control={form.control} name="thigh" render={({ field }) => (<FormItem className="col-span-2"><FormLabel>Udo (cm)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="np. 60.5" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 </div>
-                 <div className="space-y-2">
-                    <FormLabel>Zdjęcia (opcjonalnie)</FormLabel>
-                    {photoPreviews.length > 0 && (
-                        <Carousel className="w-full max-w-xs mx-auto">
-                            <CarouselContent>
-                                {photoPreviews.map((src, index) => (
-                                <CarouselItem key={index}>
-                                    <div className="p-1">
-                                    <div className="relative aspect-video w-full">
-                                        <Image src={src} alt={`Podgląd zdjęcia ${index + 1}`} layout="fill" objectFit="cover" className="rounded-md" />
-                                        <Button
-                                            type="button"
-                                            variant="destructive"
-                                            size="icon"
-                                            className="absolute top-2 right-2 h-6 w-6"
-                                            onClick={() => {
-                                                setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
-                                                removePhoto(index);
-                                            }}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                    </div>
-                                </CarouselItem>
-                                ))}
-                            </CarouselContent>
-                            <CarouselPrevious />
-                            <CarouselNext />
-                        </Carousel>
-                    )}
-                    <Button type="button" variant="outline" className="w-full" onClick={() => photoInputRef.current?.click()}>
-                        <Upload className="mr-2 h-4 w-4" />
-                        {photoPreviews.length > 0 ? 'Dodaj więcej zdjęć' : 'Dodaj zdjęcia sylwetki'}
-                    </Button>
-                    <Input type="file" ref={photoInputRef} accept="image/*" onChange={handlePhotoChange} className="hidden" multiple />
-                 </div>
-                 <FormField
+                <div className="space-y-2">
+                  <FormLabel>Zdjęcia (opcjonalnie)</FormLabel>
+                  {photoPreviews.length > 0 && (
+                    <Carousel className="w-full max-w-xs mx-auto">
+                      <CarouselContent>
+                        {photoPreviews.map((src, index) => (
+                          <CarouselItem key={index}>
+                            <div className="p-1">
+                              <div className="relative aspect-video w-full">
+                                <Image src={src} alt={`Podgląd zdjęcia ${index + 1}`} layout="fill" objectFit="cover" className="rounded-md" />
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="icon"
+                                  className="absolute top-2 right-2 h-6 w-6"
+                                  onClick={() => {
+                                    setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
+                                    removePhoto(index);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </CarouselItem>
+                        ))}
+                      </CarouselContent>
+                      <CarouselPrevious />
+                      <CarouselNext />
+                    </Carousel>
+                  )}
+                  <Button type="button" variant="outline" className="w-full" onClick={() => photoInputRef.current?.click()}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    {photoPreviews.length > 0 ? 'Dodaj więcej zdjęć' : 'Dodaj zdjęcia sylwetki'}
+                  </Button>
+                  <Input type="file" ref={photoInputRef} accept="image/*" onChange={handlePhotoChange} className="hidden" multiple />
+                </div>
+                <FormField
                   control={form.control}
                   name="sharedWithTrainer"
                   render={({ field }) => (
@@ -389,10 +389,10 @@ export default function MeasurementsPage() {
         </Dialog>
       </div>
 
-       <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <StatCard title="Waga" value={latestMeasurement?.weight?.toFixed(1) || ' - '} unit="kg" icon={Weight} isLoading={combinedLoading} />
-          <StatCard title="Talia" value={latestMeasurement?.circumferences?.waist?.toFixed(1) || ' - '} unit="cm" icon={Ruler} isLoading={combinedLoading} />
-          <StatCard title="Postęp" value="+1.2" unit="kg" icon={BarChart} isLoading={combinedLoading} />
+      <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <StatCard title="Waga" value={latestMeasurement?.weight?.toFixed(1) || ' - '} unit="kg" icon={Weight} isLoading={combinedLoading} />
+        <StatCard title="Talia" value={latestMeasurement?.circumferences?.waist?.toFixed(1) || ' - '} unit="cm" icon={Ruler} isLoading={combinedLoading} />
+        <StatCard title="Postęp" value="+1.2" unit="kg" icon={BarChart} isLoading={combinedLoading} />
       </div>
 
       <Card className="mb-6">
@@ -409,18 +409,18 @@ export default function MeasurementsPage() {
             </TabsList>
 
             {combinedLoading ? (
-                <div className="h-64 flex justify-center items-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
+              <div className="h-64 flex justify-center items-center">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
             ) : chartTabs.map((tab) => (
-                <TabsContent key={tab.value} value={tab.value}>
-                  <MeasurementChart
-                    data={tab.dataKey === 'weight' ? chartData : chartData.map(d => ({...d, [tab.dataKey]: d.circumferences[tab.dataKey as keyof typeof d.circumferences]}))}
-                    dataKey={tab.dataKey}
-                    title={tab.label}
-                    unit={tab.unit}
-                  />
-                </TabsContent>
+              <TabsContent key={tab.value} value={tab.value}>
+                <MeasurementChart
+                  data={tab.dataKey === 'weight' ? chartData : chartData.map(d => ({ ...d, [tab.dataKey]: d.circumferences[tab.dataKey as keyof typeof d.circumferences] }))}
+                  dataKey={tab.dataKey}
+                  title={tab.label}
+                  unit={tab.unit}
+                />
+              </TabsContent>
             ))}
           </Tabs>
         </CardContent>
@@ -459,23 +459,23 @@ export default function MeasurementsPage() {
                 ))
               ) : displayMeasurements && displayMeasurements.length > 0 ? (
                 displayMeasurements.map((session) => (
-                    <TableRow key={session.id}>
-                      <TableCell className="font-medium">{format(new Date(session.date), 'd MMM yyyy', { locale: pl })}</TableCell>
-                      <TableCell className="font-bold">{session.weight.toFixed(1)}</TableCell>
-                      <TableCell>{session.circumferences.biceps?.toFixed(1) || '-'}</TableCell>
-                      <TableCell>{session.circumferences.chest?.toFixed(1) || '-'}</TableCell>
-                      <TableCell>{session.circumferences.waist?.toFixed(1) || '-'}</TableCell>
-                      <TableCell>{session.circumferences.hips?.toFixed(1) || '-'}</TableCell>
-                      <TableCell>{session.circumferences.thigh?.toFixed(1) || '-'}</TableCell>
-                    </TableRow>
-                  )
+                  <TableRow key={session.id}>
+                    <TableCell className="font-medium">{format(new Date(session.date), 'd MMM yyyy', { locale: pl })}</TableCell>
+                    <TableCell className="font-bold">{session.weight.toFixed(1)}</TableCell>
+                    <TableCell>{session.circumferences.biceps?.toFixed(1) || '-'}</TableCell>
+                    <TableCell>{session.circumferences.chest?.toFixed(1) || '-'}</TableCell>
+                    <TableCell>{session.circumferences.waist?.toFixed(1) || '-'}</TableCell>
+                    <TableCell>{session.circumferences.hips?.toFixed(1) || '-'}</TableCell>
+                    <TableCell>{session.circumferences.thigh?.toFixed(1) || '-'}</TableCell>
+                  </TableRow>
+                )
                 )
               ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="h-24 text-center">
                     <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                        <Armchair className="h-8 w-8" />
-                        <span>Nie zarejestrowano jeszcze żadnych pomiarów.</span>
+                      <Armchair className="h-8 w-8" />
+                      <span>Nie zarejestrowano jeszcze żadnych pomiarów.</span>
                     </div>
                   </TableCell>
                 </TableRow>

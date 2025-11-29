@@ -18,31 +18,49 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import type { WorkoutPlan, Exercise, WorkoutLog, WorkoutDay, UserProfile } from '@/lib/types';
+import {
+  type TrainingPlan,
+  type Workout,
+  type Exercise,
+  type WorkoutLog,
+  type UserProfile,
+  SetType,
+  TrainingLevel,
+  type ExerciseSeries,
+  type WorkoutSet,
+  type DayPlan
+} from '@/lib/types';
 import { useCollection, useUser, useDoc } from '@/lib/db-hooks';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetFooter, SheetClose } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
 // --- SCHEMA DEFINITIONS ---
 const setSchema = z.object({
-  reps: z.coerce.number().min(0, 'Powtórzenia muszą być dodatnie.').optional(),
-  weight: z.coerce.number().min(0, 'Ciężar musi być dodatni.').optional(),
+  number: z.number().optional(),
+  type: z.nativeEnum(SetType).default(SetType.WorkingSet),
+  reps: z.coerce.number().min(0, 'Powtórzenia muszą być dodatnie.').default(0),
+  weight: z.coerce.number().min(0, 'Ciężar musi być dodatni.').default(0),
+  restTimeSeconds: z.coerce.number().min(0).default(60),
   duration: z.coerce.number().min(0, 'Czas musi być dodatni.').optional(),
   completed: z.boolean().optional(),
 });
 
-const exerciseLogSchema = z.object({
+const exerciseSeriesSchema = z.object({
   exerciseId: z.string().min(1, 'Proszę wybrać ćwiczenie.'),
-  sets: z.array(setSchema).optional(),
-  duration: z.coerce.number().min(0, "Czas trwania musi być dodatni.").optional(),
+  sets: z.array(setSchema).default([]),
+  tempo: z.string().default("2-0-2-0"),
+  tip: z.string().optional(),
 });
 
 const logSchema = z.object({
   workoutName: z.string().min(1, 'Nazwa treningu jest wymagana.'),
-  exercises: z.array(exerciseLogSchema),
+  exerciseSeries: z.array(exerciseSeriesSchema),
+  level: z.nativeEnum(TrainingLevel).default(TrainingLevel.Beginner),
+  durationMinutes: z.number().optional(),
 });
 
 type LogFormValues = z.infer<typeof logSchema>;
@@ -57,7 +75,7 @@ function AddExerciseSheet({ allExercises, onAddExercise }: { allExercises: Exerc
     if (!allExercises) return [];
     return allExercises.filter(ex =>
       ex.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ex.muscleGroup.toLowerCase().includes(searchTerm.toLowerCase())
+      ex.mainMuscleGroups?.some(mg => mg.name.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [allExercises, searchTerm]);
 
@@ -99,7 +117,9 @@ function AddExerciseSheet({ allExercises, onAddExercise }: { allExercises: Exerc
                 >
                   <div>
                     <p className="font-semibold">{ex.name}</p>
-                    <p className="text-sm text-muted-foreground">{ex.muscleGroup}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {ex.mainMuscleGroups?.map(mg => mg.name).join(', ') || 'Ogólnorozwojowe'}
+                    </p>
                   </div>
                   <Button variant="ghost" size="icon"><PlusCircle className="h-5 w-5 text-primary" /></Button>
                 </div>
@@ -122,22 +142,21 @@ function WorkoutBuilderView({ initialData, onStart, onCancel, allExercises, isLo
 
   const { fields, append, remove, move } = useFieldArray({
     control: form.control,
-    name: "exercises",
+    name: "exerciseSeries",
   });
 
   const handleAddExercise = (exerciseId: string) => {
     const exerciseDef = allExercises?.find(e => e.id === exerciseId);
     // Add default sets based on exercise type
-    let defaultSets = [];
-    if (exerciseDef?.type === 'duration') {
-      defaultSets = [{ duration: 0 }];
-    } else if (exerciseDef?.type === 'weight') {
-      defaultSets = [{ reps: 0, weight: 0 }];
-    } else {
-      defaultSets = [{ reps: 0 }];
-    }
+    let defaultSets: WorkoutSet[] = [];
+    // Default to 3 working sets
+    defaultSets = [
+      { number: 1, type: SetType.WorkingSet, reps: 0, weight: 0, restTimeSeconds: 60, completed: false },
+      { number: 2, type: SetType.WorkingSet, reps: 0, weight: 0, restTimeSeconds: 60, completed: false },
+      { number: 3, type: SetType.WorkingSet, reps: 0, weight: 0, restTimeSeconds: 60, completed: false }
+    ];
 
-    append({ exerciseId, sets: defaultSets, duration: 0 });
+    append({ exerciseId, sets: defaultSets, tempo: "2-0-2-0" });
   };
 
   return (
@@ -197,7 +216,9 @@ function WorkoutBuilderView({ initialData, onStart, onCancel, allExercises, isLo
                           </div>
                           <div>
                             <p className="font-semibold">{exerciseDetails?.name || (isLoadingExercises ? 'Ładowanie...' : 'Nieznane ćwiczenie')}</p>
-                            <p className="text-xs text-muted-foreground">{exerciseDetails?.muscleGroup}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {exerciseDetails?.mainMuscleGroups?.map(mg => mg.name).join(', ') || 'Ogólnorozwojowe'}
+                            </p>
                           </div>                 </div>
                         <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
@@ -248,7 +269,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: "exercises",
+    name: "exerciseSeries",
   });
 
   useEffect(() => {
@@ -262,13 +283,23 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
     if (!user || workoutLogId) return;
 
     const createInitialWorkoutLog = async () => {
-      const exercisesWithNames = initialWorkout.exercises.map(exercise => {
-        const exerciseDetails = allExercises?.find(ex => ex.id === exercise.exerciseId);
+      // Map form data to WorkoutLog structure
+      const exercisesWithNames = initialWorkout.exerciseSeries.map(series => {
+        const exerciseDetails = allExercises?.find(ex => ex.id === series.exerciseId);
+
+        const exerciseSnapshot: Exercise = exerciseDetails || {
+          id: series.exerciseId,
+          name: 'Unknown Exercise',
+          mainMuscleGroups: [],
+          secondaryMuscleGroups: [],
+          type: 'weight' // Default
+        };
+
         return {
-          exerciseId: exercise.exerciseId,
-          exerciseName: exerciseDetails?.name || 'Unknown Exercise',
-          sets: exercise.sets || [],
-          duration: exercise.duration,
+          exercise: exerciseSnapshot,
+          sets: series.sets || [],
+          tempo: series.tempo,
+          tip: series.tip
         };
       });
 
@@ -313,7 +344,12 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   };
 
   const handleAddExercise = (exerciseId: string) => {
-    const newExercise = { exerciseId, sets: [], duration: 0 };
+    const defaultSets: WorkoutSet[] = [
+      { number: 1, type: SetType.WorkingSet, reps: 0, weight: 0, restTimeSeconds: 60, completed: false },
+      { number: 2, type: SetType.WorkingSet, reps: 0, weight: 0, restTimeSeconds: 60, completed: false },
+      { number: 3, type: SetType.WorkingSet, reps: 0, weight: 0, restTimeSeconds: 60, completed: false }
+    ];
+    const newExercise = { exerciseId, sets: defaultSets, tempo: "2-0-2-0" };
     append(newExercise);
     setActiveExerciseIndex(fields.length); // Switch to the newly added exercise
 
@@ -369,19 +405,26 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
     const endTime = new Date();
     const duration = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
 
-    const exercisesWithNames = data.exercises.map(exercise => {
-      const exerciseDetails = allExercises?.find(ex => ex.id === exercise.exerciseId);
+    const exercisesWithNames = data.exerciseSeries.map(series => {
+      const exerciseDetails = allExercises?.find(ex => ex.id === series.exerciseId);
+      const exerciseSnapshot: Exercise = exerciseDetails || {
+        id: series.exerciseId,
+        name: 'Unknown Exercise',
+        mainMuscleGroups: [],
+        secondaryMuscleGroups: [],
+        type: 'weight'
+      };
       return {
-        exerciseId: exercise.exerciseId,
-        exerciseName: exerciseDetails?.name || 'Unknown Exercise',
-        sets: exercise.sets || [],
-        duration: exercise.duration,
+        exercise: exerciseSnapshot,
+        sets: series.sets || [],
+        tempo: series.tempo,
+        tip: series.tip
       };
     });
 
     const finalLogData = {
       workoutName: data.workoutName,
-      exercises: data.exercises,
+      exercises: exercisesWithNames,
       duration: duration,
       endTime: endTime,
       status: 'completed',
@@ -425,7 +468,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
         </CardHeader>
         <CardContent className="text-center space-y-4">
           <p><span className="font-semibold">Nazwa:</span> {form.getValues('workoutName')}</p>
-          <p><span className="font-semibold">Ćwiczenia:</span> {form.getValues('exercises').length}</p>
+          <p><span className="font-semibold">Ćwiczenia:</span> {form.getValues('exerciseSeries').length}</p>
           <p><span className="font-semibold">Czas trwania:</span> {Math.round((new Date().getTime() - startTime.getTime()) / (1000 * 60))} minut</p>
 
           <div className="pt-4 space-y-4">
@@ -454,7 +497,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   }
 
   const currentExercise = fields[activeExerciseIndex];
-  const selectedExerciseId = form.watch(`exercises.${activeExerciseIndex}.exerciseId`);
+  const selectedExerciseId = form.watch(`exerciseSeries.${activeExerciseIndex}.exerciseId`);
   const exerciseDetails = allExercises?.find(ex => ex.id === selectedExerciseId);
 
   return (
@@ -553,50 +596,66 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
   const { control, watch } = useFormContext<LogFormValues>();
   const { fields, append, remove } = useFieldArray({
     control,
-    name: `exercises.${index}.sets`
+    name: `exerciseSeries.${index}.sets`
   });
   const [newSetId, setNewSetId] = useState<string | null>(null);
 
   const handleAddSet = () => {
     if (fields.length > 0) {
       const lastSetIndex = fields.length - 1;
-      const lastReps = watch(`exercises.${index}.sets.${lastSetIndex}.reps`);
-      const lastWeight = watch(`exercises.${index}.sets.${lastSetIndex}.weight`);
-      const lastDuration = watch(`exercises.${index}.sets.${lastSetIndex}.duration`);
-      append({ reps: lastReps, weight: lastWeight, duration: lastDuration });
+      const lastReps = watch(`exerciseSeries.${index}.sets.${lastSetIndex}.reps`);
+      const lastWeight = watch(`exerciseSeries.${index}.sets.${lastSetIndex}.weight`);
+      const lastType = watch(`exerciseSeries.${index}.sets.${lastSetIndex}.type`);
+
+      append({
+        number: fields.length + 1,
+        type: lastType || SetType.WorkingSet,
+        reps: lastReps,
+        weight: lastWeight,
+        restTimeSeconds: 60,
+        completed: false
+      });
     } else {
-      if (exerciseDetails?.type === 'duration') {
-        append({ duration: 0 });
-      } else if (exerciseDetails?.type === 'weight') {
-        append({ reps: 0, weight: 0 });
-      } else {
-        append({ reps: 0 });
-      }
+      append({
+        number: 1,
+        type: SetType.WorkingSet,
+        reps: 0,
+        weight: 0,
+        restTimeSeconds: 60,
+        completed: false
+      });
     }
   };
+
+  const tempo = watch(`exerciseSeries.${index}.tempo`);
+  const tip = watch(`exerciseSeries.${index}.tip`);
 
   return (
     <Card className="bg-secondary/50">
       <CardHeader className="flex-row items-center justify-between pb-4">
-        <CardTitle className="text-lg font-semibold">{exerciseDetails?.name || (isLoadingExercises ? "Ładowanie..." : "Wybierz ćwiczenie")}</CardTitle>
+        <div>
+          <CardTitle className="text-lg font-semibold">{exerciseDetails?.name || (isLoadingExercises ? "Ładowanie..." : "Wybierz ćwiczenie")}</CardTitle>
+          <div className="flex gap-2 text-xs text-muted-foreground mt-1">
+            {tempo && <Badge variant="outline" className="text-xs">Tempo: {tempo}</Badge>}
+            {tip && <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-600 border-yellow-500/20">Tip</Badge>}
+          </div>
+          {tip && <p className="text-xs text-muted-foreground mt-1 italic">{tip}</p>}
+        </div>
         <Button variant="ghost" size="icon" onClick={onRemoveExercise}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          <div className="grid grid-cols-12 gap-2 items-center">
-            <Label className="col-span-1 text-sm text-muted-foreground"></Label>
-            {exerciseDetails?.type === 'duration' ? (
-              <Label className="col-span-5 text-sm text-muted-foreground">Czas (s)</Label>
-            ) : (
-              <Label className="col-span-5 text-sm text-muted-foreground">Powtórzenia</Label>
-            )}
-            {exerciseDetails?.type === 'weight' && <Label className="col-span-5 text-sm text-muted-foreground">Ciężar (kg)</Label>}
+          <div className="grid grid-cols-12 gap-2 items-center text-center">
+            <Label className="col-span-1 text-xs text-muted-foreground">#</Label>
+            <Label className="col-span-3 text-xs text-muted-foreground">Typ</Label>
+            <Label className="col-span-3 text-xs text-muted-foreground">kg</Label>
+            <Label className="col-span-3 text-xs text-muted-foreground">Reps</Label>
+            <Label className="col-span-2 text-xs text-muted-foreground">✓</Label>
           </div>
           {fields.map((setField, setIndex) => {
-            const isCompleted = watch(`exercises.${index}.sets.${setIndex}.completed`);
-            const sets = watch(`exercises.${index}.sets`);
+            const isCompleted = watch(`exerciseSeries.${index}.sets.${setIndex}.completed`);
+            const sets = watch(`exerciseSeries.${index}.sets`);
             // Find the first uncompleted set to mark as active
-            // If all are completed, activeSetIndex will be -1
             const firstUncompletedIndex = sets?.findIndex((s: any) => !s.completed);
             const isActive = firstUncompletedIndex === setIndex;
 
@@ -611,10 +670,57 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                       : 'bg-transparent'
                   }`}
               >
-                <div className="col-span-1 flex justify-center">
+                <div className="col-span-1 flex justify-center text-sm font-mono text-muted-foreground">
+                  {setIndex + 1}
+                </div>
+
+                <div className="col-span-3">
                   <FormField
                     control={control}
-                    name={`exercises.${index}.sets.${setIndex}.completed`}
+                    name={`exerciseSeries.${index}.sets.${setIndex}.type`}
+                    render={({ field }) => (
+                      <FormItem className="space-y-0">
+                        <FormControl>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <SelectTrigger className="h-8 text-xs px-1">
+                              <SelectValue placeholder="Typ" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.values(SetType).map((type) => (
+                                <SelectItem key={type} value={type} className="text-xs">{type}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={control}
+                  name={`exerciseSeries.${index}.sets.${setIndex}.weight`}
+                  render={({ field }) => (
+                    <FormItem className="col-span-3 space-y-0">
+                      <FormControl><Input type="number" step="0.5" placeholder="0" {...field} className={`h-8 text-center ${isActive ? "border-primary font-semibold" : ""}`} /></FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={control}
+                  name={`exerciseSeries.${index}.sets.${setIndex}.reps`}
+                  render={({ field }) => (
+                    <FormItem className="col-span-3 space-y-0">
+                      <FormControl><Input type="number" placeholder="0" {...field} className={`h-8 text-center ${isActive ? "border-primary font-semibold" : ""}`} /></FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <div className="col-span-2 flex justify-center">
+                  <FormField
+                    control={control}
+                    name={`exerciseSeries.${index}.sets.${setIndex}.completed`}
                     render={({ field }) => (
                       <FormItem className="space-y-0">
                         <FormControl>
@@ -634,52 +740,14 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                     )}
                   />
                 </div>
-
-                {exerciseDetails?.type === 'duration' ? (
-                  <FormField
-                    control={control}
-                    name={`exercises.${index}.sets.${setIndex}.duration`}
-                    render={({ field }) => (
-                      <FormItem className="col-span-5">
-                        <FormControl><Input type="number" placeholder="0" {...field} className={isActive ? "border-primary font-semibold" : ""} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                ) : (
-                  <FormField
-                    control={control}
-                    name={`exercises.${index}.sets.${setIndex}.reps`}
-                    render={({ field }) => (
-                      <FormItem className="col-span-5">
-                        <FormControl><Input type="number" placeholder="0" {...field} className={isActive ? "border-primary font-semibold" : ""} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-
-                {exerciseDetails?.type === 'weight' && (
-                  <FormField
-                    control={control}
-                    name={`exercises.${index}.sets.${setIndex}.weight`}
-                    render={({ field }) => (
-                      <FormItem className="col-span-5">
-                        <FormControl><Input type="number" step="0.5" placeholder="0" {...field} className={isActive ? "border-primary font-semibold" : ""} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-                <Button type="button" variant="ghost" size="icon" onClick={() => remove(setIndex)} className="col-span-1">
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
               </div>
             )
           })}
-          <Button type="button" variant="outline" size="sm" className="w-full" onClick={handleAddSet}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Dodaj serię
-          </Button>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" size="sm" className="flex-1" onClick={handleAddSet}>
+              <PlusCircle className="mr-2 h-4 w-4" /> Dodaj serię
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -691,13 +759,13 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
   const { user } = useUser();
 
   // Fetch plans assigned to the athlete
-  const { data: assignedPlans, isLoading: assignedPlansLoading } = useCollection<WorkoutPlan>(
+  const { data: assignedPlans, isLoading: assignedPlansLoading } = useCollection<TrainingPlan>(
     user?.uid ? 'workoutPlans' : null,
     user?.uid ? { assignedAthleteIds: { $in: [user.uid] } } : undefined
   );
 
   // Fetch plans created by the athlete (if they're also a trainer)
-  const { data: myPlans, isLoading: myPlansLoading } = useCollection<WorkoutPlan>(
+  const { data: myPlans, isLoading: myPlansLoading } = useCollection<TrainingPlan>(
     user?.uid ? 'workoutPlans' : null,
     user?.uid ? { trainerId: user.uid } : undefined
   );
@@ -710,21 +778,30 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
   );
 
   const workoutPlans = useMemo(() => {
-    const plansMap = new Map<string, WorkoutPlan>();
+    const plansMap = new Map<string, TrainingPlan>();
     assignedPlans?.forEach(plan => plansMap.set(plan.id, plan));
     myPlans?.forEach(plan => plansMap.set(plan.id, plan));
     return Array.from(plansMap.values());
   }, [assignedPlans, myPlans]);
 
-  const handleStartPlanDay = (plan: WorkoutPlan, dayIndex: number) => {
-    const workoutDay = plan.workoutDays[dayIndex];
+  const handleStartWorkout = (workout: Workout) => {
     const workoutData: LogFormValues = {
-      workoutName: workoutDay.dayName,
-      exercises: workoutDay.exercises.map(ex => ({
-        exerciseId: ex.exerciseId,
-        sets: ex.sets?.map(s => ({ reps: s.reps, weight: s.weight, duration: s.duration, completed: false })) || [],
-        duration: ex.duration || 0,
+      workoutName: workout.name,
+      exerciseSeries: workout.exerciseSeries.map(series => ({
+        exerciseId: series.exercise.id,
+        sets: series.sets.map((s, i) => ({
+          number: i + 1,
+          type: s.type || SetType.WorkingSet,
+          reps: s.reps || 0,
+          weight: s.weight || 0,
+          restTimeSeconds: s.restTimeSeconds || 60,
+          duration: undefined, // WorkoutSet doesn't have duration in data.ts, but ExerciseSeries might? No.
+          completed: false
+        })),
+        tempo: series.tempo || "2-0-2-0",
+        tip: series.tip
       })),
+      level: workout.level || TrainingLevel.Intermediate
     };
     onStartBuilder(workoutData);
   };
@@ -732,11 +809,21 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
   const handleRepeatWorkout = (log: WorkoutLog) => {
     const workoutData: LogFormValues = {
       workoutName: log.workoutName,
-      exercises: log.exercises.map(ex => ({
-        exerciseId: ex.exerciseId,
-        sets: ex.sets.map(s => ({ reps: s.reps, weight: s.weight, duration: s.duration, completed: false })),
-        duration: ex.duration || 0
-      }))
+      exerciseSeries: log.exercises.map(ex => ({
+        exerciseId: ex.exercise.id,
+        sets: ex.sets.map((s, i) => ({
+          number: s.number || i + 1,
+          type: s.type || SetType.WorkingSet,
+          reps: s.reps,
+          weight: s.weight,
+          restTimeSeconds: s.restTimeSeconds || 60,
+          duration: s.duration,
+          completed: false
+        })),
+        tempo: ex.tempo || "2-0-2-0",
+        tip: ex.tip
+      })),
+      level: TrainingLevel.Intermediate
     };
     onStartBuilder(workoutData);
   }
@@ -744,7 +831,8 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
   const handleStartEmpty = () => {
     onStartBuilder({
       workoutName: `Trening ${format(new Date(), 'd.MM')}`,
-      exercises: []
+      exerciseSeries: [],
+      level: TrainingLevel.Intermediate
     });
   }
 
@@ -798,7 +886,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
                         </div>
                         <div>
                           <h3 className="font-semibold text-lg">{plan.name}</h3>
-                          <p className="text-sm text-muted-foreground">{plan.workoutDays.length} dni treningowych</p>
+                          <p className="text-sm text-muted-foreground">{plan.stages.length} etapów</p>
                         </div>
                         <ChevronRight className="ml-auto h-5 w-5 text-muted-foreground" />
                       </CardContent>
@@ -807,38 +895,49 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
                   <SheetContent side="bottom" className="h-[85vh]">
                     <SheetHeader className="text-left mb-4">
                       <SheetTitle>{plan.name}</SheetTitle>
-                      <SheetDescription>Wybierz dzień treningowy, aby rozpocząć.</SheetDescription>
+                      <SheetDescription>Wybierz trening z planu.</SheetDescription>
                     </SheetHeader>
                     <ScrollArea className="h-full pb-20">
-                      <div className="space-y-4">
-                        {plan.workoutDays.map((day, index) => (
-                          <Card key={index} className="overflow-hidden">
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-base flex justify-between items-center">
-                                {day.dayName}
-                                <Button size="sm" onClick={() => handleStartPlanDay(plan, index)}>
-                                  Wybierz <Play className="ml-2 h-3 w-3" />
-                                </Button>
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent className="pb-3">
-                              <div className="space-y-1">
-                                {day.exercises.map((ex, i) => {
-                                  const exDetails = allExercises?.find(e => e.id === ex.exerciseId);
-                                  return (
-                                    <div key={i} className="flex flex-col gap-1 py-2 border-b last:border-0">
-                                      <div className="flex justify-between items-center text-sm">
-                                        <span className="font-medium">{i + 1}. {exDetails?.name || 'Ćwiczenie'}</span>
-                                        <span className="text-xs text-muted-foreground">{ex.sets?.length || 0} serii</span>
-                                      </div>
+                      <Accordion type="single" collapsible className="w-full">
+                        {plan.stages.map((stage, stageIndex) => (
+                          <AccordionItem value={`stage-${stageIndex}`} key={stageIndex}>
+                            <AccordionTrigger className="font-semibold">{stage.name}</AccordionTrigger>
+                            <AccordionContent>
+                              <div className="space-y-4 pl-2">
+                                {stage.weeks.map((week, weekIndex) => (
+                                  <div key={weekIndex} className="border-l-2 pl-4">
+                                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Tydzień {weekIndex + 1}</h4>
+                                    <div className="grid gap-2">
+                                      {week.days.map((day, dayIndex) => {
+                                        if (day === 'Rest Day') {
+                                          return (
+                                            <div key={dayIndex} className="p-2 rounded bg-secondary/20 text-sm text-muted-foreground flex justify-between">
+                                              <span>Dzień {dayIndex + 1}</span>
+                                              <span>Rest Day</span>
+                                            </div>
+                                          )
+                                        }
+                                        // It's a Workout object
+                                        return (
+                                          <Card key={dayIndex} className="cursor-pointer hover:bg-secondary/50" onClick={() => handleStartWorkout(day)}>
+                                            <CardContent className="p-3 flex justify-between items-center">
+                                              <div>
+                                                <p className="font-medium text-sm">Dzień {dayIndex + 1}: {day.name}</p>
+                                                <p className="text-xs text-muted-foreground">{day.exerciseSeries.length} ćwiczeń</p>
+                                              </div>
+                                              <Play className="h-4 w-4 text-primary" />
+                                            </CardContent>
+                                          </Card>
+                                        )
+                                      })}
                                     </div>
-                                  );
-                                })}
+                                  </div>
+                                ))}
                               </div>
-                            </CardContent>
-                          </Card>
+                            </AccordionContent>
+                          </AccordionItem>
                         ))}
-                      </div>
+                      </Accordion>
                     </ScrollArea>
                   </SheetContent>
                 </Sheet>

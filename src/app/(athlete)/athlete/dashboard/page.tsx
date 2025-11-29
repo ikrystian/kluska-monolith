@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCollection, useDoc, useUser } from '@/lib/db-hooks';
-import type { WorkoutLog, Goal, BodyMeasurement, RunningSession, LoggedMeal, PlannedWorkout, UserProfile, WorkoutPlan } from '@/lib/types';
+import type { WorkoutLog, Goal, BodyMeasurement, RunningSession, LoggedMeal, PlannedWorkout, UserProfile, TrainingPlan } from '@/lib/types';
 import { Activity, Target, Weight, Footprints, ChefHat, Calendar as CalendarIcon, TrendingUp, Dumbbell, Clock, Award } from 'lucide-react';
 
 const StatCard = ({
@@ -120,7 +120,7 @@ export default function AthleteDashboardPage() {
   );
 
   // Assigned workout plans
-  const { data: assignedPlans, isLoading: assignedPlansLoading } = useCollection<WorkoutPlan>(
+  const { data: assignedPlans, isLoading: assignedPlansLoading } = useCollection<TrainingPlan>(
     user ? 'workoutPlans' : null,
     { assignedAthleteIds: user?.uid }
   );
@@ -154,7 +154,8 @@ export default function AthleteDashboardPage() {
       isWithinInterval(new Date(w.endTime), { start: weekStart, end: weekEnd })
     ).reduce((acc, w) => {
       return acc + w.exercises.reduce((exAcc, ex) => {
-        return exAcc + ex.sets.reduce((setAcc, set) => setAcc + set.reps * (set.weight || 0), 0);
+        if (ex.exercise?.type !== 'weight') return exAcc;
+        return exAcc + ex.sets.reduce((setAcc, set) => setAcc + (set.reps || 0) * (set.weight || 0), 0);
       }, 0);
     }, 0) || 0;
 
@@ -270,7 +271,8 @@ export default function AthleteDashboardPage() {
               <div className="space-y-3">
                 {recentWorkouts.map(workout => {
                   const totalVolume = workout.exercises.reduce((acc, ex) => {
-                    const exVolume = ex.sets.reduce((setAcc, set) => setAcc + set.reps * (set.weight || 0), 0);
+                    if (ex.exercise?.type !== 'weight') return acc;
+                    const exVolume = ex.sets.reduce((setAcc, set) => setAcc + (set.reps || 0) * (set.weight || 0), 0);
                     return acc + exVolume;
                   }, 0);
 

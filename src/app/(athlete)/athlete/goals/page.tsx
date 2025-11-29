@@ -97,11 +97,11 @@ function GoalForm({ onFormSubmit, goal, onDialogClose }: { onFormSubmit: (data: 
   const form = useForm<GoalFormValues>({
     resolver: zodResolver(goalSchema),
     defaultValues: isEditMode && goal ? {
-        title: goal.title,
-        target: goal.target,
-        current: goal.current,
-        unit: goal.unit,
-        deadline: new Date(goal.deadline),
+      title: goal.title,
+      target: goal.target,
+      current: goal.current,
+      unit: goal.unit,
+      deadline: new Date(goal.deadline),
     } : {
       title: '',
       target: 100,
@@ -173,7 +173,7 @@ function GoalForm({ onFormSubmit, goal, onDialogClose }: { onFormSubmit: (data: 
                 </FormItem>
               )}
             />
-             <FormField
+            <FormField
               control={form.control}
               name="unit"
               render={({ field }) => (
@@ -298,19 +298,19 @@ function AddAchievementForm({ onAchievementAdded }: { onAchievementAdded: () => 
 
     let photoURLs: string[] = [];
     if (data.photos && data.photos.length > 0) {
-        try {
-            photoURLs = await uploadPhotos(data.photos);
-        } catch (error) {
-            console.error("Error uploading photos: ", error);
-            toast({
-                title: 'Błąd przesyłania zdjęć',
-                description: 'Nie udało się przesłać wszystkich zdjęć. Spróbuj ponownie.',
-                variant: 'destructive',
-            });
-            return; // Stop submission if photo upload fails
-        }
+      try {
+        photoURLs = await uploadPhotos(data.photos);
+      } catch (error) {
+        console.error("Error uploading photos: ", error);
+        toast({
+          title: 'Błąd przesyłania zdjęć',
+          description: 'Nie udało się przesłać wszystkich zdjęć. Spróbuj ponownie.',
+          variant: 'destructive',
+        });
+        return; // Stop submission if photo upload fails
+      }
     } else {
-        photoURLs.push(`https://picsum.photos/seed/${data.title}/400/300`);
+      photoURLs.push(`https://picsum.photos/seed/${data.title}/400/300`);
     }
 
     const newAchievementData = {
@@ -318,7 +318,7 @@ function AddAchievementForm({ onAchievementAdded }: { onAchievementAdded: () => 
       description: data.description || '',
       date: data.date.toISOString(),
       photoURLs,
-      userId: user.uid,
+      ownerId: user.uid,
     };
 
     try {
@@ -331,8 +331,8 @@ function AddAchievementForm({ onAchievementAdded }: { onAchievementAdded: () => 
       setPhotoPreviews([]);
       onAchievementAdded();
     } catch (error) {
-       console.error("Error adding achievement:", error);
-       toast({ title: "Błąd", description: "Nie udało się dodać trofeum.", variant: "destructive" });
+      console.error("Error adding achievement:", error);
+      toast({ title: "Błąd", description: "Nie udało się dodać trofeum.", variant: "destructive" });
     }
   }
 
@@ -387,7 +387,7 @@ function AddAchievementForm({ onAchievementAdded }: { onAchievementAdded: () => 
               </FormItem>
             )}
           />
-           <FormField
+          <FormField
             control={form.control}
             name="description"
             render={({ field }) => (
@@ -403,37 +403,37 @@ function AddAchievementForm({ onAchievementAdded }: { onAchievementAdded: () => 
           <div className="space-y-2">
             <FormLabel>Zdjęcia (opcjonalnie)</FormLabel>
             {photoPreviews.length > 0 && (
-                 <Carousel className="w-full max-w-xs mx-auto">
-                    <CarouselContent>
-                        {photoPreviews.map((src, index) => (
-                        <CarouselItem key={index}>
-                            <div className="p-1">
-                            <div className="relative aspect-video w-full">
-                                <Image src={src} alt={`Podgląd zdjęcia ${index + 1}`} layout="fill" objectFit="cover" className="rounded-md" />
-                                <Button
-                                    type="button"
-                                    variant="destructive"
-                                    size="icon"
-                                    className="absolute top-2 right-2 h-6 w-6"
-                                    onClick={() => {
-                                        setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
-                                        remove(index);
-                                    }}
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </div>
-                            </div>
-                        </CarouselItem>
-                        ))}
-                    </CarouselContent>
-                    <CarouselPrevious />
-                    <CarouselNext />
-                </Carousel>
+              <Carousel className="w-full max-w-xs mx-auto">
+                <CarouselContent>
+                  {photoPreviews.map((src, index) => (
+                    <CarouselItem key={index}>
+                      <div className="p-1">
+                        <div className="relative aspect-video w-full">
+                          <Image src={src} alt={`Podgląd zdjęcia ${index + 1}`} layout="fill" objectFit="cover" className="rounded-md" />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-2 right-2 h-6 w-6"
+                            onClick={() => {
+                              setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
+                              remove(index);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious />
+                <CarouselNext />
+              </Carousel>
             )}
             <Button type="button" variant="outline" className="w-full" onClick={() => photoInputRef.current?.click()}>
-                <Upload className="mr-2 h-4 w-4" />
-                {photoPreviews.length > 0 ? 'Dodaj więcej zdjęć' : 'Dodaj pamiątkowe zdjęcia'}
+              <Upload className="mr-2 h-4 w-4" />
+              {photoPreviews.length > 0 ? 'Dodaj więcej zdjęć' : 'Dodaj pamiątkowe zdjęcia'}
             </Button>
             <Input type="file" ref={photoInputRef} accept="image/*" onChange={handlePhotoChange} className="hidden" multiple />
           </div>
@@ -466,9 +466,9 @@ function ConvertGoalToAchievementForm({ goal, onConverted }: { goal: Goal, onCon
   const form = useForm<AchievementFormValues>({
     resolver: zodResolver(achievementSchema),
     defaultValues: {
-        title: goal.title,
-        description: `Osiągnięto cel: ${goal.target} ${goal.unit}`,
-        date: new Date(),
+      title: goal.title,
+      description: `Osiągnięto cel: ${goal.target} ${goal.unit}`,
+      date: new Date(),
     }
   });
 
@@ -482,7 +482,7 @@ function ConvertGoalToAchievementForm({ goal, onConverted }: { goal: Goal, onCon
       description: data.description || '',
       date: data.date.toISOString(),
       photoURLs,
-      userId: user.uid,
+      ownerId: user.uid,
     };
 
     try {
@@ -553,7 +553,7 @@ function ConvertGoalToAchievementForm({ goal, onConverted }: { goal: Goal, onCon
               </FormItem>
             )}
           />
-           <FormField
+          <FormField
             control={form.control}
             name="description"
             render={({ field }) => (
@@ -601,13 +601,13 @@ export default function GoalsAndAchievementsPage() {
   // Fetch Goals
   const { data: goals, isLoading: goalsLoading, refetch: refetchGoals } = useCollection<Goal>(
     user ? 'goals' : null,
-    { userId: user?.uid },
+    { ownerId: user?.uid },
   );
 
   // Fetch Achievements
   const { data: achievements, isLoading: achievementsLoading, refetch: refetchAchievements } = useCollection<Achievement>(
     user ? 'achievements' : null,
-    { userId: user?.uid },
+    { ownerId: user?.uid },
     { sort: { date: -1 } }
   );
 
@@ -627,7 +627,7 @@ export default function GoalsAndAchievementsPage() {
         await updateDoc('goals', editingGoal.id, updatedGoalData);
         toast({ title: 'Cel Zaktualizowany!', description: `Twój cel "${data.title}" został zmieniony.` });
       } else {
-        const newGoalData = { ...data, deadline: data.deadline.toISOString(), userId: user.uid };
+        const newGoalData = { ...data, deadline: data.deadline.toISOString(), ownerId: user.uid };
         await createDoc('goals', newGoalData);
         toast({ title: 'Cel Ustawiony!', description: `Twój nowy cel "${data.title}" został dodany.` });
       }
@@ -657,186 +657,186 @@ export default function GoalsAndAchievementsPage() {
       setGoalToDelete(null);
       refetchGoals();
     } catch (error) {
-       toast({ title: "Błąd", description: "Nie udało się usunąć celu.", variant: "destructive" });
+      toast({ title: "Błąd", description: "Nie udało się usunąć celu.", variant: "destructive" });
     }
   };
 
   return (
     <AlertDialog>
-    <div className="container mx-auto p-4 md:p-8">
-      {/* --- Header --- */}
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <h1 className="font-headline text-3xl font-bold">Cele i Trofea</h1>
-        <Button onClick={() => { setEditingGoal(null); setGoalDialogOpen(true); }}>
+      <div className="container mx-auto p-4 md:p-8">
+        {/* --- Header --- */}
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <h1 className="font-headline text-3xl font-bold">Cele i Trofea</h1>
+          <Button onClick={() => { setEditingGoal(null); setGoalDialogOpen(true); }}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Ustaw Nowy Cel
-        </Button>
-      </div>
+          </Button>
+        </div>
 
-      {/* --- Active Goals Section --- */}
-      <section className="mb-12">
+        {/* --- Active Goals Section --- */}
+        <section className="mb-12">
           <h2 className="mb-4 font-headline text-2xl font-semibold">Aktywne Cele</h2>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {isLoading ? (
-              Array.from({length: 3}).map((_, i) => (
-                  <Card key={i} className="flex flex-col">
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i} className="flex flex-col">
                   <CardHeader><Skeleton className="h-6 w-3/4" /><Skeleton className="h-4 w-1/2 mt-2" /></CardHeader>
                   <CardContent className="flex-grow space-y-2"><Skeleton className="h-8 w-1/2 mx-auto" /><Skeleton className="h-4 w-full" /></CardContent>
                   <CardFooter><Skeleton className="h-4 w-1/3 mx-auto" /></CardFooter>
-                  </Card>
+                </Card>
               ))
-              ) : goals?.map((goal) => {
+            ) : goals?.map((goal) => {
               const progress = Math.min((goal.current / goal.target) * 100, 100);
               const isCompleted = progress >= 100;
               return (
-                  <Card key={goal.id} className="flex flex-col">
-                    <CardHeader>
-                        <div className="flex items-start justify-between">
-                            <div>
-                                <CardTitle className="font-headline">{goal.title}</CardTitle>
-                                <CardDescription>Termin: {format(new Date(goal.deadline), 'd MMM yyyy', { locale: pl })}</CardDescription>
-                            </div>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2">
-                                    <MoreVertical className="h-4 w-4" />
-                                </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => { setEditingGoal(goal); setGoalDialogOpen(true); }}>
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    <span>Edytuj</span>
-                                </DropdownMenuItem>
-                                <AlertDialogTrigger asChild>
-                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} onClick={() => setGoalToDelete(goal)}>
-                                        <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-                                        <span className="text-destructive">Usuń</span>
-                                    </DropdownMenuItem>
-                                </AlertDialogTrigger>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="flex-grow">
-                      <div className="mb-2 flex items-baseline justify-center gap-2">
+                <Card key={goal.id} className="flex flex-col">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="font-headline">{goal.title}</CardTitle>
+                        <CardDescription>Termin: {format(new Date(goal.deadline), 'd MMM yyyy', { locale: pl })}</CardDescription>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => { setEditingGoal(goal); setGoalDialogOpen(true); }}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            <span>Edytuj</span>
+                          </DropdownMenuItem>
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} onClick={() => setGoalToDelete(goal)}>
+                              <Trash2 className="mr-2 h-4 w-4 text-destructive" />
+                              <span className="text-destructive">Usuń</span>
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex-grow">
+                    <div className="mb-2 flex items-baseline justify-center gap-2">
                       <span className="text-4xl font-bold">{goal.current.toLocaleString()}</span>
                       <span className="text-muted-foreground">/ {goal.target.toLocaleString()} {goal.unit}</span>
-                      </div>
-                      <Progress value={progress} aria-label={`${goal.title} postęp`} className={isCompleted ? '[&>div]:bg-green-500' : ''} />
-                      <p className="text-center text-sm text-muted-foreground mt-2">{progress.toFixed(0)}% ukończono</p>
-                    </CardContent>
-                    <CardFooter className="flex-col gap-2">
-                        {isCompleted ? (
-                            <Button onClick={() => setGoalToConvert(goal)} className="w-full bg-green-600 hover:bg-green-700">
-                                <Trophy className="mr-2 h-4 w-4" /> Zamień w Trofeum
-                            </Button>
-                        ) : (
-                            <p className="text-xs text-muted-foreground w-full text-center">
-                                Pozostało {formatDistanceToNow(new Date(goal.deadline), { locale: pl, addSuffix: true })}
-                            </p>
-                        )}
-                    </CardFooter>
-                  </Card>
-              );
-              })}
-
-              <Card onClick={() => { setEditingGoal(null); setGoalDialogOpen(true); }} className="flex flex-col items-center justify-center border-dashed hover:border-primary hover:bg-secondary/30 transition-colors cursor-pointer min-h-[280px]">
-                  <CardContent className="text-center p-6">
-                      <PlusCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                      <h3 className="font-headline text-xl font-semibold mb-2">Stwórz Nowy Cel</h3>
-                      <p className="text-muted-foreground mb-4">Zdefiniuj swój następny cel i pozostań zmotywowany.</p>
-                      <Button variant="outline">Ustaw Nowy Cel</Button>
+                    </div>
+                    <Progress value={progress} aria-label={`${goal.title} postęp`} className={isCompleted ? '[&>div]:bg-green-500' : ''} />
+                    <p className="text-center text-sm text-muted-foreground mt-2">{progress.toFixed(0)}% ukończono</p>
                   </CardContent>
-              </Card>
-          </div>
-      </section>
+                  <CardFooter className="flex-col gap-2">
+                    {isCompleted ? (
+                      <Button onClick={() => setGoalToConvert(goal)} className="w-full bg-green-600 hover:bg-green-700">
+                        <Trophy className="mr-2 h-4 w-4" /> Zamień w Trofeum
+                      </Button>
+                    ) : (
+                      <p className="text-xs text-muted-foreground w-full text-center">
+                        Pozostało {formatDistanceToNow(new Date(goal.deadline), { locale: pl, addSuffix: true })}
+                      </p>
+                    )}
+                  </CardFooter>
+                </Card>
+              );
+            })}
 
-      {/* --- Achievements Section --- */}
-      <section>
+            <Card onClick={() => { setEditingGoal(null); setGoalDialogOpen(true); }} className="flex flex-col items-center justify-center border-dashed hover:border-primary hover:bg-secondary/30 transition-colors cursor-pointer min-h-[280px]">
+              <CardContent className="text-center p-6">
+                <PlusCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="font-headline text-xl font-semibold mb-2">Stwórz Nowy Cel</h3>
+                <p className="text-muted-foreground mb-4">Zdefiniuj swój następny cel i pozostań zmotywowany.</p>
+                <Button variant="outline">Ustaw Nowy Cel</Button>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        {/* --- Achievements Section --- */}
+        <section>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-headline text-2xl font-semibold">Zdobyte Trofea</h2>
             <Button variant="outline" onClick={() => setAchievementDialogOpen(true)}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Dodaj Trofeum
+              <PlusCircle className="mr-2 h-4 w-4" /> Dodaj Trofeum
             </Button>
           </div>
-           {isLoading ? (
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-96 w-full" />)}
-              </div>
+          {isLoading ? (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-96 w-full" />)}
+            </div>
           ) : achievements?.length === 0 ? (
-              <Card className="flex flex-col items-center justify-center border-dashed py-20">
+            <Card className="flex flex-col items-center justify-center border-dashed py-20">
               <CardContent className="text-center">
-                  <Trophy className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="font-headline text-xl font-semibold mb-2">Brak Trofeów</h3>
-                  <p className="text-muted-foreground">Osiągnij swoje cele lub dodaj osiągnięcie ręcznie, aby zapełnić tę galerię chwały!</p>
+                <Trophy className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="font-headline text-xl font-semibold mb-2">Brak Trofeów</h3>
+                <p className="text-muted-foreground">Osiągnij swoje cele lub dodaj osiągnięcie ręcznie, aby zapełnić tę galerię chwały!</p>
               </CardContent>
-              </Card>
+            </Card>
           ) : (
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {achievements?.map((achievement) => (
-                      <Card key={achievement.id} className="overflow-hidden flex flex-col">
-                          <Carousel className="w-full">
-                            <CarouselContent>
-                                {achievement.photoURLs?.map((url, index) => (
-                                <CarouselItem key={index}>
-                                    <div className="relative w-full aspect-4/3">
-                                        <Image src={url} alt={`${achievement.title} ${index + 1}`} layout="fill" objectFit="cover" />
-                                    </div>
-                                </CarouselItem>
-                                ))}
-                            </CarouselContent>
-                            {achievement.photoURLs && achievement.photoURLs.length > 1 && (
-                                <>
-                                <CarouselPrevious className="left-4" />
-                                <CarouselNext className="right-4" />
-                                </>
-                            )}
-                         </Carousel>
-                          <CardHeader>
-                              <CardTitle className="font-headline">{achievement.title}</CardTitle>
-                              <CardDescription>{format(new Date(achievement.date), 'd MMMM yyyy', { locale: pl })}</CardDescription>
-                          </CardHeader>
-                          <CardContent className="flex-grow">
-                              <p className="text-sm text-muted-foreground">{achievement.description}</p>
-                          </CardContent>
-                      </Card>
-                  ))}
-              </div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {achievements?.map((achievement) => (
+                <Card key={achievement.id} className="overflow-hidden flex flex-col">
+                  <Carousel className="w-full">
+                    <CarouselContent>
+                      {achievement.photoURLs?.map((url, index) => (
+                        <CarouselItem key={index}>
+                          <div className="relative w-full aspect-4/3">
+                            <Image src={url} alt={`${achievement.title} ${index + 1}`} layout="fill" objectFit="cover" />
+                          </div>
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    {achievement.photoURLs && achievement.photoURLs.length > 1 && (
+                      <>
+                        <CarouselPrevious className="left-4" />
+                        <CarouselNext className="right-4" />
+                      </>
+                    )}
+                  </Carousel>
+                  <CardHeader>
+                    <CardTitle className="font-headline">{achievement.title}</CardTitle>
+                    <CardDescription>{format(new Date(achievement.date), 'd MMMM yyyy', { locale: pl })}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-grow">
+                    <p className="text-sm text-muted-foreground">{achievement.description}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           )}
-      </section>
+        </section>
 
-      {/* --- Dialogs --- */}
-      <Dialog open={isGoalDialogOpen} onOpenChange={(isOpen) => { if (!isOpen) handleGoalDialogClose(); else setGoalDialogOpen(true); }}>
-        <DialogContent>
+        {/* --- Dialogs --- */}
+        <Dialog open={isGoalDialogOpen} onOpenChange={(isOpen) => { if (!isOpen) handleGoalDialogClose(); else setGoalDialogOpen(true); }}>
+          <DialogContent>
             <GoalForm onFormSubmit={handleGoalFormSubmit} goal={editingGoal} onDialogClose={handleGoalDialogClose} />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isAchievementDialogOpen} onOpenChange={setAchievementDialogOpen}>
-          <DialogContent>
-              <AddAchievementForm onAchievementAdded={handleAchievementAdded} />
           </DialogContent>
-      </Dialog>
+        </Dialog>
 
-      <Dialog open={!!goalToConvert} onOpenChange={() => setGoalToConvert(null)}>
+        <Dialog open={isAchievementDialogOpen} onOpenChange={setAchievementDialogOpen}>
           <DialogContent>
-              {goalToConvert && <ConvertGoalToAchievementForm goal={goalToConvert} onConverted={handleGoalConverted} />}
+            <AddAchievementForm onAchievementAdded={handleAchievementAdded} />
           </DialogContent>
-      </Dialog>
+        </Dialog>
+
+        <Dialog open={!!goalToConvert} onOpenChange={() => setGoalToConvert(null)}>
+          <DialogContent>
+            {goalToConvert && <ConvertGoalToAchievementForm goal={goalToConvert} onConverted={handleGoalConverted} />}
+          </DialogContent>
+        </Dialog>
 
         <AlertDialogContent>
-            <AlertDialogHeader>
+          <AlertDialogHeader>
             <AlertDialogTitle>Czy na pewno chcesz usunąć ten cel?</AlertDialogTitle>
             <AlertDialogDescription>
-                Tej operacji nie można cofnąć. To spowoduje trwałe usunięcie celu "{goalToDelete?.title}".
+              Tej operacji nie można cofnąć. To spowoduje trwałe usunięcie celu "{goalToDelete?.title}".
             </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setGoalToDelete(null)}>Anuluj</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteGoal} className="bg-destructive hover:bg-destructive/90">Usuń</AlertDialogAction>
-            </AlertDialogFooter>
+          </AlertDialogFooter>
         </AlertDialogContent>
-    </div>
+      </div>
     </AlertDialog>
   );
 }

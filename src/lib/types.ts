@@ -2,6 +2,118 @@
 
 import type { Timestamp } from 'firebase/firestore';
 
+// --- Enums from data.ts ---
+export enum MuscleGroupName {
+  Back = 'Back',
+  Biceps = 'Biceps',
+  Calves = 'Calves',
+  Chest = 'Chest',
+  Core = 'Core',
+  Forearms = 'Forearms',
+  FullBody = 'Full Body',
+  Glutes = 'Glutes',
+  Hamstrings = 'Hamstrings',
+  LowerBack = 'Lower Back',
+  Quads = 'Quads',
+  RearDelts = 'Rear Delts',
+  Shoulders = 'Shoulders',
+  AnteriorTibialis = 'Anterior Tibialis',
+  Traps = 'Traps',
+  Triceps = 'Triceps',
+  Adductors = 'Adductors',
+  Hips = 'Hips',
+  Abductors = 'Abductors'
+}
+
+export enum TrainingLevel {
+  Beginner = 'beginner',
+  Intermediate = 'intermediate',
+  Advanced = 'advanced'
+}
+
+export enum SetType {
+  BackOffSet = 'Back-off set',
+  WorkingSet = 'Working set',
+  WarmUpSet = 'Warm-up set',
+  DropSet = 'Drop set',
+  FailureSet = 'Failure set'
+}
+
+// --- Interfaces from data.ts ---
+
+export interface MuscleGroup {
+  name: MuscleGroupName;
+  imageUrl?: string;
+}
+
+export interface Exercise {
+  id: string; // Keeping ID for DB compatibility
+  name: string;
+  mainMuscleGroups: MuscleGroup[];
+  secondaryMuscleGroups: MuscleGroup[];
+  instructions?: string;
+  mediaUrl?: string; // Image or Video URL
+  // Legacy fields kept optional for backward compatibility if needed, or to be removed
+  muscleGroup?: string;
+  description?: string;
+  image?: string;
+  imageHint?: string;
+  ownerId?: string;
+  type?: 'weight' | 'duration' | 'reps'; // Keeping this for logic in UI if needed, or we derive from data
+}
+
+export interface WorkoutSet {
+  number: number;
+  type: SetType;
+  reps: number;
+  weight: number;
+  restTimeSeconds: number;
+  completed?: boolean; // Added for tracking state
+  duration?: number; // Added to support duration-based sets if needed
+}
+
+export interface ExerciseSeries {
+  exercise: Exercise;
+  tempo: string; // e.g., "3-0-1-0"
+  tip?: string;
+  sets: WorkoutSet[];
+}
+
+export interface Workout {
+  id: string; // Keeping ID for DB compatibility
+  name: string;
+  imageUrl?: string;
+  level: TrainingLevel;
+  durationMinutes: number;
+  exerciseSeries: ExerciseSeries[];
+  ownerId?: string; // Added for ownership
+  description?: string; // Added for UI
+}
+
+export type DayPlan = Workout | 'Rest Day';
+
+export interface TrainingWeek {
+  // Array of 7 days, index 0 = Monday, etc.
+  days: [DayPlan, DayPlan, DayPlan, DayPlan, DayPlan, DayPlan, DayPlan];
+}
+
+export interface TrainingStage {
+  name: string;
+  weeks: TrainingWeek[];
+}
+
+export interface TrainingPlan {
+  id: string; // Keeping ID for DB compatibility
+  name: string;
+  level: TrainingLevel;
+  description?: string;
+  stages: TrainingStage[];
+  trainerId?: string; // Added for ownership
+  assignedAthleteIds?: string[]; // Added for assignment
+}
+
+// --- Existing Types (Updated where necessary) ---
+
 export type UserProfile = {
   id: string;
   name: string;
@@ -36,34 +148,15 @@ export type ArticleCategory = {
   name: string;
 };
 
-export type Exercise = {
-  id: string;
-  name: string;
-  muscleGroup: string;
-  description: string;
-  image: string;
-  imageHint: string;
-  ownerId?: string;
-  type: 'weight' | 'duration' | 'reps';
-};
-
-export type WorkoutExerciseLog = {
-  exerciseId: string;
-  sets: {
-    reps?: number;
-    weight?: number;
-    duration?: number;
-    completed?: boolean;
-  }[];
-  duration?: number; // Actual duration in seconds for time-based exercises
-};
+// Updated to match ExerciseSeries structure
+export type WorkoutExerciseLog = ExerciseSeries;
 
 export type WorkoutLog = {
   id: string;
   endTime: Timestamp;
   workoutName: string;
   duration?: number; // in minutes
-  exercises: WorkoutExerciseLog[];
+  exercises: WorkoutExerciseLog[]; // Now using ExerciseSeries
   photoURL?: string;
   athleteId: string;
   status?: 'in-progress' | 'completed';
@@ -113,6 +206,8 @@ export type WorkoutDay = {
   exercises: WorkoutDayExercise[];
 };
 
+// Keeping WorkoutPlan for now as it might be different from TrainingPlan in the DB
+// But we should aim to replace it with TrainingPlan
 export type WorkoutPlan = {
   id: string;
   name: string;
@@ -134,13 +229,6 @@ export type PlannedWorkout = {
     duration?: string;
   }[];
   ownerId: string;
-};
-
-export type MuscleGroup = {
-  id: string;
-  name: string;
-  imageUrl?: string;
-  imageHint?: string;
 };
 
 export type Achievement = {
@@ -249,6 +337,12 @@ export type Message = {
 export interface AthleteProfile extends UserProfile {
   role: 'athlete';
   trainerId: string;
+  currentPlan?: TrainingPlan; // Added to match data.ts User structure
+  completedWorkouts?: { // Added to match data.ts User structure
+    date: Date;
+    workout: Workout;
+    actualDurationMinutes?: number;
+  }[];
 }
 
 export interface DietPlan {
@@ -262,4 +356,5 @@ export interface DietPlan {
   }[];
   createdAt: Timestamp;
 }
+
 

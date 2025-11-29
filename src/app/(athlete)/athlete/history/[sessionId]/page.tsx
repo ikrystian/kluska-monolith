@@ -27,9 +27,7 @@ export default function SessionSummaryPage() {
 
   const { data: workoutLog, isLoading: sessionLoading } = useDoc<WorkoutLog>('workoutLogs', sessionId);
 
-  const { data: exercises, isLoading: exercisesLoading } = useCollection<Exercise>('exercises');
-
-  const isLoading = sessionLoading || exercisesLoading;
+  const isLoading = sessionLoading;
 
   if (isLoading) {
     return (
@@ -67,7 +65,7 @@ export default function SessionSummaryPage() {
   }
 
   const totalVolume = workoutLog.exercises.reduce((acc, ex) => {
-    const exerciseDetails = exercises?.find(e => e.id === ex.exerciseId);
+    const exerciseDetails = ex.exercise;
     if (exerciseDetails?.type !== 'weight') return acc;
     const exVolume = ex.sets.reduce((setAcc, set) => setAcc + (set.reps || 0) * (set.weight || 0), 0);
     return acc + exVolume;
@@ -133,7 +131,7 @@ export default function SessionSummaryPage() {
               </TableHeader>
               <TableBody>
                 {workoutLog.exercises.map((ex, exIndex) => {
-                  const exerciseDetails = exercises?.find(e => e.id === ex.exerciseId);
+                  const exerciseDetails = ex.exercise;
 
                   return ex.sets.map((set, setIndex) => (
                     <TableRow key={`${exIndex}-${setIndex}`}>
