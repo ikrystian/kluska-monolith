@@ -9,7 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Trash2, Save, Clock } from 'lucide-react';
+import { Plus, Trash2, Save, Clock, Check, ChevronsUpDown, ChevronDown, ChevronRight } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 
 interface SavedMeal {
@@ -260,73 +263,109 @@ export default function DietPlanForm({ initialData }: DietPlanFormProps) {
 
 function MealSelector({ meals, onSelect }: { meals: SavedMeal[], onSelect: (meal: SavedMeal, type: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack', time: string) => void }) {
     const [selectedMealId, setSelectedMealId] = useState<string>('');
-    const [type, setType] = useState<'Breakfast' | 'Lunch' | 'Dinner' | 'Snack'>('Breakfast');
     const [time, setTime] = useState('08:00');
+    const [open, setOpen] = useState(false);
+    const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const categories = ['Breakfast', 'Lunch', 'Dinner', 'Snack'] as const;
 
     const handleAdd = () => {
         const meal = meals.find(m => m._id === selectedMealId);
         if (meal) {
-            onSelect(meal, type, time);
+            onSelect(meal, meal.category || 'Breakfast', time);
         }
     };
 
+    const toggleCategory = (category: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setCollapsedCategories(prev => ({
+            ...prev,
+            [category]: !prev[category]
+        }));
+    };
+
+    const selectedMeal = meals.find(m => m._id === selectedMealId);
+
     return (
         <div className="space-y-4 py-4">
-            <div className="space-y-2">
+            <div className="space-y-2 flex flex-col">
                 <Label>Posiłek</Label>
-                <Select onValueChange={(val) => {
-                    setSelectedMealId(val);
-                    const meal = meals.find(m => m._id === val);
-                    if (meal && meal.category) {
-                        setType(meal.category);
-                    }
-                }}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Wybierz zapisany posiłek" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {['Breakfast', 'Lunch', 'Dinner', 'Snack'].map((category) => {
-                            const categoryMeals = meals.filter(m => (m.category || 'Breakfast') === category);
-                            if (categoryMeals.length === 0) return null;
+                <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={open}
+                            className="w-full justify-between"
+                        >
+                            {selectedMeal
+                                ? `${selectedMeal.name} (${selectedMeal.totalCalories.toFixed(0)} kcal)`
+                                : "Wybierz zapisany posiłek..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[400px] p-0">
+                        <Command shouldFilter={false}>
+                            <CommandInput placeholder="Szukaj posiłku..." value={searchTerm} onValueChange={setSearchTerm} />
+                            <CommandList>
+                                <CommandEmpty>Nie znaleziono posiłku.</CommandEmpty>
+                                {categories.map((category) => {
+                                    const categoryMeals = meals.filter(m => (m.category || 'Breakfast') === category);
+                                    if (categoryMeals.length === 0) return null;
 
-                            const categoryLabel = category === 'Breakfast' ? 'Śniadanie' :
-                                category === 'Lunch' ? 'Obiad' :
-                                    category === 'Dinner' ? 'Kolacja' : 'Przekąska';
+                                    // Filter based on search term manually since we disabled default filtering to handle collapsed states
+                                    const filteredMeals = categoryMeals.filter(meal =>
+                                        meal.name.toLowerCase().includes(searchTerm.toLowerCase())
+                                    );
 
-                            return (
-                                <SelectGroup key={category}>
-                                    <SelectLabel>{categoryLabel}</SelectLabel>
-                                    {categoryMeals.map(meal => (
-                                        <SelectItem key={meal._id} value={meal._id}>
-                                            {meal.name} ({meal.totalCalories.toFixed(0)} kcal)
-                                        </SelectItem>
-                                    ))}
-                                </SelectGroup>
-                            );
-                        })}
-                    </SelectContent>
-                </Select>
+                                    if (filteredMeals.length === 0 && searchTerm) return null;
+
+                                    const isCollapsed = collapsedCategories[category] && !searchTerm;
+                                    const categoryLabel = category === 'Breakfast' ? 'Śniadanie' :
+                                        category === 'Lunch' ? 'Obiad' :
+                                            category === 'Dinner' ? 'Kolacja' : 'Przekąska';
+
+                                    return (
+                                        <CommandGroup key={category} heading={
+                                            <div
+                                                className="flex items-center cursor-pointer hover:text-foreground transition-colors"
+                                                onClick={(e) => toggleCategory(category, e)}
+                                            >
+                                                {isCollapsed ? <ChevronRight className="mr-1 h-3 w-3" /> : <ChevronDown className="mr-1 h-3 w-3" />}
+                                                {categoryLabel}
+                                            </div>
+                                        }>
+                                            {!isCollapsed && filteredMeals.map(meal => (
+                                                <CommandItem
+                                                    key={meal._id}
+                                                    value={meal.name} // Use name for search if we were using default filter, but here it acts as ID for selection mostly
+                                                    onSelect={() => {
+                                                        setSelectedMealId(meal._id);
+                                                        setOpen(false);
+                                                    }}
+                                                >
+                                                    <Check
+                                                        className={cn(
+                                                            "mr-2 h-4 w-4",
+                                                            selectedMealId === meal._id ? "opacity-100" : "opacity-0"
+                                                        )}
+                                                    />
+                                                    {meal.name} ({meal.totalCalories.toFixed(0)} kcal)
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    );
+                                })}
+                            </CommandList>
+                        </Command>
+                    </PopoverContent>
+                </Popover>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label>Typ</Label>
-                    <Select value={type} onValueChange={(v: any) => setType(v)}>
-                        <SelectTrigger>
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="Breakfast">Śniadanie</SelectItem>
-                            <SelectItem value="Lunch">Obiad</SelectItem>
-                            <SelectItem value="Dinner">Kolacja</SelectItem>
-                            <SelectItem value="Snack">Przekąska</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="space-y-2">
-                    <Label>Godzina (Opcjonalnie)</Label>
-                    <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
-                </div>
+            <div className="space-y-2">
+                <Label>Godzina (Opcjonalnie)</Label>
+                <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
             </div>
 
             <Button onClick={handleAdd} disabled={!selectedMealId} className="w-full">
