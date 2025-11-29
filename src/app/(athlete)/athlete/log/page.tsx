@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useForm, useFieldArray, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { PlusCircle, Trash2, Save, Loader2, Dumbbell, Upload, Search, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, Clock, History, LayoutList, RotateCcw, CheckCircle2, Circle } from 'lucide-react';
+import { PlusCircle, Trash2, Save, Loader2, Dumbbell, Upload, Search, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, Clock, History, LayoutList, RotateCcw, CheckCircle2, Circle, Layers, Timer } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 
@@ -16,6 +16,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -36,6 +37,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetFooter, SheetClose } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { CarouselWorkoutView } from '@/components/workout/CarouselWorkoutView';
 
 
 // --- SCHEMA DEFINITIONS ---
@@ -248,6 +250,8 @@ function WorkoutBuilderView({ initialData, onStart, onCancel, allExercises, isLo
 
 
 // --- ACTIVE WORKOUT VIEW ---
+type ViewMode = 'list' | 'carousel';
+
 function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLoadingExercises, initialLogId }: { initialWorkout: LogFormValues; allExercises: Exercise[] | null; onFinishWorkout: () => void; isLoadingExercises: boolean; initialLogId?: string | null }) {
   const [startTime] = useState(initialWorkout.startTime ? new Date(initialWorkout.startTime) : new Date());
   const [workoutLogId, setWorkoutLogId] = useState<string | null>(initialLogId || null);
@@ -262,6 +266,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
 
   const [activeExerciseIndex, setActiveExerciseIndex] = useState(0);
   const [newExerciseId, setNewExerciseId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
 
   const form = useForm<LogFormValues>({
     resolver: zodResolver(logSchema),
@@ -432,6 +437,11 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
     }
   }
 
+  // Handle set completion from carousel view
+  const handleSetComplete = useCallback((exerciseIndex: number, setIndex: number) => {
+    form.setValue(`exerciseSeries.${exerciseIndex}.sets.${setIndex}.completed`, true);
+  }, [form]);
+
 
   const handleSaveWorkout = async (data: LogFormValues) => {
     if (!user || !workoutLogId) return;
@@ -566,7 +576,14 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   return (
     <div className="flex flex-col h-[calc(100vh-6rem)] md:h-auto relative">
       <FormProvider {...form}>
-        <form onSubmit={form.handleSubmit(() => setIsFinished(true))} className="flex flex-col h-full">
+        <form onSubmit={form.handleSubmit(() => setIsFinished(true), (errors) => {
+          console.error("Validation errors:", errors);
+          toast({
+            title: "Błąd walidacji",
+            description: "Sprawdź czy wszystkie wymagane pola są wypełnione poprawnie.",
+            variant: "destructive",
+          });
+        })} className="flex flex-col h-full">
 
           {/* Header Section */}
           <div className="flex justify-between items-center mb-4 px-1">
@@ -595,59 +612,88 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
             </div>
           </div>
 
-          {/* Main Content - Scrollable */}
-          <div className="flex-1 overflow-y-auto pb-24 px-1 scrollbar-hide">
-            {currentExercise ? (
-              <div className={newExerciseId === currentExercise.exerciseId ? 'animate-slide-in-up' : ''}>
-                <ExerciseCard
-                  key={currentExercise.id}
-                  index={activeExerciseIndex}
-                  exerciseDetails={exerciseDetails}
-                  onRemoveExercise={() => handleRemoveExercise(activeExerciseIndex)}
-                  isLoadingExercises={isLoadingExercises}
-                />
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-64 rounded-lg border-2 border-dashed p-8 text-center">
-                <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-xl font-semibold">Rozpocznij trening</h3>
-                <p className="mt-1 text-sm text-muted-foreground mb-4">Dodaj pierwsze ćwiczenie, aby zacząć.</p>
-              </div>
-            )}
-
-            {/* Spacer for bottom bar */}
-            <div className="h-20"></div>
+          {/* View Mode Toggle */}
+          <div className="flex items-center justify-center gap-3 mb-4 p-2 bg-secondary/30 rounded-lg">
+            <div className="flex items-center gap-2">
+              <LayoutList className={`h-4 w-4 ${viewMode === 'list' ? 'text-primary' : 'text-muted-foreground'}`} />
+              <span className={`text-sm ${viewMode === 'list' ? 'font-medium' : 'text-muted-foreground'}`}>Lista</span>
+            </div>
+            <Switch
+              checked={viewMode === 'carousel'}
+              onCheckedChange={(checked) => setViewMode(checked ? 'carousel' : 'list')}
+            />
+            <div className="flex items-center gap-2">
+              <Timer className={`h-4 w-4 ${viewMode === 'carousel' ? 'text-primary' : 'text-muted-foreground'}`} />
+              <span className={`text-sm ${viewMode === 'carousel' ? 'font-medium' : 'text-muted-foreground'}`}>Karuzela</span>
+            </div>
           </div>
 
-          {/* Bottom Navigation Bar */}
-          <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t p-4 flex justify-between items-center z-50 md:absolute md:rounded-b-lg">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              disabled={activeExerciseIndex === 0 || fields.length === 0}
-              onClick={() => setActiveExerciseIndex(prev => prev - 1)}
-            >
-              <ArrowLeft className="h-6 w-6" />
-            </Button>
-
-            <div className="-mt-8">
-              <AddExerciseSheet
+          {/* Main Content - Conditional based on view mode */}
+          {viewMode === 'carousel' ? (
+            <div className="flex-1 overflow-hidden pb-20">
+              <CarouselWorkoutView
                 allExercises={allExercises}
-                onAddExercise={handleAddExercise}
+                isLoadingExercises={isLoadingExercises}
+                onSetComplete={handleSetComplete}
               />
             </div>
+          ) : (
+            <>
+              {/* List View - Scrollable */}
+              <div className="flex-1 overflow-y-auto pb-24 px-1 scrollbar-hide">
+                {currentExercise ? (
+                  <div className={newExerciseId === currentExercise.exerciseId ? 'animate-slide-in-up' : ''}>
+                    <ExerciseCard
+                      key={currentExercise.id}
+                      index={activeExerciseIndex}
+                      exerciseDetails={exerciseDetails}
+                      onRemoveExercise={() => handleRemoveExercise(activeExerciseIndex)}
+                      isLoadingExercises={isLoadingExercises}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-64 rounded-lg border-2 border-dashed p-8 text-center">
+                    <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-4 text-xl font-semibold">Rozpocznij trening</h3>
+                    <p className="mt-1 text-sm text-muted-foreground mb-4">Dodaj pierwsze ćwiczenie, aby zacząć.</p>
+                  </div>
+                )}
 
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              disabled={activeExerciseIndex === fields.length - 1 || fields.length === 0}
-              onClick={() => setActiveExerciseIndex(prev => prev + 1)}
-            >
-              <ArrowRight className="h-6 w-6" />
-            </Button>
-          </div>
+                {/* Spacer for bottom bar */}
+                <div className="h-20"></div>
+              </div>
+
+              {/* Bottom Navigation Bar - Only for list view */}
+              <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t p-4 flex justify-between items-center z-50 md:absolute md:rounded-b-lg">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disabled={activeExerciseIndex === 0 || fields.length === 0}
+                  onClick={() => setActiveExerciseIndex(prev => prev - 1)}
+                >
+                  <ArrowLeft className="h-6 w-6" />
+                </Button>
+
+                <div className="-mt-8">
+                  <AddExerciseSheet
+                    allExercises={allExercises}
+                    onAddExercise={handleAddExercise}
+                  />
+                </div>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disabled={activeExerciseIndex === fields.length - 1 || fields.length === 0}
+                  onClick={() => setActiveExerciseIndex(prev => prev + 1)}
+                >
+                  <ArrowRight className="h-6 w-6" />
+                </Button>
+              </div>
+            </>
+          )}
 
         </form>
       </FormProvider>
@@ -1129,7 +1175,7 @@ export default function LogWorkoutPage() {
         level: TrainingLevel.Intermediate, // Default or fetch from somewhere if needed
         // We might want to pass startTime too if we want correct timer
       };
-      // Hack to pass start time via the form values or separate prop? 
+      // Hack to pass start time via the form values or separate prop?
       // Let's add it to LogFormValues temporarily or handle in ActiveWorkoutView
       // For now, let's assume we can pass it via a hidden field or just use the prop in ActiveWorkoutView
 
@@ -1146,25 +1192,41 @@ export default function LogWorkoutPage() {
     if (workoutId && preselectedWorkout && !builderData && view === 'selection') {
       const workoutData: LogFormValues = {
         workoutName: preselectedWorkout.name,
-        exerciseSeries: preselectedWorkout.exerciseSeries.map(series => ({
-          exerciseId: series.exercise.id,
-          sets: series.sets.map((s, i) => ({
-            number: i + 1,
-            type: s.type || SetType.WorkingSet,
-            reps: s.reps || 0,
-            weight: s.weight || 0,
-            restTimeSeconds: s.restTimeSeconds || 60,
-            duration: undefined,
-            completed: false
-          })),
-          tempo: series.tempo || "2-0-2-0",
-          tip: series.tip
-        })),
+        exerciseSeries: preselectedWorkout.exerciseSeries.map(series => {
+          let exerciseId = series.exercise.id || (series.exercise as any)._id;
+
+          // Try to find by name if ID is missing
+          if (!exerciseId && allExercises) {
+            const found = allExercises.find(e => e.name === series.exercise.name);
+            if (found) exerciseId = found.id;
+          }
+
+          // Fallback to temp ID if still missing
+          if (!exerciseId) {
+            console.warn(`Missing ID for exercise: ${series.exercise.name}, generating temp ID`);
+            exerciseId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          }
+
+          return {
+            exerciseId: exerciseId,
+            sets: series.sets.map((s, i) => ({
+              number: i + 1,
+              type: s.type || SetType.WorkingSet,
+              reps: s.reps || 0,
+              weight: s.weight || 0,
+              restTimeSeconds: s.restTimeSeconds || 60,
+              duration: undefined,
+              completed: false
+            })),
+            tempo: series.tempo || "2-0-2-0",
+            tip: series.tip
+          };
+        }),
         level: preselectedWorkout.level || TrainingLevel.Intermediate
       };
       handleStartBuilder(workoutData);
     }
-  }, [workoutId, preselectedWorkout, builderData, view]);
+  }, [workoutId, preselectedWorkout, builderData, view, activeWorkouts, allExercises]);
 
   const handleStartBuilder = (data: LogFormValues) => {
     setBuilderData(data);
