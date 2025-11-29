@@ -1,24 +1,18 @@
 import mongoose, { Schema, Model, Document } from 'mongoose';
 
-export interface IWorkoutDay {
-  dayName: string;
-  exercises: {
-    exerciseId: string;
-    sets: {
-      reps: number;
-      weight?: number;
-    }[];
-    duration?: number; // in seconds for time-based exercises
-  }[];
-}
-
 export interface IWorkoutPlan extends Document {
   _id: string;
   name: string;
+  level: string;
   description?: string;
   trainerId: string;
   assignedAthleteIds: string[];
-  workoutDays: IWorkoutDay[];
+  stages: {
+    name: string;
+    weeks: {
+      days: (string | object)[]; // Workout ID or 'Rest Day' or Workout object
+    }[];
+  }[];
   isDraft: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -27,22 +21,16 @@ export interface IWorkoutPlan extends Document {
 const WorkoutPlanSchema = new Schema<IWorkoutPlan>(
   {
     name: { type: String, required: true },
+    level: { type: String, required: true },
     description: { type: String },
     trainerId: { type: String, required: true },
     assignedAthleteIds: [{ type: String }],
-    workoutDays: [
+    stages: [
       {
-        dayName: { type: String, required: true },
-        exercises: [
+        name: { type: String, required: true },
+        weeks: [
           {
-            exerciseId: { type: String, required: true },
-            sets: [
-              {
-                reps: { type: Number, required: true },
-                weight: { type: Number },
-              },
-            ],
-            duration: { type: Number },
+            days: [{ type: Schema.Types.Mixed }], // Can be string ('Rest Day') or object (Workout)
           },
         ],
       },
@@ -68,4 +56,3 @@ WorkoutPlanSchema.index({ name: 'text', description: 'text' });
 
 export const WorkoutPlan: Model<IWorkoutPlan> =
   mongoose.models.WorkoutPlan || mongoose.model<IWorkoutPlan>('WorkoutPlan', WorkoutPlanSchema);
-

@@ -89,6 +89,7 @@ const trainerNavItems = [
       { href: '/trainer/diet/meals/create', label: 'Utwórz Posiłek' },
     ]
   },
+  { href: '/trainer/workout-plans', icon: ClipboardList, label: 'Plany Treningowe' },
   { href: '/trainer/workouts', icon: Library, label: 'Treningi' },
   { href: '/trainer/exercises', icon: Dumbbell, label: 'Ćwiczenia' },
   { href: '/trainer/knowledge-zone', icon: BookOpen, label: 'Strefa Wiedzy' },
