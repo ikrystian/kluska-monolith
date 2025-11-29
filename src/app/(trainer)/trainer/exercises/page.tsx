@@ -2,35 +2,10 @@
 
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -38,14 +13,10 @@ import { PlusCircle, Search, Loader2, Dumbbell, MoreVertical, Edit, Trash2 } fro
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useUser, useDoc, useCreateDoc, useUpdateDoc, useDeleteDoc } from '@/lib/db-hooks';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { UploadButton } from '@/lib/uploadthing';
 
 interface Exercise {
   id: string;
@@ -75,10 +46,7 @@ interface WorkoutPlan {
     dayName: string;
     exercises: {
       exerciseId: string;
-      sets: {
-        reps: number;
-        weight?: number;
-      }[];
+      sets: { reps: number; weight?: number }[];
       duration?: number;
     }[];
   }[];
@@ -99,17 +67,16 @@ export default function ExercisesPage() {
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
 
   const { data: userProfile } = useDoc<UserProfile>('users', user?.uid);
 
   // Fetch workout plans for athletes
   const { data: assignedPlans } = useCollection<WorkoutPlan>('workoutPlans',
-    userProfile?.role === 'athlete' && user?.uid
-      ? { assignedAthleteIds: user.uid }
-      : undefined
+    userProfile?.role === 'athlete' && user?.uid ? { assignedAthleteIds: user.uid } : undefined
   );
 
-  // Get exercise IDs from assigned plans
+  // Get exercise IDs from assigned plans (optional usage)
   const exerciseIds = useMemo(() => {
     const ids = new Set<string>();
     if (assignedPlans) {
@@ -130,14 +97,15 @@ export default function ExercisesPage() {
     user?.uid ? { ownerId: { $in: ['public', user.uid] } } : undefined
   );
 
-  // Combine all exercises (public, user's own, and from assigned plans)
+  // Combine all exercises (currently only public/user ones)
   const allExercises = useMemo(() => {
     const combined = new Map<string, Exercise>();
     publicAndUserExercises?.forEach(ex => combined.set(ex.id, ex));
+    // TODO: merge exercises from assigned plans if needed
     return Array.from(combined.values());
   }, [publicAndUserExercises]);
 
-  // Fetch muscle groups from database
+  // Fetch muscle groups
   const { data: muscleGroups, isLoading: muscleGroupsLoading } = useCollection<MuscleGroup>('muscleGroups');
 
   const { createDoc, isLoading: isCreating } = useCreateDoc();
@@ -147,59 +115,57 @@ export default function ExercisesPage() {
   const isSubmitting = isCreating || isUpdating || isDeleting;
   const isLoading = publicAndUserLoading || muscleGroupsLoading;
 
-  const filteredExercises = allExercises?.filter(
-    (exercise) =>
-      exercise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      exercise.muscleGroup.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const generateAiImage = async (prompt: string): Promise<string> => {
+    const res = await fetch('/api/generate-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt }),
+    });
+    const data = await res.json();
+    return data.imageUrl;
+  };
 
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!user) return;
-
     const form = event.currentTarget;
     const formData = new FormData(form);
     const exerciseData = {
       name: formData.get('name') as string,
       muscleGroup: formData.get('muscleGroup') as string,
-      description: formData.get('description') as string || '',
+      description: (formData.get('description') as string) || '',
       type: formData.get('type') as 'weight' | 'duration' | 'reps',
     };
-
     try {
       if (selectedExercise) {
-        // Update existing exercise
-        await updateDoc('exercises', selectedExercise.id, exerciseData);
-        toast({
-          title: "Sukces!",
-          description: "Ćwiczenie zostało zaktualizowane."
-        });
+        const updatedData = {
+          ...exerciseData,
+          image: uploadedImageUrl || (await generateAiImage(exerciseData.name)),
+          imageHint: exerciseData.name.toLowerCase(),
+        };
+        await updateDoc('exercises', selectedExercise.id, updatedData);
+        toast({ title: 'Sukces!', description: 'Ćwiczenie zostało zaktualizowane.' });
         setEditDialogOpen(false);
         setSelectedExercise(null);
+        setUploadedImageUrl('');
       } else {
-        // Add new exercise
+        const imageUrl = uploadedImageUrl || (await generateAiImage(exerciseData.name));
         const newExerciseData = {
           ...exerciseData,
-          image: `https://picsum.photos/seed/${encodeURIComponent(exerciseData.name)}/400/300`,
+          image: imageUrl,
           imageHint: exerciseData.name.toLowerCase(),
           ownerId: user.uid,
         };
-
         await createDoc('exercises', newExerciseData);
-        toast({
-          title: "Sukces!",
-          description: "Nowe ćwiczenie zostało dodane."
-        });
+        toast({ title: 'Sukces!', description: 'Nowe ćwiczenie zostało dodane.' });
         setAddDialogOpen(false);
+        setUploadedImageUrl('');
       }
-
-      refetchExercises(); // Refresh the list
+      refetchExercises();
     } catch (error) {
       toast({
         title: 'Błąd',
-        description: selectedExercise
-          ? 'Nie udało się zaktualizować ćwiczenia.'
-          : 'Nie udało się dodać ćwiczenia.',
+        description: selectedExercise ? 'Nie udało się zaktualizować ćwiczenia.' : 'Nie udało się dodać ćwiczenia.',
         variant: 'destructive',
       });
     }
@@ -212,24 +178,20 @@ export default function ExercisesPage() {
 
   const handleDeleteExercise = async () => {
     if (!selectedExercise) return;
-
     try {
       await deleteDoc('exercises', selectedExercise.id);
-      toast({
-        title: "Sukces!",
-        description: "Ćwiczenie zostało usunięte."
-      });
+      toast({ title: 'Sukces!', description: 'Ćwiczenie zostało usunięte.' });
       setSelectedExercise(null);
-      refetchExercises(); // Refresh the list
+      refetchExercises();
     } catch (error) {
-      toast({
-        title: 'Błąd',
-        description: 'Nie udało się usunąć ćwiczenia.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Błąd', description: 'Nie udało się usunąć ćwiczenia.', variant: 'destructive' });
     }
   };
 
+  const filteredExercises = allExercises?.filter(ex =>
+    ex.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    ex.muscleGroup.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const ExerciseDialogContent = ({ isEditMode }: { isEditMode: boolean }) => (
     <>
@@ -241,6 +203,12 @@ export default function ExercisesPage() {
       </DialogHeader>
       <form onSubmit={handleFormSubmit}>
         <div className="grid gap-4 py-4">
+          <UploadButton
+            endpoint="imageUploader"
+            onClientUploadComplete={files => {
+              if (files && files.length > 0) setUploadedImageUrl(files[0].url);
+            }}
+          />
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="name" className="text-right">Nazwa</Label>
             <Input id="name" name="name" defaultValue={isEditMode ? selectedExercise?.name : ''} className="col-span-3" required disabled={isSubmitting} />
@@ -248,14 +216,14 @@ export default function ExercisesPage() {
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="muscleGroup" className="text-right">Grupa mięśniowa</Label>
             <Select name="muscleGroup" defaultValue={isEditMode ? selectedExercise?.muscleGroup : ''} required disabled={isSubmitting || muscleGroupsLoading}>
-                <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Wybierz grupę mięśniową" />
-                </SelectTrigger>
-                <SelectContent>
-                    {muscleGroups?.map(group => (
-                        <SelectItem key={group.id} value={group.name}>{group.name}</SelectItem>
-                    ))}
-                </SelectContent>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Wybierz grupę mięśniową" />
+              </SelectTrigger>
+              <SelectContent>
+                {muscleGroups?.map(group => (
+                  <SelectItem key={group.id} value={group.name}>{group.name}</SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -297,15 +265,9 @@ export default function ExercisesPage() {
           <div className="flex gap-2">
             <div className="relative w-full md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Szukaj ćwiczeń..."
-                className="pl-9"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+              <Input type="search" placeholder="Szukaj ćwiczeń..." className="pl-9" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </div>
-            <Dialog open={isAddDialogOpen} onOpenChange={(isOpen) => { setAddDialogOpen(isOpen); if(!isOpen) setSelectedExercise(null); }}>
+            <Dialog open={isAddDialogOpen} onOpenChange={isOpen => { setAddDialogOpen(isOpen); if (!isOpen) setSelectedExercise(null); }}>
               <DialogTrigger asChild>
                 <Button>
                   <PlusCircle className="mr-2 h-4 w-4" />
@@ -318,7 +280,6 @@ export default function ExercisesPage() {
             </Dialog>
           </div>
         </div>
-
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {isLoading ? (
             Array.from({ length: 8 }).map((_, index) => (
@@ -335,47 +296,44 @@ export default function ExercisesPage() {
               </Card>
             ))
           ) : filteredExercises && filteredExercises.length > 0 ? (
-            filteredExercises.map((exercise) => (
+            filteredExercises.map(exercise => (
               <Card key={exercise.id} className="overflow-hidden transition-all hover:shadow-lg flex flex-col">
-                <div className="relative h-48 w-full">
-                  <Image
-                    src={exercise.image}
-                    alt={exercise.name}
-                    fill
-                    className="object-cover"
-                    data-ai-hint={exercise.imageHint}
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
+                <div className="relative h-48 w-full bg-muted flex items-center justify-center">
+                  {exercise.image && exercise.image.trim() !== '' ? (
+                    <Image src={exercise.image} alt={exercise.name} fill className="object-cover" data-ai-hint={exercise.imageHint} sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
+                  ) : (
+                    <Dumbbell className="h-12 w-12 text-muted-foreground/50" />
+                  )}
                 </div>
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                      <CardTitle className="font-headline">{exercise.name}</CardTitle>
-                      {exercise.ownerId === user?.uid && (
-                           <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2">
-                                      <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => openEditDialog(exercise)}>
-                                      <Edit className="mr-2 h-4 w-4" />
-                                      <span>Edytuj</span>
-                                  </DropdownMenuItem>
-                                   <AlertDialogTrigger asChild>
-                                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} onClick={() => setSelectedExercise(exercise)}>
-                                          <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-                                          <span className="text-destructive">Usuń</span>
-                                      </DropdownMenuItem>
-                                  </AlertDialogTrigger>
-                              </DropdownMenuContent>
-                          </DropdownMenu>
-                      )}
+                    <CardTitle className="font-headline">{exercise.name}</CardTitle>
+                    {exercise.ownerId === user?.uid && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openEditDialog(exercise)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            <span>Edytuj</span>
+                          </DropdownMenuItem>
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem onSelect={e => e.preventDefault()} onClick={() => setSelectedExercise(exercise)}>
+                              <Trash2 className="mr-2 h-4 w-4 text-destructive" />
+                              <span className="text-destructive">Usuń</span>
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
                   <div className="flex justify-between items-center pt-1">
                     <Badge variant="secondary">{exercise.muscleGroup}</Badge>
                     {exercise.ownerId === user?.uid && <Badge variant="outline">Własne</Badge>}
-                    {exercise.ownerId !== 'public' && exercise.ownerId !== user?.uid && <Badge variant="default" className='bg-green-600'>Z planu</Badge>}
+                    {exercise.ownerId !== 'public' && exercise.ownerId !== user?.uid && <Badge variant="default" className="bg-green-600">Z planu</Badge>}
                   </div>
                 </CardHeader>
                 <CardContent className="flex-grow">
@@ -397,31 +355,27 @@ export default function ExercisesPage() {
             </Card>
           )}
         </div>
-
         {/* Edit Dialog */}
-        <Dialog open={isEditDialogOpen} onOpenChange={(isOpen) => { setEditDialogOpen(isOpen); if(!isOpen) setSelectedExercise(null); }}>
+        <Dialog open={isEditDialogOpen} onOpenChange={isOpen => { setEditDialogOpen(isOpen); if (!isOpen) setSelectedExercise(null); }}>
           <DialogContent className="sm:max-w-[425px]">
             <ExerciseDialogContent isEditMode={true} />
           </DialogContent>
         </Dialog>
-
-        {/* Delete Confirmation Dialog Content */}
+        {/* Delete Confirmation */}
         <AlertDialogContent>
-            <AlertDialogHeader>
+          <AlertDialogHeader>
             <AlertDialogTitle>Czy na pewno chcesz usunąć to ćwiczenie?</AlertDialogTitle>
             <AlertDialogDescription>
-                Tej operacji nie można cofnąć. To spowoduje trwałe usunięcie ćwiczenia
-                <span className="font-semibold"> "{selectedExercise?.name}" </span>
-                z bazy danych.
+              Ta operacja nie może zostać cofnięta. Usunie ćwiczenie <span className="font-semibold">{selectedExercise?.name}</span> z bazy danych.
             </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setSelectedExercise(null)} disabled={isSubmitting}>Anuluj</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteExercise} disabled={isSubmitting} className="bg-destructive hover:bg-destructive/90">
-                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Usuń
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Usuń
             </AlertDialogAction>
-            </AlertDialogFooter>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </div>
     </AlertDialog>
