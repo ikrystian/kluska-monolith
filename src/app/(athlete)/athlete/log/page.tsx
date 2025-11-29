@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { PlusCircle, Trash2, Save, Loader2, Dumbbell, Upload, Search, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, Clock, History, LayoutList, RotateCcw, CheckCircle2, Circle } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
@@ -649,9 +649,10 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
         <div className="space-y-2">
           <div className="grid grid-cols-12 gap-2 items-center text-center">
             <Label className="col-span-1 text-xs text-muted-foreground">#</Label>
-            <Label className="col-span-3 text-xs text-muted-foreground">Typ</Label>
-            <Label className="col-span-3 text-xs text-muted-foreground">kg</Label>
-            <Label className="col-span-3 text-xs text-muted-foreground">Reps</Label>
+            <Label className="col-span-2 text-xs text-muted-foreground">Typ</Label>
+            <Label className="col-span-2 text-xs text-muted-foreground">kg</Label>
+            <Label className="col-span-2 text-xs text-muted-foreground">Reps</Label>
+            <Label className="col-span-3 text-xs text-muted-foreground">Przerwa (s)</Label>
             <Label className="col-span-2 text-xs text-muted-foreground">✓</Label>
           </div>
           {fields.map((setField, setIndex) => {
@@ -676,7 +677,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                   {setIndex + 1}
                 </div>
 
-                <div className="col-span-3">
+                <div className="col-span-2">
                   <FormField
                     control={control}
                     name={`exerciseSeries.${index}.sets.${setIndex}.type`}
@@ -703,7 +704,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                   control={control}
                   name={`exerciseSeries.${index}.sets.${setIndex}.weight`}
                   render={({ field }) => (
-                    <FormItem className="col-span-3 space-y-0">
+                    <FormItem className="col-span-2 space-y-0">
                       <FormControl><Input type="number" step="0.5" placeholder="0" {...field} className={`h-8 text-center ${isActive ? "border-primary font-semibold" : ""}`} /></FormControl>
                     </FormItem>
                   )}
@@ -713,8 +714,23 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                   control={control}
                   name={`exerciseSeries.${index}.sets.${setIndex}.reps`}
                   render={({ field }) => (
-                    <FormItem className="col-span-3 space-y-0">
+                    <FormItem className="col-span-2 space-y-0">
                       <FormControl><Input type="number" placeholder="0" {...field} className={`h-8 text-center ${isActive ? "border-primary font-semibold" : ""}`} /></FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={control}
+                  name={`exerciseSeries.${index}.sets.${setIndex}.restTimeSeconds`}
+                  render={({ field }) => (
+                    <FormItem className="col-span-3 space-y-0">
+                      <FormControl>
+                        <div className="relative">
+                          <Input type="number" placeholder="60" {...field} className={`h-8 text-center pr-6 ${isActive ? "border-primary font-semibold" : ""}`} />
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
+                        </div>
+                      </FormControl>
                     </FormItem>
                   )}
                 />
@@ -1000,6 +1016,35 @@ export default function LogWorkoutPage() {
     'exercises',
     user?.uid ? { ownerId: { $in: ownerIds } } : undefined
   );
+
+  const searchParams = useSearchParams();
+  const workoutId = searchParams.get('workoutId');
+  const { data: preselectedWorkout, isLoading: isLoadingPreselected } = useDoc<Workout>('workouts', workoutId);
+
+  // Auto-start builder if workoutId is present and workout is loaded
+  useEffect(() => {
+    if (workoutId && preselectedWorkout && !builderData && view === 'selection') {
+      const workoutData: LogFormValues = {
+        workoutName: preselectedWorkout.name,
+        exerciseSeries: preselectedWorkout.exerciseSeries.map(series => ({
+          exerciseId: series.exercise.id,
+          sets: series.sets.map((s, i) => ({
+            number: i + 1,
+            type: s.type || SetType.WorkingSet,
+            reps: s.reps || 0,
+            weight: s.weight || 0,
+            restTimeSeconds: s.restTimeSeconds || 60,
+            duration: undefined,
+            completed: false
+          })),
+          tempo: series.tempo || "2-0-2-0",
+          tip: series.tip
+        })),
+        level: preselectedWorkout.level || TrainingLevel.Intermediate
+      };
+      handleStartBuilder(workoutData);
+    }
+  }, [workoutId, preselectedWorkout, builderData, view]);
 
   const handleStartBuilder = (data: LogFormValues) => {
     setBuilderData(data);

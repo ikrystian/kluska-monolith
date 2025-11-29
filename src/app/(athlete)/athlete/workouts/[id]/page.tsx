@@ -52,13 +52,21 @@ export default function WorkoutDetailsPage() {
         <div className="container mx-auto p-4 md:p-8 pb-24">
             {/* Header */}
             <div className="flex flex-col gap-6 mb-8">
-                <Button
-                    variant="ghost"
-                    className="w-fit pl-0 hover:bg-transparent hover:text-primary"
-                    onClick={() => router.back()}
-                >
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Wróć do listy
-                </Button>
+                <div className="flex justify-between items-start">
+                    <Button
+                        variant="ghost"
+                        className="w-fit pl-0 hover:bg-transparent hover:text-primary"
+                        onClick={() => router.back()}
+                    >
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Wróć do listy
+                    </Button>
+                    <Button
+                        onClick={() => router.push(`/athlete/log?workoutId=${id}`)}
+                        className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+                    >
+                        <Play className="mr-2 h-4 w-4" /> Rozpocznij Trening
+                    </Button>
+                </div>
 
                 <div className="relative h-48 md:h-64 w-full rounded-xl overflow-hidden bg-muted">
                     {workout.imageUrl ? (
