@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from '@react-google-maps/api';
-import { useCollection, useFirestore, useMemoFirebase, collection } from '@/firebase';
 import type { Gym } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,107 +25,103 @@ const center = {
 };
 
 const mapOptions = {
-    styles: [
-        { elementType: 'geometry', stylers: [{ color: '#242f3e' }] },
-        { elementType: 'labels.text.stroke', stylers: [{ color: '#242f3e' }] },
-        { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },
-        {
-          featureType: 'administrative.locality',
-          elementType: 'labels.text.fill',
-          stylers: [{ color: '#d59563' }],
-        },
-        {
-          featureType: 'poi',
-          elementType: 'labels.text.fill',
-          stylers: [{ color: '#d59563' }],
-        },
-        {
-          featureType: 'poi.park',
-          elementType: 'geometry',
-          stylers: [{ color: '#263c3f' }],
-        },
-        {
-          featureType: 'poi.park',
-          elementType: 'labels.text.fill',
-          stylers: [{ color: '#6b9a76' }],
-        },
-        {
-          featureType: 'road',
-          elementType: 'geometry',
-          stylers: [{ color: '#38414e' }],
-        },
-        {
-          featureType: 'road',
-          elementType: 'geometry.stroke',
-          stylers: [{ color: '#212a37' }],
-        },
-        {
-          featureType: 'road',
-          elementType: 'labels.text.fill',
-          stylers: [{ color: '#9ca5b3' }],
-        },
-        {
-          featureType: 'road.highway',
-          elementType: 'geometry',
-          stylers: [{ color: '#746855' }],
-        },
-        {
-          featureType: 'road.highway',
-          elementType: 'geometry.stroke',
-          stylers: [{ color: '#1f2835' }],
-        },
-        {
-          featureType: 'road.highway',
-          elementType: 'labels.text.fill',
-          stylers: [{ color: '#f3d19c' }],
-        },
-        {
-          featureType: 'transit',
-          elementType: 'geometry',
-          stylers: [{ color: '#2f3948' }],
-        },
-        {
-          featureType: 'transit.station',
-          elementType: 'labels.text.fill',
-          stylers: [{ color: '#d59563' }],
-        },
-        {
-          featureType: 'water',
-          elementType: 'geometry',
-          stylers: [{ color: '#17263c' }],
-        },
-        {
-          featureType: 'water',
-          elementType: 'labels.text.fill',
-          stylers: [{ color: '#515c6d' }],
-        },
-        {
-          featureType: 'water',
-          elementType: 'labels.text.stroke',
-          stylers: [{ color: '#17263c' }],
-        },
-      ],
-      disableDefaultUI: true,
-      zoomControl: true,
+  styles: [
+    { elementType: 'geometry', stylers: [{ color: '#242f3e' }] },
+    { elementType: 'labels.text.stroke', stylers: [{ color: '#242f3e' }] },
+    { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },
+    {
+      featureType: 'administrative.locality',
+      elementType: 'labels.text.fill',
+      stylers: [{ color: '#d59563' }],
+    },
+    {
+      featureType: 'poi',
+      elementType: 'labels.text.fill',
+      stylers: [{ color: '#d59563' }],
+    },
+    {
+      featureType: 'poi.park',
+      elementType: 'geometry',
+      stylers: [{ color: '#263c3f' }],
+    },
+    {
+      featureType: 'poi.park',
+      elementType: 'labels.text.fill',
+      stylers: [{ color: '#6b9a76' }],
+    },
+    {
+      featureType: 'road',
+      elementType: 'geometry',
+      stylers: [{ color: '#38414e' }],
+    },
+    {
+      featureType: 'road',
+      elementType: 'geometry.stroke',
+      stylers: [{ color: '#212a37' }],
+    },
+    {
+      featureType: 'road',
+      elementType: 'labels.text.fill',
+      stylers: [{ color: '#9ca5b3' }],
+    },
+    {
+      featureType: 'road.highway',
+      elementType: 'geometry',
+      stylers: [{ color: '#746855' }],
+    },
+    {
+      featureType: 'road.highway',
+      elementType: 'geometry.stroke',
+      stylers: [{ color: '#1f2835' }],
+    },
+    {
+      featureType: 'road.highway',
+      elementType: 'labels.text.fill',
+      stylers: [{ color: '#f3d19c' }],
+    },
+    {
+      featureType: 'transit',
+      elementType: 'geometry',
+      stylers: [{ color: '#2f3948' }],
+    },
+    {
+      featureType: 'transit.station',
+      elementType: 'labels.text.fill',
+      stylers: [{ color: '#d59563' }],
+    },
+    {
+      featureType: 'water',
+      elementType: 'geometry',
+      stylers: [{ color: '#17263c' }],
+    },
+    {
+      featureType: 'water',
+      elementType: 'labels.text.fill',
+      stylers: [{ color: '#515c6d' }],
+    },
+    {
+      featureType: 'water',
+      elementType: 'labels.text.stroke',
+      stylers: [{ color: '#17263c' }],
+    },
+  ],
+  disableDefaultUI: true,
+  zoomControl: true,
 }
 
 export default function MapPage() {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  
+
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: apiKey || '',
   });
 
-  const firestore = useFirestore();
-  const gymsCollectionRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'gyms') : null),
-    [firestore]
-  );
-  const { data: gyms, isLoading: gymsLoading } = useCollection<Gym>(gymsCollectionRef);
+  const gyms: Gym[] = [];
+  const gymsLoading = false;
 
   const [geocodedGyms, setGeocodedGyms] = useState<GymWithCoords[]>([]);
-  const [geocodingLoading, setGeocodingLoading] = useState(true);
+  const [geocodingLoading, setGeocodingLoading] = useState(false); // Set to false initially since we have no gyms
   const [selectedGym, setSelectedGym] = useState<GymWithCoords | null>(null);
 
   useEffect(() => {
@@ -161,29 +156,29 @@ export default function MapPage() {
 
   if (!apiKey) {
     return (
-        <div className="container mx-auto p-4 md:p-8">
-            <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Błąd Konfiguracji Mapy</AlertTitle>
-                <AlertDescription>
-                   Klucz API Google Maps nie został skonfigurowany. Proszę dodać go do pliku .env jako NEXT_PUBLIC_GOOGLE_MAPS_API_KEY.
-                </AlertDescription>
-            </Alert>
-        </div>
+      <div className="container mx-auto p-4 md:p-8">
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Błąd Konfiguracji Mapy</AlertTitle>
+          <AlertDescription>
+            Klucz API Google Maps nie został skonfigurowany. Proszę dodać go do pliku .env jako NEXT_PUBLIC_GOOGLE_MAPS_API_KEY.
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
-  
+
   if (loadError) {
-       return (
-        <div className="container mx-auto p-4 md:p-8">
-            <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Błąd Ładowania Mapy</AlertTitle>
-                <AlertDescription>
-                   Nie udało się załadować skryptów Google Maps. Sprawdź swój klucz API i upewnij się, że jest poprawny oraz że masz włączone odpowiednie API w Google Cloud Console.
-                </AlertDescription>
-            </Alert>
-        </div>
+    return (
+      <div className="container mx-auto p-4 md:p-8">
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Błąd Ładowania Mapy</AlertTitle>
+          <AlertDescription>
+            Nie udało się załadować skryptów Google Maps. Sprawdź swój klucz API i upewnij się, że jest poprawny oraz że masz włączone odpowiednie API w Google Cloud Console.
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
@@ -221,7 +216,7 @@ export default function MapPage() {
                 >
                   <div className="p-2 max-w-xs">
                     <h3 className="font-bold text-lg">{selectedGym.name}</h3>
-                    <p className="text-sm flex items-start gap-1"><MapPin className="h-4 w-4 mt-0.5 shrink-0"/>{selectedGym.address}</p>
+                    <p className="text-sm flex items-start gap-1"><MapPin className="h-4 w-4 mt-0.5 shrink-0" />{selectedGym.address}</p>
                   </div>
                 </InfoWindowF>
               )}

@@ -1,6 +1,6 @@
 'use client';
 
-import type { Timestamp } from 'firebase/firestore';
+import { Timestamp } from "mongodb";
 
 // --- Enums from data.ts ---
 export enum MuscleGroupName {
