@@ -81,7 +81,7 @@ export default function AdminWorkoutsPage() {
                         />
                     </div>
                     <Button asChild>
-                        <Link href="/admin/workouts/new">
+                        <Link href="/admin/workouts/create">
                             <Plus className="mr-2 h-4 w-4" />
                             Nowy Trening
                         </Link>

@@ -72,7 +72,7 @@ export const athleteNavItems = [
   { href: '/athlete/goals', icon: Trophy, label: 'Cele i Trofea' },
   { href: '/athlete/knowledge-zone', icon: BookOpen, label: 'Strefa Wiedzy' },
   { href: '/athlete/map', icon: Map, label: 'Mapa' },
-  { href: '/athlete/consultations', icon: MessageSquare, label: 'Konsultacje' },
+  { href: '/athlete/workouts', icon: Dumbbell, label: 'Treningi' },
 ];
 
 const trainerNavItems = [
@@ -89,7 +89,7 @@ const trainerNavItems = [
       { href: '/trainer/diet/meals/create', label: 'Utwórz Posiłek' },
     ]
   },
-  { href: '/trainer/templates', icon: Library, label: 'Plany Treningowe' },
+  { href: '/trainer/workouts', icon: Library, label: 'Treningi' },
   { href: '/trainer/exercises', icon: Dumbbell, label: 'Ćwiczenia' },
   { href: '/trainer/knowledge-zone', icon: BookOpen, label: 'Strefa Wiedzy' },
   { href: '/trainer/map', icon: Map, label: 'Mapa Siłowni' },
@@ -100,6 +100,7 @@ const adminNavItems = [
   { href: '/admin/users', icon: Users, label: 'Użytkownicy' },
   { href: '/admin/exercises', icon: Dumbbell, label: 'Wszystkie Ćwiczenia' },
   { href: '/admin/workout-plans', icon: ClipboardList, label: 'Wszystkie Plany' },
+  { href: '/admin/workouts', icon: Dumbbell, label: 'Wszystkie Treningi' },
   { href: '/admin/articles', icon: BookMarked, label: 'Wszystkie Artykuły' },
   { href: '/admin/muscle-groups', icon: RectangleEllipsis, label: 'Grupy Mięśniowe' },
   { href: '/admin/gyms', icon: Building2, label: 'Siłownie' },
