@@ -28,6 +28,7 @@ interface SetInfoSlideProps {
   onDurationChange?: (value: number) => void;
   isCompleted?: boolean;
   validationError?: string | null;
+  onStartEditing?: () => void;
 }
 
 // Exercise type icons
@@ -56,6 +57,7 @@ export function SetInfoSlide({
   onDurationChange,
   isCompleted,
   validationError,
+  onStartEditing,
 }: SetInfoSlideProps) {
   // Get exercise type from exercise details
   const exerciseType: ExerciseType = exerciseDetails?.type || 'weight';
@@ -98,6 +100,13 @@ export function SetInfoSlide({
     }
   };
 
+  // Handle focus on input - triggers editing mode for completed sets
+  const handleInputFocus = () => {
+    if (isCompleted && onStartEditing) {
+      onStartEditing();
+    }
+  };
+
   // Render input fields based on exercise type
   const renderInputFields = () => {
     switch (exerciseType) {
@@ -115,11 +124,11 @@ export function SetInfoSlide({
                 step={0.5}
                 value={actualWeight || ''}
                 onChange={(e) => onWeightChange(parseFloat(e.target.value) || 0)}
+                onFocus={handleInputFocus}
                 placeholder={String(targetWeight || 0)}
                 className={`text-center text-lg font-semibold h-12 ${
                   validationError && (actualWeight === undefined || actualWeight === null) ? 'border-destructive ring-destructive/20 ring-2' : ''
-                }`}
-                disabled={isCompleted}
+                } ${isCompleted ? 'bg-green-50 border-green-200' : ''}`}
               />
             </div>
             <div className="space-y-2">
@@ -132,11 +141,11 @@ export function SetInfoSlide({
                 min={0}
                 value={actualReps || ''}
                 onChange={(e) => onRepsChange(parseInt(e.target.value) || 0)}
+                onFocus={handleInputFocus}
                 placeholder={String(targetReps || 0)}
                 className={`text-center text-lg font-semibold h-12 ${
                   validationError && (actualReps === undefined || actualReps <= 0) ? 'border-destructive ring-destructive/20 ring-2' : ''
-                }`}
-                disabled={isCompleted}
+                } ${isCompleted ? 'bg-green-50 border-green-200' : ''}`}
               />
             </div>
           </div>
@@ -153,11 +162,11 @@ export function SetInfoSlide({
               min={0}
               value={actualReps || ''}
               onChange={(e) => onRepsChange(parseInt(e.target.value) || 0)}
+              onFocus={handleInputFocus}
               placeholder={String(targetReps || 0)}
               className={`text-center text-2xl font-semibold h-14 ${
                 validationError && (actualReps === undefined || actualReps <= 0) ? 'border-destructive ring-destructive/20 ring-2' : ''
-              }`}
-              disabled={isCompleted}
+              } ${isCompleted ? 'bg-green-50 border-green-200' : ''}`}
             />
           </div>
         );
@@ -174,11 +183,11 @@ export function SetInfoSlide({
                 min={0}
                 value={actualDuration || ''}
                 onChange={(e) => onDurationChange?.(parseInt(e.target.value) || 0)}
+                onFocus={handleInputFocus}
                 placeholder={String(targetDuration || 0)}
                 className={`text-center text-2xl font-semibold h-14 pr-10 ${
                   validationError && (actualDuration === undefined || actualDuration <= 0) ? 'border-destructive ring-destructive/20 ring-2' : ''
-                }`}
-                disabled={isCompleted}
+                } ${isCompleted ? 'bg-green-50 border-green-200' : ''}`}
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">s</span>
             </div>

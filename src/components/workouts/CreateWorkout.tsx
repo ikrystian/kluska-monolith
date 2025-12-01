@@ -641,140 +641,142 @@ function ExerciseSeriesItem({
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-center flex-wrap gap-2">
-                                <Label className="text-xs uppercase text-muted-foreground">Serie</Label>
-                                <div className="flex items-center gap-2">
-                                    <SetTemplateSelector onSelect={handleApplyTemplate} />
-                                    <QuickSetActions
-                                        onAddSet={handleAddSet}
-                                        onDuplicateLast={handleDuplicateLastSet}
-                                        onClearAll={handleClearSets}
-                                        setsCount={setFields.length}
-                                    />
-                                </div>
-                            </div>
-
+                        {selectedExerciseId && (
                             <div className="space-y-2">
-                                {/* Header row - Hidden on mobile, visible on md+ */}
-                                <div className="hidden md:grid grid-cols-12 gap-2 items-center text-center">
-                                    <Label className="col-span-1 text-[10px] text-muted-foreground">#</Label>
-                                    <Label className="col-span-2 text-[10px] text-muted-foreground">Typ</Label>
-                                    {exerciseType === 'weight' ? (
-                                        <>
-                                            <Label className="col-span-2 text-[10px] text-muted-foreground">kg</Label>
-                                            <Label className="col-span-2 text-[10px] text-muted-foreground">Powt.</Label>
-                                        </>
-                                    ) : exerciseType === 'reps' ? (
-                                        <Label className="col-span-4 text-[10px] text-muted-foreground">Powtórzenia</Label>
-                                    ) : (
-                                        <Label className="col-span-4 text-[10px] text-muted-foreground">Czas (sek.)</Label>
-                                    )}
-                                    <Label className="col-span-3 text-[10px] text-muted-foreground">Przerwa</Label>
-                                    <Label className="col-span-2 text-[10px] text-muted-foreground">Akcje</Label>
+                                <div className="flex justify-between items-center flex-wrap gap-2">
+                                    <Label className="text-xs uppercase text-muted-foreground">Serie</Label>
+                                    <div className="flex items-center gap-2">
+                                        <SetTemplateSelector onSelect={handleApplyTemplate} />
+                                        <QuickSetActions
+                                            onAddSet={handleAddSet}
+                                            onDuplicateLast={handleDuplicateLastSet}
+                                            onClearAll={handleClearSets}
+                                            setsCount={setFields.length}
+                                        />
+                                    </div>
                                 </div>
 
-                                {setFields.map((setField: any, setIndex: number) => (
-                                    <div key={setField.id} className="grid grid-cols-2 md:grid-cols-12 gap-2 items-center border rounded-md p-2 md:border-0 md:p-0 bg-muted/20 md:bg-transparent">
-                                        {/* Set number - Mobile: Full width header */}
-                                        <div className="col-span-2 md:col-span-1 flex justify-between md:justify-center items-center text-sm font-mono text-muted-foreground md:mb-0 mb-2">
-                                            <span className="md:hidden text-xs font-bold">Seria {setIndex + 1}</span>
-                                            <span className="hidden md:inline">{setIndex + 1}</span>
-                                            <div className="flex md:hidden gap-1">
-                                                <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDuplicateSet(setIndex)}>
-                                                    <Copy className="h-3 w-3" />
-                                                </Button>
-                                                <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleRemoveSet(setIndex)}>
-                                                    <Trash2 className="h-3 w-3" />
-                                                </Button>
-                                            </div>
-                                        </div>
-
-                                        {/* Set type button with modal */}
-                                        <div className="col-span-2 md:col-span-2">
-                                            <SetTypeButton
-                                                value={form.watch(`exerciseSeries.${index}.sets.${setIndex}.type`) || SetType.WorkingSet}
-                                                onChange={(val) => form.setValue(`exerciseSeries.${index}.sets.${setIndex}.type`, val)}
-                                            />
-                                        </div>
-
-                                        {/* Conditional fields based on exercise type */}
+                                <div className="space-y-2">
+                                    {/* Header row - Hidden on mobile, visible on md+ */}
+                                    <div className="hidden md:grid grid-cols-12 gap-2 items-center text-center">
+                                        <Label className="col-span-1 text-[10px] text-muted-foreground">#</Label>
+                                        <Label className="col-span-2 text-[10px] text-muted-foreground">Typ</Label>
                                         {exerciseType === 'weight' ? (
                                             <>
-                                                <div className="col-span-1 md:col-span-2">
-                                                    <div className="relative md:static">
-                                                        <Input
-                                                            type="number"
-                                                            step="0.5"
-                                                            className="h-8 text-xs text-center"
-                                                            placeholder="0"
-                                                            {...form.register(`exerciseSeries.${index}.sets.${setIndex}.weight`)}
-                                                        />
-                                                        <span className="md:hidden absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">kg</span>
-                                                    </div>
-                                                </div>
-                                                <div className="col-span-1 md:col-span-2">
-                                                    <div className="relative md:static">
-                                                        <Input
-                                                            type="number"
-                                                            className="h-8 text-xs text-center"
-                                                            placeholder="0"
-                                                            {...form.register(`exerciseSeries.${index}.sets.${setIndex}.reps`)}
-                                                        />
-                                                        <span className="md:hidden absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">powt.</span>
-                                                    </div>
-                                                </div>
+                                                <Label className="col-span-2 text-[10px] text-muted-foreground">kg</Label>
+                                                <Label className="col-span-2 text-[10px] text-muted-foreground">Powt.</Label>
                                             </>
                                         ) : exerciseType === 'reps' ? (
-                                            <div className="col-span-2 md:col-span-4">
-                                                <Input
-                                                    type="number"
-                                                    className="h-8 text-xs text-center"
-                                                    placeholder="0"
-                                                    {...form.register(`exerciseSeries.${index}.sets.${setIndex}.reps`)}
+                                            <Label className="col-span-4 text-[10px] text-muted-foreground">Powtórzenia</Label>
+                                        ) : (
+                                            <Label className="col-span-4 text-[10px] text-muted-foreground">Czas (sek.)</Label>
+                                        )}
+                                        <Label className="col-span-3 text-[10px] text-muted-foreground">Przerwa</Label>
+                                        <Label className="col-span-2 text-[10px] text-muted-foreground">Akcje</Label>
+                                    </div>
+
+                                    {setFields.map((setField: any, setIndex: number) => (
+                                        <div key={setField.id} className="grid grid-cols-2 md:grid-cols-12 gap-2 items-center border rounded-md p-2 md:border-0 md:p-0 bg-muted/20 md:bg-transparent">
+                                            {/* Set number - Mobile: Full width header */}
+                                            <div className="col-span-2 md:col-span-1 flex justify-between md:justify-center items-center text-sm font-mono text-muted-foreground md:mb-0 mb-2">
+                                                <span className="md:hidden text-xs font-bold">Seria {setIndex + 1}</span>
+                                                <span className="hidden md:inline">{setIndex + 1}</span>
+                                                <div className="flex md:hidden gap-1">
+                                                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDuplicateSet(setIndex)}>
+                                                        <Copy className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleRemoveSet(setIndex)}>
+                                                        <Trash2 className="h-3 w-3" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+
+                                            {/* Set type button with modal */}
+                                            <div className="col-span-2 md:col-span-2">
+                                                <SetTypeButton
+                                                    value={form.watch(`exerciseSeries.${index}.sets.${setIndex}.type`) || SetType.WorkingSet}
+                                                    onChange={(val) => form.setValue(`exerciseSeries.${index}.sets.${setIndex}.type`, val)}
                                                 />
                                             </div>
-                                        ) : (
-                                            <div className="col-span-2 md:col-span-4">
+
+                                            {/* Conditional fields based on exercise type */}
+                                            {exerciseType === 'weight' ? (
+                                                <>
+                                                    <div className="col-span-1 md:col-span-2">
+                                                        <div className="relative md:static">
+                                                            <Input
+                                                                type="number"
+                                                                step="0.5"
+                                                                className="h-8 text-xs text-center"
+                                                                placeholder="0"
+                                                                {...form.register(`exerciseSeries.${index}.sets.${setIndex}.weight`)}
+                                                            />
+                                                            <span className="md:hidden absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">kg</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-span-1 md:col-span-2">
+                                                        <div className="relative md:static">
+                                                            <Input
+                                                                type="number"
+                                                                className="h-8 text-xs text-center"
+                                                                placeholder="0"
+                                                                {...form.register(`exerciseSeries.${index}.sets.${setIndex}.reps`)}
+                                                            />
+                                                            <span className="md:hidden absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">powt.</span>
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            ) : exerciseType === 'reps' ? (
+                                                <div className="col-span-2 md:col-span-4">
+                                                    <Input
+                                                        type="number"
+                                                        className="h-8 text-xs text-center"
+                                                        placeholder="0"
+                                                        {...form.register(`exerciseSeries.${index}.sets.${setIndex}.reps`)}
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div className="col-span-2 md:col-span-4">
+                                                    <div className="relative">
+                                                        <Input
+                                                            type="number"
+                                                            className="h-8 text-xs text-center pr-6"
+                                                            placeholder="0"
+                                                            {...form.register(`exerciseSeries.${index}.sets.${setIndex}.duration`)}
+                                                        />
+                                                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Rest time */}
+                                            <div className="col-span-2 md:col-span-3">
                                                 <div className="relative">
                                                     <Input
                                                         type="number"
                                                         className="h-8 text-xs text-center pr-6"
-                                                        placeholder="0"
-                                                        {...form.register(`exerciseSeries.${index}.sets.${setIndex}.duration`)}
+                                                        placeholder="60"
+                                                        {...form.register(`exerciseSeries.${index}.sets.${setIndex}.restTimeSeconds`)}
                                                     />
                                                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
+                                                    <span className="md:hidden absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">Przerwa</span>
                                                 </div>
                                             </div>
-                                        )}
 
-                                        {/* Rest time */}
-                                        <div className="col-span-2 md:col-span-3">
-                                            <div className="relative">
-                                                <Input
-                                                    type="number"
-                                                    className="h-8 text-xs text-center pr-6"
-                                                    placeholder="60"
-                                                    {...form.register(`exerciseSeries.${index}.sets.${setIndex}.restTimeSeconds`)}
-                                                />
-                                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
-                                                <span className="md:hidden absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">Przerwa</span>
+                                            {/* Actions - Desktop only */}
+                                            <div className="hidden md:flex col-span-2 gap-1 justify-center">
+                                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleDuplicateSet(setIndex)} title="Duplikuj serię">
+                                                    <Copy className="h-3 w-3" />
+                                                </Button>
+                                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleRemoveSet(setIndex)} title="Usuń serię">
+                                                    <Trash2 className="h-3 w-3" />
+                                                </Button>
                                             </div>
                                         </div>
-
-                                        {/* Actions - Desktop only */}
-                                        <div className="hidden md:flex col-span-2 gap-1 justify-center">
-                                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleDuplicateSet(setIndex)} title="Duplikuj serię">
-                                                <Copy className="h-3 w-3" />
-                                            </Button>
-                                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleRemoveSet(setIndex)} title="Usuń serię">
-                                                <Trash2 className="h-3 w-3" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </CardContent>
                 </CollapsibleContent>
             </Card>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useFormContext } from 'react-hook-form';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   Carousel,
   CarouselContent,
@@ -12,6 +13,7 @@ import { SetInfoSlide } from './SetInfoSlide';
 import { RestTimerSlide } from './RestTimerSlide';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import { type Exercise, SetType } from '@/lib/types';
 import { type ExerciseType } from '@/lib/set-type-config';
 
@@ -117,6 +119,7 @@ export function CarouselWorkoutView({
   }, [completedStates]);
 
   // Validation function for a set - depends on exercise type
+  // Weight 0 is valid for bodyweight exercises, but reps must be > 0
   const validateSet = useCallback((exerciseIndex: number, setIndex: number): { valid: boolean; error?: string } => {
     const set = exerciseSeries[exerciseIndex]?.sets[setIndex];
     if (!set) return { valid: false, error: 'Seria nie istnieje' };
@@ -127,20 +130,21 @@ export function CarouselWorkoutView({
     const exerciseType: ExerciseType = exerciseDetails?.type || 'weight';
 
     if (exerciseType === 'weight') {
-      // Weight exercises need both reps and weight
+      // Weight exercises need reps > 0, weight >= 0 (0 is valid for bodyweight)
       if (!set.reps || set.reps <= 0) {
         return { valid: false, error: 'Uzupełnij liczbę powtórzeń (musi być większa od 0)' };
       }
-      if (set.weight === undefined || set.weight === null || set.weight === '' as any) {
+      // Weight can be 0 for bodyweight exercises, but must be defined
+      if (set.weight === undefined || set.weight === null || set.weight === '' as any || isNaN(Number(set.weight))) {
         return { valid: false, error: 'Uzupełnij ciężar (0 dla ćwiczeń z masą ciała)' };
       }
     } else if (exerciseType === 'reps') {
-      // Reps-only exercises just need reps
+      // Reps-only exercises just need reps > 0
       if (!set.reps || set.reps <= 0) {
         return { valid: false, error: 'Uzupełnij liczbę powtórzeń (musi być większa od 0)' };
       }
     } else if (exerciseType === 'duration') {
-      // Duration exercises need duration
+      // Duration exercises need duration > 0
       if (!set.duration || set.duration <= 0) {
         return { valid: false, error: 'Uzupełnij czas trwania (musi być większy od 0)' };
       }
@@ -258,7 +262,7 @@ export function CarouselWorkoutView({
     return () => {
       api.off('select', onSelect);
     };
-  }, [api, currentSlideIndex, slides, onSetComplete, validateSet]);
+  }, [api, currentSlideIndex, slides, onSetComplete, validateSet, form]);
 
   // Handle timer complete - auto advance to next slide
   const handleTimerComplete = useCallback(() => {
@@ -276,6 +280,48 @@ export function CarouselWorkoutView({
       api.scrollNext();
     }
   }, [api, currentSlideIndex, slides.length]);
+
+  // Handle navigation with validation for forward movement
+  const handleNavigateNext = useCallback(() => {
+    if (!api || currentSlideIndex >= slides.length - 1) return;
+
+    const currentSlideData = slides[currentSlideIndex];
+    const nextSlideData = slides[currentSlideIndex + 1];
+
+    // If moving from set-info to rest-timer, validate first
+    if (currentSlideData?.type === 'set-info' && nextSlideData?.type === 'rest-timer') {
+      const validation = validateSet(currentSlideData.exerciseIndex, currentSlideData.setIndex);
+
+      if (!validation.valid) {
+        setValidationError(validation.error || 'Uzupełnij wymagane pola');
+        setValidationSlideIndex(currentSlideIndex);
+        return;
+      }
+
+      // Clear validation and mark as complete
+      setValidationError(null);
+      setValidationSlideIndex(null);
+      onSetComplete(currentSlideData.exerciseIndex, currentSlideData.setIndex);
+    }
+
+    api.scrollNext();
+  }, [api, currentSlideIndex, slides, validateSet, onSetComplete]);
+
+  // Handle navigation backward - always allowed
+  const handleNavigatePrev = useCallback(() => {
+    if (!api || currentSlideIndex <= 0) return;
+
+    // Clear any validation errors when going back
+    setValidationError(null);
+    setValidationSlideIndex(null);
+
+    api.scrollPrev();
+  }, [api, currentSlideIndex]);
+
+  // Handle starting to edit a completed set - unmarks it as completed
+  const handleStartEditing = useCallback((exerciseIndex: number, setIndex: number) => {
+    form.setValue(`exerciseSeries.${exerciseIndex}.sets.${setIndex}.completed`, false);
+  }, [form]);
 
   // Handle reps/weight change
   const handleRepsChange = useCallback((exerciseIndex: number, setIndex: number, value: number) => {
@@ -299,27 +345,98 @@ export function CarouselWorkoutView({
     );
   }
 
+  // Get current set info for progress bar display
+  const getCurrentSetInfo = useCallback(() => {
+    if (!currentSlide) return null;
+
+    const exerciseData = exerciseSeries[currentSlide.exerciseIndex];
+    const setData = exerciseData?.sets[currentSlide.setIndex];
+    const exerciseDetails = getCurrentExerciseDetails(currentSlide.exerciseIndex);
+
+    if (!setData || !exerciseData) return null;
+
+    return {
+      exerciseName: exerciseDetails?.name || 'Ćwiczenie',
+      setNumber: currentSlide.setIndex + 1,
+      totalSetsInExercise: exerciseData.sets.length,
+      reps: setData.reps,
+      weight: setData.weight,
+      duration: setData.duration,
+      isCompleted: setData.completed,
+      isRestSlide: currentSlide.type === 'rest-timer',
+      exerciseType: exerciseDetails?.type || 'weight',
+    };
+  }, [currentSlide, exerciseSeries, getCurrentExerciseDetails]);
+
+  const currentSetInfo = getCurrentSetInfo();
+
   return (
     <div className="flex flex-col h-full">
       {/* Progress Header */}
       <div className="px-4 py-3 border-b bg-background/95 backdrop-blur" id="progress-series-bar">
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            {currentSlide && (
-              <Badge variant="outline" className="text-xs">
-                {getCurrentExerciseDetails(currentSlide.exerciseIndex)?.name || 'Ćwiczenie'}
-              </Badge>
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {currentSetInfo && (
+              <>
+                <Badge variant="outline" className="text-xs shrink-0">
+                  {currentSetInfo.exerciseName}
+                </Badge>
+                <span className="text-xs text-muted-foreground shrink-0">
+                  Seria {currentSetInfo.setNumber}/{currentSetInfo.totalSetsInExercise}
+                </span>
+                {currentSetInfo.isCompleted && (
+                  <Badge variant="default" className="text-xs bg-green-500 shrink-0">
+                    ✓
+                  </Badge>
+                )}
+              </>
             )}
           </div>
-          <span className="text-sm text-muted-foreground">
-            {completedSets} / {totalSets} serii
-          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            {currentSetInfo && !currentSetInfo.isRestSlide && (
+              <span className="text-xs font-medium text-primary">
+                {currentSetInfo.exerciseType === 'duration'
+                  ? `${currentSetInfo.duration || 0}s`
+                  : currentSetInfo.exerciseType === 'reps'
+                  ? `${currentSetInfo.reps || 0} powt.`
+                  : `${currentSetInfo.weight || 0}kg × ${currentSetInfo.reps || 0}`
+                }
+              </span>
+            )}
+            <span className="text-sm text-muted-foreground font-medium">
+              {completedSets}/{totalSets}
+            </span>
+          </div>
         </div>
-        <Progress value={(completedSets / totalSets) * 100} className="h-2" />
+        <Progress value={totalSets > 0 ? (completedSets / totalSets) * 100 : 0} className="h-2" />
       </div>
 
-      {/* Carousel */}
-      <div className="flex-1 overflow-hidden">
+      {/* Carousel with Navigation Arrows */}
+      <div className="flex-1 overflow-hidden relative">
+        {/* Left Navigation Arrow */}
+        <Button
+          variant="outline"
+          size="icon"
+          className="absolute left-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/80 backdrop-blur shadow-lg hover:bg-background"
+          onClick={handleNavigatePrev}
+          disabled={currentSlideIndex <= 0}
+          aria-label="Poprzedni slajd"
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </Button>
+
+        {/* Right Navigation Arrow */}
+        <Button
+          variant="outline"
+          size="icon"
+          className="absolute right-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/80 backdrop-blur shadow-lg hover:bg-background"
+          onClick={handleNavigateNext}
+          disabled={currentSlideIndex >= slides.length - 1}
+          aria-label="Następny slajd"
+        >
+          <ChevronRight className="h-6 w-6" />
+        </Button>
+
         <Carousel
           setApi={setApi}
           opts={{
@@ -361,6 +478,7 @@ export function CarouselWorkoutView({
                       onDurationChange={(value) => handleDurationChange(slide.exerciseIndex, slide.setIndex, value)}
                       isCompleted={setData.completed}
                       validationError={showError}
+                      onStartEditing={() => handleStartEditing(slide.exerciseIndex, slide.setIndex)}
                     />
                   </CarouselItem>
                 );
@@ -386,20 +504,28 @@ export function CarouselWorkoutView({
       {/* Slide Indicators */}
       <div className="px-4 py-3 border-t bg-background/95 backdrop-blur">
         <div className="flex items-center justify-center gap-1 overflow-x-auto">
-          {slides.map((slide, index) => (
-            <button
-              key={index}
-              onClick={() => api?.scrollTo(index)}
-              className={`w-2 h-2 rounded-full transition-all ${
-                index === currentSlideIndex
-                  ? 'bg-primary w-4'
-                  : slide.type === 'set-info'
-                  ? 'bg-primary/30'
-                  : 'bg-muted'
-              }`}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          ))}
+          {slides.map((slide, index) => {
+            const exerciseData = exerciseSeries[slide.exerciseIndex];
+            const setData = exerciseData?.sets[slide.setIndex];
+            const isSetCompleted = slide.type === 'set-info' && setData?.completed;
+
+            return (
+              <button
+                key={index}
+                onClick={() => api?.scrollTo(index)}
+                className={`w-2 h-2 rounded-full transition-all ${
+                  index === currentSlideIndex
+                    ? 'bg-primary w-4'
+                    : isSetCompleted
+                    ? 'bg-green-500'
+                    : slide.type === 'set-info'
+                    ? 'bg-primary/30'
+                    : 'bg-muted'
+                }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            );
+          })}
         </div>
         <p className="text-center text-xs text-muted-foreground mt-2">
           {currentSlide?.type === 'set-info' ? 'Informacje o serii' : 'Przerwa'}
