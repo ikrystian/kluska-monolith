@@ -100,6 +100,10 @@ export function MultiSelect({
                                 {selectables.map((option) => (
                                     <CommandItem
                                         key={option.value}
+                                        onMouseDown={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                        }}
                                         onSelect={() => {
                                             handleSelect(option.value);
                                         }}
