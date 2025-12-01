@@ -302,7 +302,7 @@ export function CarouselWorkoutView({
   return (
     <div className="flex flex-col h-full">
       {/* Progress Header */}
-      <div className="px-4 py-3 border-b bg-background/95 backdrop-blur">
+      <div className="px-4 py-3 border-b bg-background/95 backdrop-blur" id="progress-series-bar">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             {currentSlide && (

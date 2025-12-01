@@ -56,6 +56,10 @@ export function ActiveWorkoutWidget() {
     router.push(`/athlete/log?logId=${activeWorkout?.id}`);
   };
 
+  const handleFinishWorkout = () => {
+    router.push(`/athlete/log?logId=${activeWorkout?.id}&finish=true`);
+  };
+
   return (
     <div className="fixed bottom-20 right-4 z-40 animate-in slide-in-from-right-5 fade-in duration-300 md:bottom-4">
       <Card className="w-72 shadow-lg border-primary/20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -81,15 +85,24 @@ export function ActiveWorkoutWidget() {
             </div>
           </div>
 
-          {/* Return Button */}
-          <Button
-            onClick={handleReturnToWorkout}
-            className="w-full mt-3"
-            size="sm"
-          >
-            Wróć do treningu
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
+          <div className="flex gap-2 mt-3">
+            <Button
+              onClick={handleReturnToWorkout}
+              className="flex-1"
+              size="sm"
+            >
+              Wróć
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+            <Button
+              onClick={handleFinishWorkout}
+              variant="secondary"
+              className="flex-1"
+              size="sm"
+            >
+              Zakończ
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -10,6 +10,7 @@ export interface IWorkout extends Document {
     exerciseSeries: ExerciseSeries[];
     ownerId: string;
     description?: string;
+    status: 'draft' | 'published';
     createdAt: Date;
     updatedAt: Date;
 }
@@ -40,6 +41,11 @@ const WorkoutSchema = new Schema<IWorkout>(
         ],
         ownerId: { type: String, required: true },
         description: { type: String },
+        status: {
+            type: String,
+            enum: ['draft', 'published'],
+            default: 'published'
+        },
     },
     {
         timestamps: true,

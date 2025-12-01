@@ -264,7 +264,9 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   const photoInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useUser();
+
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [activeExerciseIndex, setActiveExerciseIndex] = useState(0);
   const [newExerciseId, setNewExerciseId] = useState<string | null>(null);
@@ -285,6 +287,13 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
       setActiveExerciseIndex(fields.length - 1);
     }
   }, [fields.length, activeExerciseIndex]);
+
+  // Check for finish param
+  useEffect(() => {
+    if (searchParams.get('finish') === 'true') {
+      setIsFinished(true);
+    }
+  }, [searchParams]);
 
   // Effect to create the workout document on start (only if not resuming)
   useEffect(() => {
@@ -666,7 +675,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
               </div>
 
               {/* Bottom Navigation Bar - Only for list view */}
-              <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t p-4 flex justify-between items-center z-50 md:absolute md:rounded-b-lg">
+              <div className="fixed bottom-16 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t p-4 flex justify-between items-center z-50 md:absolute md:rounded-b-lg">
                 <Button
                   type="button"
                   variant="ghost"
