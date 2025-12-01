@@ -38,6 +38,20 @@ export function useMessages(conversationId: string | null) {
 
         await createDoc('messages', messageData);
 
+        // Fetch conversation to get current unread count
+        // Note: This is not atomic and prone to race conditions, but better than setting to total messages.
+        // In a production environment, use atomic $inc or a backend endpoint.
+        let currentUnread = 0;
+        try {
+            const convRes = await fetch(`/api/db/conversations/${conversationId}`);
+            if (convRes.ok) {
+                const convData = await convRes.json();
+                currentUnread = convData.data?.unreadCount?.[otherParticipantId] || 0;
+            }
+        } catch (e) {
+            console.error("Failed to fetch conversation for unread count", e);
+        }
+
         // Update conversation last message and unread count
         await updateDoc('conversations', conversationId, {
             lastMessage: {
@@ -46,11 +60,7 @@ export function useMessages(conversationId: string | null) {
                 createdAt: now,
             },
             updatedAt: now,
-            [`unreadCount.${otherParticipantId}`]: (messages?.length || 0) // This logic is flawed in client-side only, but matches current implementation. 
-            // Ideally we need atomic increment. The previous code used $inc which works with some DB adapters but not all client-side mocks.
-            // Let's try to use the previous logic if possible or just set it.
-            // Actually, looking at previous code: $inc: { [`unreadCount.${otherParticipantId}`]: 1 }
-            // If the updateDoc supports mongo-like syntax, we should use it.
+            [`unreadCount.${otherParticipantId}`]: currentUnread + 1
         });
 
         // Since we can't easily do atomic updates with this client hook abstraction without verifying the backend support,

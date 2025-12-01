@@ -26,7 +26,6 @@ export function MessageList({ messages, currentUserId, isLoading }: MessageListP
     return (
         <ScrollArea className="flex-1 p-4">
             <div className="space-y-4">
-                {isLoading && <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />}
                 {messages?.map(message => {
                     const isMe = message.senderId === currentUserId;
                     return (

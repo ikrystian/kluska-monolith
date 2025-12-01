@@ -42,6 +42,23 @@ import { SetTypeButton } from '@/components/workout/SetTypeModal';
 import { type ExerciseType } from '@/lib/set-type-config';
 
 
+// --- HELPER FUNCTIONS ---
+/**
+ * Extracts exercise ID from various possible locations in an exercise object.
+ * Handles cases where ID might be in 'id', '_id', or as an ObjectId.
+ */
+const getExerciseId = (exercise: any): string => {
+  // Try multiple possible ID locations
+  const id = exercise?.id || exercise?._id || exercise?.exerciseId;
+
+  if (id) {
+    // Handle ObjectId objects
+    return typeof id === 'object' && id.toString ? id.toString() : String(id);
+  }
+
+  return '';
+};
+
 // --- SCHEMA DEFINITIONS ---
 const setSchema = z.object({
   number: z.number().optional(),
@@ -300,6 +317,22 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
     if (!user || workoutLogId) return;
 
     const createInitialWorkoutLog = async () => {
+      // Validate that all exercises have valid IDs before creating the log
+      const invalidExercises = initialWorkout.exerciseSeries.filter(
+        series => !series.exerciseId || series.exerciseId === '' || series.exerciseId.startsWith('temp-')
+      );
+
+      if (invalidExercises.length > 0) {
+        console.error('Invalid exercises found (missing exerciseId):', invalidExercises);
+        toast({
+          title: 'Błąd',
+          description: 'Niektóre ćwiczenia nie mają prawidłowych identyfikatorów. Spróbuj dodać je ponownie.',
+          variant: 'destructive',
+        });
+        onFinishWorkout();
+        return;
+      }
+
       // Map form data to WorkoutLog structure
       const exercisesWithNames = initialWorkout.exerciseSeries.map(series => {
         const exerciseDetails = allExercises?.find(ex => ex.id === series.exerciseId);
@@ -1084,7 +1117,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
     const workoutData: LogFormValues = {
       workoutName: workout.name,
       exerciseSeries: workout.exerciseSeries.map(series => ({
-        exerciseId: series.exercise.id,
+        exerciseId: getExerciseId(series.exercise),
         sets: series.sets.map((s, i) => ({
           number: i + 1,
           type: s.type || SetType.WorkingSet,
@@ -1106,7 +1139,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
     const workoutData: LogFormValues = {
       workoutName: log.workoutName,
       exerciseSeries: log.exercises.map(ex => ({
-        exerciseId: ex.exercise.id,
+        exerciseId: getExerciseId(ex.exercise) || ex.exerciseId || '',
         sets: ex.sets.map((s, i) => ({
           number: s.number || i + 1,
           type: s.type || SetType.WorkingSet,
@@ -1330,7 +1363,7 @@ export default function LogWorkoutPage() {
       const resumedData: LogFormValues = {
         workoutName: activeLog.workoutName,
         exerciseSeries: activeLog.exercises.map(ex => ({
-          exerciseId: ex.exercise.id,
+          exerciseId: getExerciseId(ex.exercise) || ex.exerciseId || '',
           sets: ex.sets.map(s => ({
             number: s.number,
             type: s.type,
@@ -1364,7 +1397,7 @@ export default function LogWorkoutPage() {
       const workoutData: LogFormValues = {
         workoutName: preselectedWorkout.name,
         exerciseSeries: preselectedWorkout.exerciseSeries.map(series => {
-          let exerciseId = series.exercise.id || (series.exercise as any)._id;
+          let exerciseId = getExerciseId(series.exercise);
 
           // Try to find by name if ID is missing
           if (!exerciseId && allExercises) {
@@ -1372,14 +1405,13 @@ export default function LogWorkoutPage() {
             if (found) exerciseId = found.id;
           }
 
-          // Fallback to temp ID if still missing
+          // Log warning if still missing (but don't generate temp ID - let validation catch it)
           if (!exerciseId) {
-            console.warn(`Missing ID for exercise: ${series.exercise.name}, generating temp ID`);
-            exerciseId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            console.warn(`Missing ID for exercise: ${series.exercise.name}`);
           }
 
           return {
-            exerciseId: exerciseId,
+            exerciseId: exerciseId || '',
             sets: series.sets.map((s, i) => ({
               number: i + 1,
               type: s.type || SetType.WorkingSet,

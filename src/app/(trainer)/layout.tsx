@@ -7,6 +7,7 @@ import { useUser, useDoc } from '@/lib/db-hooks';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { QuickChatWidget } from '@/components/chat/QuickChatWidget';
 
 export default function TrainerLayout({
   children,
@@ -63,12 +64,6 @@ export default function TrainerLayout({
   // At this point, user is loaded, logged in, and is confirmed to be a trainer or admin.
   // It is now safe to render the trainer layout and its children.
   return (
-import { QuickChatWidget } from '@/components/chat/QuickChatWidget';
-
-  // ... (existing imports)
-
-  // ... (inside TrainerLayout function)
-  return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <AppNav />
@@ -79,7 +74,5 @@ import { QuickChatWidget } from '@/components/chat/QuickChatWidget';
       </div>
       <QuickChatWidget />
     </SidebarProvider>
-  );
-}
   );
 }

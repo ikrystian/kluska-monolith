@@ -49,7 +49,6 @@ export function ConversationList({
         )}>
             {header && <header className="p-4 border-b">{header}</header>}
             <ScrollArea className="flex-1">
-                {isLoading && <div className="p-4 text-center text-muted-foreground">Ładowanie...</div>}
                 {conversations?.map(convo => {
                     const otherParticipantName = userRole === 'trainer' ? convo.athleteName : convo.trainerName;
                     const hasUnread = (convo.unreadCount?.[currentUserId] || 0) > 0;

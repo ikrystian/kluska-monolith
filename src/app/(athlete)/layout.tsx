@@ -11,6 +11,7 @@ import { BottomNav } from '@/components/bottom-nav';
 import { ActiveWorkoutProvider } from '@/contexts/ActiveWorkoutContext';
 import { ActiveWorkoutWidget } from '@/components/workout/ActiveWorkoutWidget';
 import { UserProfile } from '@/lib/types';
+import { QuickChatWidget } from '@/components/chat/QuickChatWidget';
 
 export default function AthleteLayout({
   children,
@@ -66,12 +67,6 @@ export default function AthleteLayout({
   // At this point, user is loaded, logged in, and is confirmed to be an athlete.
   // It is now safe to render the athlete layout and its children.
   return (
-import { QuickChatWidget } from '@/components/chat/QuickChatWidget';
-
-  // ... (existing imports)
-
-  // ... (inside AthleteLayout function)
-  return (
     <SidebarProvider>
       <ActiveWorkoutProvider>
         <div className="flex min-h-screen w-full">
@@ -86,7 +81,5 @@ import { QuickChatWidget } from '@/components/chat/QuickChatWidget';
         <QuickChatWidget />
       </ActiveWorkoutProvider>
     </SidebarProvider>
-  );
-}
   );
 }
