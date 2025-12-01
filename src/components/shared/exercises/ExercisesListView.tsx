@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Exercise, MuscleGroupName, MuscleGroup, WorkoutPlan } from '@/lib/types';
 import { useCollection, useUser, useUpdateDoc, useDeleteDoc, useCreateDoc } from '@/lib/db-hooks';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,7 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Dumbbell, Loader2 } from 'lucide-react';
 
-import { ExerciseCard } from './ExerciseCard';
+import { ExerciseCardHorizontal } from './ExerciseCardHorizontal';
 import { ExerciseFilters } from './ExerciseFilters';
 import { ExerciseFormDialog } from './ExerciseForm';
 import { ProgressDialog } from './ProgressDialog';
@@ -220,9 +221,18 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     }
   };
 
+  // Virtualization setup
+  const parentRef = useRef<HTMLDivElement>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: filteredExercises?.length ?? 0,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 128, // 120px height + 8px gap
+    overscan: 5,
+  });
+
   return (
-    <div className="container mx-auto p-4 md:p-8">
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div className="container mx-auto p-4 md:p-8 h-full flex flex-col">
+      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between flex-shrink-0">
         <h1 className="font-headline text-3xl font-bold">{title}</h1>
         <div className="flex gap-2 flex-wrap">
           <ExerciseFilters
@@ -241,50 +251,83 @@ export function ExercisesListView(props: ExercisesListViewProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {isLoading ? (
-          Array.from({ length: 8 }).map((_, index) => (
-            <Card key={index} className="overflow-hidden">
-              <Skeleton className="h-48 w-full" />
-              <div className="p-4">
-                <Skeleton className="h-6 w-3/4 mb-2" />
-                <Skeleton className="h-4 w-1/4 mb-4" />
+      {/* Virtualized List Container */}
+      {isLoading ? (
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <div key={index} className="flex items-stretch bg-card border rounded-lg overflow-hidden h-[120px]">
+              <Skeleton className="w-[100px] h-full flex-shrink-0" />
+              <div className="flex-1 p-4 flex flex-col justify-center gap-2">
+                <Skeleton className="h-5 w-3/4" />
+                <div className="flex gap-1">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
                 <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full mt-2" />
               </div>
-            </Card>
-          ))
-        ) : filteredExercises && filteredExercises.length > 0 ? (
-          filteredExercises.map((exercise) => (
-            <ExerciseCard
-              key={exercise.id}
-              exercise={exercise}
-              userId={user?.uid}
-              canEdit={canEdit}
-              canDelete={canDelete}
-              showProgress={showProgress}
-              showOwnerBadge={showOwnerBadge}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onShowProgress={handleShowProgress}
-            />
-          ))
-        ) : (
-          <Card className="sm:col-span-2 lg:col-span-3 xl:col-span-4 flex flex-col items-center justify-center border-dashed py-20">
-            <CardContent className="text-center">
-              <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="font-headline text-xl font-semibold mb-2">Brak ćwiczeń</h3>
-              <p className="text-muted-foreground mb-4">{emptyMessage}</p>
-              {canCreate && (
-                <Button variant="outline" onClick={handleCreate}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Dodaj Ćwiczenie
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            </div>
+          ))}
+        </div>
+      ) : filteredExercises && filteredExercises.length > 0 ? (
+        <div
+          ref={parentRef}
+          className="flex-1 overflow-auto"
+          style={{ contain: 'strict' }}
+          id="exercise-full-list"
+        >
+          <div
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const exercise = filteredExercises[virtualRow.index];
+              return (
+                <div
+                  key={exercise.id}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                  className="pb-2"
+                >
+                  <ExerciseCardHorizontal
+                    exercise={exercise}
+                    userId={user?.uid}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
+                    showProgress={showProgress}
+                    showOwnerBadge={showOwnerBadge}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onShowProgress={handleShowProgress}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <Card className="flex flex-col items-center justify-center border-dashed py-20">
+          <CardContent className="text-center">
+            <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="font-headline text-xl font-semibold mb-2">Brak ćwiczeń</h3>
+            <p className="text-muted-foreground mb-4">{emptyMessage}</p>
+            {canCreate && (
+              <Button variant="outline" onClick={handleCreate}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Dodaj Ćwiczenie
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Form Dialog */}
       <ExerciseFormDialog

@@ -32,6 +32,7 @@ import {
   type DayPlan
 } from '@/lib/types';
 import { useCollection, useUser, useDoc } from '@/lib/db-hooks';
+import { useActiveWorkout } from '@/hooks/useActiveWorkout';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetFooter, SheetClose } from '@/components/ui/sheet';
@@ -274,6 +275,7 @@ type ViewMode = 'list' | 'carousel';
 function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLoadingExercises, initialLogId, sourceWorkoutId }: { initialWorkout: LogFormValues; allExercises: Exercise[] | null; onFinishWorkout: () => void; isLoadingExercises: boolean; initialLogId?: string | null; sourceWorkoutId?: string | null }) {
   const [startTime] = useState(initialWorkout.startTime ? new Date(initialWorkout.startTime) : new Date());
   const [workoutLogId, setWorkoutLogId] = useState<string | null>(initialLogId || null);
+  const isCreatingWorkoutRef = useRef(false);
   const [isFinished, setIsFinished] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -281,6 +283,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   const photoInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useUser();
+  const { refetch: refetchActiveWorkout } = useActiveWorkout();
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -314,9 +317,11 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
 
   // Effect to create the workout document on start (only if not resuming)
   useEffect(() => {
-    if (!user || workoutLogId) return;
+    if (!user || workoutLogId || isCreatingWorkoutRef.current) return;
 
     const createInitialWorkoutLog = async () => {
+      isCreatingWorkoutRef.current = true;
+
       // Validate that all exercises have valid IDs before creating the log
       const invalidExercises = initialWorkout.exerciseSeries.filter(
         series => !series.exerciseId || series.exerciseId === '' || series.exerciseId.startsWith('temp-')
@@ -329,6 +334,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
           description: 'Niektóre ćwiczenia nie mają prawidłowych identyfikatorów. Spróbuj dodać je ponownie.',
           variant: 'destructive',
         });
+        isCreatingWorkoutRef.current = false;
         onFinishWorkout();
         return;
       }
@@ -376,7 +382,11 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
 
         const result = await response.json();
         setWorkoutLogId(result.data.id);
+
+        // Notify the ActiveWorkoutContext that a workout has started
+        refetchActiveWorkout();
       } catch (error) {
+        isCreatingWorkoutRef.current = false;
         console.error('Error creating workout log:', error);
         toast({ title: 'Błąd', description: 'Nie udało się rozpocząć sesji treningowej.', variant: 'destructive' });
         onFinishWorkout();
@@ -564,6 +574,10 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
         title: 'Trening Zapisany!',
         description: `${data.workoutName} został zapisany w Twojej historii.`,
       });
+
+      // Notify the ActiveWorkoutContext that the workout has been completed
+      refetchActiveWorkout();
+
       router.push(`/athlete/history/${workoutLogId}`);
     } catch (error) {
       console.error('Error saving workout:', error);
