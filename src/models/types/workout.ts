@@ -12,6 +12,9 @@ export interface Workout {
   exerciseSeries: ExerciseSeries[];
   ownerId?: string;
   description?: string;
+  sourceWorkoutId?: string; // Track the original workout when copied
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type DayPlan = Workout | 'Rest Day';
@@ -62,6 +65,7 @@ export interface WorkoutLog {
   startTime?: Timestamp;
   feedback?: string;
   newRecords?: PersonalRecord[];
+  sourceWorkoutId?: string; // Track the original workout template used
 }
 
 export interface WorkoutDayExercise {

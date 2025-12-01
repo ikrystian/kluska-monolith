@@ -1,14 +1,14 @@
 'use client';
 
-import { use, useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useDoc, useUser } from '@/lib/db-hooks';
+import { useDoc, useUser, useCreateDoc } from '@/lib/db-hooks';
 import { Workout, ExerciseSeries, SetType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Clock, Signal, Dumbbell, Play, Calendar, ArrowRight, Repeat, Timer } from 'lucide-react';
+import { ArrowLeft, Clock, Signal, Dumbbell, Play, Calendar, ArrowRight, Repeat, Timer, Edit, Copy } from 'lucide-react';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -20,15 +20,58 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { type ExerciseType } from '@/lib/set-type-config';
+import { useToast } from '@/hooks/use-toast';
 
 export default function WorkoutDetailsPage() {
     const params = useParams();
     const router = useRouter();
     const { user } = useUser();
+    const { toast } = useToast();
     const id = params?.id as string;
     const { hasActiveWorkout, activeWorkout } = useActiveWorkout();
+    const [isCopying, setIsCopying] = useState(false);
 
     const { data: workout, isLoading } = useDoc<Workout>('workouts', id);
+    const { createDoc } = useCreateDoc();
+
+    // Check if user owns this workout
+    const isOwner = user && workout && (workout.ownerId === user.uid || workout.ownerId === 'public');
+    const canEdit = user && workout && workout.ownerId === user.uid;
+
+    const handleCopyAndEdit = async () => {
+        if (!workout || !user) return;
+
+        setIsCopying(true);
+        try {
+            // Create a copy of the workout for the user
+            const workoutCopy: Omit<Workout, 'id'> = {
+                ...workout,
+                name: `${workout.name} (kopia)`,
+                ownerId: user.uid,
+                sourceWorkoutId: workout.id, // Track the original workout
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            };
+            // Remove the id from the copy
+            delete (workoutCopy as any).id;
+
+            const result = await createDoc('workouts', workoutCopy);
+            toast({
+                title: 'Sukces',
+                description: 'Utworzono kopię treningu',
+            });
+            router.push(`/athlete/workouts/${result.id}/edit`);
+        } catch (error) {
+            console.error('Error copying workout:', error);
+            toast({
+                title: 'Błąd',
+                description: 'Nie udało się skopiować treningu',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsCopying(false);
+        }
+    };
 
     if (isLoading) {
         return (
@@ -69,6 +112,30 @@ export default function WorkoutDetailsPage() {
                     >
                         <ArrowLeft className="mr-2 h-4 w-4" /> Wróć do listy
                     </Button>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                        {/* Edit/Copy buttons */}
+                        {canEdit ? (
+                            <Button
+                                variant="outline"
+                                onClick={() => router.push(`/athlete/workouts/${id}/edit`)}
+                            >
+                                <Edit className="mr-2 h-4 w-4" /> Edytuj
+                            </Button>
+                        ) : workout && workout.ownerId !== user?.uid && (
+                            <Button
+                                variant="outline"
+                                onClick={handleCopyAndEdit}
+                                disabled={isCopying}
+                            >
+                                <Copy className="mr-2 h-4 w-4" />
+                                {isCopying ? 'Kopiowanie...' : 'Skopiuj i edytuj'}
+                            </Button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Start workout button row */}
+                <div className="flex justify-end">
                     {hasActiveWorkout ? (
                         <TooltipProvider>
                             <Tooltip>

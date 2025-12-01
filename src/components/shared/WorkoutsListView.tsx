@@ -319,17 +319,12 @@ export function WorkoutsListView({
                                         </AlertDialog>
                                     </div>
                                 ) : (
-                                    role === 'athlete' ? (
-                                        <Link href={`${detailsBasePath}/${workout.id}`} className="w-full">
-                                            <Button variant="outline" className="w-full">
-                                                {cardActionText ?? defaultCardActionText}
-                                            </Button>
-                                        </Link>
-                                    ) : (
+                                    <Link href={`${detailsBasePath}/${workout.id}`} className="w-full">
                                         <Button variant="outline" className="w-full">
+                                            {role === 'trainer' && <Edit className="mr-2 h-3 w-3" />}
                                             {cardActionText ?? defaultCardActionText}
                                         </Button>
-                                    )
+                                    </Link>
                                 )}
                             </CardFooter>
                         </Card>

@@ -254,7 +254,7 @@ function WorkoutBuilderView({ initialData, onStart, onCancel, allExercises, isLo
 // --- ACTIVE WORKOUT VIEW ---
 type ViewMode = 'list' | 'carousel';
 
-function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLoadingExercises, initialLogId }: { initialWorkout: LogFormValues; allExercises: Exercise[] | null; onFinishWorkout: () => void; isLoadingExercises: boolean; initialLogId?: string | null }) {
+function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLoadingExercises, initialLogId, sourceWorkoutId }: { initialWorkout: LogFormValues; allExercises: Exercise[] | null; onFinishWorkout: () => void; isLoadingExercises: boolean; initialLogId?: string | null; sourceWorkoutId?: string | null }) {
   const [startTime] = useState(initialWorkout.startTime ? new Date(initialWorkout.startTime) : new Date());
   const [workoutLogId, setWorkoutLogId] = useState<string | null>(initialLogId || null);
   const [isFinished, setIsFinished] = useState(false);
@@ -327,6 +327,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
         status: 'in-progress',
         startTime: startTime,
         athleteId: user.uid,
+        ...(sourceWorkoutId && { sourceWorkoutId }), // Track the original workout template
       };
 
       try {
@@ -1428,6 +1429,7 @@ export default function LogWorkoutPage() {
             allExercises={allExercises}
             isLoadingExercises={exercisesLoading}
             initialLogId={activeLogId}
+            sourceWorkoutId={workoutId} // Pass the workout template ID
           />
         </div>
       </div>
