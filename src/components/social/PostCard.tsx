@@ -136,7 +136,7 @@ export function PostCard({ post, onLike, onEdit, onDelete, onProfileClick }: Pos
         {/* Image */}
         <div className="relative">
           <img
-            src={`/api/images/${post.imageUrl}`}
+            src={`https://utfs.io/f/${post.imageUrl}`}
             alt="Post image"
             className="w-full h-auto object-cover"
             loading="lazy"

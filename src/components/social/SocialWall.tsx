@@ -12,8 +12,8 @@ import { CreatePostDialog } from './CreatePostDialog';
 import { PublicProfileDialog } from './PublicProfileDialog';
 
 const breakpointColumnsObj = {
-  default: 4,
-  1100: 3,
+  default: 2,
+  1100: 2,
   700: 2,
   500: 1
 };

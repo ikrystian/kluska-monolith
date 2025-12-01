@@ -5,6 +5,15 @@ import mongoose from 'mongoose';
 export async function GET(req: Request, { params }: { params: Promise<{ fileId: string }> }) {
   try {
     const { fileId: id } = await params;
+
+    // Validate that the id is a valid MongoDB ObjectId (24 character hex string)
+    if (!id || !/^[a-fA-F0-9]{24}$/.test(id)) {
+      return NextResponse.json(
+        { error: 'Invalid file ID format. Expected a 24 character hex string.' },
+        { status: 400 }
+      );
+    }
+
     const db = await getMongoDb();
     const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: 'images' });
     const fileId = new mongoose.mongo.ObjectId(id);

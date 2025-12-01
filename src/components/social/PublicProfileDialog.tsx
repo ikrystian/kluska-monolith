@@ -178,7 +178,7 @@ export function PublicProfileDialog({ open, onOpenChange, userId }: PublicProfil
                   {profileData.recentPosts.slice(0, 6).map((post) => (
                     <div key={post.id} className="aspect-square relative rounded-lg overflow-hidden bg-muted">
                       <img
-                        src={`/api/images/${post.imageUrl}`}
+                        src={`https://utfs.io/f/${post.imageUrl}`}
                         alt="Post"
                         className="w-full h-full object-cover"
                       />
