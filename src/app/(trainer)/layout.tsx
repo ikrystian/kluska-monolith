@@ -47,8 +47,8 @@ export default function TrainerLayout({
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="text-muted-foreground">Weryfikacja uprawnień...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-muted-foreground">Weryfikacja uprawnień...</p>
         </div>
       </div>
     );
@@ -63,6 +63,12 @@ export default function TrainerLayout({
   // At this point, user is loaded, logged in, and is confirmed to be a trainer or admin.
   // It is now safe to render the trainer layout and its children.
   return (
+import { QuickChatWidget } from '@/components/chat/QuickChatWidget';
+
+  // ... (existing imports)
+
+  // ... (inside TrainerLayout function)
+  return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <AppNav />
@@ -71,6 +77,9 @@ export default function TrainerLayout({
           <div className="flex-1 overflow-y-auto">{children}</div>
         </main>
       </div>
+      <QuickChatWidget />
     </SidebarProvider>
+  );
+}
   );
 }

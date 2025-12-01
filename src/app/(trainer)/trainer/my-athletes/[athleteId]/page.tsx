@@ -55,6 +55,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { UserProfile, WorkoutLog, Exercise, TrainingPlan } from '@/lib/types';
+import { useChat } from '@/components/chat/hooks/useChat';
 
 
 const StatCard = ({ title, value, icon: Icon, description, isLoading }: { title: string, value: string, icon: React.ElementType, description: string, isLoading?: boolean }) => (
@@ -311,24 +312,22 @@ export default function AthleteProfilePage() {
     };
   }, [workoutHistory]);
 
+  const { createConversation, conversations } = useChat();
+
   const handleStartConversation = async () => {
     if (!trainerUser || !athleteProfile) return;
 
     const conversationId = [trainerUser.uid, athleteProfile.id].sort().join('_');
+    const existingConversation = conversations?.find(c => c.conversationId === conversationId);
 
-    try {
-      // Check if conversation exists
-      const response = await fetch(`/api/db/conversations?query=${encodeURIComponent(JSON.stringify({ conversationId }))}`);
-      const data = await response.json();
-      const conversationExists = data.data && data.data.length > 0;
-
-      if (!conversationExists) {
+    if (!existingConversation) {
+      try {
         // Create new conversation
         const trainerProfileResponse = await fetch(`/api/db/users/${trainerUser.uid}`);
         const trainerProfileData = await trainerProfileResponse.json();
         const trainerProfile = trainerProfileData.data;
 
-        const newConversation = {
+        await createConversation({
           conversationId: conversationId,
           participants: [trainerUser.uid, athleteProfile.id],
           trainerId: trainerUser.uid,
@@ -336,29 +335,24 @@ export default function AthleteProfilePage() {
           trainerName: trainerProfile.name,
           athleteName: athleteProfile.name,
           lastMessage: null,
+          updatedAt: new Date(),
           unreadCount: {
             [trainerUser.uid]: 0,
             [athleteProfile.id]: 0,
           },
-        };
-
-        await fetch('/api/db/conversations', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newConversation),
         });
+      } catch (e) {
+        console.error(e);
+        toast({
+          title: "Błąd",
+          description: "Nie udało się rozpocząć konwersacji.",
+          variant: "destructive"
+        });
+        return;
       }
-
-      router.push(`/trainer/chat?conversationId=${conversationId}`);
-
-    } catch (e) {
-      console.error(e);
-      toast({
-        title: "Błąd",
-        description: "Nie udało się rozpocząć konwersacji.",
-        variant: "destructive"
-      })
     }
+
+    router.push(`/trainer/chat?conversationId=${conversationId}`);
   };
 
   const chartConfig = {
@@ -515,7 +509,14 @@ export default function AthleteProfilePage() {
                           <div className="flex w-full items-center justify-between pr-4">
                             <div className="text-left">
                               <p className="font-semibold">{log.workoutName}</p>
-                              <p className="text-sm text-muted-foreground">{log.endTime ? format(new Date(log.endTime), 'd MMMM yyyy', { locale: pl }) : 'Brak daty'}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {log.endTime ? format(
+                                  // @ts-ignore - Handle Timestamp or Date
+                                  log.endTime.toDate ? log.endTime.toDate() : new Date(log.endTime),
+                                  'd MMMM yyyy',
+                                  { locale: pl }
+                                ) : 'Brak daty'}
+                              </p>
                             </div>
                             <div className="hidden text-right md:block">
                               <p className="font-semibold">{log.duration ? Math.round(log.duration) : 0} min</p>
@@ -548,7 +549,7 @@ export default function AthleteProfilePage() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {log.exercises?.map((ex, exIndex) => {
+                              {log.exercises?.map((ex: any, exIndex) => {
                                 // Support both old structure (exerciseId lookup) and new structure (nested exercise object)
                                 const exerciseName = ex.exercise?.name || exercises?.find(e => e.id === ex.exerciseId)?.name || 'Nieznane';
                                 const exerciseType = ex.exercise?.type || exercises?.find(e => e.id === ex.exerciseId)?.type;
@@ -562,7 +563,7 @@ export default function AthleteProfilePage() {
                                     </TableRow>
                                   );
                                 }
-                                return ex.sets?.map((set, setIndex) => (
+                                return ex.sets?.map((set: any, setIndex: number) => (
                                   <TableRow key={`${exIndex}-${setIndex}`}>
                                     {setIndex === 0 ? (
                                       <TableCell rowSpan={ex.sets.length} className="font-medium align-top">

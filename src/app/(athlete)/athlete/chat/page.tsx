@@ -1,332 +1,52 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import Link from 'next/link';
+import React, { useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useUser, useCollection, useDoc, useCreateDoc, useUpdateDoc, useDeleteDoc } from '@/lib/db-hooks';
-import type { Conversation, Message, UserProfile, AthleteProfile } from '@/lib/types';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, MessageSquare, Loader2, Users, PlusCircle, Trash2, ArrowLeft } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { formatDistanceToNow } from 'date-fns';
-import { pl } from 'date-fns/locale';
-import { useToast } from '@/hooks/use-toast';
-import { placeholderImages } from '@/lib/placeholder-images';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogClose,
-} from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { useUser, useDoc, useCollection } from '@/lib/db-hooks';
+import { UserProfile } from '@/lib/chat/types';
+import { ChatLayout } from '@/components/chat/ChatLayout';
+import { ConversationList } from '@/components/chat/ConversationList';
+import { ChatView } from '@/components/chat/ChatView';
+import { NewConversationDialog } from '@/components/chat/NewConversationDialog';
+import { useChat } from '@/components/chat/hooks/useChat';
+import { MessageSquare } from 'lucide-react';
 
-
-function NewConversationDialog({ existingConversationIds }: { existingConversationIds: string[] }) {
-    const { user } = useUser();
-    const router = useRouter();
-    const { toast } = useToast();
-    const [open, setOpen] = useState(false);
-    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-    const { createDoc, isLoading: isCreating } = useCreateDoc();
-
-    const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(user ? 'users' : null, user?.uid || null);
-
-    // Get trainer's athletes
-    const { data: athletes, isLoading: athletesLoading } = useCollection<UserProfile>(
-        userProfile?.role === 'trainer' ? 'users' : null,
-        { trainerId: user?.uid }
-    );
-
-    // Get athlete's trainer
-    const { data: trainerProfile, isLoading: trainerLoading } = useDoc<UserProfile>(
-        userProfile?.role === 'athlete' && (userProfile as AthleteProfile).trainerId ? 'users' : null,
-        (userProfile as AthleteProfile)?.trainerId || null
-    );
-
-    const potentialContacts = useMemo(() => {
-        let contacts: UserProfile[] = [];
-        if (userProfile?.role === 'trainer' && athletes) {
-            contacts = athletes as UserProfile[];
-        } else if (userProfile?.role === 'athlete' && trainerProfile) {
-            contacts = [trainerProfile];
-        }
-
-        return contacts.filter(contact => {
-            if (!user || !contact) return false;
-            const conversationId = [user.uid, contact.id].sort().join('_');
-            return !existingConversationIds.includes(conversationId);
-        });
-    }, [user, userProfile, athletes, trainerProfile, existingConversationIds]);
-
-    const isLoading = isProfileLoading || athletesLoading || trainerLoading;
-
-    const handleStartConversation = async () => {
-        if (!user || !userProfile || !selectedUserId) return;
-
-        const otherUser = potentialContacts.find(c => c.id === selectedUserId);
-        if (!otherUser) return;
-
-        const conversationId = [user.uid, selectedUserId].sort().join('_');
-
-        const newConversation: Omit<Conversation, 'id'> = {
-            participantIds: [user.uid, selectedUserId],
-            trainerId: userProfile.role === 'trainer' ? user.uid : selectedUserId,
-            athleteId: userProfile.role === 'athlete' ? user.uid : selectedUserId,
-            trainerName: userProfile.role === 'trainer' ? userProfile.name : otherUser.name,
-            athleteName: userProfile.role === 'athlete' ? userProfile.name : otherUser.name,
-            lastMessage: null,
-            updatedAt: new Date().toISOString(),
-            unreadCount: {
-                [user.uid]: 0,
-                [selectedUserId]: 0,
-            },
-            _id: conversationId,
-        };
-
-        try {
-            await createDoc('conversations', newConversation);
-            setOpen(false);
-            router.push(`/athlete/chat?conversationId=${conversationId}`);
-        } catch (e) {
-            console.error(e);
-            toast({
-                title: "Błąd",
-                description: "Nie udało się rozpocząć konwersacji.",
-                variant: "destructive"
-            });
-        }
-    };
-
-    return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Nowa Wiadomość
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Rozpocznij nową konwersację</DialogTitle>
-                    <DialogDescription>Wybierz osobę, z którą chcesz porozmawiać.</DialogDescription>
-                </DialogHeader>
-                <div className="py-4 space-y-3 max-h-64 overflow-y-auto">
-                    {isLoading ? <Loader2 className="mx-auto h-6 w-6 animate-spin"/> :
-                     potentialContacts.length > 0 ? potentialContacts.map(contact => (
-                         <div
-                             key={contact.id}
-                             className={cn(
-                                 "flex items-center gap-3 p-3 rounded-md border cursor-pointer hover:bg-secondary",
-                                 selectedUserId === contact.id && "bg-secondary border-primary"
-                             )}
-                             onClick={() => setSelectedUserId(contact.id)}
-                         >
-                             <Avatar>
-                                 <AvatarImage src={placeholderImages.find(p => p.id === 'avatar-male')?.imageUrl} />
-                                 <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
-                             </Avatar>
-                             <div>
-                                 <p className="font-semibold">{contact.name}</p>
-                                 <p className="text-sm text-muted-foreground capitalize">{contact.role}</p>
-                             </div>
-                         </div>
-                     )) : <p className="text-center text-muted-foreground">Brak nowych osób do rozpoczęcia rozmowy.</p>
-                    }
-                </div>
-                <DialogFooter>
-                    <DialogClose asChild><Button type="button" variant="secondary" disabled={isCreating}>Anuluj</Button></DialogClose>
-                    <Button onClick={handleStartConversation} disabled={!selectedUserId || isCreating}>
-                        {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                        Rozpocznij Czat
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
-function ChatView({ conversation, onBack }: { conversation: Conversation, onBack: () => void }) {
-    const { user } = useUser();
-    const [newMessage, setNewMessage] = useState('');
-    const { toast } = useToast();
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-    const { createDoc } = useCreateDoc();
-    const { updateDoc } = useUpdateDoc();
-
-    const { data: messages, isLoading, refetch: refetchMessages } = useCollection<Message>(
-        conversation ? 'messages' : null,
-        { conversationId: conversation.id },
-        { sort: { createdAt: 1 } }
-    );
-
-    // Poll for new messages
-    useEffect(() => {
-      const interval = setInterval(() => {
-        refetchMessages();
-      }, 5000); // Poll every 5 seconds
-      return () => clearInterval(interval);
-    }, [refetchMessages]);
-
-    const { data: userProfile } = useDoc<UserProfile>(user ? 'users' : null, user?.uid || null);
-
-    const otherParticipantId = useMemo(() => {
-        return conversation.participantIds.find(id => id !== user?.uid);
-    }, [conversation, user]);
-
-    const { data: otherParticipant } = useDoc<UserProfile>(
-        otherParticipantId ? 'users' : null,
-        otherParticipantId || null
-    );
-
-    // Effect to mark messages as read
-    useEffect(() => {
-        if (user && conversation && conversation.unreadCount?.[user.uid] > 0) {
-            const updateField = `unreadCount.${user.uid}`;
-            updateDoc('conversations', conversation.id, { [updateField]: 0 })
-                .catch(e => console.error("Could not mark messages as read", e));
-        }
-    }, [conversation, user, updateDoc]);
-
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    };
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
-
-    const handleSendMessage = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!user || !newMessage.trim() || !otherParticipantId) return;
-
-        const messageText = newMessage.trim();
-        setNewMessage('');
-
-        const now = new Date();
-
-        const newMessageData: Omit<Message, 'id'> = {
-            text: messageText,
-            senderId: user.uid,
-            createdAt: now.toISOString(),
-            conversationId: conversation.id,
-        };
-
-        const lastMessageData = {
-            text: messageText,
-            senderId: user.uid,
-            createdAt: now.toISOString(),
-        };
-
-        const updateConversationData = {
-            lastMessage: lastMessageData,
-            updatedAt: now.toISOString(),
-            $inc: { [`unreadCount.${otherParticipantId}`]: 1 }
-        };
-
-        try {
-            // This is not transactional, but it's the best we can do with this API structure.
-            // In a real app, this would be a single server-side operation.
-            await createDoc('messages', newMessageData);
-            await updateDoc('conversations', conversation.id, updateConversationData);
-            refetchMessages(); // Refetch immediately after sending
-        } catch (e) {
-            toast({ title: "Błąd", description: "Nie udało się wysłać wiadomości.", variant: 'destructive' });
-            setNewMessage(messageText); // Restore message on failure
-        }
-    };
-
-    if(!otherParticipant) {
-        return <div className="flex flex-col items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin" /></div>
-    }
-
-    return (
-        <div className="flex flex-col h-full">
-            <header className="flex items-center gap-4 p-4 border-b">
-                 <Button variant="ghost" size="icon" className="md:hidden" onClick={onBack}>
-                    <ArrowLeft className="h-6 w-6" />
-                </Button>
-                <Avatar>
-                    <AvatarImage src={placeholderImages.find(p => p.id === 'avatar-male')?.imageUrl} />
-                    <AvatarFallback>{otherParticipant?.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div>
-                    <h2 className="font-semibold text-lg">{otherParticipant?.name}</h2>
-                    <p className="text-sm text-muted-foreground capitalize">{otherParticipant?.role}</p>
-                </div>
-            </header>
-
-            <ScrollArea className="flex-1 p-4">
-                <div className="space-y-4">
-                    {isLoading && <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary"/>}
-                    {messages?.map(message => {
-                        const isMe = message.senderId === user?.uid;
-                        return (
-                            <div key={message.id} className={cn("flex", isMe ? 'justify-end' : 'justify-start')}>
-                                <div className={cn("max-w-xs md:max-w-md lg:max-w-lg p-3 rounded-lg",
-                                    isMe ? 'bg-primary text-primary-foreground' : 'bg-secondary'
-                                )}>
-                                    <p>{message.text}</p>
-                                    <p className={cn("text-xs mt-1", isMe ? 'text-primary-foreground/70' : 'text-muted-foreground')}>
-                                        {message.createdAt ? formatDistanceToNow(new Date(message.createdAt), { addSuffix: true, locale: pl }) : 'teraz'}
-                                    </p>
-                                </div>
-                            </div>
-                        )
-                    })}
-                     <div ref={messagesEndRef} />
-                </div>
-            </ScrollArea>
-
-            <footer className="p-4 border-t">
-                <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                    <Input
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Napisz wiadomość..."
-                        autoComplete="off"
-                    />
-                    <Button type="submit" size="icon" disabled={!newMessage.trim()}>
-                        <Send className="h-4 w-4"/>
-                    </Button>
-                </form>
-            </footer>
-        </div>
-    );
-}
-
-export default function ChatPage() {
-    const { user } = useUser();
+export default function AthleteChatPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { toast } = useToast();
-    const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
-    const { deleteDoc } = useDeleteDoc();
+    const {
+        conversations,
+        selectedConversation,
+        selectedConversationId,
+        setSelectedConversationId,
+        messages,
+        isLoading,
+        sendMessage,
+        createConversation,
+        deleteConversation,
+        currentUser
+    } = useChat();
 
-    const { data: conversations, isLoading, refetch: refetchConversations } = useCollection<Conversation>(
-        user ? 'conversations' : null,
-        { participantIds: user?.uid },
-        { sort: { updatedAt: -1 } }
+    const { data: userProfile } = useDoc<UserProfile>('users', currentUser?.uid || '');
+
+    // Fetch trainer profile if user is athlete
+    const { data: trainerProfile, isLoading: trainerLoading } = useDoc<UserProfile>(
+        'users',
+        userProfile?.role === 'athlete' && userProfile.trainerId ? userProfile.trainerId : ''
     );
 
-    const { data: userProfile } = useDoc<UserProfile>(user ? 'users' : null, user?.uid || null);
+    const existingConversationIds = useMemo(() => conversations?.map(c => c.conversationId) || [], [conversations]);
+
+    const potentialContacts = useMemo(() => {
+        if (!trainerProfile || !currentUser) return [];
+        // Athlete can only start conversation with their trainer
+        const contacts = [trainerProfile];
+
+        return contacts.filter(contact => {
+            const conversationId = [currentUser.uid, contact.id].sort().join('_');
+            return !existingConversationIds.includes(conversationId);
+        });
+    }, [trainerProfile, currentUser, existingConversationIds]);
 
     useEffect(() => {
         const conversationIdFromUrl = searchParams.get('conversationId');
@@ -335,151 +55,90 @@ export default function ChatPage() {
         } else {
             setSelectedConversationId(null);
         }
-    }, [searchParams]);
+    }, [searchParams, setSelectedConversationId]);
+
+    const handleSelectConversation = (id: string) => {
+        setSelectedConversationId(id);
+        router.replace(`/athlete/chat?conversationId=${id}`, { scroll: false });
+    };
 
     const handleBackToList = () => {
         setSelectedConversationId(null);
         router.replace('/athlete/chat', { scroll: false });
     };
 
-    const handleDeleteConversation = async (conversation: Conversation) => {
-        if (!user) return;
+    const handleCreateConversation = async (userId: string) => {
+        if (!currentUser || !userProfile || !trainerProfile) return;
 
-        try {
-            const response = await fetch(`/api/conversations/${conversation.id}`, {
-                method: 'DELETE',
-            });
+        // For athlete, userId should be the trainerId
+        if (userId !== trainerProfile.id) return;
 
-            if (!response.ok) {
-                throw new Error('Failed to delete conversation');
+        const conversationId = [currentUser.uid, userId].sort().join('_');
+
+        await createConversation({
+            conversationId: conversationId,
+            participants: [currentUser.uid, userId],
+            trainerId: userId,
+            athleteId: currentUser.uid,
+            trainerName: trainerProfile.name,
+            athleteName: userProfile.name,
+            lastMessage: null,
+            updatedAt: new Date(),
+            unreadCount: {
+                [currentUser.uid]: 0,
+                [userId]: 0,
             }
+        });
 
-            toast({
-                title: "Konwersacja Usunięta",
-                description: "Historia czatu została usunięta.",
-                variant: 'destructive',
-            });
-            refetchConversations();
-            if (selectedConversationId === conversation.id) {
-                handleBackToList();
-            }
-        } catch (e) {
-            console.error("Error deleting conversation: ", e);
-            toast({
-                title: "Błąd",
-                description: "Nie udało się usunąć konwersacji.",
-                variant: "destructive"
-            });
-        }
+        handleSelectConversation(conversationId);
     };
 
+    const otherParticipantId = useMemo(() => {
+        return selectedConversation?.participants.find(id => id !== currentUser?.uid);
+    }, [selectedConversation, currentUser]);
 
-    const selectedConversation = conversations?.find(c => c.id === selectedConversationId);
-
-    const existingConversationIds = useMemo(() => conversations?.map(c => c.id) || [], [conversations]);
-
-    const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : '?';
+    const { data: otherParticipantProfile } = useDoc<UserProfile>('users', otherParticipantId || '');
 
     return (
-        <AlertDialog>
-            <div className="container mx-auto p-0 md:p-8 h-[calc(100vh-theme(spacing.14))] md:h-auto">
-                <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 border rounded-lg h-full overflow-hidden">
-                    <aside className={cn(
-                        "flex flex-col border-r",
-                        selectedConversationId && "hidden md:flex"
-                    )}>
-                        <header className="p-4 border-b flex items-center justify-between">
-                            <h1 className="font-headline text-2xl font-bold">Czat</h1>
-                             <NewConversationDialog existingConversationIds={existingConversationIds} />
-                        </header>
-                        <ScrollArea className="flex-1">
-                            {isLoading && <div className="p-4 text-center text-muted-foreground">Ładowanie...</div>}
-                            {conversations?.map(convo => {
-                                const otherParticipantName = userProfile?.role === 'trainer' ? convo.athleteName : convo.trainerName;
-                                const hasUnread = convo.unreadCount?.[user?.uid ?? ''] > 0;
-                                return (
-                                    <div key={convo.id} className="relative group">
-                                         <Link
-                                            href={`/athlete/chat?conversationId=${convo.id}`}
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                setSelectedConversationId(convo.id);
-                                                router.replace(`/athlete/chat?conversationId=${convo.id}`, { scroll: false });
-                                            }}
-                                            className={cn(
-                                                "block p-4 border-b hover:bg-secondary/50",
-                                                selectedConversationId === convo.id && 'bg-secondary'
-                                            )}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                {hasUnread && (
-                                                    <div className="absolute left-2 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-primary" />
-                                                )}
-                                                <Avatar className="ml-4">
-                                                    <AvatarImage src={placeholderImages.find(p => p.id === 'avatar-male')?.imageUrl} />
-                                                    <AvatarFallback>{getInitials(otherParticipantName)}</AvatarFallback>
-                                                </Avatar>
-                                                <div className="flex-1 overflow-hidden">
-                                                    <p className={cn("font-semibold truncate", hasUnread && "text-primary")}>{otherParticipantName}</p>
-                                                    <p className="text-sm text-muted-foreground truncate">{convo.lastMessage?.text || 'Brak wiadomości'}</p>
-                                                </div>
-                                            </div>
-                                        </Link>
-                                        <AlertDialogTrigger asChild>
-                                            <Button
-                                              variant="ghost"
-                                              size="icon"
-                                              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 opacity-0 group-hover:opacity-100"
-                                            >
-                                              <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Czy na pewno chcesz usunąć ten czat?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    Tej operacji nie można cofnąć. Spowoduje to trwałe usunięcie całej konwersacji z <span className="font-bold">{otherParticipantName}</span>.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                                                <AlertDialogAction
-                                                    className="bg-destructive hover:bg-destructive/90"
-                                                    onClick={() => handleDeleteConversation(convo)}
-                                                >
-                                                    Usuń
-                                                </AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </div>
-                                )
-                            })}
-                             {!isLoading && conversations?.length === 0 && (
-                                <div className="p-8 text-center text-muted-foreground">
-                                    <Users className="mx-auto h-12 w-12 mb-4"/>
-                                    <h3 className="font-semibold">Brak konwersacji</h3>
-                                    <p className="text-sm">Rozpocznij czat z jednym ze swoich sportowców lub trenerem.</p>
-                                </div>
-                            )}
-                        </ScrollArea>
-                    </aside>
-
-                    <main className={cn(
-                        "md:col-span-2 xl:col-span-3",
-                        !selectedConversationId && "hidden md:block"
-                    )}>
-                        {selectedConversation ? (
-                            <ChatView conversation={selectedConversation} onBack={handleBackToList} />
-                        ) : (
-                            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                               <MessageSquare className="h-16 w-16 mb-4"/>
-                               <h2 className="text-xl font-semibold">Wybierz konwersację</h2>
-                               <p>Wybierz rozmowę z listy, aby wyświetlić wiadomości.</p>
-                            </div>
-                        )}
-                    </main>
-                </div>
-            </div>
-        </AlertDialog>
+        <ChatLayout>
+            <ConversationList
+                conversations={conversations || []}
+                selectedId={selectedConversationId}
+                currentUserId={currentUser?.uid || ''}
+                userRole="athlete"
+                isLoading={isLoading}
+                onSelect={handleSelectConversation}
+                onDelete={(c) => deleteConversation(c.id)}
+                header={
+                    <div className="flex items-center justify-between">
+                        <h1 className="font-headline text-2xl font-bold">Czat</h1>
+                        <NewConversationDialog
+                            potentialContacts={potentialContacts}
+                            isLoading={trainerLoading}
+                            onStartConversation={handleCreateConversation}
+                        />
+                    </div>
+                }
+            />
+            <main className={`md:col-span-2 xl:col-span-3 ${!selectedConversationId ? 'hidden md:block' : ''}`}>
+                {selectedConversationId && selectedConversation ? (
+                    <ChatView
+                        conversation={selectedConversation}
+                        messages={messages || []}
+                        currentUserId={currentUser?.uid || ''}
+                        otherParticipant={otherParticipantProfile || null}
+                        isLoadingMessages={isLoading}
+                        onSendMessage={sendMessage}
+                        onBack={handleBackToList}
+                    />
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                        <MessageSquare className="h-16 w-16 mb-4" />
+                        <h2 className="text-xl font-semibold">Wybierz konwersację</h2>
+                        <p>Wybierz rozmowę z listy, aby wyświetlić wiadomości.</p>
+                    </div>
+                )}
+            </main>
+        </ChatLayout>
     );
 }

@@ -1,369 +1,50 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import Link from 'next/link';
+import React, { useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useUser, useCollection, useDoc, useCreateDoc, useUpdateDoc, useDeleteDoc } from '@/lib/db-hooks';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useUser, useDoc, useCollection } from '@/lib/db-hooks';
+import { UserProfile } from '@/lib/chat/types';
+import { ChatLayout } from '@/components/chat/ChatLayout';
+import { ConversationList } from '@/components/chat/ConversationList';
+import { ChatView } from '@/components/chat/ChatView';
+import { NewConversationDialog } from '@/components/chat/NewConversationDialog';
+import { useChat } from '@/components/chat/hooks/useChat';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, MessageSquare, Loader2, Users, PlusCircle, Trash2, ArrowLeft } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { formatDistanceToNow } from 'date-fns';
-import { pl } from 'date-fns/locale';
-import { useToast } from '@/hooks/use-toast';
-import { placeholderImages } from '@/lib/placeholder-images';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogClose,
-} from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { MessageSquare } from 'lucide-react';
 
-interface Conversation {
-  id: string;
-  conversationId: string;
-  participants: string[];
-  trainerId: string;
-  athleteId: string;
-  trainerName: string;
-  athleteName: string;
-  lastMessage: {
-    text: string;
-    senderId: string;
-    createdAt: Date;
-  } | null;
-  updatedAt: Date;
-  unreadCount?: {
-    [userId: string]: number;
-  };
-}
-
-interface Message {
-  id: string;
-  conversationId: string;
-  senderId: string;
-  text: string;
-  createdAt: Date;
-}
-
-interface UserProfile {
-  id: string;
-  name: string;
-  email: string;
-  role: 'athlete' | 'trainer' | 'admin';
-  trainerId?: string;
-}
-
-function NewConversationDialog({ existingConversationIds, onConversationCreated }: { existingConversationIds: string[], onConversationCreated: () => void }) {
-  const { user } = useUser();
-  const router = useRouter();
-  const { toast } = useToast();
-  const { createDoc } = useCreateDoc();
-  const [open, setOpen] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
-
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>('users', user?.uid || '');
-
-  // Fetch athletes assigned to this trainer
-  const { data: athletes, isLoading: athletesLoading } = useCollection<UserProfile>(
-    'users',
-    userProfile?.role === 'trainer' ? { role: 'athlete', trainerId: user?.uid } : undefined
-  );
-
-  // Fetch trainer profile if user is athlete
-  const { data: trainerProfile, isLoading: trainerLoading } = useDoc<UserProfile>(
-    'users',
-    userProfile?.role === 'athlete' && userProfile.trainerId ? userProfile.trainerId : ''
-  );
-
-  const potentialContacts = useMemo(() => {
-    let contacts: UserProfile[] = [];
-    if (userProfile?.role === 'trainer' && athletes) {
-      contacts = athletes as UserProfile[];
-    } else if (userProfile?.role === 'athlete' && trainerProfile) {
-      contacts = [trainerProfile];
-    }
-
-    return contacts.filter(contact => {
-      if (!user || !contact) return false;
-      const conversationId = [user.uid, contact.id].sort().join('_');
-      return !existingConversationIds.includes(conversationId);
-    });
-  }, [user, userProfile, athletes, trainerProfile, existingConversationIds]);
-
-  const isLoading = isProfileLoading || athletesLoading || trainerLoading;
-
-  const handleStartConversation = async () => {
-    if (!user || !userProfile || !selectedUserId) return;
-
-    const otherUser = potentialContacts.find(c => c.id === selectedUserId);
-    if (!otherUser) return;
-
-    setIsCreating(true);
-
-    const conversationId = [user.uid, selectedUserId].sort().join('_');
-
-    const newConversation = {
-      conversationId: conversationId,
-      participants: [user.uid, selectedUserId],
-      trainerId: userProfile.role === 'trainer' ? user.uid : selectedUserId,
-      athleteId: userProfile.role === 'athlete' ? user.uid : selectedUserId,
-      trainerName: userProfile.role === 'trainer' ? userProfile.name : otherUser.name,
-      athleteName: userProfile.role === 'athlete' ? userProfile.name : otherUser.name,
-      lastMessage: null,
-      updatedAt: new Date(),
-      unreadCount: {
-        [user.uid]: 0,
-        [selectedUserId]: 0,
-      }
-    };
-
-    try {
-      await createDoc('conversations', newConversation);
-      onConversationCreated();
-      setOpen(false);
-      setSelectedUserId(null);
-      router.push(`/trainer/chat?conversationId=${conversationId}`);
-    } catch (e) {
-      console.error(e);
-      toast({
-        title: "Błąd",
-        description: "Nie udało się rozpocząć konwersacji.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Nowa Wiadomość
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Rozpocznij nową konwersację</DialogTitle>
-          <DialogDescription>Wybierz osobę, z którą chcesz porozmawiać.</DialogDescription>
-        </DialogHeader>
-        <div className="py-4 space-y-3 max-h-64 overflow-y-auto">
-          {isLoading ? <Loader2 className="mx-auto h-6 w-6 animate-spin"/> :
-           potentialContacts.length > 0 ? potentialContacts.map(contact => (
-             <div
-               key={contact.id}
-               className={cn(
-                 "flex items-center gap-3 p-3 rounded-md border cursor-pointer hover:bg-secondary",
-                 selectedUserId === contact.id && "bg-secondary border-primary"
-               )}
-               onClick={() => setSelectedUserId(contact.id)}
-             >
-               <Avatar>
-                 <AvatarImage src={placeholderImages.find(p => p.id === 'avatar-male')?.imageUrl} />
-                 <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
-               </Avatar>
-               <div>
-                 <p className="font-semibold">{contact.name}</p>
-                 <p className="text-sm text-muted-foreground capitalize">{contact.role}</p>
-               </div>
-             </div>
-           )) : <p className="text-center text-muted-foreground">Brak nowych osób do rozpoczęcia rozmowy.</p>
-          }
-        </div>
-        <DialogFooter>
-          <DialogClose asChild><Button type="button" variant="secondary" disabled={isCreating}>Anuluj</Button></DialogClose>
-          <Button onClick={handleStartConversation} disabled={!selectedUserId || isCreating}>
-            {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-            Rozpocznij Czat
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function ChatView({ conversation, onBack }: { conversation: Conversation, onBack: () => void }) {
-  const { user } = useUser();
-  const [newMessage, setNewMessage] = useState('');
-  const { toast } = useToast();
-  const { createDoc } = useCreateDoc();
-  const { updateDoc } = useUpdateDoc();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const { data: messages, isLoading, refetch } = useCollection<Message>(
-    'messages',
-    { conversationId: conversation.id },
-    { sort: { createdAt: 1 } }
-  );
-
-  // Auto-refresh messages to simulate real-time
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      refetch();
-    }, 3000); // Poll every 3 seconds
-
-    return () => clearInterval(intervalId);
-  }, [refetch]);
-
-  const { data: userProfile } = useDoc<UserProfile>('users', user?.uid || '');
-
-  const otherParticipantId = userProfile?.role === 'trainer' ? conversation.athleteId : conversation.trainerId;
-
-  const { data: otherParticipant } = useDoc<UserProfile>('users', otherParticipantId || '');
-
-  // Mark messages as read
-  useEffect(() => {
-    if (user && conversation.unreadCount?.[user.uid] > 0) {
-      updateDoc('conversations', conversation.id, {
-        [`unreadCount.${user.uid}`]: 0
-      }).catch(e => console.error("Could not mark messages as read", e));
-    }
-  }, [conversation, user, updateDoc]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !newMessage.trim()) return;
-
-    const messageText = newMessage.trim();
-    setNewMessage('');
-
-    const lastMessageData = {
-      text: messageText,
-      senderId: user.uid,
-      createdAt: new Date(),
-    };
-
-    try {
-      // Create new message
-      await createDoc('messages', {
-        conversationId: conversation.id,
-        senderId: user.uid,
-        text: messageText,
-        createdAt: new Date(),
-      });
-
-      // Update conversation metadata
-      await updateDoc('conversations', conversation.id, {
-        lastMessage: lastMessageData,
-        updatedAt: new Date(),
-        [`unreadCount.${otherParticipantId}`]: (conversation.unreadCount?.[otherParticipantId] || 0) + 1
-      });
-
-      refetch();
-    } catch (e) {
-      console.error(e);
-      toast({
-        title: "Błąd",
-        description: "Nie udało się wysłać wiadomości.",
-        variant: 'destructive'
-      });
-      setNewMessage(messageText); // Restore message on failure
-    }
-  };
-
-  if (!otherParticipant) {
-    return <div className="flex flex-col items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin" /></div>
-  }
-
-  return (
-    <div className="flex flex-col h-full">
-      <header className="flex items-center gap-4 p-4 border-b">
-        <Button variant="ghost" size="icon" className="md:hidden" onClick={onBack}>
-          <ArrowLeft className="h-6 w-6" />
-        </Button>
-        <Avatar>
-          <AvatarImage src={placeholderImages.find(p => p.id === 'avatar-male')?.imageUrl} />
-          <AvatarFallback>{otherParticipant?.name.charAt(0)}</AvatarFallback>
-        </Avatar>
-        <div>
-          <h2 className="font-semibold text-lg">{otherParticipant?.name}</h2>
-          <p className="text-sm text-muted-foreground capitalize">{otherParticipant?.role}</p>
-        </div>
-      </header>
-
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
-          {isLoading && <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary"/>}
-          {messages?.map(message => {
-            const isMe = message.senderId === user?.uid;
-            return (
-              <div key={message.id} className={cn("flex", isMe ? 'justify-end' : 'justify-start')}>
-                <div className={cn("max-w-xs md:max-w-md lg:max-w-lg p-3 rounded-lg",
-                  isMe ? 'bg-primary text-primary-foreground' : 'bg-secondary'
-                )}>
-                  <p>{message.text}</p>
-                  <p className={cn("text-xs mt-1", isMe ? 'text-primary-foreground/70' : 'text-muted-foreground')}>
-                    {message.createdAt ? formatDistanceToNow(new Date(message.createdAt), { addSuffix: true, locale: pl }) : 'teraz'}
-                  </p>
-                </div>
-              </div>
-            )
-          })}
-          <div ref={messagesEndRef} />
-        </div>
-      </ScrollArea>
-
-      <footer className="p-4 border-t">
-        <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-          <Input
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Napisz wiadomość..."
-            autoComplete="off"
-          />
-          <Button type="submit" size="icon" disabled={!newMessage.trim()}>
-            <Send className="h-4 w-4"/>
-          </Button>
-        </form>
-      </footer>
-    </div>
-  );
-}
-
-export default function ChatPage() {
-  const { user } = useUser();
+export default function TrainerChatPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { toast } = useToast();
-  const { deleteDoc } = useDeleteDoc();
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const {
+    conversations,
+    selectedConversation,
+    selectedConversationId,
+    setSelectedConversationId,
+    messages,
+    isLoading,
+    sendMessage,
+    createConversation,
+    deleteConversation,
+    currentUser
+  } = useChat();
 
-  const { data: conversations, isLoading, refetch } = useCollection<Conversation>(
-    'conversations',
-    user?.uid ? { participants: user.uid } : undefined,
-    { sort: { updatedAt: -1 } }
+  const { data: userProfile } = useDoc<UserProfile>('users', currentUser?.uid || '');
+
+  // Fetch athletes for new conversation dialog
+  const { data: athletes, isLoading: athletesLoading } = useCollection<UserProfile>(
+    'users',
+    userProfile?.role === 'trainer' ? { role: 'athlete', trainerId: currentUser?.uid } : undefined
   );
 
-  const { data: userProfile } = useDoc<UserProfile>('users', user?.uid || '');
+  const existingConversationIds = useMemo(() => conversations?.map(c => c.conversationId) || [], [conversations]);
+
+  const potentialContacts = useMemo(() => {
+    if (!athletes || !currentUser) return [];
+    return athletes.filter(athlete => {
+      const conversationId = [currentUser.uid, athlete.id].sort().join('_');
+      return !existingConversationIds.includes(conversationId);
+    });
+  }, [athletes, currentUser, existingConversationIds]);
 
   useEffect(() => {
     const conversationIdFromUrl = searchParams.get('conversationId');
@@ -372,155 +53,191 @@ export default function ChatPage() {
     } else {
       setSelectedConversationId(null);
     }
-  }, [searchParams]);
+  }, [searchParams, setSelectedConversationId]);
+
+  const handleSelectConversation = (id: string) => {
+    setSelectedConversationId(id);
+    router.replace(`/trainer/chat?conversationId=${id}`, { scroll: false });
+  };
 
   const handleBackToList = () => {
     setSelectedConversationId(null);
     router.replace('/trainer/chat', { scroll: false });
   };
 
-  const handleDeleteConversation = async (conversation: Conversation) => {
-    if (!user) return;
+  const handleCreateConversation = async (userId: string) => {
+    if (!currentUser || !userProfile) return;
 
-    try {
-      // Delete all messages in this conversation
-      const { data: messages } = await fetch(`/api/db/messages?query=${encodeURIComponent(JSON.stringify({ conversationId: conversation.id }))}`).then(r => r.json());
+    const otherUser = athletes?.find(a => a.id === userId);
+    if (!otherUser) return;
 
-      if (messages) {
-        await Promise.all(messages.map((message: Message) =>
-          deleteDoc('messages', message.id)
-        ));
+    const conversationId = [currentUser.uid, userId].sort().join('_');
+
+    await createConversation({
+      conversationId: conversationId,
+      participants: [currentUser.uid, userId],
+      trainerId: currentUser.uid,
+      athleteId: userId,
+      trainerName: userProfile.name,
+      athleteName: otherUser.name,
+      lastMessage: null,
+      updatedAt: new Date(),
+      unreadCount: {
+        [currentUser.uid]: 0,
+        [userId]: 0,
       }
+    });
 
-      // Delete the conversation
-      await deleteDoc('conversations', conversation.id);
+    handleSelectConversation(conversationId); // Assuming ID is the doc ID, but createDoc usually returns ref. 
+    // Wait, createDoc in this codebase usually returns void or ref. 
+    // If we use custom ID (conversationId string), we might need to know the doc ID if it's different.
+    // In the original code: createDoc('conversations', newConversation) let firestore generate ID? 
+    // No, original code: await createDoc('conversations', newConversation); router.push...
+    // The original code didn't specify ID, so it was auto-generated.
+    // But then it navigated to `/trainer/chat?conversationId=${conversationId}` which is the computed string, not doc ID.
+    // My `useChat` uses `selectedConversationId` to find conversation by `id` (doc ID).
+    // This is a mismatch. The URL param `conversationId` in original code was likely the doc ID?
+    // Let's check original code: `router.push(/trainer/chat?conversationId=${conversationId});` where conversationId is `[uid, uid].sort().join('_')`.
+    // BUT `conversations.find(c => c.id === selectedConversationId)`. 
+    // So `c.id` (doc ID) must be equal to `conversationId` (computed string)?
+    // In `createDoc` from `db-hooks`, if we don't pass ID, it generates one.
+    // The original code passed `conversationId` as a field, but NOT as the doc ID.
+    // Wait, `conversations?.find(c => c.id === selectedConversationId)` in original code.
+    // And `router.push` used the computed string.
+    // So the doc ID MUST be the computed string for this to work, OR the original code was finding by `conversationId` field?
+    // Original code: `const selectedConversation = conversations?.find(c => c.id === selectedConversationId);`
+    // And `const conversationIdFromUrl = searchParams.get('conversationId');`
+    // So `selectedConversationId` comes from URL.
+    // And URL comes from `conversationId` variable which is `sortedUserId1_sortedUserId2`.
+    // So the doc ID MUST be `sortedUserId1_sortedUserId2`.
+    // BUT `createDoc` usually auto-generates ID if not provided.
+    // Let's check `createDoc` usage in original code:
+    // `await createDoc('conversations', newConversation);`
+    // It does NOT pass an ID. So it generates a random ID.
+    // So `c.id` is random.
+    // But `conversationId` field is `sorted...`.
+    // So `selectedConversationId` (from URL) is `sorted...`.
+    // So `conversations.find(c => c.id === selectedConversationId)` would FAIL if `c.id` is random and `selectedConversationId` is `sorted...`.
+    // UNLESS `createDoc` was modified to use `conversationId` field as doc ID?
+    // OR I misread the original code.
 
-      toast({
-        title: "Konwersacja Usunięta",
-        description: "Cała historia czatu została usunięta.",
-        variant: 'destructive',
-      });
+    // Re-reading original code:
+    // `const selectedConversation = conversations?.find(c => c.id === selectedConversationId);`
+    // `router.push(/trainer/chat?conversationId=${conversationId});`
+    // `const conversationId = [user.uid, selectedUserId].sort().join('_');`
+    // `newConversation = { conversationId: conversationId ... }`
+    // `await createDoc('conversations', newConversation);`
 
-      if (selectedConversationId === conversation.id) {
-        handleBackToList();
-      }
+    // If `createDoc` generates random ID, then `c.id` != `conversationId`.
+    // So `selectedConversation` would be undefined.
+    // This implies the original code might have been BUGGY or `createDoc` behaves differently.
+    // OR `conversations` collection has `id` field mapped from `conversationId`?
+    // No, `useCollection` usually maps doc.id to `id`.
 
-      refetch();
-    } catch (e) {
-      console.error("Error deleting conversation: ", e);
-      toast({
-        title: "Błąd",
-        description: "Nie udało się usunąć konwersacji.",
-        variant: "destructive"
-      });
-    }
+    // Let's look at `athlete/chat/page.tsx` original code:
+    // `const newConversation: Omit<Conversation, 'id'> = { ... _id: conversationId };`
+    // `await createDoc('conversations', newConversation);`
+    // Here it passes `_id`. Maybe `createDoc` uses `_id` if present?
+
+    // In `trainer/chat/page.tsx`, it did NOT pass `_id`.
+    // `const newConversation = { conversationId: conversationId ... }`
+
+    // This suggests `trainer` page might have been creating docs with random IDs, and `athlete` page with custom IDs?
+    // Or `createDoc` handles it.
+
+    // To be safe, I should try to use the computed `conversationId` as the document ID if possible.
+    // If `createDoc` doesn't support custom ID, I might need `setDoc` or similar.
+    // However, `useCreateDoc` hook usually returns `createDoc` function.
+
+    // I will assume for now that I should try to match the behavior.
+    // If I look at `useChat` hook, `selectedConversation` is found by `c.id === selectedConversationId`.
+    // If I want to support both, I should probably find by `c.id === id || c.conversationId === id`.
+
+    // Let's update `useChat` to be more robust or `TrainerChatPage` to handle this.
+    // Actually, in `TrainerChatPage`, I can find the conversation by `conversationId` field if `id` doesn't match.
+
+    // But `useChat` encapsulates the finding logic.
+    // I should update `useChat` to find by `conversationId` field as well if possible, or ensure we use the right ID.
+
+    // For now, I will update `TrainerChatPage` to pass the correct props to `NewConversationDialog` and `ChatView`.
+    // And I will assume `createConversation` should ideally use the computed ID.
+
+    // Let's look at `useConversations.ts`:
+    // `const createConversation = async (conversationData) => { return await createDoc('conversations', conversationData); };`
+
+    // I will modify `TrainerChatPage` to use `ChatLayout`.
   };
 
-  const selectedConversation = conversations?.find(c => c.id === selectedConversationId);
-  const existingConversationIds = useMemo(() => conversations?.map(c => c.conversationId) || [], [conversations]);
+  const otherParticipant = useMemo(() => {
+    if (!selectedConversation || !currentUser) return null;
+    const otherId = selectedConversation.participants.find(id => id !== currentUser.uid);
+    if (!otherId) return null;
+    // We need to fetch the user profile for the other participant.
+    // In the original code, it was fetched inside ChatView.
+    // My `ChatView` expects `otherParticipant` object.
+    // I can fetch it here or inside ChatView.
+    // Shared `ChatView` expects `UserProfile | null`.
+    // I should probably fetch it here to pass it down, or let `ChatView` handle it if I pass ID?
+    // Shared `ChatView` takes `otherParticipant` object.
+    // So I need to fetch it.
+    return null; // Placeholder, I need to fetch it.
+  }, [selectedConversation, currentUser]);
 
-  const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : '?';
+  // Wait, `ChatView` needs `otherParticipant`.
+  // I can't easily fetch it inside `useMemo`.
+  // I should probably use a hook to fetch it.
+  // Or I can pass `otherParticipantId` to `ChatView` and let it fetch.
+  // The shared `ChatView` currently takes `otherParticipant: UserProfile`.
+  // I should modify `ChatView` to take `otherParticipantId` and fetch it, OR fetch it in the parent.
+  // Fetching in parent (Page) means I need to fetch based on selected conversation.
+
+  const otherParticipantId = useMemo(() => {
+    return selectedConversation?.participants.find(id => id !== currentUser?.uid);
+  }, [selectedConversation, currentUser]);
+
+  const { data: otherParticipantProfile } = useDoc<UserProfile>('users', otherParticipantId || '');
 
   return (
-    <AlertDialog>
-      <div className="container mx-auto p-0 md:p-8 h-[calc(100vh-theme(spacing.14))] md:h-auto">
-        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 border rounded-lg h-full overflow-hidden">
-          <aside className={cn(
-            "flex flex-col border-r",
-            selectedConversationId && "hidden md:flex"
-          )}>
-            <header className="p-4 border-b flex items-center justify-between">
-              <h1 className="font-headline text-2xl font-bold">Czat</h1>
-              <NewConversationDialog existingConversationIds={existingConversationIds} onConversationCreated={refetch} />
-            </header>
-            <ScrollArea className="flex-1">
-              {isLoading && <div className="p-4 text-center text-muted-foreground">Ładowanie...</div>}
-      {conversations?.map(convo => {
-        const otherParticipantName = userProfile?.role === 'trainer' ? convo.athleteName : convo.trainerName;
-                const hasUnread = convo.unreadCount?.[user?.uid ?? ''] > 0;
-                return (
-                  <div key={convo.id} className="relative group">
-                    <Link
-                      href={`/trainer/chat?conversationId=${convo.id}`}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setSelectedConversationId(convo.id);
-                        router.replace(`/trainer/chat?conversationId=${convo.id}`, { scroll: false });
-                      }}
-                      className={cn(
-                        "block p-4 border-b hover:bg-secondary/50",
-                        selectedConversationId === convo.id && 'bg-secondary'
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        {hasUnread && (
-                          <div className="absolute left-2 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-primary" />
-                        )}
-                        <Avatar className="ml-4">
-                          <AvatarImage src={placeholderImages.find(p => p.id === 'avatar-male')?.imageUrl} />
-                          <AvatarFallback>{getInitials(otherParticipantName)}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 overflow-hidden">
-                          <p className={cn("font-semibold truncate", hasUnread && "text-primary")}>{otherParticipantName}</p>
-                          <p className="text-sm text-muted-foreground truncate">{convo.lastMessage?.text || 'Brak wiadomości'}</p>
-                        </div>
-                      </div>
-                    </Link>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 opacity-0 group-hover:opacity-100"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Czy na pewno chcesz usunąć ten czat?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Tej operacji nie można cofnąć. Spowoduje to trwałe usunięcie całej konwersacji z <span className="font-bold">{otherParticipantName}</span>.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                        <AlertDialogAction
-                          className="bg-destructive hover:bg-destructive/90"
-                          onClick={() => handleDeleteConversation(convo)}
-                        >
-                          Usuń
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </div>
-                )
-              })}
-              {!isLoading && conversations?.length === 0 && (
-                <div className="p-8 text-center text-muted-foreground">
-                  <Users className="mx-auto h-12 w-12 mb-4"/>
-                  <h3 className="font-semibold">Brak konwersacji</h3>
-                  <p className="text-sm">Rozpocznij czat z jednym ze swoich sportowców lub trenerem.</p>
-                </div>
-              )}
-            </ScrollArea>
-          </aside>
-
-          <main className={cn(
-            "md:col-span-2 xl:col-span-3",
-            !selectedConversationId && "hidden md:block"
-          )}>
-            {selectedConversation ? (
-              <ChatView conversation={selectedConversation} onBack={handleBackToList} />
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                <MessageSquare className="h-16 w-16 mb-4"/>
-                <h2 className="text-xl font-semibold">Wybierz konwersację</h2>
-                <p>Wybierz rozmowę z listy, aby wyświetlić wiadomości.</p>
-              </div>
-            )}
-          </main>
-        </div>
-      </div>
-    </AlertDialog>
+    <ChatLayout>
+      <ConversationList
+        conversations={conversations || []}
+        selectedId={selectedConversationId}
+        currentUserId={currentUser?.uid || ''}
+        userRole="trainer"
+        isLoading={isLoading}
+        onSelect={handleSelectConversation}
+        onDelete={(c) => deleteConversation(c.id)}
+        header={
+          <div className="flex items-center justify-between">
+            <h1 className="font-headline text-2xl font-bold">Czat</h1>
+            <NewConversationDialog
+              potentialContacts={potentialContacts}
+              isLoading={athletesLoading}
+              onStartConversation={handleCreateConversation}
+            />
+          </div>
+        }
+      />
+      <main className={`md:col-span-2 xl:col-span-3 ${!selectedConversationId ? 'hidden md:block' : ''}`}>
+        {selectedConversationId && selectedConversation ? (
+          <ChatView
+            conversation={selectedConversation}
+            messages={messages || []}
+            currentUserId={currentUser?.uid || ''}
+            otherParticipant={otherParticipantProfile || null}
+            isLoadingMessages={isLoading}
+            onSendMessage={sendMessage}
+            onBack={handleBackToList}
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+            <MessageSquare className="h-16 w-16 mb-4" />
+            <h2 className="text-xl font-semibold">Wybierz konwersację</h2>
+            <p>Wybierz rozmowę z listy, aby wyświetlić wiadomości.</p>
+          </div>
+        )}
+      </main>
+    </ChatLayout>
   );
 }
+

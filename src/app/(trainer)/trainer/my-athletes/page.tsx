@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -86,9 +87,14 @@ interface DietPlan {
   name: string;
 }
 
+import { useChat } from '@/components/chat/hooks/useChat';
+import { MessageSquare } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+
 export default function MyAthletesPage() {
   const { toast } = useToast();
   const { user } = useUser();
+  const { conversations, createConversation } = useChat();
 
   const [foundUser, setFoundUser] = useState<FoundUser | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -99,6 +105,7 @@ export default function MyAthletesPage() {
   const [assigningDietId, setAssigningDietId] = useState<string | null>(null);
   const [isDietDialogOpen, setIsDietDialogOpen] = useState(false);
   const [currentAthleteId, setCurrentAthleteId] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     fetchDiets();
@@ -149,6 +156,50 @@ export default function MyAthletesPage() {
     } finally {
       setAssigningDietId(null);
     }
+  };
+
+  const handleChat = async (athlete: UserProfile) => {
+    if (!user) return;
+
+    const conversationId = [user.uid, athlete.id].sort().join('_');
+    const existingConversation = conversations?.find(c => c.conversationId === conversationId);
+
+    if (!existingConversation) {
+      // Create if not exists
+      try {
+        await createConversation({
+          conversationId: conversationId,
+          participants: [user.uid, athlete.id],
+          trainerId: user.uid,
+          athleteId: athlete.id,
+          trainerName: userProfile?.name || 'Trener',
+          athleteName: athlete.name,
+          lastMessage: null,
+          updatedAt: new Date(),
+          unreadCount: {
+            [user.uid]: 0,
+            [athlete.id]: 0,
+          }
+        });
+      } catch (e) {
+        console.error("Failed to create conversation", e);
+        toast({
+          title: "Błąd",
+          description: "Nie udało się otworzyć czatu.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
+    router.push(`/trainer/chat?conversationId=${conversationId}`);
+  };
+
+  const getUnreadCount = (athleteId: string) => {
+    if (!user || !conversations) return 0;
+    const conversationId = [user.uid, athleteId].sort().join('_');
+    const conversation = conversations.find(c => c.conversationId === conversationId);
+    return conversation?.unreadCount?.[user.uid] || 0;
   };
 
   const avatarImage = placeholderImages.find((img) => img.id === 'avatar-male');
@@ -363,50 +414,61 @@ export default function MyAthletesPage() {
               <p>Ładowanie listy sportowców...</p>
             ) : athletes && athletes.length > 0 ? (
               <ul className="space-y-3">
-                {athletes.map((athlete: UserProfile) => (
-                  <li key={athlete.id} className="flex items-center justify-between rounded-md border p-3">
-                    <div className="flex items-center gap-4">
-                      <Avatar>
-                        {avatarImage && <AvatarImage src={avatarImage.imageUrl} alt={athlete.name} />}
-                        <AvatarFallback>{athlete.name.charAt(0).toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-semibold">{athlete.name}</p>
-                        <p className="text-sm text-muted-foreground">{athlete.email}</p>
+                {athletes.map((athlete: UserProfile) => {
+                  const unreadCount = getUnreadCount(athlete.id);
+                  return (
+                    <li key={athlete.id} className="flex items-center justify-between rounded-md border p-3">
+                      <div className="flex items-center gap-4">
+                        <Avatar>
+                          {avatarImage && <AvatarImage src={avatarImage.imageUrl} alt={athlete.name} />}
+                          <AvatarFallback>{athlete.name.charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-semibold">{athlete.name}</p>
+                          <p className="text-sm text-muted-foreground">{athlete.email}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button asChild variant="outline" size="sm">
-                        <Link href={`/trainer/my-athletes/${athlete.id}`}>Zobacz Profil</Link>
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => openDietDialog(athlete.id)}>
-                        <Utensils className="w-4 h-4 mr-2" />
-                        {athlete.assignedDietPlanId ? 'Zmień Dietę' : 'Przypisz Dietę'}
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="icon" className='h-9 w-9'>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Czy na pewno chcesz usunąć sportowca?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Tej operacji nie można cofnąć. Spowoduje to usunięcie sportowca <span className='font-bold'>{athlete.name}</span> z Twojej listy. Nie usunie to jego konta.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleRemoveAthlete(athlete.id)} className="bg-destructive hover:bg-destructive/90">
-                              Usuń
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </li>
-                ))}
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => handleChat(athlete)} className="relative">
+                          <MessageSquare className="h-4 w-4" />
+                          {unreadCount > 0 && (
+                            <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center rounded-full bg-red-500 text-[10px]">
+                              {unreadCount}
+                            </Badge>
+                          )}
+                        </Button>
+                        <Button asChild variant="outline" size="sm">
+                          <Link href={`/trainer/my-athletes/${athlete.id}`}>Zobacz Profil</Link>
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => openDietDialog(athlete.id)}>
+                          <Utensils className="w-4 h-4 mr-2" />
+                          {athlete.assignedDietPlanId ? 'Zmień' : 'Przypisz'}
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="icon" className='h-9 w-9'>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Czy na pewno chcesz usunąć sportowca?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tej operacji nie można cofnąć. Spowoduje to usunięcie sportowca <span className='font-bold'>{athlete.name}</span> z Twojej listy. Nie usunie to jego konta.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleRemoveAthlete(athlete.id)} className="bg-destructive hover:bg-destructive/90">
+                                Usuń
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             ) : (
               <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center">
