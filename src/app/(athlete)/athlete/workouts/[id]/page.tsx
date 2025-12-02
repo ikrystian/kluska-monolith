@@ -22,6 +22,8 @@ import {
 import { type ExerciseType } from '@/lib/set-type-config';
 import { useToast } from '@/hooks/use-toast';
 
+import { ScheduleWorkoutDialog } from '@/components/workouts/ScheduleWorkoutDialog';
+
 export default function WorkoutDetailsPage() {
     const params = useParams();
     const router = useRouter();
@@ -30,6 +32,7 @@ export default function WorkoutDetailsPage() {
     const id = params?.id as string;
     const { hasActiveWorkout, activeWorkout } = useActiveWorkout();
     const [isCopying, setIsCopying] = useState(false);
+    const [isScheduleOpen, setIsScheduleOpen] = useState(false);
 
     const { data: workout, isLoading } = useDoc<Workout>('workouts', id);
     const { createDoc } = useCreateDoc();
@@ -170,7 +173,22 @@ export default function WorkoutDetailsPage() {
                             <Play className="mr-2 h-4 w-4" /> Rozpocznij Trening
                         </Button>
                     )}
+                    <Button
+                        variant="outline"
+                        className="ml-2"
+                        onClick={() => setIsScheduleOpen(true)}
+                    >
+                        <Calendar className="mr-2 h-4 w-4" /> Zaplanuj trening
+                    </Button>
                 </div>
+
+                {workout && (
+                    <ScheduleWorkoutDialog
+                        workout={workout}
+                        open={isScheduleOpen}
+                        onOpenChange={setIsScheduleOpen}
+                    />
+                )}
 
                 <div className="relative h-48 md:h-64 w-full rounded-xl overflow-hidden bg-muted">
                     {workout.imageUrl ? (

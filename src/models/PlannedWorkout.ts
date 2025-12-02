@@ -12,6 +12,7 @@ export interface IPlannedWorkout {
         duration?: string;
     }[];
     ownerId: string;
+    workoutId?: string;
 }
 
 const PlannedWorkoutSchema = new Schema<IPlannedWorkout>(
@@ -26,13 +27,15 @@ const PlannedWorkoutSchema = new Schema<IPlannedWorkout>(
             duration: { type: String },
         }],
         ownerId: { type: String, required: true },
+        workoutId: { type: String },
     },
     {
         toJSON: {
             transform: (_, ret) => {
-                ret.id = ret._id.toString();
-                delete ret.__v;
-                return ret;
+                const obj = ret as any;
+                obj.id = obj._id.toString();
+                delete obj.__v;
+                return obj;
             },
         },
     }

@@ -45,8 +45,8 @@ export default function AdminLayout({
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="text-muted-foreground">Weryfikacja uprawnień...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-muted-foreground">Weryfikacja uprawnień...</p>
         </div>
       </div>
     );
@@ -64,9 +64,9 @@ export default function AdminLayout({
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <AppNav />
-        <main className="flex-1 flex-col overflow-y-auto bg-secondary/30">
+        <main className="flex-1 flex flex-col overflow-hidden bg-secondary/30">
           <AppHeader />
-          <div className="flex-1 overflow-y-auto">{children}</div>
+          <div className="flex-1 overflow-y-auto min-h-0">{children}</div>
         </main>
       </div>
     </SidebarProvider>

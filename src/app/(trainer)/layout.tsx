@@ -67,9 +67,9 @@ export default function TrainerLayout({
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <AppNav />
-        <main className="flex-1 flex-col overflow-y-auto bg-secondary/30">
+        <main className="flex-1 flex flex-col overflow-hidden bg-secondary/30">
           <AppHeader />
-          <div className="flex-1 overflow-y-auto">{children}</div>
+          <div className="flex-1 overflow-y-auto min-h-0">{children}</div>
         </main>
       </div>
       <QuickChatWidget />

@@ -271,7 +271,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
       ) : filteredExercises && filteredExercises.length > 0 ? (
         <div
           ref={parentRef}
-          className="flex-1 overflow-auto"
+          className="flex-1 overflow-auto min-h-0"
           style={{ contain: 'strict' }}
           id="exercise-full-list"
         >

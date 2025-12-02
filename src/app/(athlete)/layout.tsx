@@ -79,9 +79,9 @@ function AthleteLayoutContent({
       <ActiveWorkoutProvider>
         <div className="flex min-h-screen w-full">
           <AppNav />
-          <main className="flex-1 flex-col overflow-y-auto bg-secondary/30">
+          <main className="flex-1 flex flex-col overflow-hidden bg-secondary/30">
             <AppHeader />
-            <div className="flex-1 overflow-y-auto pb-16 md:pb-0">{children}</div>
+            <div className="flex-1 overflow-y-auto min-h-0 pb-16 md:pb-0">{children}</div>
             <BottomNav />
           </main>
         </div>
