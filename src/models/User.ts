@@ -1,6 +1,9 @@
 import mongoose, { Schema, Model, Document } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
+export type Gender = 'male' | 'female' | 'other';
+export type TrainingLevelType = 'beginner' | 'intermediate' | 'advanced';
+
 export interface IUser extends Document {
   _id: string;
   name: string;
@@ -16,6 +19,13 @@ export interface IUser extends Document {
   trainerId?: string;
   favoriteGymIds?: string[];
   assignedDietPlanId?: string;
+  // Onboarding fields
+  onboardingCompleted?: boolean;
+  gender?: Gender;
+  dateOfBirth?: Date;
+  height?: number; // w cm
+  weight?: number; // w kg
+  trainingLevel?: TrainingLevelType;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -36,6 +46,13 @@ const UserSchema = new Schema<IUser>(
     trainerId: { type: String },
     favoriteGymIds: [{ type: String }],
     assignedDietPlanId: { type: String },
+    // Onboarding fields
+    onboardingCompleted: { type: Boolean, default: false },
+    gender: { type: String, enum: ['male', 'female', 'other'] },
+    dateOfBirth: { type: Date },
+    height: { type: Number }, // w cm
+    weight: { type: Number }, // w kg
+    trainingLevel: { type: String, enum: ['beginner', 'intermediate', 'advanced'] },
   },
   {
     timestamps: true,

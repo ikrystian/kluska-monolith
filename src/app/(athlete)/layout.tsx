@@ -4,7 +4,7 @@ import { AppNav } from '@/components/nav';
 import { AppHeader } from '@/components/header';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useUser, useDoc } from '@/lib/db-hooks';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { BottomNav } from '@/components/bottom-nav';
@@ -20,6 +20,7 @@ export default function AthleteLayout({
 }>) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const pathname = usePathname();
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(
     user ? 'users' : null,
@@ -27,6 +28,7 @@ export default function AthleteLayout({
   );
 
   const isLoading = isUserLoading || isProfileLoading;
+  const isOnboardingPage = pathname?.startsWith('/athlete/onboarding');
 
   useEffect(() => {
     // This effect handles redirection after loading is complete
@@ -38,12 +40,17 @@ export default function AthleteLayout({
         router.push('/trainer/dashboard');
       } else if (userProfile?.role === 'admin') {
         router.push('/admin/dashboard');
+      } else if (userProfile?.role === 'athlete') {
+        // Check if onboarding is needed (only if not already on onboarding page)
+        if (!userProfile.onboardingCompleted && !isOnboardingPage) {
+          router.push('/athlete/onboarding');
+        }
       } else if (userProfile?.role !== 'athlete') {
         // If logged in but not an athlete/trainer/admin, go to login
         router.push('/athlete/dashboard');
       }
     }
-  }, [user, userProfile, isLoading, router]);
+  }, [user, userProfile, isLoading, router, isOnboardingPage]);
 
   // Render loading state until we are certain about the user's auth state and role.
   // This prevents child components from rendering and attempting to fetch data prematurely.
@@ -62,6 +69,11 @@ export default function AthleteLayout({
   // The useEffect will handle the redirect.
   if (userProfile?.role !== 'athlete') {
     return null;
+  }
+
+  // If on onboarding page, render children without the full layout (nav, header, etc.)
+  if (isOnboardingPage) {
+    return <>{children}</>;
   }
 
   // At this point, user is loaded, logged in, and is confirmed to be an athlete.

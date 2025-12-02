@@ -1,6 +1,9 @@
 // User-related types
 import { TrainingPlan, Workout } from './workout';
 
+export type Gender = 'male' | 'female' | 'other';
+export type TrainingLevelType = 'beginner' | 'intermediate' | 'advanced';
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -14,6 +17,13 @@ export interface UserProfile {
   };
   trainerId?: string;
   favoriteGymIds?: string[];
+  // Onboarding fields
+  onboardingCompleted?: boolean;
+  gender?: Gender;
+  dateOfBirth?: string;
+  height?: number;
+  weight?: number;
+  trainingLevel?: TrainingLevelType;
 }
 
 export interface AthleteProfile extends UserProfile {
@@ -25,4 +35,14 @@ export interface AthleteProfile extends UserProfile {
     workout: Workout;
     actualDurationMinutes?: number;
   }[];
+}
+
+// Onboarding data type
+export interface OnboardingData {
+  name: string;
+  gender: Gender;
+  dateOfBirth: string;
+  height: number;
+  weight: number;
+  trainingLevel: TrainingLevelType;
 }
