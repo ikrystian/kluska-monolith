@@ -24,6 +24,10 @@ export * from './SocialPost';
 export * from './CustomProduct';
 export * from './DietPlan';
 export * from './SavedMeal';
+// Gamification models
+export * from './GamificationProfile';
+export * from './Reward';
+export * from './AchievementBadge';
 
 // Export enums from types (no conflicts)
 export { MuscleGroupName, TrainingLevel, SetType } from './types/enums';

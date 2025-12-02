@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Gender, TrainingLevelType, OnboardingData } from '@/models/types/user';
+import { useUserProfile } from '@/contexts/UserProfileContext';
 
 export interface OnboardingState {
   name: string;
@@ -63,6 +64,7 @@ export function useOnboarding(initialName: string = ''): UseOnboardingReturn {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const { refetch: refetchUserProfile } = useUserProfile();
 
   const totalSteps = ONBOARDING_STEPS.length;
   const currentStepName = ONBOARDING_STEPS[currentStep];
@@ -176,9 +178,13 @@ export function useOnboarding(initialName: string = ''): UseOnboardingReturn {
         description: 'Twój profil został skonfigurowany. Witaj w GymProgress!',
       });
 
+      // Refetch user profile to update the cached data
+      if (refetchUserProfile) {
+        await refetchUserProfile();
+      }
+
       // Redirect to dashboard
       router.push('/athlete/dashboard');
-      router.refresh();
     } catch (error: any) {
       toast({
         title: 'Błąd',
@@ -188,7 +194,7 @@ export function useOnboarding(initialName: string = ''): UseOnboardingReturn {
     } finally {
       setIsSubmitting(false);
     }
-  }, [data, isSubmitting, router, toast]);
+  }, [data, isSubmitting, router, toast, refetchUserProfile]);
 
   return {
     currentStep,
