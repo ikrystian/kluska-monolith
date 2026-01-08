@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CircleDashed } from 'lucide-react';
 import { Gender } from '@/models/types/user';
 import { cn } from '@/lib/utils';
 
@@ -14,10 +14,29 @@ interface GenderStepProps {
   canProceed: boolean;
 }
 
-const genderOptions: { value: Gender; label: string; emoji: string; color: string }[] = [
-  { value: 'male', label: 'Mężczyzna', emoji: '🚹', color: 'from-blue-500 to-blue-600' },
-  { value: 'female', label: 'Kobieta', emoji: '🚺', color: 'from-pink-500 to-pink-600' },
-  { value: 'other', label: 'Inna', emoji: '⚧', color: 'from-purple-500 to-purple-600' },
+// Custom Mars icon (♂)
+const MarsIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <circle cx="10" cy="14" r="5" />
+    <path d="M14.5 9.5L19 5" />
+    <path d="M19 5v5" />
+    <path d="M19 5h-5" />
+  </svg>
+);
+
+// Custom Venus icon (♀)
+const VenusIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <circle cx="12" cy="9" r="5" />
+    <path d="M12 14v7" />
+    <path d="M9 18h6" />
+  </svg>
+);
+
+const genderOptions: { value: Gender; label: string; icon: React.FC<{ className?: string }>; color: string }[] = [
+  { value: 'male', label: 'Mężczyzna', icon: MarsIcon, color: 'from-blue-500 to-blue-600' },
+  { value: 'female', label: 'Kobieta', icon: VenusIcon, color: 'from-pink-500 to-pink-600' },
+  { value: 'other', label: 'Inna', icon: CircleDashed, color: 'from-purple-500 to-purple-600' },
 ];
 
 export function GenderStep({ value, onChange, onNext, onPrev, canProceed }: GenderStepProps) {
@@ -43,13 +62,16 @@ export function GenderStep({ value, onChange, onNext, onPrev, canProceed }: Gend
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 + index * 0.1 }}
             className={cn(
-              'w-16 h-16 rounded-full flex items-center justify-center text-3xl',
+              'w-16 h-16 rounded-full flex items-center justify-center',
               value === option.value
                 ? `bg-gradient-to-br ${option.color} shadow-lg`
                 : 'bg-secondary'
             )}
           >
-            {option.emoji}
+            <option.icon className={cn(
+              'w-8 h-8',
+              value === option.value ? 'text-white' : 'text-muted-foreground'
+            )} />
           </motion.div>
         ))}
       </motion.div>
@@ -96,13 +118,16 @@ export function GenderStep({ value, onChange, onNext, onPrev, canProceed }: Gend
           >
             <div
               className={cn(
-                'w-14 h-14 rounded-full flex items-center justify-center text-2xl transition-all duration-300',
+                'w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300',
                 value === option.value
                   ? `bg-gradient-to-br ${option.color}`
                   : 'bg-secondary'
               )}
             >
-              {option.emoji}
+              <option.icon className={cn(
+                'w-7 h-7',
+                value === option.value ? 'text-white' : 'text-muted-foreground'
+              )} />
             </div>
             <span className="text-lg font-medium">{option.label}</span>
             {value === option.value && (

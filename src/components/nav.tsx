@@ -83,6 +83,15 @@ const trainerNavItems = [
   { href: '/trainer/chat', icon: MessageSquare, label: 'Czat' },
   { href: '/trainer/social', icon: Users2, label: 'Social' },
   {
+    label: 'Trening',
+    icon: Dumbbell,
+    items: [
+      { href: '/trainer/workout-plans', label: 'Plany Treningowe' },
+      { href: '/trainer/workouts', label: 'Treningi' },
+      { href: '/trainer/exercises', label: 'Ćwiczenia' },
+    ]
+  },
+  {
     label: 'Dieta',
     icon: Salad,
     items: [
@@ -92,9 +101,6 @@ const trainerNavItems = [
       { href: '/trainer/diet/meals/create', label: 'Utwórz Posiłek' },
     ]
   },
-  { href: '/trainer/workout-plans', icon: ClipboardList, label: 'Plany Treningowe' },
-  { href: '/trainer/workouts', icon: Library, label: 'Treningi' },
-  { href: '/trainer/exercises', icon: Dumbbell, label: 'Ćwiczenia' },
   { href: '/trainer/knowledge-zone', icon: BookOpen, label: 'Strefa Wiedzy' },
   { href: '/trainer/map', icon: Map, label: 'Mapa Siłowni' },
 ]

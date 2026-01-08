@@ -63,7 +63,7 @@ export function HeightStep({ value, onChange, onNext, onPrev, canProceed }: Heig
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.5 }}
-        className="mb-8 text-center"
+        className="mb-6 text-center"
       >
         <div className="text-6xl font-bold bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">
           {height}
@@ -71,51 +71,69 @@ export function HeightStep({ value, onChange, onNext, onPrev, canProceed }: Heig
         <div className="text-xl text-muted-foreground">cm</div>
       </motion.div>
 
-      {/* Visual Height Indicator */}
+      {/* Visual Height Gauge */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}
         className="w-full max-w-sm mb-8"
       >
-        <div className="relative flex items-end justify-center gap-6 h-40 mb-6">
-          {/* Ruler markings */}
-          <div className="absolute left-0 h-full flex flex-col justify-between text-xs text-muted-foreground">
-            <span>250</span>
-            <span>200</span>
-            <span>170</span>
-            <span>140</span>
-            <span>100</span>
-          </div>
-
-          {/* Person silhouette */}
-          <motion.div
-            className="relative flex flex-col items-center"
-            animate={{ height: `${heightPercentage}%` }}
-            transition={{ type: 'spring', stiffness: 100, damping: 15 }}
-          >
-            {/* Head */}
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/70 mb-1" />
-            {/* Body */}
-            <div
-              className="w-12 flex-1 min-h-[20px] rounded-t-lg bg-gradient-to-b from-primary/80 to-primary/50"
-              style={{ maxHeight: '100px' }}
-            />
-            {/* Legs */}
-            <div className="flex gap-1">
-              <div className="w-5 h-12 rounded-b-lg bg-gradient-to-b from-primary/50 to-primary/30" />
-              <div className="w-5 h-12 rounded-b-lg bg-gradient-to-b from-primary/50 to-primary/30" />
+        {/* Semi-circular gauge */}
+        <div className="flex justify-center mb-6">
+          <div className="relative w-48 h-24 overflow-hidden">
+            {/* Background arc */}
+            <svg className="w-48 h-48 -mt-0" viewBox="0 0 200 100">
+              {/* Track */}
+              <path
+                d="M 20 100 A 80 80 0 0 1 180 100"
+                fill="none"
+                strokeWidth="12"
+                className="stroke-secondary"
+                strokeLinecap="round"
+              />
+              {/* Progress arc */}
+              <motion.path
+                d="M 20 100 A 80 80 0 0 1 180 100"
+                fill="none"
+                strokeWidth="12"
+                className="stroke-emerald-500"
+                strokeLinecap="round"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: heightPercentage / 100 }}
+                transition={{ type: 'spring', stiffness: 60, damping: 15 }}
+              />
+            </svg>
+            {/* Center indicator */}
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2">
+              <motion.div
+                className="w-3 h-3 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50"
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
             </div>
-          </motion.div>
-
-          {/* Ruler bar */}
-          <div className="w-4 h-full bg-secondary rounded-full relative overflow-hidden">
-            <motion.div
-              className="absolute bottom-0 w-full bg-gradient-to-t from-green-500 to-emerald-400 rounded-full"
-              animate={{ height: `${heightPercentage}%` }}
-              transition={{ type: 'spring', stiffness: 100, damping: 15 }}
-            />
+            {/* Min/Max labels */}
+            <div className="absolute bottom-0 left-2 text-xs text-muted-foreground">100</div>
+            <div className="absolute bottom-0 right-2 text-xs text-muted-foreground">250</div>
           </div>
+        </div>
+
+        {/* Height categories */}
+        <div className="flex justify-center gap-2 mb-6">
+          {[
+            { label: 'Niski', range: [100, 160], color: 'bg-blue-500' },
+            { label: 'Średni', range: [161, 180], color: 'bg-emerald-500' },
+            { label: 'Wysoki', range: [181, 250], color: 'bg-purple-500' },
+          ].map((cat) => (
+            <div
+              key={cat.label}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-300 ${height >= cat.range[0] && height <= cat.range[1]
+                  ? `${cat.color} text-white shadow-md`
+                  : 'bg-secondary text-muted-foreground'
+                }`}
+            >
+              {cat.label}
+            </div>
+          ))}
         </div>
 
         {/* Slider */}

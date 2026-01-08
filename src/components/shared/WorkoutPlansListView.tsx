@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useCollection, useUser, useDeleteDoc } from '@/lib/db-hooks';
-import type { TrainingPlan, UserProfile } from '@/lib/types';
+import type { TrainingPlan, UserProfile, Workout } from '@/lib/types';
 import {
   Table,
   TableBody,
@@ -21,7 +21,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Trash2, Loader2, Plus, Edit } from 'lucide-react';
+import { Trash2, Loader2, Plus, Edit, Dumbbell } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import {
@@ -82,6 +82,12 @@ export function WorkoutPlansListView({
     showAuthorColumn ?? role === 'admin' ? 'users' : null
   );
 
+  // Fetch workouts to check if any exist (only for trainer)
+  const { data: workouts, isLoading: workoutsLoading } = useCollection<Workout>(
+    role === 'trainer' && currentUser?.uid ? 'workouts' : null,
+    role === 'trainer' && currentUser?.uid ? { ownerId: currentUser.uid } : undefined
+  );
+
   const [planToDelete, setPlanToDelete] = useState<TrainingPlan | null>(null);
 
   const usersMap = useMemo(() => {
@@ -89,7 +95,7 @@ export function WorkoutPlansListView({
     return new Map(users.map(u => [u.id, u.name]));
   }, [users]);
 
-  const isLoading = plansLoading || (showAuthorColumn ?? role === 'admin' ? usersLoading : false);
+  const isLoading = plansLoading || (showAuthorColumn ?? role === 'admin' ? usersLoading : false) || (role === 'trainer' ? workoutsLoading : false);
   const shouldShowAuthor = showAuthorColumn ?? role === 'admin';
 
   const displayTitle = title ?? (role === 'admin' ? 'Wszystkie Plany Treningowe' : 'Moje Plany Treningowe');
@@ -120,6 +126,36 @@ export function WorkoutPlansListView({
       });
     }
   };
+
+  // Check if trainer has no workouts
+  const showNoWorkoutsMessage = role === 'trainer' && !workoutsLoading && workouts && workouts.length === 0;
+
+  if (showNoWorkoutsMessage) {
+    return (
+      <div className="container mx-auto p-4 md:p-8">
+        <Card className="border-dashed border-2">
+          <CardHeader className="text-center">
+            <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
+              <Dumbbell className="w-12 h-12 text-primary" />
+            </div>
+            <CardTitle className="text-xl mb-2">Najpierw utwórz pojedynczy trening</CardTitle>
+            <CardDescription className="max-w-md mx-auto">
+              Twój plan treningowy składa się z wielu planów pojedynczych treningów.
+              Dzięki temu podejściu, raz utworzony trening możesz wielokrotnie wykorzystywać w różnych planach długoterminowych.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center pb-8">
+            <Link href="/trainer/workouts/create">
+              <Button size="lg" className="mt-4">
+                <Plus className="mr-2 h-4 w-4" />
+                Utwórz pierwszy trening
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-4 md:p-8">

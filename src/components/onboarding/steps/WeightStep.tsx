@@ -53,22 +53,11 @@ export function WeightStep({ value, height, onChange, onNext, onPrev, canProceed
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-        className="relative mb-6"
+        className="mb-6"
       >
         <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-xl">
           <Weight className="w-10 h-10 text-white" />
         </div>
-        {/* Animated weight plates */}
-        <motion.div
-          animate={{ rotate: [0, 10, -10, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="absolute -left-4 top-1/2 -translate-y-1/2 w-6 h-10 bg-gray-700 rounded"
-        />
-        <motion.div
-          animate={{ rotate: [0, -10, 10, 0] }}
-          transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-          className="absolute -right-4 top-1/2 -translate-y-1/2 w-6 h-10 bg-gray-700 rounded"
-        />
       </motion.div>
 
       {/* Title */}
@@ -118,32 +107,50 @@ export function WeightStep({ value, height, onChange, onNext, onPrev, canProceed
         transition={{ delay: 0.6 }}
         className="w-full max-w-sm mb-6"
       >
-        {/* Visual weight representation */}
+        {/* Circular progress ring */}
         <div className="flex justify-center mb-6">
-          <div className="relative">
-            {/* Scale platform */}
-            <div className="w-40 h-4 bg-gradient-to-b from-gray-300 to-gray-400 rounded-lg shadow-md" />
-            {/* Scale base */}
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-32 h-2 bg-gray-500 rounded-b-lg" />
-            {/* Weight indicator */}
-            <motion.div
-              className="absolute -top-8 left-1/2 -translate-x-1/2"
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 1 }}
-            >
-              <div className="flex items-end gap-1">
-                {Array.from({ length: Math.min(5, Math.ceil(weight / 30)) }).map((_, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ scaleY: 0 }}
-                    animate={{ scaleY: 1 }}
-                    transition={{ delay: 0.7 + i * 0.1 }}
-                    className="w-6 bg-gradient-to-t from-amber-600 to-amber-400 rounded-t"
-                    style={{ height: `${20 + (i + 1) * 8}px` }}
-                  />
-                ))}
-              </div>
-            </motion.div>
+          <div className="relative w-32 h-32">
+            <svg className="w-32 h-32 -rotate-90" viewBox="0 0 120 120">
+              {/* Background circle */}
+              <circle
+                cx="60"
+                cy="60"
+                r="50"
+                fill="none"
+                strokeWidth="10"
+                className="stroke-secondary"
+              />
+              {/* Progress circle */}
+              <motion.circle
+                cx="60"
+                cy="60"
+                r="50"
+                fill="none"
+                strokeWidth="10"
+                className="stroke-amber-500"
+                strokeLinecap="round"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: Math.min((weight - 30) / 170, 1) }}
+                transition={{ type: 'spring', stiffness: 60, damping: 15 }}
+                style={{
+                  strokeDasharray: '314.159',
+                  strokeDashoffset: 0,
+                }}
+              />
+            </svg>
+            {/* Center content */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <motion.div
+                className="text-3xl font-bold text-amber-500"
+                key={weight}
+                initial={{ scale: 1.1 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                {Math.round(weight)}
+              </motion.div>
+              <span className="text-xs text-muted-foreground">kg</span>
+            </div>
           </div>
         </div>
 

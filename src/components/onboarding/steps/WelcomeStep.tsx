@@ -35,11 +35,12 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
         </div>
         <motion.div
           animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.5, 1, 0.5],
+            scale: [1, 1.1, 1],
+            opacity: [0.7, 1, 0.7],
+            rotate: [0, 5, -5, 0],
           }}
           transition={{
-            duration: 2,
+            duration: 3,
             repeat: Infinity,
             ease: 'easeInOut',
           }}

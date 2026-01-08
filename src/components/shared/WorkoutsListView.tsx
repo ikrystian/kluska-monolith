@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useUser, useCollection, useDeleteDoc } from '@/lib/db-hooks';
-import { Workout, TrainingLevel } from '@/lib/types';
+import { Workout, TrainingLevel, Exercise } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -128,11 +128,17 @@ export function WorkoutsListView({
         getQueryFilter()
     );
 
+    // Fetch exercises to check if any exist (only for trainer)
+    const { data: exercises, isLoading: exercisesLoading } = useCollection<Exercise>(
+        role === 'trainer' && user?.uid ? 'exercises' : null,
+        role === 'trainer' && user?.uid ? { ownerId: user.uid } : undefined
+    );
+
     // Apply search filter for admin
     const filteredWorkouts = (showSearch ?? role === 'admin') && searchTerm
         ? workouts?.filter(workout =>
             workout.name.toLowerCase().includes(searchTerm.toLowerCase())
-          )
+        )
         : workouts;
 
     const handleDeleteWorkout = async () => {
@@ -167,6 +173,36 @@ export function WorkoutsListView({
     const shouldShowSearch = showSearch ?? role === 'admin';
     const shouldShowDelete = showDelete ?? role === 'admin';
     const shouldShowOwnerBadge = showOwnerBadge ?? role === 'athlete';
+
+    // Check if trainer has no exercises
+    const showNoExercisesMessage = role === 'trainer' && !exercisesLoading && exercises && exercises.length === 0;
+
+    if (showNoExercisesMessage) {
+        return (
+            <div className="container mx-auto p-4 md:p-8">
+                <Card className="border-dashed border-2">
+                    <CardHeader className="text-center">
+                        <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
+                            <Dumbbell className="w-12 h-12 text-primary" />
+                        </div>
+                        <CardTitle className="text-xl mb-2">Najpierw dodaj ćwiczenia</CardTitle>
+                        <CardDescription className="max-w-md mx-auto">
+                            Twój trening składa się z pojedynczych ćwiczeń.
+                            Aby utworzyć trening, najpierw musisz dodać ćwiczenia do swojej bazy.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex justify-center pb-8">
+                        <Link href="/trainer/exercises">
+                            <Button size="lg" className="mt-4">
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Dodaj pierwsze ćwiczenie
+                            </Button>
+                        </Link>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
 
     return (
         <div className="container mx-auto p-4 md:p-8">

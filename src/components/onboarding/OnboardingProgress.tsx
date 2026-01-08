@@ -42,24 +42,29 @@ export function OnboardingProgress({
       </div>
       {/* Step indicators */}
       <div className="flex justify-between mt-3">
-        {Array.from({ length: totalDataSteps }).map((_, index) => (
-          <motion.div
-            key={index}
-            className={cn(
-              'w-2 h-2 rounded-full transition-colors duration-300',
-              index < dataStepNumber
-                ? 'bg-primary'
-                : index === dataStepNumber - 1
+        {Array.from({ length: totalDataSteps }).map((_, index) => {
+          const isActive = index === dataStepNumber - 1;
+          const isCompleted = index < dataStepNumber - 1;
+
+          return (
+            <motion.div
+              key={index}
+              className={cn(
+                'w-2.5 h-2.5 rounded-full transition-all duration-300',
+                isCompleted
                   ? 'bg-primary'
-                  : 'bg-secondary'
-            )}
-            initial={{ scale: 0.8 }}
-            animate={{
-              scale: index === dataStepNumber - 1 ? 1.2 : 1,
-            }}
-            transition={{ duration: 0.3 }}
-          />
-        ))}
+                  : isActive
+                    ? 'bg-primary ring-4 ring-primary/20'
+                    : 'bg-secondary'
+              )}
+              initial={{ scale: 0.8 }}
+              animate={{
+                scale: isActive ? 1.3 : 1,
+              }}
+              transition={{ duration: 0.3, type: 'spring', stiffness: 300 }}
+            />
+          );
+        })}
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCollection, useDoc, useUser } from '@/lib/db-hooks';
 import type { WorkoutLog, Goal, BodyMeasurement, RunningSession, LoggedMeal, PlannedWorkout, UserProfile, TrainingPlan } from '@/lib/types';
-import { Activity, Target, Weight, Footprints, ChefHat, Calendar as CalendarIcon, TrendingUp, Dumbbell, Clock, Award } from 'lucide-react';
+import { Activity, Target, Weight, Footprints, ChefHat, Calendar as CalendarIcon, TrendingUp, Dumbbell, Clock, Award, Layers } from 'lucide-react';
 
 const StatCard = ({
   title,
@@ -228,7 +228,7 @@ export default function AthleteDashboardPage() {
           value={assignedPlans?.length || 0}
           icon={Award}
           isLoading={isLoading}
-          href="/athlete/templates"
+          href="/athlete/workout-plans"
         />
         <StatCard
           title="Zaplanowane na dziś"
@@ -362,6 +362,48 @@ export default function AthleteDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Assigned Workout Plans */}
+      {assignedPlans && assignedPlans.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="font-headline">Plany Treningowe od Trenera</CardTitle>
+              <CardDescription>Przypisane Ci programy treningowe</CardDescription>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/athlete/workout-plans">Zobacz szczegóły</Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {assignedPlans.slice(0, 3).map((plan) => {
+                const totalWeeks = plan.stages.reduce((acc, stage) => acc + stage.weeks.length, 0);
+                return (
+                  <Link key={plan.id} href="/athlete/workout-plans" className="block">
+                    <div className="p-4 rounded-lg border hover:bg-secondary/50 transition-colors">
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="font-semibold">{plan.name}</h4>
+                        <Badge variant="outline" className="text-xs">{plan.level}</Badge>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Layers className="h-3 w-3" />
+                          <span>{plan.stages.length} etapów</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <CalendarIcon className="h-3 w-3" />
+                          <span>{totalWeeks} tyg.</span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Actions */}
       <Card className="mt-6">

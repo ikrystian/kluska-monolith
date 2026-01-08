@@ -104,11 +104,11 @@ export function SummaryStep({ data, onSubmit, onPrev, onEdit, isSubmitting }: Su
         </div>
         <motion.div
           animate={{
-            scale: [1, 1.2, 1],
-            rotate: [0, 10, -10, 0],
+            scale: [1, 1.1, 1],
+            rotate: [0, 8, -8, 0],
           }}
           transition={{
-            duration: 2,
+            duration: 3,
             repeat: Infinity,
             ease: 'easeInOut',
           }}
