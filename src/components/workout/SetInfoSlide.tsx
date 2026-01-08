@@ -126,9 +126,8 @@ export function SetInfoSlide({
                 onChange={(e) => onWeightChange(parseFloat(e.target.value) || 0)}
                 onFocus={handleInputFocus}
                 placeholder={String(targetWeight || 0)}
-                className={`text-center text-lg font-semibold h-12 ${
-                  validationError && (actualWeight === undefined || actualWeight === null) ? 'border-destructive ring-destructive/20 ring-2' : ''
-                } ${isCompleted ? 'bg-green-50 border-green-200' : ''}`}
+                className={`text-center text-lg font-semibold h-12 ${validationError && (actualWeight === undefined || actualWeight === null) ? 'border-destructive ring-destructive/20 ring-2' : ''
+                  } ${isCompleted ? 'bg-green-50 border-green-200' : ''}`}
               />
             </div>
             <div className="space-y-2">
@@ -143,9 +142,8 @@ export function SetInfoSlide({
                 onChange={(e) => onRepsChange(parseInt(e.target.value) || 0)}
                 onFocus={handleInputFocus}
                 placeholder={String(targetReps || 0)}
-                className={`text-center text-lg font-semibold h-12 ${
-                  validationError && (actualReps === undefined || actualReps <= 0) ? 'border-destructive ring-destructive/20 ring-2' : ''
-                } ${isCompleted ? 'bg-green-50 border-green-200' : ''}`}
+                className={`text-center text-lg font-semibold h-12 ${validationError && (actualReps === undefined || actualReps <= 0) ? 'border-destructive ring-destructive/20 ring-2' : ''
+                  } ${isCompleted ? 'bg-green-50 border-green-200' : ''}`}
               />
             </div>
           </div>
@@ -164,9 +162,8 @@ export function SetInfoSlide({
               onChange={(e) => onRepsChange(parseInt(e.target.value) || 0)}
               onFocus={handleInputFocus}
               placeholder={String(targetReps || 0)}
-              className={`text-center text-2xl font-semibold h-14 ${
-                validationError && (actualReps === undefined || actualReps <= 0) ? 'border-destructive ring-destructive/20 ring-2' : ''
-              } ${isCompleted ? 'bg-green-50 border-green-200' : ''}`}
+              className={`text-center text-2xl font-semibold h-14 ${validationError && (actualReps === undefined || actualReps <= 0) ? 'border-destructive ring-destructive/20 ring-2' : ''
+                } ${isCompleted ? 'bg-green-50 border-green-200' : ''}`}
             />
           </div>
         );
@@ -185,9 +182,8 @@ export function SetInfoSlide({
                 onChange={(e) => onDurationChange?.(parseInt(e.target.value) || 0)}
                 onFocus={handleInputFocus}
                 placeholder={String(targetDuration || 0)}
-                className={`text-center text-2xl font-semibold h-14 pr-10 ${
-                  validationError && (actualDuration === undefined || actualDuration <= 0) ? 'border-destructive ring-destructive/20 ring-2' : ''
-                } ${isCompleted ? 'bg-green-50 border-green-200' : ''}`}
+                className={`text-center text-2xl font-semibold h-14 pr-10 ${validationError && (actualDuration === undefined || actualDuration <= 0) ? 'border-destructive ring-destructive/20 ring-2' : ''
+                  } ${isCompleted ? 'bg-green-50 border-green-200' : ''}`}
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">s</span>
             </div>
@@ -197,7 +193,7 @@ export function SetInfoSlide({
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[400px] p-4">
+    <div className="flex flex-col items-center justify-center min-h-[400px] p-4 border border-muted">
       <Card className={`w-full max-w-sm ${isCompleted ? 'opacity-60' : ''}`}>
         <CardHeader className="text-center pb-2">
           <div className="flex items-center justify-center gap-2 mb-2">

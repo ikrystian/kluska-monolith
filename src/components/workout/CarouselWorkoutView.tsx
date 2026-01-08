@@ -398,8 +398,8 @@ export function CarouselWorkoutView({
                 {currentSetInfo.exerciseType === 'duration'
                   ? `${currentSetInfo.duration || 0}s`
                   : currentSetInfo.exerciseType === 'reps'
-                  ? `${currentSetInfo.reps || 0} powt.`
-                  : `${currentSetInfo.weight || 0}kg × ${currentSetInfo.reps || 0}`
+                    ? `${currentSetInfo.reps || 0} powt.`
+                    : `${currentSetInfo.weight || 0}kg × ${currentSetInfo.reps || 0}`
                 }
               </span>
             )}
@@ -413,8 +413,7 @@ export function CarouselWorkoutView({
 
       {/* Carousel with Navigation Arrows */}
       <div className="flex-1 overflow-hidden relative">
-        {/* Left Navigation Arrow */}
-        <Button
+        {/* <Button
           variant="outline"
           size="icon"
           className="absolute left-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/80 backdrop-blur shadow-lg hover:bg-background"
@@ -425,7 +424,6 @@ export function CarouselWorkoutView({
           <ChevronLeft className="h-6 w-6" />
         </Button>
 
-        {/* Right Navigation Arrow */}
         <Button
           variant="outline"
           size="icon"
@@ -435,21 +433,24 @@ export function CarouselWorkoutView({
           aria-label="Następny slajd"
         >
           <ChevronRight className="h-6 w-6" />
-        </Button>
+        </Button> */}
 
         <Carousel
           setApi={setApi}
           opts={{
             align: 'center',
             loop: false,
+            slidesToScroll: 1,
+            containScroll: false,
           }}
-          className="w-full h-full"
+          className="w-full h-full px-8"
         >
-          <CarouselContent className="h-full">
+          <CarouselContent className="h-full -ml-2">
             {slides.map((slide, index) => {
               const exerciseDetails = getCurrentExerciseDetails(slide.exerciseIndex);
               const exerciseData = exerciseSeries[slide.exerciseIndex];
               const setData = exerciseData?.sets[slide.setIndex];
+              const isActive = currentSlideIndex === index;
 
               if (!setData) return null;
 
@@ -458,42 +459,52 @@ export function CarouselWorkoutView({
                 const showError = validationSlideIndex === index ? validationError : null;
 
                 return (
-                  <CarouselItem key={`set-${slide.exerciseIndex}-${slide.setIndex}`} className="h-full">
-                    <SetInfoSlide
-                      exerciseName={exerciseDetails?.name || (isLoadingExercises ? 'Ładowanie...' : 'Nieznane ćwiczenie')}
-                      exerciseDetails={exerciseDetails}
-                      setIndex={slide.setIndex}
-                      totalSets={exerciseData.sets.length}
-                      setType={setData.type}
-                      targetReps={setData.reps}
-                      targetWeight={setData.weight}
-                      targetDuration={setData.duration}
-                      actualReps={setData.reps}
-                      actualWeight={setData.weight}
-                      actualDuration={setData.duration}
-                      tempo={exerciseData.tempo}
-                      tip={exerciseData.tip}
-                      onRepsChange={(value) => handleRepsChange(slide.exerciseIndex, slide.setIndex, value)}
-                      onWeightChange={(value) => handleWeightChange(slide.exerciseIndex, slide.setIndex, value)}
-                      onDurationChange={(value) => handleDurationChange(slide.exerciseIndex, slide.setIndex, value)}
-                      isCompleted={setData.completed}
-                      validationError={showError}
-                      onStartEditing={() => handleStartEditing(slide.exerciseIndex, slide.setIndex)}
-                    />
+                  <CarouselItem
+                    key={`set-${slide.exerciseIndex}-${slide.setIndex}`}
+                    className="h-full basis-[85%] pl-2 transition-all duration-300"
+                  >
+                    <div className={`h-full transition-all duration-300 ${isActive ? 'scale-100 opacity-100' : 'scale-95 opacity-50'}`}>
+                      <SetInfoSlide
+                        exerciseName={exerciseDetails?.name || (isLoadingExercises ? 'Ładowanie...' : 'Nieznane ćwiczenie')}
+                        exerciseDetails={exerciseDetails}
+                        setIndex={slide.setIndex}
+                        totalSets={exerciseData.sets.length}
+                        setType={setData.type}
+                        targetReps={setData.reps}
+                        targetWeight={setData.weight}
+                        targetDuration={setData.duration}
+                        actualReps={setData.reps}
+                        actualWeight={setData.weight}
+                        actualDuration={setData.duration}
+                        tempo={exerciseData.tempo}
+                        tip={exerciseData.tip}
+                        onRepsChange={(value) => handleRepsChange(slide.exerciseIndex, slide.setIndex, value)}
+                        onWeightChange={(value) => handleWeightChange(slide.exerciseIndex, slide.setIndex, value)}
+                        onDurationChange={(value) => handleDurationChange(slide.exerciseIndex, slide.setIndex, value)}
+                        isCompleted={setData.completed}
+                        validationError={showError}
+                        onStartEditing={() => handleStartEditing(slide.exerciseIndex, slide.setIndex)}
+                      />
+                    </div>
                   </CarouselItem>
                 );
               }
 
               // Rest timer slide
               return (
-                <CarouselItem key={`rest-${slide.exerciseIndex}-${slide.setIndex}`} className="h-full">
-                  <RestTimerSlide
-                    restTimeSeconds={setData.restTimeSeconds || 60}
-                    nextSetInfo={getNextSetInfo(slide.exerciseIndex, slide.setIndex)}
-                    isActive={currentSlideIndex === index}
-                    onComplete={handleTimerComplete}
-                    onSkip={handleSkip}
-                  />
+                <CarouselItem
+                  key={`rest-${slide.exerciseIndex}-${slide.setIndex}`}
+                  className="h-full basis-[85%] pl-2 transition-all duration-300"
+                >
+                  <div className={`h-full transition-all duration-300 ${isActive ? 'scale-100 opacity-100' : 'scale-95 opacity-50'}`}>
+                    <RestTimerSlide
+                      restTimeSeconds={setData.restTimeSeconds || 60}
+                      nextSetInfo={getNextSetInfo(slide.exerciseIndex, slide.setIndex)}
+                      isActive={currentSlideIndex === index}
+                      onComplete={handleTimerComplete}
+                      onSkip={handleSkip}
+                    />
+                  </div>
                 </CarouselItem>
               );
             })}
@@ -513,15 +524,14 @@ export function CarouselWorkoutView({
               <button
                 key={index}
                 onClick={() => api?.scrollTo(index)}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  index === currentSlideIndex
-                    ? 'bg-primary w-4'
-                    : isSetCompleted
+                className={`w-2 h-2 rounded-full transition-all ${index === currentSlideIndex
+                  ? 'bg-primary w-4'
+                  : isSetCompleted
                     ? 'bg-green-500'
                     : slide.type === 'set-info'
-                    ? 'bg-primary/30'
-                    : 'bg-muted'
-                }`}
+                      ? 'bg-primary/30'
+                      : 'bg-muted'
+                  }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
             );
