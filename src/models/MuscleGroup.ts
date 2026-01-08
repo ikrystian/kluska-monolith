@@ -29,8 +29,8 @@ const MuscleGroupSchema = new Schema<IMuscleGroup>(
   }
 );
 
-MuscleGroupSchema.index({ name: 1 });
+// MuscleGroupSchema.index({ name: 1 }); - Removed as already unique in schema
 
-export const MuscleGroup: Model<IMuscleGroup> = 
+export const MuscleGroup: Model<IMuscleGroup> =
   mongoose.models.MuscleGroup || mongoose.model<IMuscleGroup>('MuscleGroup', MuscleGroupSchema);
 

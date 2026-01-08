@@ -457,22 +457,30 @@ export default function AthleteProfilePage() {
             {bodyMeasurements && bodyMeasurements.length > 0 ? (
               <div className="space-y-3">
                 {bodyMeasurements.map((measurement: any) => (
-                  <div key={measurement.id} className="flex items-center justify-between rounded-md bg-secondary p-3">
-                    <div>
-                      <p className="font-semibold">{format(new Date(measurement.date), "d MMMM yyyy", { locale: pl })}</p>
-                      <p className="text-sm text-muted-foreground">Waga: {measurement.weight} kg</p>
+                  <div key={measurement.id} className="flex flex-col gap-2 rounded-md bg-secondary p-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold">{format(new Date(measurement.date), "d MMMM yyyy", { locale: pl })}</p>
+                        <p className="text-sm text-muted-foreground">Waga: {measurement.weight} kg</p>
+                      </div>
+                      <div className="flex gap-2">
+                        {measurement.circumferences?.biceps && (
+                          <Badge variant="outline">Biceps: {measurement.circumferences.biceps} cm</Badge>
+                        )}
+                        {measurement.circumferences?.chest && (
+                          <Badge variant="outline">Klatka: {measurement.circumferences.chest} cm</Badge>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      {measurement.circumferences?.biceps && (
-                        <Badge variant="outline">Biceps: {measurement.circumferences.biceps} cm</Badge>
-                      )}
-                      {measurement.circumferences?.chest && (
-                        <Badge variant="outline">Klatka: {measurement.circumferences.chest} cm</Badge>
-                      )}
-                      {measurement.circumferences?.waist && (
-                        <Badge variant="outline">Talia: {measurement.circumferences.waist} cm</Badge>
-                      )}
-                    </div>
+                    {measurement.photoURLs && measurement.photoURLs.length > 0 && (
+                      <div className="flex gap-2 overflow-x-auto pb-2">
+                        {measurement.photoURLs.map((url: string, idx: number) => (
+                          <div key={idx} className="relative h-24 w-24 flex-shrink-0 rounded-md overflow-hidden border">
+                            <img src={url} alt={`Pomiar ${idx + 1}`} className="h-full w-full object-cover" />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

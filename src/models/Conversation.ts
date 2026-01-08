@@ -46,7 +46,7 @@ const ConversationSchema = new Schema<IConversation>(
   }
 );
 
-ConversationSchema.index({ conversationId: 1 });
+// ConversationSchema.index({ conversationId: 1 }); - Removed as it's already unique defined in schema
 ConversationSchema.index({ participants: 1 });
 ConversationSchema.index({ trainerId: 1 });
 ConversationSchema.index({ athleteId: 1 });

@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useUser, useCollection } from '@/lib/db-hooks';
-import { Users, MessageSquare, Dumbbell, TrendingUp } from 'lucide-react';
+import { Users, MessageSquare, Dumbbell, TrendingUp, Ruler, Check } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -30,6 +30,15 @@ interface Conversation {
     createdAt: string;
   };
   unreadCount?: Record<string, number>;
+}
+
+interface BodyMeasurement {
+  id: string;
+  ownerId: string;
+  date: string;
+  weight: number;
+  photoURLs?: string[];
+  sharedWithTrainer: boolean;
 }
 
 interface WorkoutLog {
@@ -76,6 +85,13 @@ export default function TrainerDashboardPage() {
     { trainerId: user?.uid }
   );
 
+  // Fetch recent Shared Measurements - NEW
+  const { data: recentMeasurements, isLoading: measurementsLoading } = useCollection<BodyMeasurement>(
+    user?.uid ? 'bodyMeasurements' : null,
+    { sharedWithTrainer: true },
+    { sort: { date: -1 }, limit: 5 }
+  );
+
   // Calculate statistics
   const stats = useMemo(() => {
     const totalAthletes = athletes?.length || 0;
@@ -98,7 +114,7 @@ export default function TrainerDashboardPage() {
     };
   }, [athletes, workoutPlans, conversations, recentWorkouts, user]);
 
-  const isLoading = athletesLoading || conversationsLoading || workoutsLoading || plansLoading;
+  const isLoading = athletesLoading || conversationsLoading || workoutsLoading || plansLoading || measurementsLoading;
 
   if (isLoading) {
     return (
@@ -273,6 +289,51 @@ export default function TrainerDashboardPage() {
             ) : (
               <p className="text-sm text-muted-foreground text-center py-8">
                 Brak konwersacji
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mt-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Ostatnie Pomiary</CardTitle>
+            <CardDescription>Najnowsze pomiary udostępnione przez sportowców</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {recentMeasurements && recentMeasurements.length > 0 ? (
+              <div className="space-y-4">
+                {recentMeasurements.map((measurement: any) => {
+                  const athlete = athletes?.find((a: any) => a.id === measurement.ownerId);
+                  return (
+                    <div key={measurement.id} className="flex items-center justify-between border-b pb-3 last:border-0">
+                      <div className="flex items-center gap-3">
+                        <div className="flex bg-muted h-8 w-8 items-center justify-center rounded-full">
+                          <Ruler className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{athlete?.name || 'Nieznany'}</p>
+                          <p className="text-xs text-muted-foreground">Waga: {measurement.weight} kg</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {measurement.photoURLs && measurement.photoURLs.length > 0 && (
+                          <Badge variant="outline" className="text-xs gap-1">
+                            <Check className="h-3 w-3" /> Zdjęcia
+                          </Badge>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(measurement.date).toLocaleDateString('pl-PL')}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Brak udostępnionych pomiarów
               </p>
             )}
           </CardContent>

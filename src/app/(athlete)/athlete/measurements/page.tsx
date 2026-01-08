@@ -40,8 +40,8 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PlusCircle, Loader2, Weight, Ruler, BarChart, Armchair, Upload, Trash2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { PlusCircle, Loader2, Weight, Ruler, BarChart, Armchair, Upload, Trash2, Camera } from 'lucide-react';
+import { useUploadThing } from '@/lib/uploadthing';
 import { useCollection, useCreateDoc, useUser } from '@/lib/db-hooks';
 import type { BodyMeasurement } from '@/lib/types';
 import { Switch } from '@/components/ui/switch';
@@ -148,6 +148,20 @@ export default function MeasurementsPage() {
   const [isDialogOpen, setDialogOpen] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [photosToUpload, setPhotosToUpload] = useState<File[]>([]);
+
+  const { startUpload, isUploading } = useUploadThing("imageUploader", {
+    onClientUploadComplete: (res) => {
+      console.log("Files: ", res);
+    },
+    onUploadError: (error: Error) => {
+      toast({
+        title: "Błąd przesyłania",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const { data: measurements, isLoading: measurementsLoading, refetch } = useCollection<BodyMeasurement>(
     user ? 'bodyMeasurements' : null,
@@ -192,49 +206,27 @@ export default function MeasurementsPage() {
     },
   });
 
-  const { fields: photoFields, append: appendPhoto, remove: removePhoto } = useFieldArray({
-    control: form.control,
-    name: "photos"
-  });
-
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
       const newPreviews = files.map(file => URL.createObjectURL(file));
       setPhotoPreviews(prev => [...prev, ...newPreviews]);
-      files.forEach(file => appendPhoto(file as any));
+      setPhotosToUpload(prev => [...prev, ...files]);
     }
-  };
-
-  const uploadPhotos = async (photos: File[]): Promise<string[]> => {
-    if (!user) return [];
-    const uploadPromises = photos.map(async (photo) => {
-      const formData = new FormData();
-      formData.append('file', photo);
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await response.json();
-      return `/api/images/${data.fileId}`;
-    });
-    return Promise.all(uploadPromises);
   };
 
   const onSubmit = async (data: MeasurementFormValues) => {
     if (!user) return;
 
     let photoURLs: string[] = [];
-    if (data.photos && data.photos.length > 0) {
+    if (photosToUpload.length > 0) {
       try {
-        photoURLs = await uploadPhotos(data.photos);
+        const uploadResult = await startUpload(photosToUpload);
+        if (uploadResult) {
+          photoURLs = uploadResult.map(res => res.url);
+        }
       } catch (error) {
         console.error("Error uploading photos: ", error);
-        toast({
-          title: 'Błąd przesyłania zdjęć',
-          description: 'Nie udało się przesłać wszystkich zdjęć. Spróbuj ponownie.',
-          variant: 'destructive',
-        });
         return;
       }
     }
@@ -262,6 +254,7 @@ export default function MeasurementsPage() {
       });
       form.reset();
       setPhotoPreviews([]);
+      setPhotosToUpload([]);
       setDialogOpen(false);
       refetch();
     } catch (error) {
@@ -304,18 +297,18 @@ export default function MeasurementsPage() {
                     <FormItem>
                       <FormLabel>Waga (kg)</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.1" placeholder="np. 85.5" {...field} />
+                        <Input type="number" step="0.1" placeholder="np. 85.5" {...field} value={field.value ?? ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <div className="grid grid-cols-2 gap-4">
-                  <FormField control={form.control} name="biceps" render={({ field }) => (<FormItem><FormLabel>Biceps (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                  <FormField control={form.control} name="chest" render={({ field }) => (<FormItem><FormLabel>Klatka (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                  <FormField control={form.control} name="waist" render={({ field }) => (<FormItem><FormLabel>Talia (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                  <FormField control={form.control} name="hips" render={({ field }) => (<FormItem><FormLabel>Biodra (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                  <FormField control={form.control} name="thigh" render={({ field }) => (<FormItem className="col-span-2"><FormLabel>Udo (cm)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="np. 60.5" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                  <FormField control={form.control} name="biceps" render={({ field }) => (<FormItem><FormLabel>Biceps (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                  <FormField control={form.control} name="chest" render={({ field }) => (<FormItem><FormLabel>Klatka (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                  <FormField control={form.control} name="waist" render={({ field }) => (<FormItem><FormLabel>Talia (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                  <FormField control={form.control} name="hips" render={({ field }) => (<FormItem><FormLabel>Biodra (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                  <FormField control={form.control} name="thigh" render={({ field }) => (<FormItem className="col-span-2"><FormLabel>Udo (cm)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="np. 60.5" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
                 </div>
                 <div className="space-y-2">
                   <FormLabel>Zdjęcia (opcjonalnie)</FormLabel>
@@ -334,7 +327,7 @@ export default function MeasurementsPage() {
                                   className="absolute top-2 right-2 h-6 w-6"
                                   onClick={() => {
                                     setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
-                                    removePhoto(index);
+                                    setPhotosToUpload(prev => prev.filter((_, i) => i !== index));
                                   }}
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -378,8 +371,8 @@ export default function MeasurementsPage() {
                   <DialogClose asChild>
                     <Button type="button" variant="secondary" disabled={form.formState.isSubmitting}>Anuluj</Button>
                   </DialogClose>
-                  <Button type="submit" disabled={isCreating}>
-                    {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <Button type="submit" disabled={isCreating || isUploading}>
+                    {(isCreating || isUploading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Zapisz Pomiar
                   </Button>
                 </DialogFooter>
@@ -436,6 +429,7 @@ export default function MeasurementsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Data</TableHead>
+                <TableHead>Zdjęcia</TableHead>
                 <TableHead>Waga (kg)</TableHead>
                 <TableHead>Biceps (cm)</TableHead>
                 <TableHead>Klatka (cm)</TableHead>
@@ -449,6 +443,7 @@ export default function MeasurementsPage() {
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
                     <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-8" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-16" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-16" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-16" /></TableCell>
@@ -461,6 +456,26 @@ export default function MeasurementsPage() {
                 displayMeasurements.map((session) => (
                   <TableRow key={session.id}>
                     <TableCell className="font-medium">{format(new Date(session.date), 'd MMM yyyy', { locale: pl })}</TableCell>
+                    <TableCell>
+                      {session.photoURLs && session.photoURLs.length > 0 ? (
+                        <div className="flex -space-x-2 overflow-hidden">
+                          {session.photoURLs.slice(0, 3).map((url, i) => (
+                            <div key={i} className="relative h-8 w-8 rounded-full border-2 border-background">
+                              <Image src={url} alt="Miniaturka" layout="fill" objectFit="cover" className="rounded-full" />
+                            </div>
+                          ))}
+                          {session.photoURLs.length > 3 && (
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-muted text-[10px] font-medium">
+                              +{session.photoURLs.length - 3}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="h-8 w-8 flex items-center justify-center text-muted-foreground/30">
+                          <Camera className="h-4 w-4" />
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell className="font-bold">{session.weight.toFixed(1)}</TableCell>
                     <TableCell>{session.circumferences.biceps?.toFixed(1) || '-'}</TableCell>
                     <TableCell>{session.circumferences.chest?.toFixed(1) || '-'}</TableCell>
@@ -472,7 +487,7 @@ export default function MeasurementsPage() {
                 )
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
+                  <TableCell colSpan={8} className="h-24 text-center">
                     <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                       <Armchair className="h-8 w-8" />
                       <span>Nie zarejestrowano jeszcze żadnych pomiarów.</span>

@@ -101,7 +101,7 @@ const GamificationProfileSchema = new Schema<IGamificationProfile>(
   }
 );
 
-GamificationProfileSchema.index({ userId: 1 });
+// GamificationProfileSchema.index({ userId: 1 }); - Removed as already unique in schema
 GamificationProfileSchema.index({ totalPointsEarned: -1 });
 GamificationProfileSchema.index({ currentFitCoins: -1 });
 GamificationProfileSchema.index({ level: -1 });
