@@ -42,6 +42,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PlusCircle, Loader2, Weight, Ruler, BarChart, Armchair, Upload, Trash2, Camera } from 'lucide-react';
 import { useUploadThing } from '@/lib/uploadthing';
+import { useToast } from '@/hooks/use-toast';
 import { useCollection, useCreateDoc, useUser } from '@/lib/db-hooks';
 import type { BodyMeasurement } from '@/lib/types';
 import { Switch } from '@/components/ui/switch';

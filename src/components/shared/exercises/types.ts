@@ -78,13 +78,13 @@ export interface ProgressDialogProps {
 // Default configurations by role
 export const roleDefaults: Record<ExercisesRole, Partial<ExercisesListViewProps>> = {
   athlete: {
-    canCreate: false,
+    canCreate: true,
     canEdit: true,  // Only own exercises
     canDelete: true, // Only own exercises
     showProgress: true,
     showOwnerBadge: false,
     title: 'Biblioteka Ćwiczeń',
-    emptyMessage: 'Nie znaleziono żadnych ćwiczeń.',
+    emptyMessage: 'Nie znaleziono żadnych ćwiczeń. Dodaj swoje pierwsze ćwiczenie, aby zacząć.',
   },
   trainer: {
     canCreate: true,
