@@ -131,7 +131,8 @@ export function WorkoutsListView({
     // Fetch exercises to check if any exist (only for trainer)
     const { data: exercises, isLoading: exercisesLoading } = useCollection<Exercise>(
         role === 'trainer' && user?.uid ? 'exercises' : null,
-        role === 'trainer' && user?.uid ? { ownerId: user.uid } : undefined
+        role === 'trainer' && user?.uid ? { ownerId: { $in: ['public', user.uid] } } : undefined,
+        { limit: 1 }
     );
 
     // Apply search filter for admin
