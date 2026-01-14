@@ -1,5 +1,4 @@
 // Workout-related types
-import { Timestamp } from 'mongodb';
 import { TrainingLevel } from './enums';
 import { Exercise, ExerciseSeries } from './exercise';
 
@@ -49,20 +48,20 @@ export interface PersonalRecord {
   type: 'max_weight' | 'max_reps' | 'max_duration';
   value: number;
   reps?: number;
-  achievedAt: Timestamp;
+  achievedAt: string;
   workoutLogId: string;
 }
 
 export interface WorkoutLog {
   id: string;
-  endTime: Timestamp;
+  endTime: string;
   workoutName: string;
   duration?: number;
   exercises: WorkoutExerciseLog[];
   photoURL?: string;
   athleteId: string;
   status?: 'in-progress' | 'completed';
-  startTime?: Timestamp;
+  startTime?: string;
   feedback?: string;
   newRecords?: PersonalRecord[];
   sourceWorkoutId?: string; // Track the original workout template used
@@ -95,7 +94,7 @@ export interface WorkoutPlan {
 
 export interface PlannedWorkout {
   id: string;
-  date: Timestamp;
+  date: string;
   workoutName: string;
   exercises: {
     name: string;

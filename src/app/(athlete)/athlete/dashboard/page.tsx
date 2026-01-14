@@ -90,33 +90,33 @@ export default function AthleteDashboardPage() {
   // Active goals
   const { data: goals, isLoading: goalsLoading } = useCollection<Goal>(
     user ? 'goals' : null,
-    { userId: user?.uid }
+    { ownerId: user?.uid }
   );
 
   // Latest body measurement
   const { data: latestMeasurements, isLoading: measurementsLoading } = useCollection<BodyMeasurement>(
     user ? 'bodyMeasurements' : null,
-    { userId: user?.uid },
+    { ownerId: user?.uid },
     { sort: { date: -1 }, limit: 1 }
   );
 
   // Recent running sessions (last 30 days)
   const { data: runningSessions, isLoading: runningLoading } = useCollection<RunningSession>(
     user ? 'runningSessions' : null,
-    { userId: user?.uid, date: { $gte: thirtyDaysAgo.toISOString() } },
+    { ownerId: user?.uid, date: { $gte: thirtyDaysAgo.toISOString() } },
     { sort: { date: -1 } }
   );
 
   // Recent meals (today)
   const { data: todayMeals, isLoading: mealsLoading } = useCollection<LoggedMeal>(
     user ? 'meals' : null,
-    { userId: user?.uid, date: { $gte: todayStart.toISOString(), $lte: todayEnd.toISOString() } }
+    { ownerId: user?.uid, date: { $gte: todayStart.toISOString(), $lte: todayEnd.toISOString() } }
   );
 
   // This week's planned workouts
   const { data: plannedWorkouts, isLoading: plannedLoading } = useCollection<PlannedWorkout>(
     user ? 'plannedWorkouts' : null,
-    { userId: user?.uid, date: { $gte: weekStart.toISOString(), $lte: weekEnd.toISOString() } }
+    { ownerId: user?.uid, date: { $gte: weekStart.toISOString(), $lte: weekEnd.toISOString() } }
   );
 
   // Assigned workout plans

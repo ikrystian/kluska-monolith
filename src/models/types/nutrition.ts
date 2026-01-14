@@ -1,5 +1,4 @@
 // Nutrition-related types
-import { Timestamp } from 'mongodb';
 
 export interface FoodItem {
   name: string;
@@ -14,7 +13,7 @@ export type MealType = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
 export interface Meal {
   id: string;
   ownerId: string;
-  date: Timestamp;
+  date: string;
   type: MealType;
   foodItems: FoodItem[];
 }
@@ -22,7 +21,7 @@ export interface Meal {
 export interface LoggedMeal {
   id: string;
   ownerId: string;
-  date: Timestamp;
+  date: string;
   type: MealType;
   foodItems: FoodItem[];
 }
@@ -36,5 +35,5 @@ export interface DietPlan {
     dayNumber: number;
     meals: Meal[];
   }[];
-  createdAt: Timestamp;
+  createdAt: string;
 }

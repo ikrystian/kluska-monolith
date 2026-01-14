@@ -254,7 +254,7 @@ function WorkoutBuilderView({ initialData, onStart, onCancel, allExercises, isLo
             )}
           </div>
 
-          <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t p-4 flex justify-between items-center z-50 md:absolute md:rounded-b-lg gap-4">
+          <div className="fixed bottom-16 left-0 right-0 bg-background/95 backdrop-blur border-t p-4 flex justify-between items-center z-50 md:absolute md:rounded-b-lg gap-4">
             <div className="w-full">
               <AddExerciseSheet allExercises={allExercises} onAddExercise={handleAddExercise} />
             </div>

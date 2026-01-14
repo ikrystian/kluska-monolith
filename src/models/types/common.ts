@@ -1,5 +1,4 @@
 // Common types used across the application
-import { Timestamp } from 'mongodb';
 
 export interface Article {
   id: string;
@@ -8,8 +7,8 @@ export interface Article {
   authorId: string;
   authorName: string;
   category: string;
-  createdAt: Timestamp;
-  updatedAt?: Timestamp;
+  createdAt: string;
+  updatedAt?: string;
   status: 'published' | 'draft';
   coverImageUrl?: string;
   imageHint?: string;
@@ -26,7 +25,7 @@ export interface Goal {
   target: number;
   current: number;
   unit: string;
-  deadline: Timestamp;
+  deadline: string;
   ownerId: string;
 }
 
@@ -34,14 +33,14 @@ export interface Achievement {
   id: string;
   title: string;
   description: string;
-  date: Timestamp;
+  date: string;
   photoURLs: string[];
   ownerId: string;
 }
 
 export interface RunningSession {
   id: string;
-  date: Timestamp;
+  date: string;
   distance: number;
   duration: number;
   avgPace: number;
@@ -55,13 +54,13 @@ export interface TrainerRequest {
   athleteName: string;
   trainerId: string;
   status: 'pending' | 'accepted' | 'rejected';
-  createdAt: Timestamp;
+  createdAt: string;
 }
 
 export interface BodyMeasurement {
   id: string;
   ownerId: string;
-  date: Timestamp;
+  date: string;
   weight: number;
   circumferences: {
     biceps?: number;
@@ -99,9 +98,9 @@ export interface Conversation {
   lastMessage: {
     text: string;
     senderId: string;
-    createdAt: Timestamp;
+    createdAt: string;
   } | null;
-  updatedAt: Timestamp;
+  updatedAt: string;
   unreadCount?: {
     [userId: string]: number;
   };
@@ -112,5 +111,5 @@ export interface Message {
   conversationId: string;
   senderId: string;
   text: string;
-  createdAt: Timestamp;
+  createdAt: string;
 }

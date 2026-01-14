@@ -62,17 +62,23 @@ export default function CalendarPage() {
                                 day: "h-full w-full p-1 aria-selected:opacity-100"
                             }}
                             components={{
-                                Day: ({ date, ...props }) => {
+                                Day: (props: any) => {
+                                    const rawDate = props.date || props.day;
+                                    const date = (rawDate instanceof Date && !isNaN(rawDate.getTime())) ? rawDate : undefined;
+
+                                    if (!date) return <div {...props} />;
+
                                     const dateStr = format(date, 'yyyy-MM-dd');
-                                    const hasCompleted = workoutDates.has(dateStr);
+                                    m(dateStr);
                                     const hasPlanned = plannedDates.has(dateStr);
                                     return (
                                         <div
-                                            className="relative h-full w-full flex items-center justify-center"
+                                            {...props}
+                                            className={`${props.className || ''} relative h-full w-full flex items-center justify-center data-[selected]:bg-primary data-[selected]:text-primary-foreground`}
                                         >
                                             <span>{format(date, 'd')}</span>
                                             {hasCompleted && (
-                                                <div className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-primary"></div>
+                                                <div className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-primary data-[selected]:bg-primary-foreground"></div>
                                             )}
                                             {hasPlanned && !hasCompleted && (
                                                 <div className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-accent"></div>
