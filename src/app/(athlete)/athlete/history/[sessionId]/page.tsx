@@ -43,7 +43,7 @@ export default function SessionSummaryPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <Skeleton className="h-48 w-full" />
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Skeleton className="h-20 w-full" />
               <Skeleton className="h-20 w-full" />
               <Skeleton className="h-20 w-full" />
@@ -81,8 +81,8 @@ export default function SessionSummaryPage() {
       </Button>
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline text-3xl">{workoutLog.workoutName}</CardTitle>
-          <CardDescription className="text-lg">
+          <CardTitle className="font-headline text-2xl sm:text-3xl">{workoutLog.workoutName}</CardTitle>
+          <CardDescription className="text-base sm:text-lg">
             {workoutLog.endTime ? format(new Date(workoutLog.endTime), 'd MMMM yyyy, HH:mm', { locale: pl }) : '...'}
           </CardDescription>
         </CardHeader>
@@ -132,12 +132,12 @@ export default function SessionSummaryPage() {
               <div className="grid gap-2">
                 {workoutLog.newRecords.map((record, idx) => (
                   <Card key={idx} className="bg-yellow-500/10 border-yellow-500/30">
-                    <CardContent className="p-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Trophy className="h-4 w-4 text-yellow-500" />
-                        <span className="font-medium">{record.exerciseName}</span>
+                    <CardContent className="p-3 flex flex-col sm:flex-row gap-2 sm:items-center justify-between">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Trophy className="h-4 w-4 text-yellow-500 flex-shrink-0" />
+                        <span className="font-medium truncate">{record.exerciseName}</span>
                       </div>
-                      <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700">
+                      <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700 w-fit flex-shrink-0">
                         {record.type === 'max_weight' && `${record.value} kg @ ${record.reps} powt.`}
                         {record.type === 'max_reps' && `${record.value} powtórzeń`}
                         {record.type === 'max_duration' && `${record.value} sek.`}
@@ -151,52 +151,107 @@ export default function SessionSummaryPage() {
 
           <div>
             <h3 className="mb-4 font-headline text-xl">Szczegóły sesji</h3>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[200px]">Ćwiczenie</TableHead>
-                  <TableHead>Seria</TableHead>
-                  <TableHead>Typ</TableHead>
-                  <TableHead className="text-right">Wynik</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {workoutLog.exercises.map((ex, exIndex) => {
-                  const exerciseDetails = ex.exercise;
-                  const exerciseType: ExerciseType = exerciseDetails?.type || 'weight';
 
-                  return ex.sets.map((set, setIndex) => (
-                    <TableRow key={`${exIndex}-${setIndex}`}>
-                      {setIndex === 0 ? (
-                        <TableCell rowSpan={ex.sets.length} className="font-medium align-top">
-                          <div className="flex flex-col gap-1">
-                            <span>{exerciseDetails?.name || 'Nieznane Ćwiczenie'}</span>
-                            <Badge variant="outline" className="w-fit text-[10px] gap-1">
-                              {exerciseType === 'weight' && <Dumbbell className="h-2.5 w-2.5" />}
-                              {exerciseType === 'reps' && <Repeat className="h-2.5 w-2.5" />}
-                              {exerciseType === 'duration' && <Timer className="h-2.5 w-2.5" />}
-                              {exerciseType === 'weight' ? 'Ciężar' : exerciseType === 'reps' ? 'Powt.' : 'Czas'}
-                            </Badge>
+            {/* Mobile View - Card Layout */}
+            <div className="space-y-4 md:hidden">
+              {workoutLog.exercises.map((ex, exIndex) => {
+                const exerciseDetails = ex.exercise;
+                const exerciseType: ExerciseType = exerciseDetails?.type || 'weight';
+
+                return (
+                  <Card key={exIndex} className="overflow-hidden">
+                    <CardHeader className="bg-secondary/30 py-3 px-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-col gap-1">
+                          <span className="font-medium">{exerciseDetails?.name || 'Nieznane Ćwiczenie'}</span>
+                          <Badge variant="outline" className="w-fit text-[10px] gap-1">
+                            {exerciseType === 'weight' && <Dumbbell className="h-2.5 w-2.5" />}
+                            {exerciseType === 'reps' && <Repeat className="h-2.5 w-2.5" />}
+                            {exerciseType === 'duration' && <Timer className="h-2.5 w-2.5" />}
+                            {exerciseType === 'weight' ? 'Ciężar' : exerciseType === 'reps' ? 'Powt.' : 'Czas'}
+                          </Badge>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">
+                          {ex.sets.length} {ex.sets.length === 1 ? 'seria' : ex.sets.length < 5 ? 'serie' : 'serii'}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="divide-y divide-border">
+                        {ex.sets.map((set, setIndex) => (
+                          <div key={setIndex} className="flex items-center justify-between px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-xs font-medium">
+                                {setIndex + 1}
+                              </span>
+                              <SetTypeBadge type={set.type} />
+                            </div>
+                            <span className="font-mono text-sm font-medium">
+                              {exerciseType === 'duration'
+                                ? `${set.duration || 0} sek.`
+                                : exerciseType === 'weight'
+                                  ? `${set.weight || 0}kg × ${set.reps || 0}`
+                                  : `${set.reps || 0} powt.`
+                              }
+                            </span>
                           </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Desktop View - Table Layout */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[200px]">Ćwiczenie</TableHead>
+                    <TableHead>Seria</TableHead>
+                    <TableHead>Typ</TableHead>
+                    <TableHead className="text-right">Wynik</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {workoutLog.exercises.map((ex, exIndex) => {
+                    const exerciseDetails = ex.exercise;
+                    const exerciseType: ExerciseType = exerciseDetails?.type || 'weight';
+
+                    return ex.sets.map((set, setIndex) => (
+                      <TableRow key={`${exIndex}-${setIndex}`}>
+                        {setIndex === 0 ? (
+                          <TableCell rowSpan={ex.sets.length} className="font-medium align-top">
+                            <div className="flex flex-col gap-1">
+                              <span>{exerciseDetails?.name || 'Nieznane Ćwiczenie'}</span>
+                              <Badge variant="outline" className="w-fit text-[10px] gap-1">
+                                {exerciseType === 'weight' && <Dumbbell className="h-2.5 w-2.5" />}
+                                {exerciseType === 'reps' && <Repeat className="h-2.5 w-2.5" />}
+                                {exerciseType === 'duration' && <Timer className="h-2.5 w-2.5" />}
+                                {exerciseType === 'weight' ? 'Ciężar' : exerciseType === 'reps' ? 'Powt.' : 'Czas'}
+                              </Badge>
+                            </div>
+                          </TableCell>
+                        ) : null}
+                        <TableCell>{setIndex + 1}</TableCell>
+                        <TableCell>
+                          <SetTypeBadge type={set.type} />
                         </TableCell>
-                      ) : null}
-                      <TableCell>{setIndex + 1}</TableCell>
-                      <TableCell>
-                        <SetTypeBadge type={set.type} />
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        {exerciseType === 'duration'
-                          ? `${set.duration || 0} sek.`
-                          : exerciseType === 'weight'
-                            ? `${set.weight || 0}kg × ${set.reps || 0}`
-                            : `${set.reps || 0} powt.`
-                        }
-                      </TableCell>
-                    </TableRow>
-                  ));
-                })}
-              </TableBody>
-            </Table>
+                        <TableCell className="text-right font-mono">
+                          {exerciseType === 'duration'
+                            ? `${set.duration || 0} sek.`
+                            : exerciseType === 'weight'
+                              ? `${set.weight || 0}kg × ${set.reps || 0}`
+                              : `${set.reps || 0} powt.`
+                          }
+                        </TableCell>
+                      </TableRow>
+                    ));
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           </div>
 
           {workoutLog.feedback && (

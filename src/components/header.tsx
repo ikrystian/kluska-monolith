@@ -14,7 +14,7 @@ export function AppHeader() {
         <SidebarTrigger />
       </div>
       <Link
-        href="/"
+        href="./dashboard"
         className="flex items-center gap-2 font-bold text-primary md:hidden"
       >
         <span className="font-headline text-xl">Leniwa Kluska</span>

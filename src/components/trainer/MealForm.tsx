@@ -265,7 +265,7 @@ export default function MealForm({ initialData }: MealFormProps) {
                             <CardTitle>Dodaj Składniki</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <Tabs defaultValue="search">
+                            <Tabs defaultValue="manual">
                                 <TabsList className="grid w-full grid-cols-2">
                                     <TabsTrigger value="search">Szukaj w FatSecret</TabsTrigger>
                                     <TabsTrigger value="manual">Ręczne Wprowadzanie</TabsTrigger>
