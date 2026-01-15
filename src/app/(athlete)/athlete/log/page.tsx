@@ -1528,7 +1528,7 @@ export default function LogWorkoutPage() {
 
   return (
     <div className="container mx-auto p-4 md:p-8">
-      <h1 className="mb-6 font-headline text-3xl font-bold">Zapisz Trening</h1>
+      <h1 className="mb-6 font-headline text-3xl font-bold">Trenuj Teraz</h1>
       <WorkoutSelectionView
         onStartBuilder={handleStartBuilder}
         allExercises={allExercises}

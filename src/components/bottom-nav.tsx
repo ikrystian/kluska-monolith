@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, PlusSquare, CalendarDays, MessageSquare, User } from 'lucide-react';
+import { LayoutDashboard, Play, CalendarDays, MessageSquare, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function BottomNav() {
@@ -11,7 +11,7 @@ export function BottomNav() {
     const items = [
         { href: '/athlete/dashboard', icon: LayoutDashboard, label: 'Panel' },
         { href: '/athlete/calendar', icon: CalendarDays, label: 'Kalendarz' },
-        { href: '/athlete/log', icon: PlusSquare, label: 'Trening' },
+        { href: '/athlete/log', icon: Play, label: 'Trenuj' },
         { href: '/athlete/chat', icon: MessageSquare, label: 'Czat' },
         { href: '/athlete/profile', icon: User, label: 'Profil' },
     ];

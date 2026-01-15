@@ -56,7 +56,7 @@ export default function AppLayout({
         <AppNav />
         <main className="flex flex-1 flex-col bg-secondary/30">
           <AppHeader />
-          <div className="flex-1 overflow-y-auto">{children}</div>
+          <div className="flex-1 pt-16 overflow-y-auto">{children}</div>
         </main>
       </div>
     </SidebarProvider>

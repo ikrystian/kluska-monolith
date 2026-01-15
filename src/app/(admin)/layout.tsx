@@ -66,7 +66,7 @@ export default function AdminLayout({
         <AppNav />
         <main className="flex-1 flex flex-col overflow-hidden bg-secondary/30">
           <AppHeader />
-          <div className="flex-1 overflow-y-auto min-h-0">{children}</div>
+          <div className="flex-1 pt-16 overflow-y-auto min-h-0">{children}</div>
         </main>
       </div>
     </SidebarProvider>

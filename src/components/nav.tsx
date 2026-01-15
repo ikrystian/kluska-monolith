@@ -7,7 +7,7 @@ import {
   LayoutDashboard,
   LogOut,
   User,
-  PlusSquare,
+  Play,
   Library,
   Users,
   RectangleEllipsis,
@@ -24,6 +24,8 @@ import {
   ArrowLeft,
   ChevronRight,
   Users2,
+  Layers,
+  TrendingUp,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -61,20 +63,38 @@ import { Loader2 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 export const athleteNavItems = [
-  { href: '/athlete/dashboard', icon: LayoutDashboard, label: 'Panel Sportowca' },
-  { href: '/athlete/log', icon: PlusSquare, label: 'Zapisz Trening' },
-  { href: '/athlete/calendar', icon: CalendarDays, label: 'Kalendarz' },
-  { href: '/athlete/chat', icon: MessageSquare, label: 'Czat' },
-  { href: '/athlete/social', icon: Users2, label: 'Social' },
-  { href: '/athlete/workout-plans', icon: Library, label: 'Plany Treningowe' },
-  { href: '/athlete/exercises', icon: Dumbbell, label: 'Ćwiczenia' },
-  { href: '/athlete/running', icon: Footprints, label: 'Bieganie' },
-  { href: '/athlete/measurements', icon: Ruler, label: 'Pomiary' },
-  { href: '/athlete/history', icon: History, label: 'Historia' },
-  { href: '/athlete/goals', icon: Trophy, label: 'Cele i Trofea' },
+  { href: '/athlete/dashboard', icon: LayoutDashboard, label: 'Panel' },
+  {
+    label: 'Trening',
+    icon: Dumbbell,
+    items: [
+      { href: '/athlete/log', label: 'Trenuj Teraz', icon: Play },
+      { href: '/athlete/workouts', label: 'Szablony', icon: ClipboardList },
+      { href: '/athlete/workout-plans', label: 'Mój Program', icon: Layers },
+      { href: '/athlete/exercises', label: 'Ćwiczenia', icon: Dumbbell },
+      { href: '/athlete/running', label: 'Bieganie', icon: Footprints },
+      { href: '/athlete/history', label: 'Historia', icon: History },
+    ]
+  },
+  {
+    label: 'Postępy',
+    icon: TrendingUp,
+    items: [
+      { href: '/athlete/measurements', label: 'Pomiary', icon: Ruler },
+      { href: '/athlete/goals', label: 'Cele i Trofea', icon: Trophy },
+      { href: '/athlete/calendar', label: 'Kalendarz', icon: CalendarDays },
+    ]
+  },
+  {
+    label: 'Społeczność',
+    icon: Users2,
+    items: [
+      { href: '/athlete/chat', label: 'Czat', icon: MessageSquare },
+      { href: '/athlete/social', label: 'Social', icon: Users2 },
+    ]
+  },
   { href: '/athlete/knowledge-zone', icon: BookOpen, label: 'Strefa Wiedzy' },
-  { href: '/athlete/map', icon: Map, label: 'Mapa' },
-  { href: '/athlete/workouts', icon: Dumbbell, label: 'Treningi' },
+  { href: '/athlete/map', icon: Map, label: 'Mapa Siłowni' },
 ];
 
 const trainerNavItems = [
