@@ -185,7 +185,7 @@ function WorkoutBuilderView({ initialData, onStart, onCancel, allExercises, isLo
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-6rem)] md:h-auto relative">
+    <div className="flex flex-col h-[calc(100vh-12rem)] md:h-auto relative">
       <div className="flex items-center justify-between mb-6">
         <Button variant="ghost" onClick={onCancel} className="p-0 hover:bg-transparent">
           <ArrowLeft className="mr-2 h-4 w-4" /> Wróć
@@ -635,7 +635,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   const exerciseDetails = allExercises?.find(ex => ex.id === selectedExerciseId);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-6rem)] md:h-auto relative">
+    <div className="flex flex-col h-[calc(100vh-12rem)] md:h-auto relative">
       <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(() => setIsFinished(true), (errors) => {
           console.error("Validation errors:", errors);

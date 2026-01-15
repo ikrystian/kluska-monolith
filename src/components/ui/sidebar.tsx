@@ -225,22 +225,22 @@ const Sidebar = React.forwardRef<
     return (
       <div
         ref={ref}
-        className={cn("group hidden shrink-0 md:block bg-background border-r transition-[width] duration-300", 
-        state === 'collapsed' ? 'w-[--sidebar-width-icon]' : 'w-[--sidebar-width]',
-        className
+        className={cn("group hidden shrink-0 md:block bg-background border-r transition-[width] duration-300",
+          state === 'collapsed' ? 'w-[--sidebar-width-icon]' : 'w-[--sidebar-width]',
+          className
         )}
         data-state={state}
         data-collapsible={state === "collapsed" ? collapsible : ""}
         data-variant={variant}
         data-side={side}
-         {...props}
+        {...props}
       >
         <div
-            data-sidebar="sidebar"
-            className="flex h-full w-full flex-col"
-          >
-            {children}
-          </div>
+          data-sidebar="sidebar"
+          className="flex h-full w-full flex-col"
+        >
+          {children}
+        </div>
       </div>
     )
   }
@@ -573,7 +573,7 @@ const SidebarMenuAction = React.forwardRef<
         "peer-data-[size=lg]/menu-button:top-2.5",
         "group-data-[state=collapsed]:hidden",
         showOnHover &&
-          "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-accent-foreground md:opacity-0",
+        "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-accent-foreground md:opacity-0",
         className
       )}
       {...props}

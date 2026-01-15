@@ -280,8 +280,7 @@ export function AppNav() {
     <Sidebar>
       <SidebarHeader>
         <Link href="/" className="flex items-center gap-2 font-bold text-primary">
-          <Dumbbell className="h-6 w-6" />
-          <span className="font-headline text-xl">GymProgress</span>
+          <span className="font-headline text-xl">Leniwa Kluska</span>
         </Link>
       </SidebarHeader>
       <SidebarContent>

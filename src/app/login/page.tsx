@@ -88,37 +88,42 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-secondary/50 p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center">
-          <Dumbbell className="mx-auto h-10 w-10 text-primary" />
-          <CardTitle className="font-headline text-2xl">Witaj z powrotem</CardTitle>
-          <CardDescription>Podaj swoje dane, aby uzyskać dostęp do konta.</CardDescription>
+    <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
+      <Card className="w-full max-w-md border-border/50">
+        <CardHeader className="space-y-3 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-primary">
+            <Dumbbell className="h-7 w-7 text-primary-foreground" />
+          </div>
+          <CardTitle className="font-headline text-2xl font-extrabold">Witaj z powrotem</CardTitle>
+          <CardDescription className="text-base">Zaloguj się do swojego konta GymProgress</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4">
+        <CardContent className="grid gap-5">
           <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="font-semibold">Email</Label>
             <Input
               id="email"
               type="email"
-              placeholder="m@example.com"
+              placeholder="twoj@email.com"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
               onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+              className="h-11"
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="password">Hasło</Label>
+            <Label htmlFor="password" className="font-semibold">Hasło</Label>
             <Input
               id="password"
               type="password"
+              placeholder="••••••••"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
               onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+              className="h-11"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -128,13 +133,13 @@ export default function LoginPage() {
               onCheckedChange={(checked) => setRememberMe(checked as boolean)}
               disabled={isLoading}
             />
-            <Label htmlFor="rememberMe" className="font-normal cursor-pointer">
+            <Label htmlFor="rememberMe" className="cursor-pointer font-normal text-sm">
               Zapamiętaj mnie
             </Label>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Button className="w-full" onClick={handleLogin} disabled={isLoading}>
+          <Button className="w-full h-11 font-bold text-base" onClick={handleLogin} disabled={isLoading}>
             {isLoading ? 'Logowanie...' : 'Zaloguj się'}
           </Button>
           <p className="text-center text-sm text-muted-foreground">

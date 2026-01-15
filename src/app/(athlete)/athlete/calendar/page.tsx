@@ -145,38 +145,39 @@ export default function CalendarPage() {
             </h1>
 
             {/* Legend */}
-            <div className="flex flex-wrap gap-4 text-sm mb-6">
-                <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full" style={{ backgroundColor: statusColors.scheduled.bg }} />
+            <div className="flex flex-wrap gap-2 md:gap-4 text-xs md:text-sm mb-6">
+                <div className="flex items-center gap-1.5">
+                    <div className="h-2.5 w-2.5 md:h-3 md:w-3 rounded-full shrink-0" style={{ backgroundColor: statusColors.scheduled.bg }} />
                     <span>Z trenerem</span>
                 </div>
-                <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full" style={{ backgroundColor: statusColors.confirmed.bg }} />
+                <div className="flex items-center gap-1.5">
+                    <div className="h-2.5 w-2.5 md:h-3 md:w-3 rounded-full shrink-0" style={{ backgroundColor: statusColors.confirmed.bg }} />
                     <span>Potwierdzone</span>
                 </div>
-                <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full" style={{ backgroundColor: statusColors.workout.bg }} />
+                <div className="flex items-center gap-1.5">
+                    <div className="h-2.5 w-2.5 md:h-3 md:w-3 rounded-full shrink-0" style={{ backgroundColor: statusColors.workout.bg }} />
                     <span>Ukończone</span>
                 </div>
-                <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full" style={{ backgroundColor: statusColors.planned.bg }} />
+                <div className="flex items-center gap-1.5">
+                    <div className="h-2.5 w-2.5 md:h-3 md:w-3 rounded-full shrink-0" style={{ backgroundColor: statusColors.planned.bg }} />
                     <span>Zaplanowane</span>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 {/* Calendar */}
-                <Card className="lg:col-span-2">
-                    <CardContent className="p-4">
+                <Card className="lg:col-span-2 overflow-hidden">
+                    <CardContent className="p-2 md:p-4">
                         {isLoading ? (
-                            <Skeleton className="h-[500px] w-full" />
+                            <Skeleton className="h-[350px] md:h-[500px] w-full" />
                         ) : (
                             <FullCalendarWrapper
                                 events={calendarEvents}
                                 onEventClick={handleEventClick}
                                 onDateClick={handleDateClick}
                                 initialView="dayGridMonth"
-                                height={500}
+                                height="auto"
+                                className="calendar-mobile-fix"
                             />
                         )}
                     </CardContent>
@@ -205,17 +206,17 @@ export default function CalendarPage() {
                                 {selectedDayEvents.trainerSessions.map((session, index) => {
                                     const sessionDate = new Date(session.date);
                                     return (
-                                        <AccordionItem value={`trainer-${index}`} key={session.id} className="border rounded-lg px-3">
+                                        <AccordionItem value={`trainer-${index}`} key={session.id} className="border rounded-lg px-2 md:px-3">
                                             <AccordionTrigger className="py-3">
-                                                <div className="flex justify-between w-full pr-2">
-                                                    <div className="text-left">
-                                                        <p className="font-semibold text-sm">{session.title}</p>
+                                                <div className="flex flex-col sm:flex-row sm:justify-between w-full pr-2 gap-1 sm:gap-2">
+                                                    <div className="text-left min-w-0 flex-1">
+                                                        <p className="font-semibold text-sm truncate">{session.title}</p>
                                                         <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                                            <User className="h-3 w-3" />
-                                                            {session.trainerName}
+                                                            <User className="h-3 w-3 shrink-0" />
+                                                            <span className="truncate">{session.trainerName}</span>
                                                         </p>
                                                     </div>
-                                                    <Badge className="bg-orange-500 hover:bg-orange-600 text-xs">
+                                                    <Badge className="bg-orange-500 hover:bg-orange-600 text-xs shrink-0 self-start sm:self-center">
                                                         {session.status === 'confirmed' ? 'Potwierdzona' : 'Z trenerem'}
                                                     </Badge>
                                                 </div>
@@ -256,14 +257,14 @@ export default function CalendarPage() {
                                         return acc + exVolume;
                                     }, 0);
                                     return (
-                                        <AccordionItem value={`completed-${index}`} key={log.id} className="border rounded-lg px-3">
+                                        <AccordionItem value={`completed-${index}`} key={log.id} className="border rounded-lg px-2 md:px-3">
                                             <AccordionTrigger className="py-3">
-                                                <div className="flex justify-between w-full pr-2">
-                                                    <div className="text-left">
-                                                        <p className="font-semibold text-sm">{log.workoutName}</p>
+                                                <div className="flex flex-col sm:flex-row sm:justify-between w-full pr-2 gap-1 sm:gap-2">
+                                                    <div className="text-left min-w-0 flex-1">
+                                                        <p className="font-semibold text-sm truncate">{log.workoutName}</p>
                                                         <p className="text-xs text-muted-foreground">{totalVolume.toLocaleString()} kg</p>
                                                     </div>
-                                                    <Badge variant="default" className="text-xs">Ukończono</Badge>
+                                                    <Badge variant="default" className="text-xs shrink-0 self-start sm:self-center">Ukończono</Badge>
                                                 </div>
                                             </AccordionTrigger>
                                             <AccordionContent>
@@ -295,14 +296,14 @@ export default function CalendarPage() {
 
                                 {/* Zaplanowane */}
                                 {selectedDayEvents.planned.map((plan, index) => (
-                                    <AccordionItem value={`planned-${index}`} key={plan.id} className="border rounded-lg px-3">
+                                    <AccordionItem value={`planned-${index}`} key={plan.id} className="border rounded-lg px-2 md:px-3">
                                         <AccordionTrigger className="py-3">
-                                            <div className="flex justify-between w-full pr-2">
-                                                <div className="text-left">
-                                                    <p className="font-semibold text-sm">{plan.workoutName}</p>
+                                            <div className="flex flex-col sm:flex-row sm:justify-between w-full pr-2 gap-1 sm:gap-2">
+                                                <div className="text-left min-w-0 flex-1">
+                                                    <p className="font-semibold text-sm truncate">{plan.workoutName}</p>
                                                     <p className="text-xs text-muted-foreground">{plan.exercises.length} ćwiczeń</p>
                                                 </div>
-                                                <Badge variant="secondary" className="bg-accent text-accent-foreground text-xs">Zaplanowano</Badge>
+                                                <Badge variant="secondary" className="bg-accent text-accent-foreground text-xs shrink-0 self-start sm:self-center">Zaplanowano</Badge>
                                             </div>
                                         </AccordionTrigger>
                                         <AccordionContent>

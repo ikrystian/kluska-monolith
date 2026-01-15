@@ -98,7 +98,7 @@ export default function RegisterPage() {
         variant: 'destructive',
       });
     } finally {
-        setUiLoading(false);
+      setUiLoading(false);
     }
   };
 
@@ -111,16 +111,18 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-secondary/50 p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center">
-          <Dumbbell className="mx-auto h-10 w-10 text-primary" />
-          <CardTitle className="font-headline text-2xl">Stwórz Konto</CardTitle>
-          <CardDescription>Dołącz do GymProgress i zacznij śledzić swoje postępy.</CardDescription>
+    <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
+      <Card className="w-full max-w-md border-border/50">
+        <CardHeader className="space-y-3 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-primary">
+            <Dumbbell className="h-7 w-7 text-primary-foreground" />
+          </div>
+          <CardTitle className="font-headline text-2xl font-extrabold">Stwórz Konto</CardTitle>
+          <CardDescription className="text-base">Rozpocznij swoją podróż fitness z GymProgress</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4">
+        <CardContent className="grid gap-5">
           <div className="grid gap-2">
-            <Label htmlFor="name">Imię i Nazwisko</Label>
+            <Label htmlFor="name" className="font-semibold">Imię i Nazwisko</Label>
             <Input
               id="name"
               placeholder="Jan Kowalski"
@@ -128,56 +130,61 @@ export default function RegisterPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={isLoading}
+              className="h-11"
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="font-semibold">Email</Label>
             <Input
               id="email"
               type="email"
-              placeholder="m@example.com"
+              placeholder="twoj@email.com"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
+              className="h-11"
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="password">Hasło</Label>
+            <Label htmlFor="password" className="font-semibold">Hasło</Label>
             <Input
               id="password"
               type="password"
+              placeholder="••••••••"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
+              className="h-11"
             />
+            <p className="text-xs text-muted-foreground">Minimum 6 znaków</p>
           </div>
-          <div className="grid gap-2">
-            <Label>Rola</Label>
+          <div className="grid gap-3">
+            <Label className="font-semibold">Wybierz typ konta</Label>
             <RadioGroup
               defaultValue="athlete"
-              className="flex gap-4"
+              className="grid grid-cols-2 gap-3"
               onValueChange={(value: 'athlete' | 'trainer' | 'admin') => setRole(value)}
               disabled={isLoading}
             >
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 rounded-lg border border-input p-3 has-[:checked]:border-primary has-[:checked]:bg-primary/5">
                 <RadioGroupItem value="athlete" id="r-athlete" />
-                <Label htmlFor="r-athlete">Sportowiec</Label>
+                <Label htmlFor="r-athlete" className="cursor-pointer font-normal">Sportowiec</Label>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 rounded-lg border border-input p-3 has-[:checked]:border-primary has-[:checked]:bg-primary/5">
                 <RadioGroupItem value="trainer" id="r-trainer" />
-                <Label htmlFor="r-trainer">Trener</Label>
+                <Label htmlFor="r-trainer" className="cursor-pointer font-normal">Trener</Label>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 rounded-lg border border-input p-3 has-[:checked]:border-primary has-[:checked]:bg-primary/5 col-span-2">
                 <RadioGroupItem value="admin" id="r-admin" />
-                <Label htmlFor="r-admin">Administrator</Label>
+                <Label htmlFor="r-admin" className="cursor-pointer font-normal">Administrator</Label>
               </div>
             </RadioGroup>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Button className="w-full" onClick={handleRegister} disabled={isLoading}>
+          <Button className="w-full h-11 font-bold text-base" onClick={handleRegister} disabled={isLoading}>
             {isLoading ? 'Rejestrowanie...' : 'Zarejestruj się'}
           </Button>
           <p className="text-center text-sm text-muted-foreground">

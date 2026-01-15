@@ -157,6 +157,92 @@ export function FullCalendarWrapper({
                     font-weight: 500;
                     background-color: hsl(var(--secondary));
                 }
+
+                /* Mobile Responsive Styles */
+                @media (max-width: 640px) {
+                    .fc-wrapper .fc-toolbar {
+                        flex-direction: column;
+                        gap: 0.5rem;
+                    }
+
+                    .fc-wrapper .fc-toolbar-chunk {
+                        display: flex;
+                        justify-content: center;
+                    }
+
+                    .fc-wrapper .fc-toolbar-title {
+                        font-size: 1rem !important;
+                    }
+
+                    .fc-wrapper .fc-button {
+                        padding: 0.375rem 0.5rem;
+                        font-size: 0.75rem;
+                    }
+
+                    .fc-wrapper .fc-button-group .fc-button {
+                        padding: 0.25rem 0.4rem;
+                    }
+
+                    .fc-wrapper .fc-daygrid-day-number {
+                        padding: 0.25rem;
+                        font-size: 0.75rem;
+                    }
+
+                    .fc-wrapper .fc-daygrid-day-frame {
+                        min-height: 3rem;
+                    }
+
+                    .fc-wrapper .fc-event {
+                        font-size: 0.65rem;
+                        padding: 0.0625rem 0.25rem;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+
+                    .fc-wrapper .fc-daygrid-event-harness {
+                        margin-bottom: 1px;
+                    }
+
+                    .fc-wrapper .fc-col-header-cell {
+                        padding: 0.5rem 0;
+                        font-size: 0.75rem;
+                    }
+
+                    .fc-wrapper .fc-col-header-cell-cushion {
+                        padding: 0 !important;
+                    }
+
+                    .fc-wrapper .fc-daygrid-more-link {
+                        font-size: 0.65rem;
+                    }
+
+                    .fc-wrapper .fc-button-group {
+                        flex-wrap: wrap;
+                        gap: 2px;
+                    }
+
+                    /* Hide some view buttons on very small screens */
+                    .fc-wrapper .fc-timeGridDay-button,
+                    .fc-wrapper .fc-listWeek-button {
+                        display: none;
+                    }
+                }
+
+                @media (max-width: 400px) {
+                    .fc-wrapper .fc-toolbar-chunk:last-child {
+                        display: none;
+                    }
+
+                    .fc-wrapper .fc-daygrid-day-top {
+                        flex-direction: row;
+                        justify-content: center;
+                    }
+
+                    .fc-wrapper .fc-daygrid-day-number {
+                        font-size: 0.7rem;
+                    }
+                }
             `}</style>
             <FullCalendar
                 ref={calendarRef}
