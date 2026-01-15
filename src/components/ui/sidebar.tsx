@@ -225,7 +225,7 @@ const Sidebar = React.forwardRef<
     return (
       <div
         ref={ref}
-        className={cn("group hidden shrink-0 md:block bg-background border-r transition-[width] duration-300",
+        className={cn("group hidden shrink-0 md:block bg-background border-r transition-[width] duration-300 h-screen sticky top-0",
           state === 'collapsed' ? 'w-[--sidebar-width-icon]' : 'w-[--sidebar-width]',
           className
         )}
@@ -237,7 +237,7 @@ const Sidebar = React.forwardRef<
       >
         <div
           data-sidebar="sidebar"
-          className="flex h-full w-full flex-col"
+          className="flex h-full w-full flex-col overflow-y-auto"
         >
           {children}
         </div>

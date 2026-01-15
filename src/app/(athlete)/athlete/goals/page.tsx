@@ -19,7 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import type { Goal, Achievement } from '@/lib/types';
-import { PlusCircle, Target, Calendar as CalendarIcon, Loader2, Trophy, Upload, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, Target, Calendar as CalendarIcon, Loader2, Trophy, Upload, MoreVertical, Edit, Trash2, Medal, Sparkles } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -64,6 +64,10 @@ import { useUser, useCollection, useCreateDoc, useUpdateDoc, useDeleteDoc } from
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAchievements, useGamificationProfile } from '@/hooks/useGamification';
+import { AchievementsGrid, GamificationStatsCard, AchievementNotification, useAchievementNotifications } from '@/components/gamification';
+import { Award } from 'lucide-react';
 
 // --- SCHEMAS ---
 
@@ -604,12 +608,17 @@ export default function GoalsAndAchievementsPage() {
     { ownerId: user?.uid },
   );
 
-  // Fetch Achievements
+  // Fetch Achievements (user trophies)
   const { data: achievements, isLoading: achievementsLoading, refetch: refetchAchievements } = useCollection<Achievement>(
     user ? 'achievements' : null,
     { ownerId: user?.uid },
     { sort: { date: -1 } }
   );
+
+  // Gamification hooks
+  const { stats: gamificationStats, isLoading: statsLoading, refreshProfile } = useGamificationProfile();
+  const { achievements: badges, isLoading: badgesLoading, checkAchievements, refreshAchievements: refetchBadges } = useAchievements();
+  const { currentNotification, addNotifications, dismissCurrent } = useAchievementNotifications();
 
   const isLoading = goalsLoading || achievementsLoading;
 
@@ -643,11 +652,26 @@ export default function GoalsAndAchievementsPage() {
     refetchAchievements();
   }
 
-  const handleGoalConverted = () => {
+  const handleGoalConverted = async () => {
     setGoalToConvert(null);
     refetchGoals();
     refetchAchievements();
-  }
+    // Sprawdź nowe odznaki gamifikacji
+    try {
+      const result = await checkAchievements();
+      if (result?.newAchievements?.length > 0) {
+        addNotifications(result.newAchievements);
+        toast({
+          title: 'Nowe odznaki!',
+          description: `Odblokowałeś ${result.newAchievements.length} nowych odznak!`,
+        });
+      }
+      refreshProfile();
+      refetchBadges();
+    } catch (error) {
+      console.error('Error checking achievements:', error);
+    }
+  };
 
   const handleDeleteGoal = async () => {
     if (!goalToDelete || !user) return;
@@ -663,6 +687,11 @@ export default function GoalsAndAchievementsPage() {
 
   return (
     <AlertDialog>
+      {/* Achievement unlock notification */}
+      <AchievementNotification
+        achievement={currentNotification}
+        onClose={dismissCurrent}
+      />
       <div className="container mx-auto p-4 md:p-8">
         {/* --- Header --- */}
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -749,6 +778,76 @@ export default function GoalsAndAchievementsPage() {
               </CardContent>
             </Card>
           </div>
+        </section>
+
+        {/* --- Gamification Badges Section --- */}
+        <section className="mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-headline text-2xl font-semibold flex items-center gap-2">
+              <Medal className="h-6 w-6 text-yellow-500" />
+              Odznaki Gamifikacji
+            </h2>
+            {gamificationStats && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <span>Poziom {gamificationStats.level}</span>
+                <span>•</span>
+                <span>{gamificationStats.currentFitCoins} FitCoins</span>
+              </div>
+            )}
+          </div>
+
+          {/* Mini stats card */}
+          {gamificationStats && (
+            <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold">{gamificationStats.level}</p>
+                  <p className="text-xs text-muted-foreground">Poziom</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold">{gamificationStats.currentFitCoins}</p>
+                  <p className="text-xs text-muted-foreground">FitCoins</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-orange-500/10 to-red-500/10">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold">{gamificationStats.streaks.goals}</p>
+                  <p className="text-xs text-muted-foreground">Seria celów</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-purple-500/10 to-pink-500/10">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold">{gamificationStats.achievementCount}</p>
+                  <p className="text-xs text-muted-foreground">Odznaki</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Badges Grid */}
+          {badgesLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardHeader><div className="h-6 bg-muted rounded w-3/4"></div></CardHeader>
+                  <CardContent><div className="h-4 bg-muted rounded w-full mb-2"></div><div className="h-3 bg-muted rounded w-full"></div></CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : badges.length === 0 ? (
+            <Card className="flex flex-col items-center justify-center border-dashed py-12">
+              <CardContent className="text-center">
+                <Medal className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="font-headline text-xl font-semibold mb-2">Brak dostępnych odznak</h3>
+                <p className="text-muted-foreground">Zdobywaj odznaki kończąc cele i treningi!</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <AchievementsGrid achievements={badges} />
+          )}
         </section>
 
         {/* --- Achievements Section --- */}

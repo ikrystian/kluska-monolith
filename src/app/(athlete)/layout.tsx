@@ -80,7 +80,7 @@ function AthleteLayoutContent({
           <AppNav />
           <main className="flex-1 flex flex-col overflow-hidden bg-secondary/30">
             <AppHeader />
-            <div className="flex-1 overflow-y-auto min-h-0 pt-16 pb-16 md:pb-0">{children}</div>
+            <div className="flex-1 overflow-y-auto min-h-0 pt-16 pb-16 md:pb-0 sm:pt-0">{children}</div>
             <BottomNav />
           </main>
         </div>
