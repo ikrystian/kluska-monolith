@@ -80,6 +80,7 @@ export const athleteNavItems = [
 const trainerNavItems = [
   { href: '/trainer/dashboard', icon: LayoutDashboard, label: 'Panel Trenera' },
   { href: '/trainer/my-athletes', icon: Users, label: 'Moi Sportowcy' },
+  { href: '/trainer/schedule', icon: CalendarDays, label: 'Harmonogram' },
   { href: '/trainer/chat', icon: MessageSquare, label: 'Czat' },
   { href: '/trainer/social', icon: Users2, label: 'Social' },
   {

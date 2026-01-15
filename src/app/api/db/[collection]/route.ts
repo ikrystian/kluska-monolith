@@ -24,7 +24,8 @@ import {
   Achievement,
   Workout,
   SocialProfile,
-  SocialPost
+  SocialPost,
+  TrainingSession
 } from '@/models';
 
 const modelMap: Record<string, any> = {
@@ -48,6 +49,7 @@ const modelMap: Record<string, any> = {
   workouts: Workout,
   socialProfiles: SocialProfile,
   socialPosts: SocialPost,
+  trainingSessions: TrainingSession,
 };
 
 // GET - Fetch collection

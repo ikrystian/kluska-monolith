@@ -12,7 +12,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCollection, useDoc, useUser } from '@/lib/db-hooks';
 import type { WorkoutLog, Goal, BodyMeasurement, RunningSession, LoggedMeal, PlannedWorkout, UserProfile, TrainingPlan } from '@/lib/types';
-import { Activity, Target, Weight, Footprints, ChefHat, Calendar as CalendarIcon, TrendingUp, Dumbbell, Clock, Award, Layers } from 'lucide-react';
+import { Activity, Target, Weight, Footprints, ChefHat, Calendar as CalendarIcon, TrendingUp, Dumbbell, Clock, Award, Layers, User, MapPin, Bell } from 'lucide-react';
+import type { TrainingSessionData } from '@/components/schedule/SessionDetailsDialog';
 
 const StatCard = ({
   title,
@@ -124,6 +125,25 @@ export default function AthleteDashboardPage() {
     user ? 'workoutPlans' : null,
     { assignedAthleteIds: user?.uid }
   );
+
+  // Upcoming trainer sessions
+  const { data: trainerSessions, isLoading: trainerSessionsLoading } = useCollection<TrainingSessionData>(
+    user ? 'trainingSessions' : null,
+    { athleteId: user?.uid }
+  );
+
+  // Filter upcoming sessions (next 7 days, not cancelled)
+  const upcomingTrainerSessions = useMemo(() => {
+    if (!trainerSessions) return [];
+    const now = new Date();
+    const weekLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    return trainerSessions
+      .filter(session => {
+        const sessionDate = new Date(session.date);
+        return sessionDate >= now && sessionDate <= weekLater && session.status !== 'cancelled';
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [trainerSessions]);
 
   // Calculate stats
   const stats = useMemo(() => {
@@ -362,6 +382,68 @@ export default function AthleteDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Upcoming Trainer Sessions */}
+      {upcomingTrainerSessions.length > 0 && (
+        <Card className="mt-6 border-orange-500/30 bg-orange-500/5">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500/20">
+                <Bell className="h-5 w-5 text-orange-500" />
+              </div>
+              <div>
+                <CardTitle className="font-headline">Sesje z Trenerem</CardTitle>
+                <CardDescription>Nadchodzące spotkania treningowe</CardDescription>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/athlete/calendar">Zobacz kalendarz</Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {upcomingTrainerSessions.slice(0, 3).map((session) => {
+                const sessionDate = new Date(session.date);
+                return (
+                  <Link key={session.id} href="/athlete/calendar" className="block">
+                    <div className="p-4 rounded-lg border border-orange-500/20 hover:bg-orange-500/10 transition-colors">
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="font-semibold">{session.title}</h4>
+                        <Badge
+                          className={session.status === 'confirmed'
+                            ? 'bg-green-500 hover:bg-green-600'
+                            : 'bg-orange-500 hover:bg-orange-600'
+                          }
+                        >
+                          {session.status === 'confirmed' ? 'Potwierdzona' : 'Oczekuje'}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                        <CalendarIcon className="h-3 w-3" />
+                        <span>{format(sessionDate, 'EEEE, d MMM', { locale: pl })}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                        <Clock className="h-3 w-3" />
+                        <span>{format(sessionDate, 'HH:mm')} ({session.duration} min)</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <User className="h-3 w-3" />
+                        <span>{session.trainerName}</span>
+                      </div>
+                      {session.location && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                          <MapPin className="h-3 w-3" />
+                          <span>{session.location}</span>
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Assigned Workout Plans */}
       {assignedPlans && assignedPlans.length > 0 && (

@@ -24,6 +24,7 @@ export * from './SocialPost';
 export * from './CustomProduct';
 export * from './DietPlan';
 export * from './SavedMeal';
+export * from './TrainingSession';
 // Gamification models
 export * from './GamificationProfile';
 export * from './Reward';
