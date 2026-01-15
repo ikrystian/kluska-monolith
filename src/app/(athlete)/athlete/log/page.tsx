@@ -33,6 +33,8 @@ import {
 } from '@/lib/types';
 import { useCollection, useUser, useDoc } from '@/lib/db-hooks';
 import { useActiveWorkout } from '@/hooks/useActiveWorkout';
+import { useExerciseHistory } from '@/hooks/useExerciseHistory';
+import { ExerciseProgressIndicator, ExerciseHistoryBadge } from '@/components/workout/ExerciseProgressIndicator';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetFooter, SheetClose } from '@/components/ui/sheet';
@@ -708,6 +710,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
                       exerciseDetails={exerciseDetails}
                       onRemoveExercise={() => handleRemoveExercise(activeExerciseIndex)}
                       isLoadingExercises={isLoadingExercises}
+                      userId={user?.uid || null}
                     />
                   </div>
                 ) : (
@@ -760,7 +763,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   )
 }
 
-function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExercises }: { index: number, exerciseDetails: Exercise | undefined, onRemoveExercise: () => void, isLoadingExercises: boolean }) {
+function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExercises, userId }: { index: number, exerciseDetails: Exercise | undefined, onRemoveExercise: () => void, isLoadingExercises: boolean, userId: string | null }) {
   const { control, watch, setValue } = useFormContext<LogFormValues>();
   const { fields, append, remove } = useFieldArray({
     control,
@@ -772,6 +775,13 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
 
   // Get exercise type from exercise details
   const exerciseType: ExerciseType = exerciseDetails?.type || 'weight';
+
+  // Fetch exercise history for progress comparison
+  const exerciseId = watch(`exerciseSeries.${index}.exerciseId`);
+  const { data: exerciseHistory, isLoading: isHistoryLoading } = useExerciseHistory(
+    exerciseId || exerciseDetails?.id || null,
+    userId
+  );
 
   // Validation function for a set - depends on exercise type
   const validateSet = (setIndex: number): { valid: boolean; error?: string } => {
@@ -878,9 +888,12 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
       <CardHeader className="flex-row items-center justify-between pb-4">
         <div>
           <CardTitle className="text-lg font-semibold">{exerciseDetails?.name || (isLoadingExercises ? "Ładowanie..." : "Wybierz ćwiczenie")}</CardTitle>
-          <div className="flex gap-2 text-xs text-muted-foreground mt-1">
+          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-1">
             {tempo && <Badge variant="outline" className="text-xs">Tempo: {tempo}</Badge>}
             {tip && <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-600 border-yellow-500/20">Tip</Badge>}
+            {exerciseHistory && (
+              <ExerciseHistoryBadge lastWorkoutDate={exerciseHistory.lastWorkoutDate} lastWorkoutName={exerciseHistory.lastWorkoutName} />
+            )}
           </div>
           {tip && <p className="text-xs text-muted-foreground mt-1 italic">{tip}</p>}
         </div>
@@ -1083,6 +1096,21 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                     </span>
                   )}
                 </div>
+                {/* Progress comparison row */}
+                {exerciseHistory && exerciseHistory.sets[setIndex] && (
+                  <div className="col-span-12 flex justify-center -mt-1 mb-1">
+                    <ExerciseProgressIndicator
+                      currentWeight={watch(`exerciseSeries.${index}.sets.${setIndex}.weight`) || 0}
+                      currentReps={watch(`exerciseSeries.${index}.sets.${setIndex}.reps`) || 0}
+                      currentDuration={watch(`exerciseSeries.${index}.sets.${setIndex}.duration`) || 0}
+                      previousWeight={exerciseHistory.sets[setIndex]?.weight}
+                      previousReps={exerciseHistory.sets[setIndex]?.reps}
+                      previousDuration={exerciseHistory.sets[setIndex]?.duration}
+                      exerciseType={exerciseType}
+                      compact
+                    />
+                  </div>
+                )}
               </div>
             )
           })}
