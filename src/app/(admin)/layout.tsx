@@ -3,23 +3,20 @@
 import { AppNav } from '@/components/nav';
 import { AppHeader } from '@/components/header';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { useUser, useDoc } from '@/lib/db-hooks';
+import { useUser } from '@/lib/db-hooks';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { UserProfileProvider, useUserProfile } from '@/contexts/UserProfileContext';
 
-export default function AdminLayout({
+function AdminLayoutContent({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const { user, isUserLoading } = useUser();
+  const { userProfile, isLoading: isProfileLoading } = useUserProfile();
   const router = useRouter();
-
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc(
-    user ? 'users' : null,
-    user?.uid || null
-  );
 
   const isLoading = isUserLoading || isProfileLoading;
 
@@ -72,3 +69,16 @@ export default function AdminLayout({
     </SidebarProvider>
   );
 }
+
+export default function AdminLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <UserProfileProvider>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </UserProfileProvider>
+  );
+}
+

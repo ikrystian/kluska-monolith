@@ -57,46 +57,33 @@ export async function GET(
   { params }: { params: Promise<{ collection: string; id: string }> }
 ) {
   try {
-    console.log('API GET request received');
     const session = await getServerSession(authOptions);
-    console.log('Session:', session ? 'authenticated' : 'not authenticated');
 
     // Some collections might be public, adjust as needed
     // if (!session) {
     //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     // }
 
-    console.log('Connecting to database...');
     await connectToDatabase();
-    console.log('Database connected');
 
     const { collection, id } = await params;
-    console.log(`Fetching from collection: ${collection}, id: ${id}`);
 
     const Model = modelMap[collection];
-    console.log(`Model found: ${Model ? 'yes' : 'no'}`);
 
     if (!Model) {
-      console.log('Model not found in modelMap');
       return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
     }
 
-    console.log(`Validating ObjectId: ${id}`);
     if (!isValidObjectId(id)) {
-      console.log('Invalid ObjectId format');
       return NextResponse.json({ error: 'Invalid ID format' }, { status: 400 });
     }
 
-    console.log('Querying database for document...');
     const doc = await Model.findById(id).exec();
-    console.log(`Document found: ${doc ? 'yes' : 'no'}`);
 
     if (!doc) {
-      console.log('Document not found in database');
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
     }
 
-    console.log('Returning document successfully');
     return NextResponse.json({ data: doc.toJSON() });
   } catch (error) {
     console.error('GET /api/db/[collection]/[id] error:', error);

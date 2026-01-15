@@ -45,7 +45,8 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { placeholderImages } from '@/lib/placeholder-images';
-import { useDoc, useUser } from '@/lib/db-hooks';
+import { useUser } from '@/lib/db-hooks';
+import { useUserProfile } from '@/contexts/UserProfileContext';
 import { signOut, signIn } from 'next-auth/react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -148,11 +149,8 @@ export function AppNav() {
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [adminSession, setAdminSession] = useState<{ id: string; email: string; name: string } | null>(null);
 
-  // Fetch user profile using MongoDB hooks
-  const { data: userProfile } = useDoc(
-    user ? 'users' : null,
-    user?.uid || null
-  );
+  // Use user profile from context (shared with layout)
+  const { userProfile } = useUserProfile();
 
   // Fetch all users for impersonation
   const { data: allUsers } = useCollection<any>(

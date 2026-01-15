@@ -25,8 +25,8 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
     setError(null);
 
     try {
-      // Add cache-busting query parameter to force fresh data
-      const response = await fetch(`/api/db/users/${userId}?t=${Date.now()}`);
+
+      const response = await fetch(`/api/db/users/${userId}`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch user profile: ${response.statusText}`);

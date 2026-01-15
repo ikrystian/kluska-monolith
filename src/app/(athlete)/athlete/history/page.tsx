@@ -44,10 +44,11 @@ export default function HistoryPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Fetch workout logs for the current user, sorted by endTime descending
+  // Limit to 50 records to prevent loading too much data at once
   const { data: workoutLogs, isLoading, refetch } = useCollection<WorkoutLog>(
     user?.uid ? 'workoutLogs' : null,
     user?.uid ? { athleteId: user.uid } : undefined,
-    { sort: { endTime: -1 } }
+    { sort: { endTime: -1 }, limit: 50 }
   );
 
   const handleDelete = async (sessionId: string) => {
