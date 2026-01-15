@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Instagram, Facebook, Twitter, Loader2 } from 'lucide-react';
+import { Instagram, Facebook, Twitter, Loader2, Camera } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,6 +24,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Switch } from '@/components/ui/switch';
+import { AvatarUploadDialog } from './AvatarUploadDialog';
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Imię jest wymagane.'),
@@ -42,34 +43,49 @@ export function ProfilePage() {
   const { toast } = useToast();
   const { user } = useUser();
   const avatarImage = placeholderImages.find((img) => img.id === 'avatar-male');
+  const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
 
-  const { data: userProfile, isLoading: profileLoading } = useDoc<UserProfile>('users', user?.uid || null);
+  const { data: userProfile, isLoading: profileLoading, refetch } = useDoc<UserProfile>('users', user?.uid || null);
 
   const { data: allGyms, isLoading: gymsLoading } = useCollection<Gym>('gyms');
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     values: {
-        name: userProfile?.name || '',
-        email: userProfile?.email || '',
-        socialLinks: {
-            instagram: userProfile?.socialLinks?.instagram || '',
-            facebook: userProfile?.socialLinks?.facebook || '',
-            twitter: userProfile?.socialLinks?.twitter || '',
-        },
-        favoriteGymIds: userProfile?.favoriteGymIds || [],
+      name: userProfile?.name || '',
+      email: userProfile?.email || '',
+      socialLinks: {
+        instagram: userProfile?.socialLinks?.instagram || '',
+        facebook: userProfile?.socialLinks?.facebook || '',
+        twitter: userProfile?.socialLinks?.twitter || '',
+      },
+      favoriteGymIds: userProfile?.favoriteGymIds || [],
     }
   });
 
   const isLoading = profileLoading || gymsLoading;
   const { updateDoc } = useUpdateDoc();
 
+  const handleAvatarUpload = async (url: string) => {
+    if (!user || !userProfile) return;
+    try {
+      await updateDoc('users', user.uid, { ...userProfile, avatarUrl: url });
+      refetch();
+    } catch (error) {
+      toast({
+        title: 'Błąd!',
+        description: 'Nie udało się zapisać avatara.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const onSubmit = async (data: ProfileFormValues) => {
     if (!userProfile || !user) return;
 
     const updatedData: UserProfile = {
-        ...userProfile,
-        ...data
+      ...userProfile,
+      ...data
     };
 
     try {
@@ -104,9 +120,11 @@ export function ProfilePage() {
           <Card>
             <CardContent className="flex flex-col items-center p-6 text-center">
               <Avatar className="mb-4 h-24 w-24 border-2 border-primary">
-                {avatarImage && (
+                {userProfile?.avatarUrl ? (
+                  <AvatarImage src={userProfile.avatarUrl} alt="Awatar użytkownika" />
+                ) : avatarImage ? (
                   <AvatarImage src={avatarImage.imageUrl} alt="Awatar użytkownika" />
-                )}
+                ) : null}
                 <AvatarFallback>
                   {isLoading ? <Skeleton className="h-full w-full" /> : getInitials(userProfile?.name)}
                 </AvatarFallback>
@@ -122,9 +140,16 @@ export function ProfilePage() {
                   <p className="text-muted-foreground capitalize">{userProfile?.role}</p>
                 </>
               )}
-              <Button variant="outline" size="sm" className="mt-4" disabled>
+              <Button variant="outline" size="sm" className="mt-4" onClick={() => setIsAvatarDialogOpen(true)}>
+                <Camera className="mr-2 h-4 w-4" />
                 Zmień zdjęcie
               </Button>
+              <AvatarUploadDialog
+                open={isAvatarDialogOpen}
+                onOpenChange={setIsAvatarDialogOpen}
+                onUploadComplete={handleAvatarUpload}
+                currentAvatarUrl={userProfile?.avatarUrl}
+              />
             </CardContent>
           </Card>
         </div>
@@ -139,150 +164,150 @@ export function ProfilePage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    {isLoading ? (
-                        <div className="space-y-6">
-                            <Skeleton className="h-10 w-full" />
-                            <Skeleton className="h-10 w-full" />
-                        </div>
-                    ) : (
-                        <>
-                            <FormField
-                                control={form.control}
-                                name="name"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Imię i Nazwisko</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="email"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Adres Email</FormLabel>
-                                    <FormControl>
-                                        <Input type="email" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </>
-                    )}
-
-                    <div className="space-y-4 pt-4">
-                        <h3 className="font-semibold">Media Społecznościowe</h3>
-                        {isLoading ? (
-                           <div className="space-y-4">
-                                <Skeleton className="h-10 w-full" />
-                                <Skeleton className="h-10 w-full" />
-                                <Skeleton className="h-10 w-full" />
-                           </div>
-                        ) : (
-                            <>
-                                <FormField
-                                    control={form.control}
-                                    name="socialLinks.instagram"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="flex items-center gap-2">
-                                                <Instagram className="h-4 w-4" /> Instagram
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="https://instagram.com/twojprofil" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                 <FormField
-                                    control={form.control}
-                                    name="socialLinks.facebook"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="flex items-center gap-2">
-                                                <Facebook className="h-4 w-4" /> Facebook
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="https://facebook.com/twojprofil" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="socialLinks.twitter"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="flex items-center gap-2">
-                                                <Twitter className="h-4 w-4" /> Twitter / X
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="https://x.com/twojprofil" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </>
-                        )}
+                  {isLoading ? (
+                    <div className="space-y-6">
+                      <Skeleton className="h-10 w-full" />
+                      <Skeleton className="h-10 w-full" />
                     </div>
+                  ) : (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Imię i Nazwisko</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Adres Email</FormLabel>
+                            <FormControl>
+                              <Input type="email" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </>
+                  )}
 
-                    <div className="space-y-4 pt-4">
-                        <h3 className="font-semibold">Ulubione Siłownie</h3>
+                  <div className="space-y-4 pt-4">
+                    <h3 className="font-semibold">Media Społecznościowe</h3>
+                    {isLoading ? (
+                      <div className="space-y-4">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                    ) : (
+                      <>
                         <FormField
                           control={form.control}
-                          name="favoriteGymIds"
-                          render={() => (
+                          name="socialLinks.instagram"
+                          render={({ field }) => (
                             <FormItem>
-                                <div className="max-h-48 overflow-y-auto space-y-2 rounded-md border p-4">
-                                    {isLoading && <p>Ładowanie siłowni...</p>}
-                                    {allGyms?.map((gym) => (
-                                    <FormField
-                                        key={gym.id}
-                                        control={form.control}
-                                        name="favoriteGymIds"
-                                        render={({ field }) => {
-                                        return (
-                                            <FormItem
-                                            key={gym.id}
-                                            className="flex flex-row items-start space-x-3 space-y-0"
-                                            >
-                                            <FormControl>
-                                                <Checkbox
-                                                checked={field.value?.includes(gym.id)}
-                                                onCheckedChange={(checked) => {
-                                                    return checked
-                                                    ? field.onChange([...(field.value || []), gym.id])
-                                                    : field.onChange(
-                                                        field.value?.filter(
-                                                        (value) => value !== gym.id
-                                                        )
-                                                    )
-                                                }}
-                                                />
-                                            </FormControl>
-                                            <FormLabel className="font-normal">
-                                                {gym.name}
-                                            </FormLabel>
-                                            </FormItem>
-                                        )
-                                        }}
-                                    />
-                                    ))}
-                                    {!isLoading && allGyms?.length === 0 && <p className="text-sm text-muted-foreground">Brak siłowni do wyboru.</p>}
-                                </div>
-                                <FormMessage />
+                              <FormLabel className="flex items-center gap-2">
+                                <Instagram className="h-4 w-4" /> Instagram
+                              </FormLabel>
+                              <FormControl>
+                                <Input placeholder="https://instagram.com/twojprofil" {...field} />
+                              </FormControl>
+                              <FormMessage />
                             </FormItem>
                           )}
                         />
-                    </div>
+                        <FormField
+                          control={form.control}
+                          name="socialLinks.facebook"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2">
+                                <Facebook className="h-4 w-4" /> Facebook
+                              </FormLabel>
+                              <FormControl>
+                                <Input placeholder="https://facebook.com/twojprofil" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="socialLinks.twitter"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2">
+                                <Twitter className="h-4 w-4" /> Twitter / X
+                              </FormLabel>
+                              <FormControl>
+                                <Input placeholder="https://x.com/twojprofil" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    )}
+                  </div>
+
+                  <div className="space-y-4 pt-4">
+                    <h3 className="font-semibold">Ulubione Siłownie</h3>
+                    <FormField
+                      control={form.control}
+                      name="favoriteGymIds"
+                      render={() => (
+                        <FormItem>
+                          <div className="max-h-48 overflow-y-auto space-y-2 rounded-md border p-4">
+                            {isLoading && <p>Ładowanie siłowni...</p>}
+                            {allGyms?.map((gym) => (
+                              <FormField
+                                key={gym.id}
+                                control={form.control}
+                                name="favoriteGymIds"
+                                render={({ field }) => {
+                                  return (
+                                    <FormItem
+                                      key={gym.id}
+                                      className="flex flex-row items-start space-x-3 space-y-0"
+                                    >
+                                      <FormControl>
+                                        <Checkbox
+                                          checked={field.value?.includes(gym.id)}
+                                          onCheckedChange={(checked) => {
+                                            return checked
+                                              ? field.onChange([...(field.value || []), gym.id])
+                                              : field.onChange(
+                                                field.value?.filter(
+                                                  (value) => value !== gym.id
+                                                )
+                                              )
+                                          }}
+                                        />
+                                      </FormControl>
+                                      <FormLabel className="font-normal">
+                                        {gym.name}
+                                      </FormLabel>
+                                    </FormItem>
+                                  )
+                                }}
+                              />
+                            ))}
+                            {!isLoading && allGyms?.length === 0 && <p className="text-sm text-muted-foreground">Brak siłowni do wyboru.</p>}
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
                   <div className="space-y-2">
                     <FormLabel>Motyw</FormLabel>
@@ -296,7 +321,7 @@ export function ProfilePage() {
                         <FormLabel htmlFor="workout-reminders">Przypomnienia o treningu</FormLabel>
                         <p className="text-sm text-muted-foreground">Otrzymuj powiadomienia przed zaplanowanymi treningami.</p>
                       </div>
-                      <Switch id="workout-reminders" defaultChecked/>
+                      <Switch id="workout-reminders" defaultChecked />
                     </div>
                     <div className="flex items-center justify-between rounded-md border p-4">
                       <div>
@@ -309,8 +334,8 @@ export function ProfilePage() {
 
                   <div className="flex justify-end pt-4">
                     <Button type="submit" disabled={form.formState.isSubmitting || isLoading}>
-                        {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                        Zapisz Zmiany
+                      {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Zapisz Zmiany
                     </Button>
                   </div>
                 </CardContent>

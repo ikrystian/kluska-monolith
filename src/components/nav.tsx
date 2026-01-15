@@ -371,7 +371,11 @@ export function AppNav() {
         </SidebarMenu>
         <div className="flex items-center gap-3 p-2">
           <Avatar className="h-10 w-10">
-            {avatarImage && <AvatarImage src={avatarImage.imageUrl} alt="Awatar użytkownika" />}
+            {userProfile?.avatarUrl ? (
+              <AvatarImage src={userProfile.avatarUrl} alt="Awatar użytkownika" />
+            ) : avatarImage ? (
+              <AvatarImage src={avatarImage.imageUrl} alt="Awatar użytkownika" />
+            ) : null}
             <AvatarFallback>{getInitials(userProfile?.name)}</AvatarFallback>
           </Avatar>
           <div className="flex flex-col">

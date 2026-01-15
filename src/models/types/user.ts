@@ -9,6 +9,7 @@ export interface UserProfile {
   name: string;
   email: string;
   role: 'athlete' | 'trainer' | 'admin';
+  avatarUrl?: string;
   location?: string;
   socialLinks?: {
     instagram?: string;
@@ -25,6 +26,7 @@ export interface UserProfile {
   weight?: number;
   trainingLevel?: TrainingLevelType;
 }
+
 
 export interface AthleteProfile extends UserProfile {
   role: 'athlete';
