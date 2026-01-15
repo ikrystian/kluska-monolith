@@ -7,7 +7,6 @@ import { useUser, useDoc } from '@/lib/db-hooks';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { QuickChatWidget } from '@/components/chat/QuickChatWidget';
 
 export default function TrainerLayout({
   children,
@@ -72,7 +71,6 @@ export default function TrainerLayout({
           <div className="flex-1 overflow-y-auto min-h-0">{children}</div>
         </main>
       </div>
-      <QuickChatWidget />
     </SidebarProvider>
   );
 }

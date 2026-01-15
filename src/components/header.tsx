@@ -5,6 +5,7 @@ import { Dumbbell } from 'lucide-react';
 import { SidebarTrigger } from './ui/sidebar';
 import Link from 'next/link';
 import { NotificationBell } from './notifications/NotificationBell';
+import { QuickChatWidget } from './chat/QuickChatWidget';
 
 export function AppHeader() {
   return (
@@ -21,6 +22,7 @@ export function AppHeader() {
       </Link>
       <div className="ml-auto flex items-center gap-2">
         <NotificationBell />
+        <QuickChatWidget />
       </div>
     </header>
   );

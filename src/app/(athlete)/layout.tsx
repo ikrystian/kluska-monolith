@@ -10,7 +10,6 @@ import { Loader2 } from 'lucide-react';
 import { BottomNav } from '@/components/bottom-nav';
 import { ActiveWorkoutProvider } from '@/contexts/ActiveWorkoutContext';
 import { ActiveWorkoutWidget } from '@/components/workout/ActiveWorkoutWidget';
-import { QuickChatWidget } from '@/components/chat/QuickChatWidget';
 import { UserProfileProvider, useUserProfile } from '@/contexts/UserProfileContext';
 
 function AthleteLayoutContent({
@@ -86,7 +85,6 @@ function AthleteLayoutContent({
           </main>
         </div>
         <ActiveWorkoutWidget />
-        <QuickChatWidget />
       </ActiveWorkoutProvider>
     </SidebarProvider>
   );
