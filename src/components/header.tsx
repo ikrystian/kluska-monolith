@@ -4,6 +4,7 @@
 import { Dumbbell } from 'lucide-react';
 import { SidebarTrigger } from './ui/sidebar';
 import Link from 'next/link';
+import { NotificationBell } from './notifications/NotificationBell';
 
 export function AppHeader() {
   return (
@@ -18,6 +19,9 @@ export function AppHeader() {
         <Dumbbell className="h-6 w-6" />
         <span className="font-headline text-xl">GymProgress</span>
       </Link>
+      <div className="ml-auto flex items-center gap-2">
+        <NotificationBell />
+      </div>
     </header>
   );
 }
