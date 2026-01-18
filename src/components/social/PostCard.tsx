@@ -97,7 +97,11 @@ export function PostCard({ post, onLike, onEdit, onDelete, onProfileClick }: Pos
             onClick={() => onProfileClick(post.authorId)}
           >
             <Avatar className="h-8 w-8">
-              <AvatarImage src={placeholderImages.find(img => img.id === 'avatar-male')?.imageUrl} />
+              {post.authorAvatarUrl ? (
+                <AvatarImage src={post.authorAvatarUrl} alt={post.authorNickname} />
+              ) : (
+                <AvatarImage src={placeholderImages.find(img => img.id === 'avatar-male')?.imageUrl} />
+              )}
               <AvatarFallback>{getInitials(post.authorNickname)}</AvatarFallback>
             </Avatar>
             <div>

@@ -4,6 +4,7 @@ export interface ISocialPost {
   _id: string;
   authorId: string;
   authorNickname: string;
+  authorAvatarUrl?: string;
   imageUrl: string;
   description: string;
   likes: string[];
@@ -16,6 +17,7 @@ const SocialPostSchema = new Schema<ISocialPost>(
   {
     authorId: { type: String, required: true },
     authorNickname: { type: String, required: true },
+    authorAvatarUrl: { type: String },
     imageUrl: { type: String, required: true },
     description: { type: String, maxlength: 500, default: '' },
     likes: [{ type: String }],

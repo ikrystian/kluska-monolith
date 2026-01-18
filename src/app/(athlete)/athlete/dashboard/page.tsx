@@ -11,8 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCollection, useDoc, useUser } from '@/lib/db-hooks';
-import type { WorkoutLog, Goal, BodyMeasurement, RunningSession, LoggedMeal, PlannedWorkout, UserProfile, TrainingPlan } from '@/lib/types';
-import { Activity, Target, Weight, Footprints, ChefHat, Calendar as CalendarIcon, TrendingUp, Dumbbell, Clock, Award, Layers, User, MapPin, Bell } from 'lucide-react';
+import type { WorkoutLog, Goal, BodyMeasurement, RunningSession, LoggedMeal, PlannedWorkout, UserProfile, TrainingPlan, Habit, HabitLog } from '@/lib/types';
+import { Activity, Target, Weight, Footprints, ChefHat, Calendar as CalendarIcon, TrendingUp, Dumbbell, Clock, Award, Layers, User, MapPin, Bell, CheckSquare } from 'lucide-react';
 import type { TrainingSessionData } from '@/components/schedule/SessionDetailsDialog';
 
 const StatCard = ({
@@ -132,6 +132,18 @@ export default function AthleteDashboardPage() {
     { athleteId: user?.uid }
   );
 
+  // Habits data
+  const { data: habits, isLoading: habitsLoading } = useCollection<Habit>(
+    user ? 'habits' : null,
+    { ownerId: user?.uid, isActive: true }
+  );
+
+  // Habit logs for this week
+  const { data: habitLogs } = useCollection<HabitLog>(
+    user ? 'habitlogs' : null,
+    { ownerId: user?.uid }
+  );
+
   // Filter upcoming sessions (next 7 days, not cancelled)
   const upcomingTrainerSessions = useMemo(() => {
     if (!trainerSessions) return [];
@@ -192,7 +204,64 @@ export default function AthleteDashboardPage() {
     };
   }, [recentWorkouts, goals, latestMeasurements, runningSessions, todayMeals, weekStart, weekEnd]);
 
-  const isLoading = workoutsLoading || goalsLoading || measurementsLoading || runningLoading || mealsLoading || assignedPlansLoading;
+  // Calculate habits stats for the week
+  const habitsStats = useMemo(() => {
+    if (!habits || habits.length === 0) return { completionRate: 0, completedToday: 0, totalHabits: 0 };
+
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const weekDates: string[] = [];
+    let currentDate = weekStart;
+    while (currentDate <= weekEnd && currentDate <= new Date()) {
+      weekDates.push(format(currentDate, 'yyyy-MM-dd'));
+      currentDate = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
+    }
+
+    // Create a lookup for completed habits
+    const completedLookup = new Set<string>();
+    habitLogs?.forEach(log => {
+      if (log.completed) {
+        completedLookup.add(`${log.habitId}-${log.date}`);
+      }
+    });
+
+    // Count completions
+    let totalPossible = 0;
+    let totalCompleted = 0;
+    let completedToday = 0;
+
+    weekDates.forEach(dateStr => {
+      habits.forEach(habit => {
+        // Check if habit should be active on this day
+        const date = new Date(dateStr);
+        const dayOfWeek = date.getDay();
+        let isActiveOnDay = true;
+
+        if (habit.frequency?.type === 'specific_days') {
+          isActiveOnDay = habit.frequency?.daysOfWeek?.includes(dayOfWeek) ?? false;
+        }
+
+        if (isActiveOnDay) {
+          totalPossible++;
+          if (completedLookup.has(`${habit.id}-${dateStr}`)) {
+            totalCompleted++;
+            if (dateStr === today) {
+              completedToday++;
+            }
+          }
+        }
+      });
+    });
+
+    const completionRate = totalPossible > 0 ? Math.round((totalCompleted / totalPossible) * 100) : 0;
+
+    return {
+      completionRate,
+      completedToday,
+      totalHabits: habits.length,
+    };
+  }, [habits, habitLogs, weekStart, weekEnd]);
+
+  const isLoading = workoutsLoading || goalsLoading || measurementsLoading || runningLoading || mealsLoading || assignedPlansLoading || habitsLoading;
 
   return (
     <div className="container mx-auto p-4 md:p-8">
@@ -483,6 +552,84 @@ export default function AthleteDashboardPage() {
                 );
               })}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Habits Section */}
+      {habits && habits.length > 0 && (
+        <Card className="mt-6 border-green-500/30 bg-green-500/5">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/20">
+                <CheckSquare className="h-5 w-5 text-green-500" />
+              </div>
+              <div>
+                <CardTitle className="font-headline">Nawyki</CardTitle>
+                <CardDescription>Twoje codzienne nawyki i postępy</CardDescription>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/athlete/habits">Zarządzaj</Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {/* Stats row */}
+            <div className="flex flex-wrap gap-4 mb-4 p-3 rounded-lg bg-background/50">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-green-500">{habitsStats.completionRate}%</span>
+                <span className="text-sm text-muted-foreground">wykonanych w tym tygodniu</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-semibold">{habitsStats.completedToday}/{habitsStats.totalHabits}</span>
+                <span className="text-sm text-muted-foreground">ukończonych dziś</span>
+              </div>
+            </div>
+
+            {/* Habits list */}
+            <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+              {habits.slice(0, 6).map((habit) => {
+                const today = format(new Date(), 'yyyy-MM-dd');
+                const isCompletedToday = habitLogs?.some(
+                  log => log.habitId === habit.id && log.date === today && log.completed
+                );
+
+                return (
+                  <Link key={habit.id} href="/athlete/habits" className="block">
+                    <div className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${isCompletedToday
+                        ? 'bg-green-500/10 border-green-500/30'
+                        : 'hover:bg-secondary/50'
+                      }`}>
+                      <span className="text-2xl">{habit.icon || '💪'}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className={`font-medium truncate ${isCompletedToday ? 'text-green-600 dark:text-green-400' : ''}`}>
+                          {habit.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {habit.frequency?.type === 'daily'
+                            ? 'Codziennie'
+                            : habit.frequency?.type === 'specific_days'
+                              ? 'Wybrane dni'
+                              : `Co ${habit.frequency?.repeatEvery} dni`
+                          }
+                        </p>
+                      </div>
+                      {isCompletedToday && (
+                        <CheckSquare className="h-5 w-5 text-green-500 shrink-0" />
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {habits.length > 6 && (
+              <div className="mt-3 text-center">
+                <Button variant="link" size="sm" asChild>
+                  <Link href="/athlete/habits">Zobacz wszystkie ({habits.length})</Link>
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

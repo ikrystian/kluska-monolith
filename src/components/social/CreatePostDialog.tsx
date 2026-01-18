@@ -18,6 +18,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { useToast } from '@/hooks/use-toast';
 import { useUploadThing } from '@/lib/uploadthing';
 import { useCreateDoc, useUser } from '@/lib/db-hooks';
+import { useUserProfile } from '@/contexts/UserProfileContext';
 
 const createPostSchema = z.object({
   description: z.string().max(500, 'Description must be at most 500 characters'),
@@ -34,6 +35,7 @@ interface CreatePostDialogProps {
 export function CreatePostDialog({ open, onOpenChange, onSuccess }: CreatePostDialogProps) {
   const { toast } = useToast();
   const { user } = useUser();
+  const { userProfile } = useUserProfile();
   const { createDoc } = useCreateDoc();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -116,6 +118,7 @@ export function CreatePostDialog({ open, onOpenChange, onSuccess }: CreatePostDi
       await createDoc('socialPosts', {
         authorId: user.uid,
         authorNickname: user.name || 'Anonymous', // This should be replaced with actual nickname
+        authorAvatarUrl: userProfile?.avatarUrl || undefined,
         imageUrl,
         description: data.description,
         likes: [],
