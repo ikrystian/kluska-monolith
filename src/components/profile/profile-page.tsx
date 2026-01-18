@@ -25,6 +25,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Switch } from '@/components/ui/switch';
 import { AvatarUploadDialog } from './AvatarUploadDialog';
+import { useUserProfile } from '@/contexts/UserProfileContext';
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Imię jest wymagane.'),
@@ -46,6 +47,7 @@ export function ProfilePage() {
   const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
 
   const { data: userProfile, isLoading: profileLoading, refetch } = useDoc<UserProfile>('users', user?.uid || null);
+  const { refetch: refetchProfileContext } = useUserProfile();
 
   const { data: allGyms, isLoading: gymsLoading } = useCollection<Gym>('gyms');
 
@@ -71,6 +73,7 @@ export function ProfilePage() {
     try {
       await updateDoc('users', user.uid, { ...userProfile, avatarUrl: url });
       refetch();
+      refetchProfileContext();
     } catch (error) {
       toast({
         title: 'Błąd!',
