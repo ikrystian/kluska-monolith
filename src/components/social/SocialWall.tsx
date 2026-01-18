@@ -149,9 +149,8 @@ export function SocialWall({ userId }: SocialWallProps) {
         </div>
 
         {!userId && user && (
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nowy post
+          <Button title="Nowy post" onClick={() => setCreateDialogOpen(true)}>
+            <Plus className="h-4 w-4" />
           </Button>
         )}
       </div>
