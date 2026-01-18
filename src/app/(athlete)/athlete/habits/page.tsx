@@ -741,16 +741,16 @@ export default function HabitsPage() {
                 </DialogContent>
             </Dialog>
 
-            <div className="container mx-auto p-4 md:p-8">
+            <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-4xl">
                 {/* --- Header --- */}
-                <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div>
-                        <h1 className="font-headline text-3xl font-bold flex items-center gap-2">
-                            <CheckSquare className="h-8 w-8 text-primary" />
-                            Nawyki
+                <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                        <h1 className="font-headline text-2xl sm:text-3xl font-bold flex items-center gap-2">
+                            <CheckSquare className="h-6 w-6 sm:h-8 sm:w-8 text-primary shrink-0" />
+                            <span className="truncate">Nawyki</span>
                         </h1>
-                        <p className="text-muted-foreground mt-1">
-                            Śledź swoje codzienne nawyki i buduj lepsze rutyny
+                        <p className="text-muted-foreground text-sm sm:text-base mt-1">
+                            Śledź swoje codzienne nawyki
                         </p>
                     </div>
                     <Button
@@ -758,6 +758,7 @@ export default function HabitsPage() {
                             setEditingHabit(null);
                             setHabitDialogOpen(true);
                         }}
+                        className="w-full sm:w-auto shrink-0"
                     >
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Dodaj Nawyk
@@ -768,23 +769,23 @@ export default function HabitsPage() {
                 {habits && habits.length > 0 && (
                     <Card className="mb-6">
                         <CardContent className="p-4">
-                            <div className="flex items-center justify-between gap-4 flex-wrap">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                                 <div className="flex items-center gap-3">
                                     <div
-                                        className="w-12 h-12 rounded-full flex items-center justify-center"
+                                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0"
                                         style={{ backgroundColor: 'hsl(var(--primary) / 0.1)' }}
                                     >
-                                        <Flame className="h-6 w-6 text-primary" />
+                                        <Flame className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                                     </div>
                                     <div>
-                                        <p className="text-sm text-muted-foreground">
+                                        <p className="text-xs sm:text-sm text-muted-foreground">
                                             Wykonanie w tym tygodniu
                                         </p>
-                                        <p className="text-2xl font-bold">{stats.completionRate}%</p>
+                                        <p className="text-xl sm:text-2xl font-bold">{stats.completionRate}%</p>
                                     </div>
                                 </div>
-                                <div className="flex-1 min-w-[200px] max-w-md">
-                                    <Progress value={stats.completionRate} className="h-3" />
+                                <div className="flex-1 w-full sm:max-w-xs">
+                                    <Progress value={stats.completionRate} className="h-2 sm:h-3" />
                                     <p className="text-xs text-muted-foreground mt-1 text-right">
                                         {stats.totalCompleted} / {stats.totalPossible} wykonanych
                                     </p>
@@ -795,158 +796,230 @@ export default function HabitsPage() {
                 )}
 
                 {/* --- Week Navigation --- */}
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" size="icon" onClick={goToPreviousWeek}>
+                <div className="flex items-center justify-between gap-2 mb-4">
+                    <div className="flex items-center gap-1 sm:gap-2 flex-1 justify-center min-w-0">
+                        <Button variant="outline" size="icon" onClick={goToPreviousWeek} className="h-8 w-8 sm:h-9 sm:w-9 shrink-0">
                             <ChevronLeft className="h-4 w-4" />
                         </Button>
-                        <span className="font-medium min-w-[200px] text-center">
-                            {format(weekDates[0], 'd MMM', { locale: pl })} -{' '}
-                            {format(weekDates[6], 'd MMM yyyy', { locale: pl })}
+                        <span className="font-medium text-xs sm:text-sm text-center truncate px-1">
+                            {format(weekDates[0], 'd MMM', { locale: pl })} – {format(weekDates[6], 'd MMM', { locale: pl })}
                         </span>
-                        <Button variant="outline" size="icon" onClick={goToNextWeek}>
+                        <Button variant="outline" size="icon" onClick={goToNextWeek} className="h-8 w-8 sm:h-9 sm:w-9 shrink-0">
                             <ChevronRight className="h-4 w-4" />
                         </Button>
                     </div>
                     {!isCurrentWeek && (
-                        <Button variant="ghost" size="sm" onClick={goToCurrentWeek}>
-                            Bieżący tydzień
+                        <Button variant="ghost" size="sm" onClick={goToCurrentWeek} className="shrink-0 text-xs sm:text-sm px-2 sm:px-3">
+                            Dziś
                         </Button>
                     )}
                 </div>
 
-                {/* --- Habits Grid --- */}
-                <Card>
-                    <CardHeader className="pb-2">
-                        <div className="grid grid-cols-[1fr_repeat(7,minmax(40px,1fr))] gap-2 text-center">
-                            <div></div>
-                            {weekDates.map((date) => {
-                                const isToday = isSameDay(date, new Date());
-                                return (
-                                    <div
-                                        key={date.toISOString()}
-                                        className={cn(
-                                            'text-xs font-medium py-2 rounded-md',
-                                            isToday && 'bg-primary text-primary-foreground'
-                                        )}
-                                    >
-                                        <div>{format(date, 'EEE', { locale: pl })}</div>
-                                        <div className="text-lg font-bold">{format(date, 'd')}</div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        {isLoading ? (
+                {/* --- Habits Grid (Desktop) / Cards (Mobile) --- */}
+                {isLoading ? (
+                    <Card>
+                        <CardContent className="p-4">
                             <div className="space-y-4">
                                 {Array.from({ length: 3 }).map((_, i) => (
-                                    <div
-                                        key={i}
-                                        className="grid grid-cols-[1fr_repeat(7,minmax(40px,1fr))] gap-2 items-center"
-                                    >
-                                        <Skeleton className="h-10 w-full" />
-                                        {Array.from({ length: 7 }).map((_, j) => (
-                                            <Skeleton key={j} className="h-8 w-8 mx-auto rounded" />
-                                        ))}
+                                    <div key={i} className="flex items-center gap-3">
+                                        <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+                                        <div className="flex-1 space-y-2">
+                                            <Skeleton className="h-4 w-32" />
+                                            <Skeleton className="h-3 w-24" />
+                                        </div>
                                     </div>
                                 ))}
                             </div>
-                        ) : habits && habits.length > 0 ? (
-                            <div className="space-y-2">
-                                {habits.map((habit) => (
-                                    <div
-                                        key={habit.id}
-                                        className="grid grid-cols-[1fr_repeat(7,minmax(40px,1fr))] gap-2 items-center py-2 border-b last:border-b-0"
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xl shrink-0">{habit.icon || '💪'}</span>
-                                            <div className="min-w-0 flex-1">
-                                                <span className="font-medium truncate block">{habit.name}</span>
-                                                <span className="text-xs text-muted-foreground">{getFrequencyLabel(habit)}</span>
+                        </CardContent>
+                    </Card>
+                ) : habits && habits.length > 0 ? (
+                    <>
+                        {/* Mobile View - Card Layout */}
+                        <div className="block md:hidden space-y-3">
+                            {habits.map((habit) => (
+                                <Card key={habit.id} className="overflow-hidden">
+                                    <CardContent className="p-0">
+                                        {/* Habit Header */}
+                                        <div className="flex items-center gap-3 p-3 border-b bg-muted/30">
+                                            <div
+                                                className="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0"
+                                                style={{ backgroundColor: `${habit.color || '#10b981'}20` }}
+                                            >
+                                                {habit.icon || '💪'}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-medium truncate">{habit.name}</p>
+                                                <p className="text-xs text-muted-foreground">{getFrequencyLabel(habit)}</p>
                                             </div>
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-6 w-6 shrink-0"
-                                                    >
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
                                                         <MoreVertical className="h-4 w-4" />
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem
-                                                        onClick={() => {
-                                                            setEditingHabit(habit);
-                                                            setHabitDialogOpen(true);
-                                                        }}
-                                                    >
+                                                    <DropdownMenuItem onClick={() => { setEditingHabit(habit); setHabitDialogOpen(true); }}>
                                                         <Edit className="mr-2 h-4 w-4" />
-                                                        <span>Edytuj</span>
+                                                        Edytuj
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={() => setHabitToDelete(habit)}
-                                                        className="text-destructive focus:text-destructive"
-                                                    >
+                                                    <DropdownMenuItem onClick={() => setHabitToDelete(habit)} className="text-destructive focus:text-destructive">
                                                         <Trash2 className="mr-2 h-4 w-4" />
-                                                        <span>Usuń</span>
+                                                        Usuń
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </div>
-                                        {weekDateStrings.map((dateStr) => {
-                                            const isCompleted = logsByHabitAndDate.get(
-                                                `${habit.id}-${dateStr}`
-                                            );
-                                            const isFuture = dateStr > format(new Date(), 'yyyy-MM-dd');
-                                            const isActiveDay = isHabitActiveOnDay(habit, dateStr);
+                                        {/* Week Days Grid */}
+                                        <div className="grid grid-cols-7 gap-1 p-2">
+                                            {weekDates.map((date, idx) => {
+                                                const dateStr = weekDateStrings[idx];
+                                                const isToday = isSameDay(date, new Date());
+                                                const isCompleted = logsByHabitAndDate.get(`${habit.id}-${dateStr}`);
+                                                const isFuture = dateStr > format(new Date(), 'yyyy-MM-dd');
+                                                const isActiveDay = isHabitActiveOnDay(habit, dateStr);
 
-                                            if (!isActiveDay) {
                                                 return (
-                                                    <div key={dateStr} className="flex justify-center">
-                                                        <div className="h-8 w-8 rounded flex items-center justify-center text-muted-foreground/30">
-                                                            —
-                                                        </div>
+                                                    <div key={dateStr} className="flex flex-col items-center gap-1">
+                                                        <span className={cn(
+                                                            "text-[10px] font-medium uppercase",
+                                                            isToday ? "text-primary" : "text-muted-foreground"
+                                                        )}>
+                                                            {format(date, 'EEEEEE', { locale: pl })}
+                                                        </span>
+                                                        <span className={cn(
+                                                            "text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full",
+                                                            isToday && "bg-primary text-primary-foreground"
+                                                        )}>
+                                                            {format(date, 'd')}
+                                                        </span>
+                                                        {isActiveDay ? (
+                                                            <Checkbox
+                                                                checked={!!isCompleted}
+                                                                onCheckedChange={() => toggleHabitCompletion(habit.id, dateStr)}
+                                                                disabled={isFuture}
+                                                                className={cn(
+                                                                    'h-7 w-7 rounded-md transition-all',
+                                                                    isCompleted && 'border-transparent data-[state=checked]:border-transparent',
+                                                                    isFuture && 'opacity-40'
+                                                                )}
+                                                                style={isCompleted ? { backgroundColor: habit.color || '#10b981', borderColor: habit.color || '#10b981' } : undefined}
+                                                            />
+                                                        ) : (
+                                                            <div className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground/30 text-xs">
+                                                                —
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 );
-                                            }
+                                            })}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
 
-                                            return (
-                                                <div key={dateStr} className="flex justify-center">
-                                                    <Checkbox
-                                                        checked={!!isCompleted}
-                                                        onCheckedChange={() =>
-                                                            toggleHabitCompletion(habit.id, dateStr)
-                                                        }
-                                                        disabled={isFuture}
-                                                        className={cn(
-                                                            'h-8 w-8 rounded transition-all',
-                                                            isCompleted &&
-                                                            'border-transparent data-[state=checked]:border-transparent'
-                                                        )}
-                                                        style={
-                                                            isCompleted
-                                                                ? {
-                                                                    backgroundColor: habit.color || '#10b981',
-                                                                    borderColor: habit.color || '#10b981',
-                                                                }
-                                                                : undefined
-                                                        }
-                                                    />
+                        {/* Desktop View - Grid Layout */}
+                        <Card className="hidden md:block">
+                            <CardHeader className="pb-2 px-4">
+                                <div className="grid grid-cols-[minmax(150px,1fr)_repeat(7,48px)] gap-2 text-center items-end">
+                                    <div></div>
+                                    {weekDates.map((date) => {
+                                        const isToday = isSameDay(date, new Date());
+                                        return (
+                                            <div
+                                                key={date.toISOString()}
+                                                className={cn(
+                                                    'text-xs font-medium py-2 rounded-lg',
+                                                    isToday && 'bg-primary text-primary-foreground'
+                                                )}
+                                            >
+                                                <div className="uppercase">{format(date, 'EEE', { locale: pl })}</div>
+                                                <div className="text-base font-bold">{format(date, 'd')}</div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </CardHeader>
+                            <CardContent className="px-4">
+                                <div className="space-y-1">
+                                    {habits.map((habit) => (
+                                        <div
+                                            key={habit.id}
+                                            className="grid grid-cols-[minmax(150px,1fr)_repeat(7,48px)] gap-2 items-center py-3 border-b last:border-b-0"
+                                        >
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <div
+                                                    className="w-9 h-9 rounded-full flex items-center justify-center text-base shrink-0"
+                                                    style={{ backgroundColor: `${habit.color || '#10b981'}20` }}
+                                                >
+                                                    {habit.icon || '💪'}
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-12">
+                                                <div className="min-w-0 flex-1">
+                                                    <span className="font-medium truncate block text-sm">{habit.name}</span>
+                                                    <span className="text-xs text-muted-foreground">{getFrequencyLabel(habit)}</span>
+                                                </div>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem onClick={() => { setEditingHabit(habit); setHabitDialogOpen(true); }}>
+                                                            <Edit className="mr-2 h-4 w-4" />
+                                                            Edytuj
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => setHabitToDelete(habit)} className="text-destructive focus:text-destructive">
+                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            Usuń
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </div>
+                                            {weekDateStrings.map((dateStr) => {
+                                                const isCompleted = logsByHabitAndDate.get(`${habit.id}-${dateStr}`);
+                                                const isFuture = dateStr > format(new Date(), 'yyyy-MM-dd');
+                                                const isActiveDay = isHabitActiveOnDay(habit, dateStr);
+
+                                                if (!isActiveDay) {
+                                                    return (
+                                                        <div key={dateStr} className="flex justify-center">
+                                                            <div className="h-8 w-8 rounded-md flex items-center justify-center text-muted-foreground/30">—</div>
+                                                        </div>
+                                                    );
+                                                }
+
+                                                return (
+                                                    <div key={dateStr} className="flex justify-center">
+                                                        <Checkbox
+                                                            checked={!!isCompleted}
+                                                            onCheckedChange={() => toggleHabitCompletion(habit.id, dateStr)}
+                                                            disabled={isFuture}
+                                                            className={cn(
+                                                                'h-8 w-8 rounded-md transition-all',
+                                                                isCompleted && 'border-transparent data-[state=checked]:border-transparent',
+                                                                isFuture && 'opacity-50'
+                                                            )}
+                                                            style={isCompleted ? { backgroundColor: habit.color || '#10b981', borderColor: habit.color || '#10b981' } : undefined}
+                                                        />
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </>
+                ) : (
+                    <Card>
+                        <CardContent className="py-12">
+                            <div className="text-center">
                                 <CheckSquare className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                                 <h3 className="font-headline text-xl font-semibold mb-2">
                                     Brak nawyków
                                 </h3>
-                                <p className="text-muted-foreground mb-4">
+                                <p className="text-muted-foreground mb-4 text-sm">
                                     Dodaj swój pierwszy nawyk, aby zacząć śledzić postępy.
                                 </p>
                                 <Button
@@ -959,9 +1032,9 @@ export default function HabitsPage() {
                                     Dodaj Pierwszy Nawyk
                                 </Button>
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* --- Add Habit Card --- */}
                 {habits && habits.length > 0 && (
@@ -970,10 +1043,10 @@ export default function HabitsPage() {
                             setEditingHabit(null);
                             setHabitDialogOpen(true);
                         }}
-                        className="mt-4 flex items-center justify-center border-dashed hover:border-primary hover:bg-secondary/30 transition-colors cursor-pointer py-8"
+                        className="mt-4 flex items-center justify-center border-dashed hover:border-primary hover:bg-secondary/30 transition-colors cursor-pointer py-6"
                     >
-                        <CardContent className="flex items-center gap-2 text-muted-foreground p-0">
-                            <PlusCircle className="h-5 w-5" />
+                        <CardContent className="flex items-center gap-2 text-muted-foreground p-0 text-sm">
+                            <PlusCircle className="h-4 w-4" />
                             <span>Dodaj kolejny nawyk</span>
                         </CardContent>
                     </Card>
