@@ -64,7 +64,7 @@ export function ExerciseCardHorizontal({
             </div>
           ) : (
             <Image
-              src={exercise.mediaUrl || exercise.image || ''}
+              src={''}
               alt={exercise.name}
               fill
               className="object-cover"
@@ -140,7 +140,7 @@ export function ExerciseCardHorizontal({
 
         {/* Description Row */}
         <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-          {exercise.description || exercise.instructions || 'Brak opisu'}
+          {exercise.instructions || exercise.description || 'Brak opisu'}
         </p>
       </div>
     </div>
