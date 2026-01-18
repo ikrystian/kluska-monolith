@@ -114,15 +114,23 @@ export interface Message {
   createdAt: string;
 }
 
+export type FrequencyType = 'daily' | 'specific_days' | 'every_x_days';
+
+export interface HabitFrequency {
+  type: FrequencyType;
+  daysOfWeek?: number[]; // 0 = Sunday, 1 = Monday, etc.
+  repeatEvery?: number; // For every_x_days
+}
+
 export interface Habit {
   id: string;
   ownerId: string;
   name: string;
   description?: string;
-  icon?: string;
+  icon?: string; // Emoji icon
   color?: string;
-  frequency: 'daily' | 'weekly';
-  targetDaysPerWeek?: number;
+  frequency: HabitFrequency;
+  duration?: number; // Optional goal in days
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

@@ -4,19 +4,17 @@ import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format, startOfWeek, addDays, isSameDay, parseISO } from 'date-fns';
+import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
-    CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import type { Habit, HabitLog } from '@/lib/types';
+import type { Habit, HabitLog, FrequencyType } from '@/lib/types';
 import {
     PlusCircle,
     Loader2,
@@ -62,7 +60,6 @@ import {
     FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import {
     useUser,
@@ -74,19 +71,24 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
-// --- SCHEMAS ---
+// --- CONSTANTS ---
 
-const habitSchema = z.object({
-    name: z.string().min(1, 'Nazwa jest wymagana.'),
-    description: z.string().optional(),
-    color: z.string().optional(),
-});
+const EMOJI_OPTIONS = ['💪', '📚', '🏃', '💻', '🧘', '🎯', '⏰', '💧', '🥗', '😴', '🎨', '🎵', '🚴', '🏋️', '🧠', '❤️'];
 
-type HabitFormValues = z.infer<typeof habitSchema>;
+const WEEK_DAYS = [
+    { id: 1, label: 'Pon' },
+    { id: 2, label: 'Wt' },
+    { id: 3, label: 'Śr' },
+    { id: 4, label: 'Czw' },
+    { id: 5, label: 'Pt' },
+    { id: 6, label: 'Sob' },
+    { id: 0, label: 'Ndz' },
+];
 
-// --- COLOR OPTIONS ---
-const colorOptions = [
+const COLOR_OPTIONS = [
     { value: '#10b981', label: 'Zielony' },
     { value: '#3b82f6', label: 'Niebieski' },
     { value: '#8b5cf6', label: 'Fioletowy' },
@@ -95,6 +97,21 @@ const colorOptions = [
     { value: '#ec4899', label: 'Różowy' },
     { value: '#06b6d4', label: 'Turkusowy' },
 ];
+
+// --- SCHEMAS ---
+
+const habitSchema = z.object({
+    name: z.string().min(1, 'Nazwa jest wymagana.'),
+    icon: z.string().default('💪'),
+    color: z.string().default('#10b981'),
+    frequencyType: z.enum(['daily', 'specific_days', 'every_x_days']).default('daily'),
+    selectedDays: z.array(z.number()).default([]),
+    repeatInterval: z.number().min(2).max(365).default(2),
+    hasDuration: z.boolean().default(false),
+    duration: z.number().min(1).max(365).default(30),
+});
+
+type HabitFormValues = z.infer<typeof habitSchema>;
 
 // --- HABIT FORM ---
 function HabitForm({
@@ -112,19 +129,41 @@ function HabitForm({
 
     const form = useForm<HabitFormValues>({
         resolver: zodResolver(habitSchema),
-        defaultValues:
-            isEditMode && habit
-                ? {
-                    name: habit.name,
-                    description: habit.description || '',
-                    color: habit.color || '#10b981',
-                }
-                : {
-                    name: '',
-                    description: '',
-                    color: '#10b981',
-                },
+        defaultValues: isEditMode && habit
+            ? {
+                name: habit.name,
+                icon: habit.icon || '💪',
+                color: habit.color || '#10b981',
+                frequencyType: habit.frequency?.type || 'daily',
+                selectedDays: habit.frequency?.daysOfWeek || [],
+                repeatInterval: habit.frequency?.repeatEvery || 2,
+                hasDuration: !!habit.duration,
+                duration: habit.duration || 30,
+            }
+            : {
+                name: '',
+                icon: '💪',
+                color: '#10b981',
+                frequencyType: 'daily',
+                selectedDays: [],
+                repeatInterval: 2,
+                hasDuration: false,
+                duration: 30,
+            },
     });
+
+    const frequencyType = form.watch('frequencyType');
+    const selectedDays = form.watch('selectedDays');
+    const hasDuration = form.watch('hasDuration');
+
+    const toggleDay = (dayId: number) => {
+        const current = form.getValues('selectedDays');
+        if (current.includes(dayId)) {
+            form.setValue('selectedDays', current.filter((d) => d !== dayId));
+        } else {
+            form.setValue('selectedDays', [...current, dayId]);
+        }
+    };
 
     const handleSubmit = async (data: HabitFormValues) => {
         try {
@@ -135,6 +174,11 @@ function HabitForm({
             console.error('Error submitting habit:', error);
         }
     };
+
+    const isSubmitDisabled =
+        form.formState.isSubmitting ||
+        isLoading ||
+        (frequencyType === 'specific_days' && selectedDays.length === 0);
 
     return (
         <Form {...form}>
@@ -150,7 +194,8 @@ function HabitForm({
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="grid gap-4 py-4">
+                <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
+                    {/* Name */}
                     <FormField
                         control={form.control}
                         name="name"
@@ -159,32 +204,221 @@ function HabitForm({
                                 <FormLabel>Nazwa Nawyku</FormLabel>
                                 <FormControl>
                                     <Input
-                                        placeholder="np. Pij 2L wody"
+                                        placeholder="np. Medytacja 10 minut"
                                         {...field}
                                         disabled={form.formState.isSubmitting}
+                                        autoFocus
                                     />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
+
+                    {/* Frequency Type */}
                     <FormField
                         control={form.control}
-                        name="description"
+                        name="frequencyType"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Opis (opcjonalnie)</FormLabel>
+                                <FormLabel>Częstotliwość</FormLabel>
                                 <FormControl>
-                                    <Textarea
-                                        placeholder="Dodatkowe szczegóły..."
-                                        {...field}
-                                        disabled={form.formState.isSubmitting}
-                                    />
+                                    <RadioGroup
+                                        onValueChange={field.onChange}
+                                        value={field.value}
+                                        className="flex flex-wrap gap-2"
+                                    >
+                                        <div className="flex items-center">
+                                            <RadioGroupItem value="daily" id="freq-daily" className="peer sr-only" />
+                                            <Label
+                                                htmlFor="freq-daily"
+                                                className={cn(
+                                                    'px-3 py-2 rounded-md border cursor-pointer transition-colors',
+                                                    field.value === 'daily'
+                                                        ? 'bg-primary text-primary-foreground border-primary'
+                                                        : 'bg-background hover:bg-secondary'
+                                                )}
+                                            >
+                                                Codziennie
+                                            </Label>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <RadioGroupItem value="specific_days" id="freq-specific" className="peer sr-only" />
+                                            <Label
+                                                htmlFor="freq-specific"
+                                                className={cn(
+                                                    'px-3 py-2 rounded-md border cursor-pointer transition-colors',
+                                                    field.value === 'specific_days'
+                                                        ? 'bg-primary text-primary-foreground border-primary'
+                                                        : 'bg-background hover:bg-secondary'
+                                                )}
+                                            >
+                                                Wybrane dni
+                                            </Label>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <RadioGroupItem value="every_x_days" id="freq-interval" className="peer sr-only" />
+                                            <Label
+                                                htmlFor="freq-interval"
+                                                className={cn(
+                                                    'px-3 py-2 rounded-md border cursor-pointer transition-colors',
+                                                    field.value === 'every_x_days'
+                                                        ? 'bg-primary text-primary-foreground border-primary'
+                                                        : 'bg-background hover:bg-secondary'
+                                                )}
+                                            >
+                                                Co X dni
+                                            </Label>
+                                        </div>
+                                    </RadioGroup>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
+
+                    {/* Days Selector (for specific_days) */}
+                    {frequencyType === 'specific_days' && (
+                        <div className="space-y-2">
+                            <Label>Wybierz dni tygodnia</Label>
+                            <div className="flex flex-wrap gap-2">
+                                {WEEK_DAYS.map((day) => (
+                                    <Button
+                                        key={day.id}
+                                        type="button"
+                                        variant={selectedDays.includes(day.id) ? 'default' : 'outline'}
+                                        size="sm"
+                                        onClick={() => toggleDay(day.id)}
+                                        className="w-12"
+                                    >
+                                        {day.label}
+                                    </Button>
+                                ))}
+                            </div>
+                            {selectedDays.length === 0 && (
+                                <p className="text-sm text-destructive">Wybierz przynajmniej jeden dzień</p>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Interval Selector (for every_x_days) */}
+                    {frequencyType === 'every_x_days' && (
+                        <FormField
+                            control={form.control}
+                            name="repeatInterval"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm">Powtarzaj co</span>
+                                        <Input
+                                            type="number"
+                                            min={2}
+                                            max={365}
+                                            className="w-20"
+                                            {...field}
+                                            onChange={(e) => field.onChange(Math.max(2, parseInt(e.target.value) || 2))}
+                                        />
+                                        <span className="text-sm">dni</span>
+                                    </div>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    )}
+
+                    {/* Duration Goal */}
+                    <div className="space-y-3">
+                        <Label>Cel (opcjonalne)</Label>
+                        <RadioGroup
+                            value={hasDuration ? 'duration' : 'infinite'}
+                            onValueChange={(v) => form.setValue('hasDuration', v === 'duration')}
+                            className="flex flex-wrap gap-2"
+                        >
+                            <div className="flex items-center">
+                                <RadioGroupItem value="infinite" id="dur-infinite" className="peer sr-only" />
+                                <Label
+                                    htmlFor="dur-infinite"
+                                    className={cn(
+                                        'px-3 py-2 rounded-md border cursor-pointer transition-colors',
+                                        !hasDuration
+                                            ? 'bg-primary text-primary-foreground border-primary'
+                                            : 'bg-background hover:bg-secondary'
+                                    )}
+                                >
+                                    Bezterminowo
+                                </Label>
+                            </div>
+                            <div className="flex items-center">
+                                <RadioGroupItem value="duration" id="dur-days" className="peer sr-only" />
+                                <Label
+                                    htmlFor="dur-days"
+                                    className={cn(
+                                        'px-3 py-2 rounded-md border cursor-pointer transition-colors',
+                                        hasDuration
+                                            ? 'bg-primary text-primary-foreground border-primary'
+                                            : 'bg-background hover:bg-secondary'
+                                    )}
+                                >
+                                    Cel dniowy
+                                </Label>
+                            </div>
+                        </RadioGroup>
+
+                        {hasDuration && (
+                            <FormField
+                                control={form.control}
+                                name="duration"
+                                render={({ field }) => (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm">Wykonaj przez</span>
+                                        <Input
+                                            type="number"
+                                            min={1}
+                                            max={365}
+                                            className="w-20"
+                                            {...field}
+                                            onChange={(e) => field.onChange(Math.max(1, parseInt(e.target.value) || 1))}
+                                        />
+                                        <span className="text-sm">dni</span>
+                                    </div>
+                                )}
+                            />
+                        )}
+                    </div>
+
+                    {/* Emoji Icon */}
+                    <FormField
+                        control={form.control}
+                        name="icon"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Wybierz ikonę</FormLabel>
+                                <FormControl>
+                                    <div className="grid grid-cols-8 gap-2">
+                                        {EMOJI_OPTIONS.map((emoji) => (
+                                            <button
+                                                key={emoji}
+                                                type="button"
+                                                onClick={() => field.onChange(emoji)}
+                                                className={cn(
+                                                    'w-10 h-10 text-xl flex items-center justify-center rounded-md transition-all border-2',
+                                                    field.value === emoji
+                                                        ? 'border-primary bg-primary/10 scale-110'
+                                                        : 'border-transparent hover:bg-secondary'
+                                                )}
+                                                disabled={form.formState.isSubmitting}
+                                            >
+                                                {emoji}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    {/* Color */}
                     <FormField
                         control={form.control}
                         name="color"
@@ -193,7 +427,7 @@ function HabitForm({
                                 <FormLabel>Kolor</FormLabel>
                                 <FormControl>
                                     <div className="flex gap-2 flex-wrap">
-                                        {colorOptions.map((color) => (
+                                        {COLOR_OPTIONS.map((color) => (
                                             <button
                                                 key={color.value}
                                                 type="button"
@@ -227,7 +461,7 @@ function HabitForm({
                             Anuluj
                         </Button>
                     </DialogClose>
-                    <Button type="submit" disabled={form.formState.isSubmitting || isLoading}>
+                    <Button type="submit" disabled={isSubmitDisabled}>
                         {(form.formState.isSubmitting || isLoading) && (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         )}
@@ -295,9 +529,27 @@ export default function HabitsPage() {
         return map;
     }, [habitLogs]);
 
+    // Check if habit should be active on a given day
+    const isHabitActiveOnDay = (habit: Habit, dateStr: string): boolean => {
+        const date = new Date(dateStr);
+        const dayOfWeek = date.getDay(); // 0 = Sunday
+
+        if (!habit.frequency || habit.frequency.type === 'daily') {
+            return true;
+        }
+
+        if (habit.frequency.type === 'specific_days') {
+            return habit.frequency.daysOfWeek?.includes(dayOfWeek) ?? false;
+        }
+
+        // For every_x_days, we'd need the habit creation date to calculate
+        // For simplicity, we'll show it as active always
+        return true;
+    };
+
     // Calculate stats
     const stats = useMemo(() => {
-        if (!habits || habits.length === 0) return { completionRate: 0, streak: 0 };
+        if (!habits || habits.length === 0) return { completionRate: 0, totalCompleted: 0, totalPossible: 0 };
 
         const today = format(new Date(), 'yyyy-MM-dd');
         let totalPossible = 0;
@@ -306,9 +558,11 @@ export default function HabitsPage() {
         weekDateStrings.forEach((date) => {
             if (date <= today) {
                 habits.forEach((habit) => {
-                    totalPossible++;
-                    if (logsByHabitAndDate.get(`${habit.id}-${date}`)) {
-                        totalCompleted++;
+                    if (isHabitActiveOnDay(habit, date)) {
+                        totalPossible++;
+                        if (logsByHabitAndDate.get(`${habit.id}-${date}`)) {
+                            totalCompleted++;
+                        }
                     }
                 });
             }
@@ -328,16 +582,28 @@ export default function HabitsPage() {
     const handleHabitFormSubmit = async (data: HabitFormValues) => {
         if (!user) return;
 
+        const habitData = {
+            name: data.name,
+            icon: data.icon,
+            color: data.color,
+            frequency: {
+                type: data.frequencyType as FrequencyType,
+                daysOfWeek: data.frequencyType === 'specific_days' ? data.selectedDays : undefined,
+                repeatEvery: data.frequencyType === 'every_x_days' ? data.repeatInterval : undefined,
+            },
+            duration: data.hasDuration ? data.duration : undefined,
+        };
+
         try {
             if (editingHabit) {
-                await updateDoc('habits', editingHabit.id, data);
+                await updateDoc('habits', editingHabit.id, habitData);
                 toast({
                     title: 'Nawyk Zaktualizowany!',
                     description: `Nawyk "${data.name}" został zmieniony.`,
                 });
             } else {
                 await createDoc('habits', {
-                    ...data,
+                    ...habitData,
                     ownerId: user.uid,
                     isActive: true,
                 });
@@ -381,7 +647,6 @@ export default function HabitsPage() {
 
         try {
             if (isCurrentlyCompleted) {
-                // Find and delete the log
                 const logToDelete = habitLogs?.find(
                     (log) => log.habitId === habitId && log.date === date
                 );
@@ -389,7 +654,6 @@ export default function HabitsPage() {
                     await deleteDoc('habitlogs', logToDelete.id);
                 }
             } else {
-                // Create a new log
                 await createDoc('habitlogs', {
                     habitId,
                     ownerId: user.uid,
@@ -423,6 +687,22 @@ export default function HabitsPage() {
         format(currentWeekStart, 'yyyy-MM-dd') ===
         format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
 
+    // Get frequency label for display
+    const getFrequencyLabel = (habit: Habit): string => {
+        if (!habit.frequency) return 'Codziennie';
+        switch (habit.frequency.type) {
+            case 'daily':
+                return 'Codziennie';
+            case 'specific_days':
+                const days = habit.frequency.daysOfWeek?.map((d) => WEEK_DAYS.find((wd) => wd.id === d)?.label).join(', ');
+                return days || 'Wybrane dni';
+            case 'every_x_days':
+                return `Co ${habit.frequency.repeatEvery} dni`;
+            default:
+                return 'Codziennie';
+        }
+    };
+
     return (
         <>
             <AlertDialog
@@ -451,7 +731,7 @@ export default function HabitsPage() {
             </AlertDialog>
 
             <Dialog open={isHabitDialogOpen} onOpenChange={setHabitDialogOpen}>
-                <DialogContent>
+                <DialogContent className="max-w-md">
                     <HabitForm
                         onFormSubmit={handleHabitFormSubmit}
                         habit={editingHabit}
@@ -580,11 +860,11 @@ export default function HabitsPage() {
                                         className="grid grid-cols-[1fr_repeat(7,minmax(40px,1fr))] gap-2 items-center py-2 border-b last:border-b-0"
                                     >
                                         <div className="flex items-center gap-2">
-                                            <div
-                                                className="w-3 h-3 rounded-full shrink-0"
-                                                style={{ backgroundColor: habit.color || '#10b981' }}
-                                            />
-                                            <span className="font-medium truncate">{habit.name}</span>
+                                            <span className="text-xl shrink-0">{habit.icon || '💪'}</span>
+                                            <div className="min-w-0 flex-1">
+                                                <span className="font-medium truncate block">{habit.name}</span>
+                                                <span className="text-xs text-muted-foreground">{getFrequencyLabel(habit)}</span>
+                                            </div>
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <Button
@@ -620,6 +900,18 @@ export default function HabitsPage() {
                                                 `${habit.id}-${dateStr}`
                                             );
                                             const isFuture = dateStr > format(new Date(), 'yyyy-MM-dd');
+                                            const isActiveDay = isHabitActiveOnDay(habit, dateStr);
+
+                                            if (!isActiveDay) {
+                                                return (
+                                                    <div key={dateStr} className="flex justify-center">
+                                                        <div className="h-8 w-8 rounded flex items-center justify-center text-muted-foreground/30">
+                                                            —
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+
                                             return (
                                                 <div key={dateStr} className="flex justify-center">
                                                     <Checkbox
