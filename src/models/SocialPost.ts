@@ -39,9 +39,8 @@ SocialPostSchema.index({ authorId: 1 }); // For user's posts
 SocialPostSchema.index({ authorId: 1, createdAt: -1 }); // For user's recent posts
 
 // Pre-save middleware to update likesCount
-SocialPostSchema.pre('save', function (next) {
+SocialPostSchema.pre('save', function () {
   this.likesCount = this.likes.length;
-  next();
 });
 
 export const SocialPost: Model<ISocialPost> =
