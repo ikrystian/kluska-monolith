@@ -26,6 +26,7 @@ import {
   Users2,
   Layers,
   TrendingUp,
+  CheckSquare,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -83,6 +84,7 @@ export const athleteNavItems = [
     items: [
       { href: '/athlete/measurements', label: 'Pomiary', icon: Ruler },
       { href: '/athlete/goals', label: 'Cele i Trofea', icon: Trophy },
+      { href: '/athlete/habits', label: 'Nawyki', icon: CheckSquare },
       { href: '/athlete/calendar', label: 'Kalendarz', icon: CalendarDays },
     ]
   },

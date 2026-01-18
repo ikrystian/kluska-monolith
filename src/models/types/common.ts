@@ -113,3 +113,27 @@ export interface Message {
   text: string;
   createdAt: string;
 }
+
+export interface Habit {
+  id: string;
+  ownerId: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  frequency: 'daily' | 'weekly';
+  targetDaysPerWeek?: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface HabitLog {
+  id: string;
+  habitId: string;
+  ownerId: string;
+  date: string;
+  completed: boolean;
+  createdAt: string;
+  updatedAt: string;
+}

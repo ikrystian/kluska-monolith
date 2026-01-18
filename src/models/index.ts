@@ -30,6 +30,9 @@ export * from './GamificationProfile';
 export * from './Reward';
 export * from './AchievementBadge';
 export * from './Notification';
+// Habits models
+export * from './Habit';
+export * from './HabitLog';
 
 // Export enums from types (no conflicts)
 export { MuscleGroupName, TrainingLevel, SetType } from './types/enums';
@@ -80,4 +83,6 @@ export type {
   Gym as GymType,
   Conversation as ConversationType,
   Message as MessageType,
+  Habit as HabitType,
+  HabitLog as HabitLogType,
 } from './types';
