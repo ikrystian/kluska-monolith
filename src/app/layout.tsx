@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
+import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { MongoDBProvider } from '@/lib/mongodb-provider';
 import { ThemeProvider } from '@/components/theme-provider';
 
@@ -49,6 +50,7 @@ export default function RootLayout({
           <MongoDBProvider>
             {children}
             <Toaster />
+            <SonnerToaster />
           </MongoDBProvider>
         </ThemeProvider>
       </body>
