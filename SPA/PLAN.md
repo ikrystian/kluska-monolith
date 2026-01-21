@@ -94,10 +94,13 @@ SPA/
         └── athlete/
             ├── DashboardPage.tsx     ✅ (pełna implementacja)
             ├── WorkoutsPage.tsx      ✅ (pełna implementacja)
-            ├── ExercisesPage.tsx     ✅ (NEW - pełna implementacja)
-            ├── HistoryPage.tsx       ✅ (NEW - pełna implementacja)
-            ├── HistoryDetailPage.tsx ✅ (NEW - pełna implementacja)
-            └── [18 placeholder pages] 🔄
+            ├── WorkoutDetailPage.tsx ✅ (pełna implementacja)
+            ├── ExercisesPage.tsx     ✅ (pełna implementacja)
+            ├── HistoryPage.tsx       ✅ (pełna implementacja)
+            ├── HistoryDetailPage.tsx ✅ (pełna implementacja)
+            ├── ProfilePage.tsx       ✅ (pełna implementacja)
+            ├── GoalsPage.tsx         ✅ (pełna implementacja)
+            └── [13 placeholder pages] 🔄
 ```
 
 ### Uruchomienie projektu:
