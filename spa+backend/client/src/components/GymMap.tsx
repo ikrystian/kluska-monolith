@@ -105,7 +105,7 @@ const mapOptions = {
 };
 
 export default function GymMap() {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
     const { isLoaded, loadError } = useJsApiLoader({
         id: 'google-map-script',
@@ -118,10 +118,10 @@ export default function GymMap() {
 
     const fetchGyms = useCallback(async () => {
         try {
-            const response = await fetch('/api/gyms');
+            const response = await fetch('/api/db/gyms');
             if (response.ok) {
-                const data = await response.json();
-                setGyms(data);
+                const result = await response.json();
+                setGyms(result.data || []);
             } else {
                 console.error('Failed to fetch gyms');
             }
@@ -197,7 +197,7 @@ export default function GymMap() {
                     <AlertTriangle className="h-4 w-4" />
                     <AlertTitle>Błąd Konfiguracji Mapy</AlertTitle>
                     <AlertDescription>
-                        Klucz API Google Maps nie został skonfigurowany. Proszę dodać go do pliku .env jako NEXT_PUBLIC_GOOGLE_MAPS_API_KEY.
+                        Klucz API Google Maps nie został skonfigurowany. Proszę dodać go do pliku .env jako VITE_GOOGLE_MAPS_API_KEY.
                     </AlertDescription>
                 </Alert>
             </div>

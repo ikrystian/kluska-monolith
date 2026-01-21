@@ -45,7 +45,7 @@ export function CreatePostDialog({ open, onOpenChange, onSuccess }: CreatePostDi
   const uploadImage = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await api.request<{ url: string }>('/upload', {
+    const response = await api.request<{ url: string }>('/api/upload', {
       method: 'POST',
       body: formData,
     });
