@@ -53,9 +53,16 @@ export function useActiveWorkoutContext(): ActiveWorkoutContextType {
 }
 
 /**
- * Hook to access active workout state.
+ * Hook to access active workout state and mutations.
  * Must be used within an ActiveWorkoutProvider.
  */
 export function useActiveWorkout() {
-  return useActiveWorkoutContext();
+  const context = useActiveWorkoutContext();
+  // Here we could extend the context value with mutation wrappers like:
+  // const { mutate: updateWorkout } = useUpdateDoc('workoutLogs');
+  // const finishWorkout = () => ...
+
+  // For now return the context as is, logic is handled in pages/hooks composition
+  return context;
 }
+
