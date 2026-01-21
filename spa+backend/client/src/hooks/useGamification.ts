@@ -284,6 +284,47 @@ export function useCompleteGoal(onSuccess?: () => void) {
   };
 }
 
+export interface PointTransaction {
+  amount: number;
+  type: 'earned' | 'spent' | 'bonus';
+  source: string;
+  sourceId?: string;
+  description: string;
+  createdAt: string;
+}
+
+export function usePointHistory(limit: number = 50) {
+  const [history, setHistory] = useState<PointTransaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetchHistory = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/gamification/history?limit=${limit}`);
+      if (!response.ok) throw new Error('Failed to fetch history');
+      const data = await response.json();
+      setHistory(data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Unknown error'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [limit]);
+
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
+
+  return {
+    history,
+    isLoading,
+    error,
+    refreshHistory: fetchHistory,
+  };
+}
+
 // Admin hooks for trainers
 export function useAdminRewards() {
   const [rewards, setRewards] = useState<Reward[]>([]);

@@ -12,8 +12,11 @@ import {
     useGamificationProfile,
     useLeaderboard,
     useRewards,
-    useAchievements
+    useAchievements,
+    usePointHistory
 } from '@/hooks/useGamification';
+import { PointHistoryChart } from '@/components/gamification/PointHistoryChart';
+import { PointHistoryTable } from '@/components/gamification/PointHistoryTable';
 import { useSession } from '@/lib/next-auth-react';
 import { Trophy, Gift, Crown, Target, RefreshCw } from 'lucide-react';
 
@@ -27,6 +30,8 @@ export default function GamificationPage() {
         isLoading: achievementsLoading,
         checkAchievements
     } = useAchievements();
+
+    const { history, isLoading: historyLoading } = usePointHistory(50);
 
     const handleCheckin = async () => {
         try {
@@ -78,8 +83,13 @@ export default function GamificationPage() {
                 </div>
             </div>
 
-            {/* Stats Card */}
-            <GamificationStatsCard stats={stats} isLoading={statsLoading} />
+            {/* Stats and Charts Grid */}
+            <div className="grid gap-6 md:grid-cols-2">
+                <GamificationStatsCard stats={stats} isLoading={statsLoading} />
+                <PointHistoryChart history={history} isLoading={historyLoading} />
+            </div>
+
+            <PointHistoryTable history={history} isLoading={historyLoading} />
 
             {/* Tabs for different sections */}
             <Tabs defaultValue="rewards" className="space-y-4">
