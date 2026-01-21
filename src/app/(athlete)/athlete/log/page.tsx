@@ -36,6 +36,17 @@ import { useActiveWorkout } from '@/hooks/useActiveWorkout';
 import { useExerciseHistory } from '@/hooks/useExerciseHistory';
 import { ExerciseProgressIndicator, ExerciseHistoryBadge } from '@/components/workout/ExerciseProgressIndicator';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetFooter, SheetClose } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
@@ -593,6 +604,41 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
     }
   };
 
+  const handleDiscardWorkout = async () => {
+    if (!workoutLogId) return;
+
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/db/workoutLogs/${workoutLogId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete workout');
+      }
+
+      toast({
+        title: 'Trening odrzucony',
+        description: 'Twój trening został usunięty.',
+      });
+
+      refetchActiveWorkout();
+      // Use window.location to force a full refresh and clear state completely, 
+      // or just redirect if client-side navigation is enough. 
+      // Given the complex state interaction, a router push is usually fine if we clear builderData upstream.
+      onFinishWorkout();
+    } catch (error) {
+      console.error('Error discarding workout:', error);
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się odrzucić treningu.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   if (isFinished) {
     return (
       <Card>
@@ -625,6 +671,26 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
             Zapisz i Zakończ
           </Button>
           <Button onClick={() => setIsFinished(false)} variant="ghost" className="w-full">Wróć do treningu</Button>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10">Odrzuć trening (bez zapisywania)</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Odrzuć trening</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Czy na pewno chcesz odrzucić ten trening? Postęp nie zostanie zapisany, a sesja zostanie usunięta.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDiscardWorkout} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Odrzuć
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardFooter>
       </Card>
     )
@@ -897,7 +963,25 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
           </div>
           {tip && <p className="text-xs text-muted-foreground mt-1 italic">{tip}</p>}
         </div>
-        <Button variant="ghost" size="icon" onClick={onRemoveExercise}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Usuń ćwiczenie</AlertDialogTitle>
+              <AlertDialogDescription>
+                Czy na pewno chcesz usunąć to ćwiczenie? Wszystkie serie zostaną utracone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Anuluj</AlertDialogCancel>
+              <AlertDialogAction onClick={onRemoveExercise} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Usuń
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
