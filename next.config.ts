@@ -2,7 +2,7 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
-  allowedDevOrigins: ['http://83.168.88.80'],
+  allowedDevOrigins: ['http://83.168.88.80', 'http://localhost:5173'],
   typescript: {
     ignoreBuildErrors: true,
   },

@@ -348,14 +348,27 @@ export interface Goal {
 export interface Habit {
   id: string;
   userId: string;
+  ownerId?: string;
   name: string;
   description?: string;
+  icon?: string;
+  color?: string;
   frequency: 'daily' | 'weekly' | 'custom';
   targetDays?: number[];
   streak: number;
   longestStreak: number;
   completedDates: string[];
+  isActive?: boolean;
   createdAt: string;
+}
+
+export interface HabitLog {
+  id: string;
+  habitId: string;
+  ownerId: string;
+  date: string;
+  completed: boolean;
+  createdAt?: string;
 }
 
 // Calendar types
