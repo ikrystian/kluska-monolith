@@ -1,0 +1,49 @@
+import mongoose, { Schema, Model, Document } from 'mongoose';
+
+export interface IGym extends Omit<Document, '_id'> {
+  _id: string;
+  name: string;
+  address: string;
+  location?: {
+    lat: number;
+    lng: number;
+  };
+  description?: string;
+  amenities?: string[];
+  rating?: number;
+  photoUrls?: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const GymSchema = new Schema<IGym>(
+  {
+    name: { type: String, required: true },
+    address: { type: String, required: true },
+    location: {
+      lat: { type: Number },
+      lng: { type: Number },
+    },
+    description: { type: String },
+    amenities: [{ type: String }],
+    rating: { type: Number, min: 0, max: 5 },
+    photoUrls: [{ type: String }],
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      transform: (_, ret) => {
+        (ret as any).id = ret._id.toString();
+        delete (ret as any).__v;
+        return ret;
+      },
+    },
+  }
+);
+
+GymSchema.index({ name: 'text', address: 'text' });
+GymSchema.index({ 'location.lat': 1, 'location.lng': 1 });
+
+export const Gym: Model<IGym> = 
+  mongoose.models.Gym || mongoose.model<IGym>('Gym', GymSchema);
+
