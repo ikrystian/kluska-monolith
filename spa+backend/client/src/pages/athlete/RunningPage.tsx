@@ -64,7 +64,7 @@ export default function RunningPage() {
 
   const { data: runningSessions, isLoading, refetch } = useCollection<RunningSession>(
     user ? 'runningSessions' : null,
-    { userId: user?.uid },
+    { ownerId: user?.uid },
     { sort: { date: -1 } }
   );
 
@@ -107,7 +107,7 @@ export default function RunningPage() {
       duration: data.duration,
       avgPace: avgPace,
       notes: data.notes,
-      userId: user.uid,
+      ownerId: user.uid,
     };
 
     try {
