@@ -4,6 +4,7 @@ import { Outlet } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { ActiveWorkoutWidget } from '@/components/workout/ActiveWorkoutWidget';
+import { BottomNav } from '@/components/bottom-nav';
 
 export default function AthleteLayout() {
     return (
@@ -18,6 +19,7 @@ export default function AthleteLayout() {
                     <Outlet />
                 </main>
             </SidebarInset>
+            <BottomNav />
             <ActiveWorkoutWidget />
         </SidebarProvider>
     );

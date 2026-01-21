@@ -1,12 +1,9 @@
-'use client';
-
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Play, CalendarDays, MessageSquare, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function BottomNav() {
-    const pathname = usePathname();
+    const { pathname } = useLocation();
 
     const items = [
         { href: '/athlete/dashboard', icon: LayoutDashboard, label: 'Panel' },
@@ -17,7 +14,7 @@ export function BottomNav() {
     ];
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 z-50 block border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden">
+        <div id="bottom-nav" className="fixed bottom-0 left-0 right-0 z-50 block border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden">
             <div className="flex h-16 items-center justify-around px-2">
                 {items.map((item) => {
                     const isActive = pathname === item.href || (item.href !== '/athlete/dashboard' && pathname.startsWith(item.href));

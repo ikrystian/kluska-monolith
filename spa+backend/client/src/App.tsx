@@ -35,6 +35,7 @@ import AthleteProfile from '@/pages/athlete/ProfilePage';
 import AthleteGamification from '@/pages/athlete/GamificationPage';
 import AthleteChat from '@/pages/athlete/ChatPage';
 import AthleteHabits from '@/pages/athlete/HabitsPage';
+import AthleteMap from '@/pages/athlete/MapPage';
 
 // Trainer Pages
 import TrainerDashboard from '@/pages/trainer/DashboardPage';
@@ -129,6 +130,7 @@ function AppRoutes() {
         <Route path="gamification" element={<AthleteGamification />} />
         <Route path="chat" element={<AthleteChat />} />
         <Route path="habits" element={<AthleteHabits />} />
+        <Route path="map" element={<AthleteMap />} />
         {/* Add more athlete routes here */}
       </Route>
 

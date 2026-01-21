@@ -17,7 +17,7 @@ export function BottomNav() {
     ];
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 z-50 block border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden">
+        <div id="bottom-nav" className="fixed bottom-0 left-0 right-0 z-50 block border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden">
             <div className="flex h-16 items-center justify-around px-2">
                 {items.map((item) => {
                     const isActive = pathname === item.href || (item.href !== '/athlete/dashboard' && pathname.startsWith(item.href));

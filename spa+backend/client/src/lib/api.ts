@@ -19,7 +19,7 @@ class ApiClient {
         return localStorage.getItem('auth_token');
     }
 
-    private async request<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
+    public async request<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
         const { token, ...fetchOptions } = options;
         const authToken = token || this.getToken();
 

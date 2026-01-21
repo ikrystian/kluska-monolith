@@ -77,17 +77,13 @@ const goalSchema = z.object({
   target: z.coerce.number().positive('Cel musi być liczbą dodatnią.'),
   current: z.coerce.number().min(0, 'Aktualna wartość nie może być ujemna.'),
   unit: z.string().min(1, 'Jednostka jest wymagana (np. kg, km, powtórzenia).'),
-  deadline: z.date({
-    required_error: 'Termin jest wymagany.',
-  }),
+  deadline: z.date({ message: 'Termin jest wymagany.' }),
 });
 
 const achievementSchema = z.object({
   title: z.string().min(1, 'Tytuł jest wymagany.'),
   description: z.string().optional(),
-  date: z.date({
-    required_error: 'Data jest wymagana.',
-  }),
+  date: z.date({ message: 'Data jest wymagana.' }),
   photos: z.array(z.instanceof(File)).optional(),
 });
 
