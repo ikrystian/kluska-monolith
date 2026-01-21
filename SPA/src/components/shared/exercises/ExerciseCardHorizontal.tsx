@@ -60,7 +60,11 @@ export function ExerciseCardHorizontal({
                         </div>
                     ) : (
                         <img
+<<<<<<< HEAD
                             src={exercise.mediaUrl || exercise.image}
+=======
+                            src={exercise.mediaUrl || exercise.image || ''}
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
                             alt={exercise.name}
                             className="object-cover w-full h-full"
                         />

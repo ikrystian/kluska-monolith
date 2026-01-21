@@ -1,6 +1,20 @@
 import * as React from "react"
+<<<<<<< HEAD
 import { Slot } from "@radix-ui/react-slot"
 import { Controller, ControllerProps, FieldPath, FieldValues, FormProvider, useFormContext } from "react-hook-form"
+=======
+import * as LabelPrimitive from "@radix-ui/react-label"
+import { Slot } from "@radix-ui/react-slot"
+import {
+    Controller,
+    FormProvider,
+    useFormContext,
+    type ControllerProps,
+    type FieldPath,
+    type FieldValues,
+} from "react-hook-form"
+
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 
@@ -76,8 +90,13 @@ const FormItem = React.forwardRef<
 FormItem.displayName = "FormItem"
 
 const FormLabel = React.forwardRef<
+<<<<<<< HEAD
     React.ElementRef<typeof Label>,
     React.ComponentPropsWithoutRef<typeof Label>
+=======
+    React.ElementRef<typeof LabelPrimitive.Root>,
+    React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
 >(({ className, ...props }, ref) => {
     const { error, formItemId } = useFormField()
 
@@ -136,7 +155,11 @@ const FormMessage = React.forwardRef<
     React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, children, ...props }, ref) => {
     const { error, formMessageId } = useFormField()
+<<<<<<< HEAD
     const body = error ? String(error?.message) : children
+=======
+    const body = error ? String(error?.message ?? "") : children
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
 
     if (!body) {
         return null

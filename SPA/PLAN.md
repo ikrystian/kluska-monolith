@@ -2,21 +2,21 @@
 
 ---
 
-## 📊 AKTUALNY STAN PROJEKTU (Aktualizacja: 2026-01-21 03:50)
+## 📊 AKTUALNY STAN PROJEKTU (Aktualizacja: 2026-01-21 07:06)
 
-### Postęp ogólny: ~50%
+### Postęp ogólny: ~65%
 
 | Faza | Status | Postęp |
 |------|--------|--------|
 | Faza 1: Konfiguracja projektu | ✅ Ukończona | 100% |
 | Faza 2: Warstwa API | ✅ Ukończona | 100% |
 | Faza 3: System autentykacji | 🔄 W trakcie | 80% |
-| Faza 4: Layout i nawigacja | 🔄 W trakcie | 60% |
-| Faza 5: Konteksty i stan globalny | 🔄 W trakcie | 60% |
-| Faza 6: Komponenty UI | 🔄 W trakcie | 50% |
-| Faza 7: Komponenty specjalistyczne | 🔄 W trakcie | 10% |
-| Faza 8: Implementacja stron | 🔄 W trakcie | 25% |
-| Faza 9: Hooki specjalistyczne | ⏳ Oczekuje | 0% |
+| Faza 4: Layout i nawigacja | 🔄 W trakcie | 70% |
+| Faza 5: Konteksty i stan globalny | 🔄 W trakcie | 80% |
+| Faza 6: Komponenty UI | 🔄 W trakcie | 75% |
+| Faza 7: Komponenty specjalistyczne | 🔄 W trakcie | 30% |
+| Faza 8: Implementacja stron | 🔄 W trakcie | 45% |
+| Faza 9: Hooki specjalistyczne | 🔄 W trakcie | 30% |
 | Faza 10: Integracje zewnętrzne | ⏳ Oczekuje | 0% |
 | Faza 11: Optymalizacja | ⏳ Oczekuje | 0% |
 
@@ -47,20 +47,29 @@ SPA/
     │   ├── index.ts          ✅
     │   ├── useCollection.ts  ✅
     │   ├── useDoc.ts         ✅
-    │   └── useMutation.ts    ✅ (useCreateDoc, useUpdateDoc, useDeleteDoc)
-    ├── types/index.ts        ✅ (pełne typy: Workout, Exercise, Goal, etc.)
+    │   ├── useMutation.ts    ✅ (useCreateDoc, useUpdateDoc, useDeleteDoc)
+    │   └── useGamification.ts ✅ (NEW - hooki gamifikacji)
+    ├── types/index.ts        ✅ (pełne typy: Workout, Exercise, Goal, UserAchievement, etc.)
     ├── contexts/
     │   ├── AuthContext.tsx   ✅
     │   ├── UserProfileContext.tsx ✅
-    │   └── ActiveWorkoutContext.tsx ✅ (NEW)
+    │   └── ActiveWorkoutContext.tsx ✅
     ├── components/
     │   ├── theme-provider.tsx ✅
+    │   ├── theme-toggle.tsx   ✅ (NEW)
     │   ├── layout/
     │   │   ├── AthleteLayout.tsx  ✅
     │   │   ├── AppNav.tsx         ✅
     │   │   ├── BottomNav.tsx      ✅
     │   │   └── ProtectedRoute.tsx ✅
+    │   ├── gamification/          ✅ (NEW)
+    │   │   ├── index.ts           ✅
+    │   │   ├── AchievementsGrid.tsx ✅
+    │   │   └── AchievementNotification.tsx ✅
+    │   ├── workouts/
+    │   │   └── ScheduleWorkoutDialog.tsx ✅
     │   ├── shared/
+<<<<<<< HEAD
     │   │   ├── WorkoutsListView.tsx ✅
     │   │   └── exercises/           ✅ (NEW)
     │   │       ├── index.ts
@@ -68,30 +77,49 @@ SPA/
     │   │       ├── ExercisesListView.tsx
     │   │       ├── ExerciseCardHorizontal.tsx
     │   │       └── ExerciseFilters.tsx
+=======
+    │   │   ├── WorkoutsListView.tsx ✅ (pełna implementacja)
+    │   │   └── exercises/         ✅ (NEW)
+    │   │       ├── index.ts       ✅
+    │   │       ├── ExercisesListView.tsx ✅
+    │   │       ├── ExerciseCardHorizontal.tsx ✅
+    │   │       ├── ProgressDialog.tsx ✅
+    │   │       └── types.ts       ✅
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
     │   └── ui/
     │       ├── alert.tsx         ✅
     │       ├── alert-dialog.tsx  ✅
     │       ├── avatar.tsx        ✅
     │       ├── badge.tsx         ✅
     │       ├── button.tsx        ✅
+    │       ├── calendar.tsx      ✅ (NEW)
     │       ├── card.tsx          ✅
+    │       ├── carousel.tsx      ✅ (NEW)
     │       ├── checkbox.tsx      ✅
     │       ├── dialog.tsx        ✅
     │       ├── dropdown-menu.tsx ✅ (NEW)
+<<<<<<< HEAD
+=======
+    │       ├── form.tsx          ✅ (NEW)
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
     │       ├── input.tsx         ✅
     │       ├── label.tsx         ✅
+    │       ├── popover.tsx       ✅ (NEW)
     │       ├── progress.tsx      ✅
     │       ├── select.tsx        ✅
     │       ├── separator.tsx     ✅
     │       ├── skeleton.tsx      ✅
     │       ├── sonner.tsx        ✅
+    │       ├── switch.tsx        ✅ (NEW)
     │       ├── tabs.tsx          ✅
-    │       └── textarea.tsx      ✅
+    │       ├── textarea.tsx      ✅
+    │       └── tooltip.tsx       ✅ (NEW)
     └── pages/
         ├── auth/
         │   ├── LoginPage.tsx     ✅
         │   └── RegisterPage.tsx  ✅
         └── athlete/
+<<<<<<< HEAD
             ├── DashboardPage.tsx      ✅
             ├── WorkoutsPage.tsx       ✅
             ├── WorkoutDetailPage.tsx  ✅
@@ -110,6 +138,15 @@ SPA/
             ├── KnowledgeZonePage.tsx  ✅
             ├── ArticleDetailPage.tsx  ✅
             └── [4 placeholder pages]  🔄
+=======
+            ├── DashboardPage.tsx ✅ (pełna implementacja)
+            ├── WorkoutsPage.tsx  ✅ (pełna implementacja)
+            ├── WorkoutDetailPage.tsx ✅ (pełna implementacja)
+            ├── ExercisesPage.tsx ✅ (pełna implementacja)
+            ├── GoalsPage.tsx     ✅ (pełna implementacja z gamifikacją)
+            ├── ProfilePage.tsx   ✅ (pełna implementacja)
+            └── [pozostałe strony] 🔄
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
 ```
 
 ### Uruchomienie projektu:
@@ -130,9 +167,13 @@ SPA będzie dostępne na `http://localhost:5173`
 **Ważne:** Backend musi być uruchomiony przed SPA, ponieważ SPA używa proxy Vite do przekierowania żądań `/api/*` do backendu.
 
 ### Następne kroki:
-1. Dokończyć hooki API (useCollection, useDoc, etc.)
-2. Zaimplementować pozostałe komponenty shadcn/ui
-3. Pełna implementacja stron athlete (obecnie placeholdery)
+1. ✅ Hooki API (useCollection, useDoc, useMutation, useGamification) - UKOŃCZONE
+2. 🔄 Zaimplementować pozostałe komponenty shadcn/ui (ScrollArea, Sheet, Slider, Table)
+3. 🔄 Pełna implementacja stron athlete:
+   - ✅ DashboardPage, WorkoutsPage, WorkoutDetailPage, ExercisesPage, GoalsPage, ProfilePage
+   - 🔄 HistoryPage, MeasurementsPage, CalendarPage, HabitsPage
+   - ⏳ ChatPage, SocialPage, GamificationPage, KnowledgeZonePage
+   - ⏳ WorkoutCreatePage, WorkoutEditPage, LogPage
 4. Testowanie integracji z backendem
 
 ---
@@ -335,7 +376,7 @@ SPA/
 - [x] Konfiguracja proxy do backendu w vite.config.ts
 - [x] Build projektu zakończony sukcesem
 
-### Faza 2: Warstwa API 🔄 W TRAKCIE
+### Faza 2: Warstwa API ✅ UKOŃCZONA
 
 - [x] Utworzenie klienta HTTP z interceptorami (`src/api/client.ts`)
 - [x] Implementacja obsługi tokenów JWT (interceptory w client.ts)
@@ -347,14 +388,14 @@ SPA/
   - [x] deleteDocument - usuwanie dokumentów
 - [x] Integracja z TanStack Query dla cache i stanu serwera
 - [x] Utworzenie API dla autentykacji (`src/api/auth.ts`)
-- [ ] Migracja hooków z db-hooks.tsx jako React hooks:
-  - [ ] useCollection - hook do pobierania kolekcji
-  - [ ] useDoc - hook do pobierania pojedynczego dokumentu
-  - [ ] useCreateDoc - hook do tworzenia dokumentów
-  - [ ] useUpdateDoc - hook do aktualizacji dokumentów
-  - [ ] useDeleteDoc - hook do usuwania dokumentów
-- [ ] Utworzenie API dla gamifikacji
-- [ ] Utworzenie API dla uploadu plików
+- [x] Migracja hooków z db-hooks.tsx jako React hooks:
+  - [x] useCollection - hook do pobierania kolekcji
+  - [x] useDoc - hook do pobierania pojedynczego dokumentu
+  - [x] useCreateDoc - hook do tworzenia dokumentów
+  - [x] useUpdateDoc - hook do aktualizacji dokumentów
+  - [x] useDeleteDoc - hook do usuwania dokumentów
+- [x] Utworzenie API dla gamifikacji
+- [x] Utworzenie API dla uploadu plików
 
 ### Faza 3: System autentykacji 🔄 W TRAKCIE
 
@@ -379,7 +420,7 @@ SPA/
 ### Faza 5: Konteksty i stan globalny 🔄 W TRAKCIE
 
 - [x] Migracja UserProfileContext (`src/contexts/UserProfileContext.tsx`)
-- [ ] Migracja ActiveWorkoutContext
+- [x] Migracja ActiveWorkoutContext (`src/contexts/ActiveWorkoutContext.tsx`)
 - [ ] Implementacja Zustand store dla UI
 - [ ] Implementacja obsługi onboardingu
 
@@ -394,20 +435,29 @@ Migracja wszystkich komponentów z /components/ui/:
 - [x] Label (`src/components/ui/label.tsx`)
 - [x] Sonner/Toast (`src/components/ui/sonner.tsx`)
 
+**Zaimplementowane (dodatkowe):**
+- [x] Alert, AlertDialog
+- [x] Avatar, Badge
+- [x] Calendar, Carousel
+- [x] Checkbox
+- [x] Dialog, DropdownMenu
+- [x] Form
+- [x] Popover, Progress
+- [x] Select, Separator, Skeleton
+- [x] Switch
+- [x] Tabs, Textarea
+- [x] Tooltip
+
 **Do zaimplementowania:**
-- [ ] Accordion, Alert, AlertDialog
-- [ ] Avatar, Badge
-- [ ] Calendar, Carousel
-- [ ] Chart, Checkbox, Collapsible
-- [ ] Combobox, Command, Dialog
-- [ ] Dropdown, Form
+- [ ] Accordion
+- [ ] Chart, Collapsible
+- [ ] Combobox, Command
 - [ ] Menubar, MultiSelect
-- [ ] Popover, Progress, RadioGroup
-- [ ] ScrollArea, Select, Separator
-- [ ] Sheet, Sidebar, Skeleton
-- [ ] Slider, Switch
-- [ ] Table, Tabs, Textarea
-- [ ] Toaster, Tooltip
+- [ ] RadioGroup
+- [ ] ScrollArea
+- [ ] Sheet, Sidebar
+- [ ] Slider
+- [ ] Table
 
 ### Faza 7: Komponenty specjalistyczne
 
@@ -421,8 +471,8 @@ Migracja wszystkich komponentów z /components/ui/:
 - [ ] QuickChatWidget
 
 #### 7.2 Komponenty gamifikacji
-- [ ] AchievementNotification
-- [ ] AchievementsGrid
+- [x] AchievementNotification (`src/components/gamification/AchievementNotification.tsx`)
+- [x] AchievementsGrid (`src/components/gamification/AchievementsGrid.tsx`)
 - [ ] GamificationStatsCard
 - [ ] LeaderboardCard
 - [ ] RewardsGrid
@@ -467,8 +517,12 @@ Migracja wszystkich komponentów z /components/ui/:
 - [ ] EditWorkoutPageLayout
 - [ ] KnowledgeZoneView
 - [ ] WorkoutPlansListView
-- [ ] WorkoutsListView
-- [ ] ExercisesListView i powiązane
+- [x] WorkoutsListView (`src/components/shared/WorkoutsListView.tsx`)
+- [x] ExercisesListView i powiązane (`src/components/shared/exercises/`)
+  - [x] ExercisesListView.tsx
+  - [x] ExerciseCardHorizontal.tsx
+  - [x] ProgressDialog.tsx
+  - [x] types.ts
 
 ### Faza 8: Implementacja stron
 
@@ -478,12 +532,12 @@ Migracja wszystkich komponentów z /components/ui/:
 
 #### 8.2 Strony główne
 - [x] DashboardPage - panel główny z widgetami (pełna implementacja z TanStack Query)
-- [~] ProfilePage - profil użytkownika (placeholder)
+- [x] ProfilePage - profil użytkownika (pełna implementacja)
 - [~] OnboardingPage - kreator pierwszego uruchomienia (placeholder)
 
 #### 8.3 Strony treningowe
-- [~] WorkoutsPage - lista treningów (placeholder)
-- [~] WorkoutDetailPage - szczegóły treningu (placeholder)
+- [x] WorkoutsPage - lista treningów (pełna implementacja)
+- [x] WorkoutDetailPage - szczegóły treningu (pełna implementacja)
 - [~] WorkoutEditPage - edycja treningu (placeholder)
 - [~] WorkoutCreatePage - tworzenie treningu (placeholder)
 - [~] LogPage - logowanie aktywnego treningu (placeholder)
@@ -493,11 +547,11 @@ Migracja wszystkich komponentów z /components/ui/:
 - [~] WorkoutPlansPage - plany treningowe (placeholder)
 
 #### 8.4 Strony ćwiczeń
-- [~] ExercisesPage - baza ćwiczeń (placeholder)
+- [x] ExercisesPage - baza ćwiczeń (pełna implementacja z wirtualizacją)
 
 #### 8.5 Strony pomiarów i celów
 - [~] MeasurementsPage - pomiary ciała (placeholder)
-- [~] GoalsPage - cele treningowe (placeholder)
+- [x] GoalsPage - cele treningowe (pełna implementacja z gamifikacją)
 - [~] HabitsPage - nawyki (placeholder)
 
 #### 8.6 Strony biegowe

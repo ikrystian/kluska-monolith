@@ -193,6 +193,7 @@ export interface UserProfile {
   name?: string;
   displayName?: string;
   photoURL?: string;
+  avatarUrl?: string;
   role: UserRole;
   trainerId?: string;
   createdAt?: string;
@@ -205,6 +206,27 @@ export interface UserProfile {
   trainingLevel?: TrainingLevelType;
   goals?: string[];
   onboardingCompleted?: boolean;
+  // Social links
+  socialLinks?: {
+    instagram?: string;
+    facebook?: string;
+    twitter?: string;
+  };
+  // Favorite gyms
+  favoriteGymIds?: string[];
+}
+
+// Gym type
+export interface Gym {
+  id: string;
+  name: string;
+  address?: string;
+  city?: string;
+  latitude?: number;
+  longitude?: number;
+  amenities?: string[];
+  imageUrl?: string;
+  createdAt?: string;
 }
 
 // Gamification types
@@ -301,23 +323,24 @@ export interface ArticleCategory {
 
 // Measurement types
 
-export interface Measurement {
-  id: string;
-  userId: string;
-  date: string;
-  weight?: number;
-  bodyFat?: number;
+export interface MeasurementCircumferences {
+  biceps?: number;
   chest?: number;
   waist?: number;
   hips?: number;
-  bicepLeft?: number;
-  bicepRight?: number;
-  thighLeft?: number;
-  thighRight?: number;
-  calfLeft?: number;
-  calfRight?: number;
+  thigh?: number;
+}
+
+export interface Measurement {
+  id: string;
+  ownerId: string;
+  date: string;
+  weight: number;
+  circumferences: MeasurementCircumferences;
+  sharedWithTrainer?: boolean;
+  photoURLs?: string[];
   notes?: string;
-  createdAt: string;
+  createdAt?: string;
 }
 
 // Alias for backward compatibility
@@ -327,20 +350,32 @@ export type BodyMeasurement = Measurement;
 
 export interface Goal {
   id: string;
-  userId: string;
+  userId?: string;
+  ownerId?: string;
   title: string;
   description?: string;
-  targetValue: number;
-  currentValue: number;
+  targetValue?: number;
+  currentValue?: number;
   // Aliases for compatibility
-  target?: number;
-  current?: number;
+  target: number;
+  current: number;
   unit: string;
-  type: 'weight' | 'strength' | 'endurance' | 'habit' | 'custom';
-  deadline?: string;
-  completed: boolean;
+  type?: 'weight' | 'strength' | 'endurance' | 'habit' | 'custom';
+  deadline: string;
+  completed?: boolean;
   completedAt?: string;
-  createdAt: string;
+  createdAt?: string;
+}
+
+// User Achievement (Trophy) - different from gamification Achievement
+export interface UserAchievement {
+  id: string;
+  ownerId: string;
+  title: string;
+  description?: string;
+  date: string;
+  photoURLs?: string[];
+  createdAt?: string;
 }
 
 // Habit types

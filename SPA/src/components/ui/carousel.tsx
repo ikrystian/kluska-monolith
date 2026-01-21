@@ -1,8 +1,15 @@
 import * as React from "react"
+<<<<<<< HEAD
 import { ArrowLeft, ArrowRight } from "lucide-react"
 import useEmblaCarousel, {
     type UseEmblaCarouselType,
 } from "embla-carousel-react"
+=======
+import useEmblaCarousel, {
+    type UseEmblaCarouselType,
+} from "embla-carousel-react"
+import { ArrowLeft, ArrowRight } from "lucide-react"
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -21,7 +28,11 @@ type CarouselProps = {
 
 type CarouselContextProps = {
     carouselRef: ReturnType<typeof useEmblaCarousel>[0]
+<<<<<<< HEAD
     api: CarouselApi
+=======
+    api: ReturnType<typeof useEmblaCarousel>[1]
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
     scrollPrev: () => void
     scrollNext: () => void
     canScrollPrev: boolean
@@ -134,7 +145,11 @@ const Carousel = React.forwardRef<
             >
                 <div
                     ref={ref}
+<<<<<<< HEAD
                     onKeyDown={handleKeyDown}
+=======
+                    onKeyDownCapture={handleKeyDown}
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
                     className={cn("relative", className)}
                     role="region"
                     aria-roledescription="carousel"

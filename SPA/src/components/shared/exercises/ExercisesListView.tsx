@@ -1,7 +1,14 @@
+<<<<<<< HEAD
 import { useState } from 'react';
 import { Exercise, MuscleGroupName } from '@/types';
 import { useCollection } from '@/hooks/useCollection';
 import { useDeleteDoc } from '@/hooks/useMutation';
+=======
+import { useState, useMemo, useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { Exercise, MuscleGroupName, MuscleGroup, WorkoutPlan } from '@/types';
+import { useCollection, useUpdateDoc, useDeleteDoc, useCreateDoc } from '@/hooks';
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,7 +28,13 @@ import { PlusCircle, Dumbbell, Loader2 } from 'lucide-react';
 
 import { ExerciseCardHorizontal } from './ExerciseCardHorizontal';
 import { ExerciseFilters } from './ExerciseFilters';
+<<<<<<< HEAD
 import { ExercisesListViewProps, roleDefaults } from './types';
+=======
+import { ExerciseFormDialog } from './ExerciseForm';
+import { ProgressDialog } from './ProgressDialog';
+import { ExercisesListViewProps, ExerciseFormData, roleDefaults } from './types';
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
 
 export function ExercisesListView(props: ExercisesListViewProps) {
     const { role } = props;
@@ -37,22 +50,42 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     const emptyMessage = props.emptyMessage ?? defaults.emptyMessage ?? 'Nie znaleziono żadnych ćwiczeń.';
 
     const { user } = useAuth();
+<<<<<<< HEAD
     const { mutate: deleteDoc, isPending: isDeleting } = useDeleteDoc('exercises');
 
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string>('all');
     const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
+=======
+    const userId = user?.id;
+
+    const { mutateAsync: updateDoc } = useUpdateDoc<Exercise>('exercises');
+    const { mutateAsync: deleteDoc } = useDeleteDoc('exercises');
+    const { mutateAsync: createDoc } = useCreateDoc<Exercise>('exercises');
+
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string>('all');
+    const [isFormDialogOpen, setFormDialogOpen] = useState(false);
+    const [isProgressDialogOpen, setProgressDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
     const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
 
     // Fetch exercises based on role
     const getExerciseQuery = () => {
+<<<<<<< HEAD
         if (!user?.id) return undefined;
+=======
+        if (!userId) return undefined;
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
 
         if (role === 'admin') {
             return undefined; // Admin sees all
         }
 
         // Athlete and Trainer see public + own exercises
+<<<<<<< HEAD
         return { ownerId: { $in: ['public', user.id] } };
     };
 
@@ -63,6 +96,56 @@ export function ExercisesListView(props: ExercisesListViewProps) {
 
     // Combine all exercises (simplified - no workout plan exercises for now)
     const allExercises = exercises ?? [];
+=======
+        return { ownerId: { $in: ['public', userId] } };
+    };
+
+    const { data: exercises, isLoading: exercisesLoading, refetch: refetchExercises } = useCollection<Exercise>(
+        userId ? 'exercises' : null,
+        { query: getExerciseQuery() }
+    );
+
+    // For athletes, also fetch exercises from assigned workout plans
+    const { data: assignedPlans } = useCollection<WorkoutPlan>(
+        role === 'athlete' && userId ? 'workoutPlans' : null,
+        {
+            query: role === 'athlete' && userId ? { assignedAthleteIds: { $in: [userId] } } : undefined,
+            enabled: role === 'athlete' && !!userId,
+        }
+    );
+
+    const exerciseIdsFromPlans = useMemo(() => {
+        const ids = new Set<string>();
+        if (assignedPlans) {
+            assignedPlans.forEach(plan => {
+                plan.workoutDays?.forEach(day => {
+                    day.exercises?.forEach(ex => {
+                        if (ex.exerciseId) ids.add(ex.exerciseId);
+                    });
+                });
+            });
+        }
+        return Array.from(ids);
+    }, [assignedPlans]);
+
+    const { data: planExercises } = useCollection<Exercise>(
+        role === 'athlete' && exerciseIdsFromPlans.length > 0 ? 'exercises' : null,
+        {
+            query: exerciseIdsFromPlans.length > 0 ? { id: { $in: exerciseIdsFromPlans } } : undefined,
+            enabled: exerciseIdsFromPlans.length > 0,
+        }
+    );
+
+    // Combine all exercises
+    const allExercises = useMemo(() => {
+        const combined = new Map<string, Exercise>();
+        exercises?.forEach(ex => combined.set(ex.id, ex));
+        planExercises?.forEach(ex => combined.set(ex.id, ex));
+        return Array.from(combined.values());
+    }, [exercises, planExercises]);
+
+    const isLoading = exercisesLoading;
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
 
     // Filter exercises
     const filteredExercises = allExercises?.filter((exercise) => {
@@ -82,8 +165,12 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     // Handlers
     const handleEdit = (exercise: Exercise) => {
         setSelectedExercise(exercise);
+<<<<<<< HEAD
         // TODO: Open form dialog for editing
         toast.info('Edycja ćwiczenia będzie dostępna wkrótce');
+=======
+        setFormDialogOpen(true);
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
     };
 
     const handleDelete = (exercise: Exercise) => {
@@ -93,18 +180,82 @@ export function ExercisesListView(props: ExercisesListViewProps) {
 
     const handleShowProgress = (exercise: Exercise) => {
         setSelectedExercise(exercise);
+<<<<<<< HEAD
         // TODO: Open progress dialog
         toast.info('Widok postępu będzie dostępny wkrótce');
+=======
+        setProgressDialogOpen(true);
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
     };
 
     const handleCreate = () => {
         setSelectedExercise(null);
+<<<<<<< HEAD
         // TODO: Open form dialog for creating
         toast.info('Dodawanie ćwiczeń będzie dostępne wkrótce');
+=======
+        setFormDialogOpen(true);
+    };
+
+    const handleFormSubmit = async (data: ExerciseFormData) => {
+        if (!user) return;
+        setIsSubmitting(true);
+
+        // Map strings back to MuscleGroup objects
+        const mainMuscleGroups: MuscleGroup[] = data.mainMuscleGroups.map(name => ({ name: name as MuscleGroupName }));
+        const secondaryMuscleGroups: MuscleGroup[] = (data.secondaryMuscleGroups || []).map(name => ({ name: name as MuscleGroupName }));
+
+        try {
+            if (selectedExercise) {
+                // Update existing exercise
+                const updatedData = {
+                    name: data.name,
+                    mainMuscleGroups,
+                    secondaryMuscleGroups,
+                    instructions: data.instructions || data.description,
+                    mediaUrl: data.mediaUrl,
+                    type: data.type,
+                    description: data.instructions || data.description,
+                    // Legacy support
+                    muscleGroup: data.mainMuscleGroups[0],
+                    image: data.mediaUrl,
+                    imageHint: data.name.toLowerCase(),
+                };
+                await updateDoc({ id: selectedExercise.id, data: updatedData });
+                toast.success("Ćwiczenie zostało zaktualizowane.");
+            } else {
+                // Create new exercise
+                const newExerciseData = {
+                    name: data.name,
+                    mainMuscleGroups,
+                    secondaryMuscleGroups,
+                    instructions: data.instructions || data.description,
+                    mediaUrl: data.mediaUrl,
+                    type: data.type,
+                    description: data.instructions || data.description,
+                    // Legacy support
+                    muscleGroup: data.mainMuscleGroups[0],
+                    image: data.mediaUrl,
+                    imageHint: data.name.toLowerCase(),
+                    ownerId: role === 'admin' ? 'public' : userId,
+                };
+                await createDoc(newExerciseData as Partial<Exercise>);
+                toast.success("Nowe ćwiczenie zostało dodane.");
+            }
+            setFormDialogOpen(false);
+            setSelectedExercise(null);
+            refetchExercises();
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Nie udało się zapisać ćwiczenia.');
+        } finally {
+            setIsSubmitting(false);
+        }
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
     };
 
     const handleDeleteConfirm = async () => {
         if (!selectedExercise) return;
+<<<<<<< HEAD
 
         deleteDoc(
             selectedExercise.id,
@@ -122,6 +273,32 @@ export function ExercisesListView(props: ExercisesListViewProps) {
         );
     };
 
+=======
+        setIsSubmitting(true);
+
+        try {
+            await deleteDoc(selectedExercise.id);
+            toast.success("Ćwiczenie zostało usunięte.");
+            setSelectedExercise(null);
+            setDeleteDialogOpen(false);
+            refetchExercises();
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Nie udało się usunąć ćwiczenia.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // Virtualization setup
+    const parentRef = useRef<HTMLDivElement>(null);
+    const rowVirtualizer = useVirtualizer({
+        count: filteredExercises?.length ?? 0,
+        getScrollElement: () => parentRef.current,
+        estimateSize: () => 128, // 120px height + 8px gap
+        overscan: 5,
+    });
+
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
     return (
         <div className="container mx-auto p-4 md:p-8 h-full flex flex-col">
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between flex-shrink-0">
@@ -143,8 +320,13 @@ export function ExercisesListView(props: ExercisesListViewProps) {
                 </div>
             </div>
 
+<<<<<<< HEAD
             {/* Exercise List */}
             {exercisesLoading ? (
+=======
+            {/* Virtualized List Container */}
+            {isLoading ? (
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
                 <div className="flex flex-col gap-2">
                     {Array.from({ length: 8 }).map((_, index) => (
                         <div key={index} className="flex items-stretch bg-card border rounded-lg overflow-hidden h-[120px]">
@@ -161,6 +343,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
                     ))}
                 </div>
             ) : filteredExercises && filteredExercises.length > 0 ? (
+<<<<<<< HEAD
                 <div className="flex flex-col gap-2 overflow-auto">
                     {filteredExercises.map((exercise) => (
                         <ExerciseCardHorizontal
@@ -176,6 +359,51 @@ export function ExercisesListView(props: ExercisesListViewProps) {
                             onShowProgress={handleShowProgress}
                         />
                     ))}
+=======
+                <div
+                    ref={parentRef}
+                    className="flex-1 overflow-auto min-h-0"
+                    style={{ contain: 'strict' }}
+                    id="exercise-full-list"
+                >
+                    <div
+                        style={{
+                            height: `${rowVirtualizer.getTotalSize()}px`,
+                            width: '100%',
+                            position: 'relative',
+                        }}
+                    >
+                        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                            const exercise = filteredExercises[virtualRow.index];
+                            return (
+                                <div
+                                    key={exercise.id}
+                                    style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        height: `${virtualRow.size}px`,
+                                        transform: `translateY(${virtualRow.start}px)`,
+                                    }}
+                                    className="pb-2"
+                                >
+                                    <ExerciseCardHorizontal
+                                        exercise={exercise}
+                                        userId={userId}
+                                        canEdit={canEdit}
+                                        canDelete={canDelete}
+                                        showProgress={showProgress}
+                                        showOwnerBadge={showOwnerBadge}
+                                        onEdit={handleEdit}
+                                        onDelete={handleDelete}
+                                        onShowProgress={handleShowProgress}
+                                    />
+                                </div>
+                            );
+                        })}
+                    </div>
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
                 </div>
             ) : (
                 <Card className="flex flex-col items-center justify-center border-dashed py-20">
@@ -193,6 +421,33 @@ export function ExercisesListView(props: ExercisesListViewProps) {
                 </Card>
             )}
 
+<<<<<<< HEAD
+=======
+            {/* Form Dialog */}
+            <ExerciseFormDialog
+                exercise={selectedExercise}
+                isOpen={isFormDialogOpen}
+                onClose={() => {
+                    setFormDialogOpen(false);
+                    setSelectedExercise(null);
+                }}
+                onSubmit={handleFormSubmit}
+                isSubmitting={isSubmitting}
+                muscleGroupOptions={muscleGroupOptions}
+                showImageUpload={canCreate || role === 'admin'}
+            />
+
+            {/* Progress Dialog */}
+            {showProgress && (
+                <ProgressDialog
+                    exercise={selectedExercise}
+                    userId={userId}
+                    open={isProgressDialogOpen}
+                    onOpenChange={setProgressDialogOpen}
+                />
+            )}
+
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
             {/* Delete Confirmation Dialog */}
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                 <AlertDialogContent>
@@ -205,15 +460,26 @@ export function ExercisesListView(props: ExercisesListViewProps) {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
+<<<<<<< HEAD
                         <AlertDialogCancel onClick={() => setSelectedExercise(null)} disabled={isDeleting}>
+=======
+                        <AlertDialogCancel onClick={() => setSelectedExercise(null)} disabled={isSubmitting}>
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
                             Anuluj
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDeleteConfirm}
+<<<<<<< HEAD
                             disabled={isDeleting}
                             className="bg-destructive hover:bg-destructive/90"
                         >
                             {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+=======
+                            disabled={isSubmitting}
+                            className="bg-destructive hover:bg-destructive/90"
+                        >
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
                             Usuń
                         </AlertDialogAction>
                     </AlertDialogFooter>

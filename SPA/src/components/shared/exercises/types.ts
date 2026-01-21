@@ -68,6 +68,16 @@ export interface ExerciseFiltersProps {
     muscleGroupOptions: { label: string; value: string }[];
 }
 
+<<<<<<< HEAD
+=======
+export interface ProgressDialogProps {
+    exercise: Exercise | null;
+    userId: string | undefined;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}
+
+>>>>>>> 47f4578 (feat: Revamp workout detail page with copy/schedule/start actions, introduce exercise progress tracking, gamification, and new UI components.)
 // Default configurations by role
 export const roleDefaults: Record<ExercisesRole, Partial<ExercisesListViewProps>> = {
     athlete: {
