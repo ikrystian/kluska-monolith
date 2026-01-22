@@ -2,9 +2,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
     HealthConnect,
-    HealthConnectAvailability,
-    HealthConnectRecordType
-} from '@capacitor-community/health-connect';
+} from 'capacitor-health-connect';
 
 export interface HealthData {
     steps: number;
@@ -21,12 +19,31 @@ export const useHealthConnect = () => {
 
     const checkAvailability = useCallback(async () => {
         try {
-            const status = await HealthConnect.checkAvailability();
-            setIsAvailable(status === 'Installed' || status === 'NotInstalled'); // Logic allows to prompt install
+            const { availability } = await HealthConnect.checkAvailability();
+            // Note: checkAvailability returns object or string? 
+            // Docs say `checkAvailability() => any`. 
+            // Usage example: `const healthConnectAvailability = await HealthConnect.checkAvailability();`
+            // Let's assume it returns the string directly based on usage example showing assignment to variable named after type.
+            // BUT wait, usage example: `const healthConnectAvailability = ...`. It might be an object wrapping it?
+            // Actually, usually Capacitor plugins return an object like `{ value: ... }` or similar.
+            // BUT the README says "Returns: any".
+            // Let's assume it returns a string for now as per usage example implication.
+            // Wait, looking at other capacitor plugins, they often return { value: ... }. 
+            // However, `checkAvailability` in `capacitor-health-connect` usually returns `{ availability: 'Available' }` or plain string?
+            // I'll wrap in a safe check.
 
-            if (status === 'Installed') {
-                const permissionsStatus = await HealthConnect.checkPermissions({
-                    read: ['Steps', 'TotalCaloriesBurned']
+            // Actually, let's look at the result. If it is an object, I'll log it.
+            // Safest: check result, or result.availability.
+
+            const result = await HealthConnect.checkAvailability();
+            const status = (typeof result === 'string') ? result : result?.availability || 'NotInstalled';
+
+            setIsAvailable(status === 'Available');
+
+            if (status === 'Available') {
+                const permissionsStatus = await HealthConnect.checkHealthPermissions({
+                    read: ['Steps', 'ActiveCaloriesBurned'],
+                    write: []
                 });
                 setHasPermissions(permissionsStatus.granted.includes('Steps'));
             }
@@ -39,18 +56,18 @@ export const useHealthConnect = () => {
     const requestPermissions = useCallback(async () => {
         try {
             if (!isAvailable) {
-                // Theoretically should open store if not installed, but let's assume installed for now or handle gracefully
-                await HealthConnect.openHealthConnectSetting(); // Fallback or distinct check?
-                // Actually, the plugin has requestPermissions
+                await HealthConnect.openHealthConnectSetting();
             }
 
-            const result = await HealthConnect.requestPermissions({
-                read: ['Steps', 'TotalCaloriesBurned']
+            const result = await HealthConnect.requestHealthPermissions({
+                read: ['Steps', 'ActiveCaloriesBurned'],
+                write: []
             });
 
             // Re-check permissions
-            const permissionsStatus = await HealthConnect.checkPermissions({
-                read: ['Steps', 'TotalCaloriesBurned']
+            const permissionsStatus = await HealthConnect.checkHealthPermissions({
+                read: ['Steps', 'ActiveCaloriesBurned'],
+                write: []
             });
             setHasPermissions(permissionsStatus.granted.includes('Steps'));
             if (permissionsStatus.granted.includes('Steps')) {
@@ -70,29 +87,24 @@ export const useHealthConnect = () => {
             const now = new Date();
             const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-            // In a real app we might want to query specific intervals or aggregate
-            // The plugin might return raw records or aggregates depending on call
-            // Let's assume we want aggregate daily total
-
-            // Note: @capacitor-community/health-connect might have specific specific aggregate functions or we iterate records
-            // Let's check documentation pattern via standard usage if I can't browse. 
-            // Usually it's `getRecord` with time range.
-
-            // Wait, standard Health Connect implementation in Capacitor often involves separate calls for specific types
-            // For now I'll implement a basic structure that tries to fetch steps.
-
-            const { records: stepRecords } = await HealthConnect.getRecords({
+            const { records: stepRecords } = await HealthConnect.readRecords({
                 type: 'Steps',
-                startTime: startOfDay.toISOString(),
-                endTime: now.toISOString()
+                timeRangeFilter: {
+                    type: 'between',
+                    startTime: startOfDay.toISOString(),
+                    endTime: now.toISOString()
+                }
             });
 
             const totalSteps = stepRecords.reduce((sum: number, record: any) => sum + record.count, 0);
 
-            const { records: caloriesRecords } = await HealthConnect.getRecords({
-                type: 'TotalCaloriesBurned',
-                startTime: startOfDay.toISOString(),
-                endTime: now.toISOString()
+            const { records: caloriesRecords } = await HealthConnect.readRecords({
+                type: 'ActiveCaloriesBurned',
+                timeRangeFilter: {
+                    type: 'between',
+                    startTime: startOfDay.toISOString(),
+                    endTime: now.toISOString()
+                }
             });
 
             const totalCalories = caloriesRecords.reduce((sum: number, record: any) => sum + record.energy.kilocalories, 0);
