@@ -13,6 +13,7 @@ import { useCollection, useDoc, useUser } from '@/lib/db-hooks';
 import type { WorkoutLog, Goal, BodyMeasurement, RunningSession, LoggedMeal, PlannedWorkout, TrainingPlan, Habit, HabitLog, UserProfile } from '@/models/types';
 import { Activity, Target, Weight, Footprints, Calendar as CalendarIcon, Dumbbell, Clock, Award, Layers, User, MapPin, Bell, CheckSquare } from 'lucide-react';
 import type { TrainingSessionData } from '@/components/schedule/SessionDetailsDialog';
+import { HealthConnectWidget } from '@/components/health-connect-widget';
 
 const StatCard = ({
     title,
@@ -265,14 +266,18 @@ export default function DashboardPage() {
     const isLoading = workoutsLoading || goalsLoading || measurementsLoading || runningLoading || mealsLoading || assignedPlansLoading || habitsLoading;
 
     return (
-        <div className="container mx-auto p-4 md:p-8">
+        <div className="container mx-auto p-3 md:p-8 animate-fade-in">
             <div className="mb-6">
-                <h1 className="font-headline text-3xl font-bold">Panel Sportowca</h1>
-                <p className="text-muted-foreground">Witaj, {userProfile?.name || user?.name}! Oto Twój przegląd postępów.</p>
+                <h1 className="font-headline text-2xl md:text-3xl font-bold">Panel Sportowca</h1>
+                <p className="text-sm md:text-base text-muted-foreground">Witaj, {userProfile?.name || user?.name}! Oto Twój przegląd postępów.</p>
+            </div>
+
+            <div className="mb-6">
+                <HealthConnectWidget />
             </div>
 
             {/* Statistics Grid */}
-            <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard
                     title="Treningi w tym tygodniu"
                     value={stats.thisWeekWorkouts}
@@ -642,7 +647,7 @@ export default function DashboardPage() {
                     <CardDescription>Najczęściej używane funkcje</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-2 lg:grid-cols-4">
                         <Button asChild className="h-auto p-4 flex-col">
                             <Link to="/athlete/log">
                                 <Dumbbell className="h-8 w-8 mb-2" />
