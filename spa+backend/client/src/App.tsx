@@ -5,6 +5,7 @@ import { SessionProvider, useSession } from '@/lib/next-auth-react';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { ActiveWorkoutProvider } from '@/contexts/ActiveWorkoutContext';
+import { ThemeColorProvider } from "@/contexts/ThemeColorContext"
 import { UserProfileProvider } from '@/contexts/UserProfileContext';
 
 // Pages
@@ -168,15 +169,17 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme" attribute="class">
       <SessionProvider>
         <UserProfileProvider>
-          <ActiveWorkoutProvider>
-            <BrowserRouter>
-              <AppRoutes />
-              <Toaster />
-            </BrowserRouter>
-          </ActiveWorkoutProvider>
+          <ThemeColorProvider>
+            <ActiveWorkoutProvider>
+              <BrowserRouter>
+                <AppRoutes />
+                <Toaster />
+              </BrowserRouter>
+            </ActiveWorkoutProvider>
+          </ThemeColorProvider>
         </UserProfileProvider>
       </SessionProvider>
     </ThemeProvider>

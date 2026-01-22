@@ -7,6 +7,7 @@ import { authRouter } from './routes/auth';
 import uploadRouter from './routes/upload';
 import aiRouter from './routes/ai';
 import { gamificationRouter } from './routes/gamification';
+import { notificationsRouter } from './routes/notifications';
 import path from 'path';
 
 dotenv.config();
@@ -31,6 +32,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/ai', aiRouter);
 app.use('/api/gamification', gamificationRouter);
+app.use('/api/notifications', notificationsRouter);
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.listen(PORT, () => {
