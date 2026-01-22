@@ -10,12 +10,12 @@ export default function AthleteLayout() {
     return (
         <SidebarProvider>
             <AppSidebar variant="athlete" />
-            <SidebarInset>
-                <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 lg:px-6">
+            <SidebarInset className="min-h-[100dvh] bg-background">
+                <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:px-6 pt-[env(safe-area-inset-top)]">
                     <SidebarTrigger />
                     <div className="flex-1" />
                 </header>
-                <main className="flex-1 p-4 lg:p-6">
+                <main className="flex-1 p-4 lg:p-6 pb-24 md:pb-6">
                     <Outlet />
                 </main>
             </SidebarInset>
