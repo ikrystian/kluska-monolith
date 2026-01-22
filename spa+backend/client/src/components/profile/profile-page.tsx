@@ -22,7 +22,8 @@ import { useToast } from '@/hooks/use-toast';
 import type { UserProfile, Gym } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { ThemeSelector } from '@/components/theme-selector';
+import { ThemeColorSelector } from '@/components/theme-color-selector';
 import { Switch } from '@/components/ui/switch';
 import { AvatarUploadDialog } from './AvatarUploadDialog';
 import { useUserProfile } from '@/contexts/UserProfileContext';
@@ -314,7 +315,12 @@ export function ProfilePage() {
 
                   <div className="space-y-2">
                     <FormLabel>Motyw</FormLabel>
-                    <ThemeToggle />
+                    <ThemeSelector />
+                  </div>
+
+                  <div className="space-y-2">
+                    <FormLabel>Schemat Kolorystyczny</FormLabel>
+                    <ThemeColorSelector />
                   </div>
 
                   <div className="space-y-4 pt-4">

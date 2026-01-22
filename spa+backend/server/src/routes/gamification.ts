@@ -5,8 +5,10 @@ import {
     getLeaderboard,
     getAvailableRewards,
     redeemReward,
-    getPointHistory
+    getPointHistory,
+    awardGoalCompletionPoints,
 } from '../lib/gamification/gamification-service';
+import { Reward } from '../models/Reward';
 import {
     getAchievementsWithProgress,
     getUnlockedAchievements,
@@ -194,6 +196,77 @@ router.post('/seed-achievements', async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Error seeding achievements:', error);
         res.status(500).json({ error: 'Failed to seed achievements' });
+    }
+});
+
+// POST /goals/:goalId/complete
+router.post('/goals/:goalId/complete', async (req: Request, res: Response) => {
+    try {
+        const userId = getUserId(req);
+        if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+        const { goalId } = req.params;
+        const { trainerApproval } = req.body;
+
+        const result = await awardGoalCompletionPoints(goalId, userId, trainerApproval);
+        res.json(result);
+
+    } catch (error) {
+        console.error('Error completing goal:', error);
+        res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to complete goal' });
+    }
+});
+
+// Admin Reward Routes
+
+// GET /admin/rewards
+router.get('/admin/rewards', async (req: Request, res: Response) => {
+    try {
+        // In a real app, verify admin role here
+        const rewards = await Reward.find().sort({ createdAt: -1 });
+        res.json(rewards);
+    } catch (error) {
+        console.error('Error fetching admin rewards:', error);
+        res.status(500).json({ error: 'Failed to fetch rewards' });
+    }
+});
+
+// POST /admin/rewards
+router.post('/admin/rewards', async (req: Request, res: Response) => {
+    try {
+        const reward = new Reward(req.body);
+        await reward.save();
+        res.status(201).json(reward);
+    } catch (error) {
+        console.error('Error creating reward:', error);
+        res.status(500).json({ error: 'Failed to create reward' });
+    }
+});
+
+// PUT /admin/rewards/:id
+router.put('/admin/rewards/:id', async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const reward = await Reward.findByIdAndUpdate(id, req.body, { new: true });
+
+        if (!reward) return res.status(404).json({ error: 'Reward not found' });
+
+        res.json(reward);
+    } catch (error) {
+        console.error('Error updating reward:', error);
+        res.status(500).json({ error: 'Failed to update reward' });
+    }
+});
+
+// DELETE /admin/rewards/:id
+router.delete('/admin/rewards/:id', async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        await Reward.findByIdAndDelete(id);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting reward:', error);
+        res.status(500).json({ error: 'Failed to delete reward' });
     }
 });
 

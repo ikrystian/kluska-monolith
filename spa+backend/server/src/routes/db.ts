@@ -28,6 +28,15 @@ const modelMap: Record<string, any> = {
     trainingSessions: Models.TrainingSession,
     habits: Models.Habit,
     habitlogs: Models.HabitLog,
+    personalRecords: Models.PersonalRecord,
+    notifications: Models.Notification,
+    gamificationProfiles: Models.GamificationProfile,
+    rewards: Models.Reward,
+    nutritionGoals: Models.NutritionGoal,
+    savedMeals: Models.SavedMeal,
+    dietPlans: Models.DietPlan,
+    customProducts: Models.CustomProduct,
+    achievementBadges: Models.AchievementBadge,
 };
 
 // GET /api/db/:collection
@@ -144,6 +153,46 @@ dbRouter.put('/:collection/:id', async (req, res) => {
 
     } catch (error) {
         console.error('PUT /api/db/:collection/:id error', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// PATCH /api/db/:collection/:id
+dbRouter.patch('/:collection/:id', async (req, res) => {
+    try {
+        const { collection, id } = req.params;
+        let Model = modelMap[collection];
+
+        if (!Model && collection === 'workoutPlans') Model = Models.WorkoutPlan;
+        if (!Model) return res.status(404).json({ error: 'Collection not found' });
+
+        const doc = await Model.findByIdAndUpdate(id, req.body, { new: true });
+        if (!doc) return res.status(404).json({ error: 'Document not found' });
+
+        res.json({ data: doc });
+
+    } catch (error) {
+        console.error('PATCH /api/db/:collection/:id error', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// DELETE /api/db/:collection/:id
+dbRouter.delete('/:collection/:id', async (req, res) => {
+    try {
+        const { collection, id } = req.params;
+        let Model = modelMap[collection];
+
+        if (!Model && collection === 'workoutPlans') Model = Models.WorkoutPlan;
+        if (!Model) return res.status(404).json({ error: 'Collection not found' });
+
+        const doc = await Model.findByIdAndDelete(id);
+        if (!doc) return res.status(404).json({ error: 'Document not found' });
+
+        res.json({ data: true });
+
+    } catch (error) {
+        console.error('DELETE /api/db/:collection/:id error', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
