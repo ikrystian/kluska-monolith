@@ -7,7 +7,7 @@ import 'leaflet/dist/leaflet.css';
 import type { Gym } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin } from 'lucide-react';
+import { MapPin, Phone, Globe, Star } from 'lucide-react';
 
 // Fix for default marker icon in Leaflet with Next.js/React
 // See: https://github.com/PaulLeCam/react-leaflet/issues/453
@@ -113,16 +113,47 @@ export default function GymMap() {
                         {geocodedGyms.map((gym) => (
                             <Marker key={gym._id || gym.id} position={[gym.lat, gym.lng]}>
                                 <Popup>
-                                    <div className="p-1 max-w-xs">
-                                        <h3 className="font-bold text-base mb-1">{gym.name}</h3>
-                                        <p className="text-sm flex items-start gap-1">
-                                            <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
-                                            {gym.address}
-                                        </p>
-                                        {gym.rating && (
-                                            <p className="text-xs text-yellow-600 mt-1 font-medium">
-                                                Ocena: {gym.rating}/5
+                                    <div className="p-1 max-w-xs space-y-2">
+                                        <div>
+                                            <h3 className="font-bold text-base mb-0.5 leading-tight">{gym.name}</h3>
+                                            <p className="text-sm flex items-start gap-1 text-muted-foreground">
+                                                <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
+                                                <span>{gym.address}</span>
                                             </p>
+                                        </div>
+
+                                        {gym.rating ? (
+                                            <div className="flex items-center gap-1.5 text-sm">
+                                                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                                <span className="font-semibold">{gym.rating}</span>
+                                                {gym.ratingCount && (
+                                                    <span className="text-muted-foreground">({gym.ratingCount})</span>
+                                                )}
+                                            </div>
+                                        ) : null}
+
+                                        {(gym.phoneNumber || gym.website) && (
+                                            <div className="space-y-1 pt-1 border-t">
+                                                {gym.phoneNumber && (
+                                                    <div className="flex items-center gap-2 text-sm">
+                                                        <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                                                        <span>{gym.phoneNumber}</span>
+                                                    </div>
+                                                )}
+                                                {gym.website && (
+                                                    <div className="flex items-center gap-2 text-sm">
+                                                        <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+                                                        <a
+                                                            href={gym.website}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-blue-600 hover:underline truncate"
+                                                        >
+                                                            Strona www
+                                                        </a>
+                                                    </div>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
                                 </Popup>

@@ -22,7 +22,7 @@ import {
 import { useCollection, useUser, useDoc, useUpdateDoc, useDeleteDoc } from '@/lib/db-hooks';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { placeholderImages } from '@/lib/placeholder-images';
+
 import { Button } from '@/components/ui/button';
 import { Edit, Loader2, Trash2 } from 'lucide-react';
 import {
@@ -59,6 +59,7 @@ interface UserProfile {
   name: string;
   email: string;
   role: 'athlete' | 'trainer' | 'admin';
+  avatarUrl?: string;
   location?: string;
   socialLinks?: {
     instagram?: string;
@@ -101,7 +102,7 @@ export default function AdminUsersPage() {
   const { updateDoc, isLoading: isUpdating } = useUpdateDoc();
   const { deleteDoc, isLoading: isDeleting } = useDeleteDoc();
 
-  const avatarImage = placeholderImages.find((img) => img.id === 'avatar-male');
+
 
   const form = useForm<EditUserFormValues>({
     resolver: zodResolver(editUserSchema),
@@ -221,21 +222,21 @@ export default function AdminUsersPage() {
             </TableHeader>
             <TableBody>
               {pageIsLoading ? (
-                 Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                        <TableCell><Skeleton className="h-10 w-48" /></TableCell>
-                        <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                        <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                        <TableCell className="text-right"><Skeleton className="h-9 w-24 ml-auto" /></TableCell>
-                    </TableRow>
-                 ))
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-10 w-48" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-9 w-24 ml-auto" /></TableCell>
+                  </TableRow>
+                ))
               ) : users && users.length > 0 && currentUserProfile?.role === 'admin' ? (
                 users.map((user: UserProfile) => (
                   <TableRow key={user.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar>
-                          {avatarImage && <AvatarImage src={avatarImage.imageUrl} alt={user.name} />}
+                          {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name} />}
                           <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                         </Avatar>
                         <span className="font-medium">{user.name}</span>
@@ -265,7 +266,7 @@ export default function AdminUsersPage() {
                       </div>
                     </TableCell>
                   </TableRow>
-              ))) : (
+                ))) : (
                 <TableRow>
                   <TableCell colSpan={4} className="py-12 text-center text-muted-foreground">
                     {currentUserProfile?.role !== 'admin'
