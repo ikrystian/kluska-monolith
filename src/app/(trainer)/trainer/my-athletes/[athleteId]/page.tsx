@@ -242,7 +242,7 @@ function FeedbackDialog({ workout, onUpdate }: { workout: any, onUpdate: () => v
         <DialogHeader>
           <DialogTitle>Feedback do treningu: {workout.workoutName}</DialogTitle>
           <DialogDescription>
-            Data: {format(new Date(workout.endTime), 'd MMMM yyyy', { locale: pl })}
+            Data: {workout.endTime ? format(new Date(workout.endTime), 'd MMMM yyyy', { locale: pl }) : 'Brak daty'}
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">

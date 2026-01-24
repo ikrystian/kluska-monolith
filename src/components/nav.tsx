@@ -27,6 +27,8 @@ import {
   Layers,
   TrendingUp,
   CheckSquare,
+  Gauge,
+  ClipboardCheck,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -96,12 +98,14 @@ export const athleteNavItems = [
       { href: '/athlete/social', label: 'Social', icon: Users2 },
     ]
   },
+  { href: '/athlete/check-in', icon: ClipboardCheck, label: 'Tygodniowy Check-in' },
   { href: '/athlete/knowledge-zone', icon: BookOpen, label: 'Strefa Wiedzy' },
   { href: '/athlete/map', icon: Map, label: 'Mapa Siłowni' },
 ];
 
 const trainerNavItems = [
   { href: '/trainer/dashboard', icon: LayoutDashboard, label: 'Panel Trenera' },
+  { href: '/trainer/command-center', icon: Gauge, label: 'Centrum Dowodzenia' },
   { href: '/trainer/my-athletes', icon: Users, label: 'Moi Sportowcy' },
   { href: '/trainer/surveys', icon: ClipboardList, label: 'Ankiety' },
   { href: '/trainer/schedule', icon: CalendarDays, label: 'Harmonogram' },
