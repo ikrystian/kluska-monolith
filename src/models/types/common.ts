@@ -84,6 +84,10 @@ export interface Gym {
   description?: string;
   amenities?: string[];
   rating?: number;
+  ratingCount?: number;
+  phoneNumber?: string;
+  website?: string;
+  cid?: string;
   photoUrls?: string[];
 }
 

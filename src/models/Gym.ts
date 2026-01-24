@@ -11,6 +11,10 @@ export interface IGym extends Document {
   description?: string;
   amenities?: string[];
   rating?: number;
+  ratingCount?: number;
+  phoneNumber?: string;
+  website?: string;
+  cid?: string;
   photoUrls?: string[];
   createdAt: Date;
   updatedAt: Date;
@@ -27,6 +31,10 @@ const GymSchema = new Schema<IGym>(
     description: { type: String },
     amenities: [{ type: String }],
     rating: { type: Number, min: 0, max: 5 },
+    ratingCount: { type: Number },
+    phoneNumber: { type: String },
+    website: { type: String },
+    cid: { type: String, unique: true, sparse: true },
     photoUrls: [{ type: String }],
   },
   {
@@ -43,7 +51,8 @@ const GymSchema = new Schema<IGym>(
 
 GymSchema.index({ name: 'text', address: 'text' });
 GymSchema.index({ 'location.lat': 1, 'location.lng': 1 });
+GymSchema.index({ cid: 1 });
 
-export const Gym: Model<IGym> = 
+export const Gym: Model<IGym> =
   mongoose.models.Gym || mongoose.model<IGym>('Gym', GymSchema);
 
