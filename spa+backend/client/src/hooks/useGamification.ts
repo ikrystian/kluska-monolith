@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { api } from '../lib/api';
 
 export interface GamificationStats {
   totalPointsEarned: number;
@@ -65,9 +66,7 @@ export function useGamificationProfile() {
   const fetchProfile = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/gamification/profile');
-      if (!response.ok) throw new Error('Failed to fetch profile');
-      const data = await response.json();
+      const data = await api.request<GamificationStats>('/api/gamification/profile');
       setStats(data);
       setError(null);
     } catch (err) {
@@ -82,17 +81,11 @@ export function useGamificationProfile() {
   }, [fetchProfile]);
 
   const checkin = useCallback(async () => {
-    const response = await fetch('/api/gamification/profile', {
+    const result = await api.request('/api/gamification/profile', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'checkin' }),
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to check in');
-    }
-
-    const result = await response.json();
     fetchProfile();
     return result;
   }, [fetchProfile]);
@@ -118,9 +111,8 @@ export function useLeaderboard(limit: number = 10, trainerId?: string) {
         const url = trainerId
           ? `/api/gamification/leaderboard?limit=${limit}&trainerId=${trainerId}`
           : `/api/gamification/leaderboard?limit=${limit}`;
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Failed to fetch leaderboard');
-        const data = await response.json();
+
+        const data = await api.request<LeaderboardEntry[]>(url);
         setLeaderboard(data);
         setError(null);
       } catch (err) {
@@ -148,9 +140,7 @@ export function useRewards() {
   const fetchRewards = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/gamification/rewards');
-      if (!response.ok) throw new Error('Failed to fetch rewards');
-      const data = await response.json();
+      const data = await api.request<Reward[]>('/api/gamification/rewards');
       setRewards(data);
       setError(null);
     } catch (err) {
@@ -165,18 +155,11 @@ export function useRewards() {
   }, [fetchRewards]);
 
   const redeemReward = useCallback(async (rewardId: string) => {
-    const response = await fetch('/api/gamification/rewards', {
+    const result = await api.request('/api/gamification/rewards', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ rewardId }),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to redeem reward');
-    }
-
-    const result = await response.json();
     fetchRewards();
     return result;
   }, [fetchRewards]);
@@ -201,9 +184,8 @@ export function useAchievements(unlockedOnly: boolean = false) {
       const url = unlockedOnly
         ? '/api/gamification/achievements?unlocked=true'
         : '/api/gamification/achievements';
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Failed to fetch achievements');
-      const data = await response.json();
+
+      const data = await api.request<AchievementWithProgress[]>(url);
       setAchievements(data);
       setError(null);
     } catch (err) {
@@ -218,15 +200,10 @@ export function useAchievements(unlockedOnly: boolean = false) {
   }, [fetchAchievements]);
 
   const checkAchievements = useCallback(async () => {
-    const response = await fetch('/api/gamification/achievements', {
+    const result = await api.request('/api/gamification/achievements', {
       method: 'POST',
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to check achievements');
-    }
-
-    const result = await response.json();
     fetchAchievements();
     return result;
   }, [fetchAchievements]);
@@ -249,18 +226,10 @@ export function useCompleteGoal(onSuccess?: () => void) {
     setError(null);
 
     try {
-      const response = await fetch(`/api/gamification/goals/${goalId}/complete`, {
+      const result = await api.request(`/api/gamification/goals/${goalId}/complete`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ trainerApproval }),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to complete goal');
-      }
-
-      const result = await response.json();
 
       // Call success callback to refresh data
       if (onSuccess) {
@@ -301,9 +270,7 @@ export function usePointHistory(limit: number = 50) {
   const fetchHistory = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/gamification/history?limit=${limit}`);
-      if (!response.ok) throw new Error('Failed to fetch history');
-      const data = await response.json();
+      const data = await api.request<PointTransaction[]>(`/api/gamification/history?limit=${limit}`);
       setHistory(data);
       setError(null);
     } catch (err) {
@@ -334,9 +301,7 @@ export function useAdminRewards() {
   const fetchRewards = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/gamification/admin/rewards');
-      if (!response.ok) throw new Error('Failed to fetch rewards');
-      const data = await response.json();
+      const data = await api.request<Reward[]>('/api/gamification/admin/rewards');
       setRewards(data);
       setError(null);
     } catch (err) {
@@ -351,48 +316,29 @@ export function useAdminRewards() {
   }, [fetchRewards]);
 
   const createReward = useCallback(async (rewardData: Partial<Reward>) => {
-    const response = await fetch('/api/gamification/admin/rewards', {
+    const result = await api.request('/api/gamification/admin/rewards', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(rewardData),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to create reward');
-    }
-
-    const result = await response.json();
     fetchRewards();
     return result;
   }, [fetchRewards]);
 
   const updateReward = useCallback(async (rewardId: string, rewardData: Partial<Reward>) => {
-    const response = await fetch(`/api/gamification/admin/rewards/${rewardId}`, {
+    const result = await api.request(`/api/gamification/admin/rewards/${rewardId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(rewardData),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to update reward');
-    }
-
-    const result = await response.json();
     fetchRewards();
     return result;
   }, [fetchRewards]);
 
   const deleteReward = useCallback(async (rewardId: string) => {
-    const response = await fetch(`/api/gamification/admin/rewards/${rewardId}`, {
+    await api.request(`/api/gamification/admin/rewards/${rewardId}`, {
       method: 'DELETE',
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to delete reward');
-    }
 
     fetchRewards();
   }, [fetchRewards]);
