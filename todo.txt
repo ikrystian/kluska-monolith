@@ -20,7 +20,7 @@ BRAK FUNKCJI ADMINA DO ZARZADZANIA PONIZSZYMI DANYMI:
 18. Rewards (Nagrody) - brak systemu zarządzania nagrodami w grywalizacji
 19. RunningSessions (Sesje biegowe) - brak wglądu w aktywności biegowe
 20. SavedMeals (Zapisane posiłki) - brak zarządzania zapisanymi zestawami
-21. SocialPosts (Posty społecznościowe) - brak moderacji postów
+21.
 22. SocialProfiles (Profile społecznościowe) - brak moderacji profili
 23. Surveys (Antykiety) - brak kreatora i podglądu ankiet (chyba że jest częściowo, ale model sugeruje brak pełnego CRUD w admin panelu)
 24. SurveyResponses (Odpowiedzi na ankiety) - brak przeglądania odpowiedzi
