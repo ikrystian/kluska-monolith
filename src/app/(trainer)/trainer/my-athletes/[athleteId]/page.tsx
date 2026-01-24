@@ -12,6 +12,9 @@ import {
   Loader2,
   MessageSquare,
   Ruler,
+  ClipboardList,
+  CheckCircle,
+  Clock
 } from 'lucide-react';
 import {
   Card,
@@ -56,6 +59,29 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { UserProfile, WorkoutLog, Exercise, TrainingPlan } from '@/lib/types';
 import { useChat } from '@/components/chat/hooks/useChat';
+
+interface Survey {
+  id: string;
+  title: string;
+  status: 'draft' | 'active' | 'closed';
+  assignedAthleteIds: string[];
+  questions: {
+    id: string;
+    text: string;
+    type: 'open' | 'closed';
+  }[];
+}
+
+interface SurveyResponse {
+  id: string;
+  surveyId: string;
+  athleteId: string;
+  submittedAt: string;
+  answers: {
+    questionId: string;
+    answer: string;
+  }[];
+}
 
 
 const StatCard = ({ title, value, icon: Icon, description, isLoading }: { title: string, value: string, icon: React.ElementType, description: string, isLoading?: boolean }) => (
@@ -279,6 +305,18 @@ export default function AthleteProfilePage() {
     { sort: { date: 1 }, limit: 5 }
   );
 
+  // Fetch assigned surveys
+  const { data: surveys, isLoading: surveysLoading } = useCollection<Survey>(
+    athleteId ? 'surveys' : null,
+    { assignedAthleteIds: athleteId }
+  );
+
+  // Fetch survey responses
+  const { data: surveyResponses, isLoading: responsesLoading } = useCollection<SurveyResponse>(
+    athleteId ? 'surveyResponses' : null,
+    { athleteId }
+  );
+
   const nextWorkout = plannedWorkouts?.[0];
 
   // Calculate statistics
@@ -444,6 +482,91 @@ export default function AthleteProfilePage() {
               </>
             ) : (
               <p className="text-sm text-muted-foreground text-center py-8">Brak celów</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Surveys Section - New Addition */}
+        <Card className="lg:col-span-5">
+          <CardHeader>
+            <CardTitle className="font-headline">Ankiety</CardTitle>
+            <CardDescription>Ankiety przypisane do sportowca i ich status.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {surveysLoading || responsesLoading ? (
+              <div className="flex justify-center p-4">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : surveys && surveys.length > 0 ? (
+              <Accordion type="single" collapsible className="w-full space-y-2">
+                {surveys.map((survey) => {
+                  const response = surveyResponses?.find(r => r.surveyId === survey.id);
+                  const isCompleted = !!response;
+
+                  return (
+                    <AccordionItem key={survey.id} value={survey.id} className="border rounded-lg px-2">
+                      <AccordionTrigger className="hover:no-underline">
+                        <div className="flex items-center justify-between w-full pr-4">
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-full ${isCompleted ? 'bg-green-100 text-green-600' : 'bg-secondary text-muted-foreground'}`}>
+                              <ClipboardList className="h-5 w-5" />
+                            </div>
+                            <div className="text-left">
+                              <p className="font-medium">{survey.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {isCompleted
+                                  ? `Wypełniona: ${format(new Date(response.submittedAt), 'd MMM yyyy', { locale: pl })}`
+                                  : 'Oczekuje na wypełnienie'
+                                }
+                              </p>
+                            </div>
+                          </div>
+                          <div>
+                            {isCompleted ? (
+                              <Badge className="bg-green-500">Wypełniona</Badge>
+                            ) : (
+                              <Badge variant="secondary">Niewypełniona</Badge>
+                            )}
+                          </div>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-2 pb-4 px-2">
+                        {isCompleted ? (
+                          <div className="space-y-4">
+                            {survey.questions?.map((question, idx) => {
+                              const answer = response.answers.find(a => a.questionId === question.id)?.answer || '-';
+                              return (
+                                <div key={question.id} className="border-l-2 border-primary/20 pl-4">
+                                  <p className="text-sm font-medium text-muted-foreground mb-1">
+                                    {idx + 1}. {question.text}
+                                  </p>
+                                  <p className="text-sm">{answer}</p>
+                                </div>
+                              );
+                            })}
+                            <div className="pt-2">
+                              <Button variant="outline" size="sm" asChild className="w-full">
+                                <Link href={`/trainer/surveys/${survey.id}`}>
+                                  Pełne szczegóły ankiety
+                                </Link>
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground text-center py-2">
+                            Ankieta jeszcze nie została wypełniona przez sportowca.
+                          </p>
+                        )}
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
+              </Accordion>
+            ) : (
+              <div className="text-center text-muted-foreground py-8">
+                <ClipboardList className="mx-auto h-12 w-12 mb-4" />
+                <p>Brak przypisanych ankiet.</p>
+              </div>
             )}
           </CardContent>
         </Card>

@@ -27,7 +27,9 @@ import {
   SocialProfile,
   SocialPost,
   Habit,
-  HabitLog
+  HabitLog,
+  Survey,
+  SurveyResponse
 } from '@/models';
 
 const modelMap: Record<string, any> = {
@@ -53,6 +55,8 @@ const modelMap: Record<string, any> = {
   socialPosts: SocialPost,
   habits: Habit,
   habitlogs: HabitLog,
+  surveys: Survey,
+  surveyResponses: SurveyResponse,
 };
 
 // GET - Fetch single document by ID
