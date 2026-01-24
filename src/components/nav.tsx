@@ -84,6 +84,7 @@ export const athleteNavItems = [
     label: 'Postępy',
     icon: TrendingUp,
     items: [
+      { href: '/athlete/progress', label: 'Dashboard Postępów', icon: TrendingUp },
       { href: '/athlete/measurements', label: 'Pomiary', icon: Ruler },
       { href: '/athlete/goals', label: 'Cele i Trofea', icon: Trophy },
       { href: '/athlete/habits', label: 'Nawyki', icon: CheckSquare },
