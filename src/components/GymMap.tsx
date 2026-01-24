@@ -1,120 +1,31 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from '@react-google-maps/api';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import type { Gym } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, MapPin } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 
-const containerStyle = {
-    width: '100%',
-    height: '100%',
-    borderRadius: '0.5rem',
-};
+// Fix for default marker icon in Leaflet with Next.js/React
+// See: https://github.com/PaulLeCam/react-leaflet/issues/453
+const DefaultIcon = L.icon({
+    iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+});
 
-const defaultCenter = {
-    lat: 52.237049,
-    lng: 21.017532, // Center of Warsaw
-};
+L.Marker.prototype.options.icon = DefaultIcon;
 
-const mapOptions = {
-    styles: [
-        { elementType: 'geometry', stylers: [{ color: '#242f3e' }] },
-        { elementType: 'labels.text.stroke', stylers: [{ color: '#242f3e' }] },
-        { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },
-        {
-            featureType: 'administrative.locality',
-            elementType: 'labels.text.fill',
-            stylers: [{ color: '#d59563' }],
-        },
-        {
-            featureType: 'poi',
-            elementType: 'labels.text.fill',
-            stylers: [{ color: '#d59563' }],
-        },
-        {
-            featureType: 'poi.park',
-            elementType: 'geometry',
-            stylers: [{ color: '#263c3f' }],
-        },
-        {
-            featureType: 'poi.park',
-            elementType: 'labels.text.fill',
-            stylers: [{ color: '#6b9a76' }],
-        },
-        {
-            featureType: 'road',
-            elementType: 'geometry',
-            stylers: [{ color: '#38414e' }],
-        },
-        {
-            featureType: 'road',
-            elementType: 'geometry.stroke',
-            stylers: [{ color: '#212a37' }],
-        },
-        {
-            featureType: 'road',
-            elementType: 'labels.text.fill',
-            stylers: [{ color: '#9ca5b3' }],
-        },
-        {
-            featureType: 'road.highway',
-            elementType: 'geometry',
-            stylers: [{ color: '#746855' }],
-        },
-        {
-            featureType: 'road.highway',
-            elementType: 'geometry.stroke',
-            stylers: [{ color: '#1f2835' }],
-        },
-        {
-            featureType: 'road.highway',
-            elementType: 'labels.text.fill',
-            stylers: [{ color: '#f3d19c' }],
-        },
-        {
-            featureType: 'transit',
-            elementType: 'geometry',
-            stylers: [{ color: '#2f3948' }],
-        },
-        {
-            featureType: 'transit.station',
-            elementType: 'labels.text.fill',
-            stylers: [{ color: '#d59563' }],
-        },
-        {
-            featureType: 'water',
-            elementType: 'geometry',
-            stylers: [{ color: '#17263c' }],
-        },
-        {
-            featureType: 'water',
-            elementType: 'labels.text.fill',
-            stylers: [{ color: '#515c6d' }],
-        },
-        {
-            featureType: 'water',
-            elementType: 'labels.text.stroke',
-            stylers: [{ color: '#17263c' }],
-        },
-    ],
-    disableDefaultUI: true,
-    zoomControl: true,
-};
+const center: [number, number] = [52.237049, 21.017532]; // Center of Warsaw
 
 export default function GymMap() {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-    const { isLoaded, loadError } = useJsApiLoader({
-        id: 'google-map-script',
-        googleMapsApiKey: apiKey || '',
-    });
-
     const [gyms, setGyms] = useState<Gym[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedGym, setSelectedGym] = useState<Gym | null>(null);
+    const [geocodedGyms, setGeocodedGyms] = useState<(Gym & { lat: number; lng: number })[]>([]);
 
     const fetchGyms = useCallback(async () => {
         try {
@@ -136,49 +47,37 @@ export default function GymMap() {
         fetchGyms();
     }, [fetchGyms]);
 
-    // Helper to get coordinates. 
-    // If gym has location, use it. 
-    // If not, we might need to geocode, but for now let's filter out those without location or handle them gracefully.
-    // Ideally, the backend/admin should ensure location is present.
-    // For this component, we will only show markers for gyms with valid location.
-    // Or we could implement client-side geocoding like the original file did, but that consumes API quota.
-    // Let's stick to using stored location for now, as per the "gyms added by administrator" requirement which implies a controlled dataset.
-    // However, to be safe and robust, if we really want to support address-only gyms, we can add geocoding back.
-    // Given the previous code had geocoding, I will re-implement it to be safe, but only for gyms missing location.
-
-    const [geocodedGyms, setGeocodedGyms] = useState<(Gym & { lat: number; lng: number })[]>([]);
-
     useEffect(() => {
-        if (isLoaded && gyms.length > 0) {
+        if (gyms.length > 0) {
             const processGyms = async () => {
                 const processed: (Gym & { lat: number; lng: number })[] = [];
-                const geocoder = new window.google.maps.Geocoder();
 
+                // Use Promise.all to fetch concurrently but be mindful of rate limits if many gyms
+                // Nominatim has a usage policy of 1 request per second.
+                // We should process sequentially to respect this.
                 for (const gym of gyms) {
                     if (gym.location && gym.location.lat && gym.location.lng) {
                         processed.push({ ...gym, lat: gym.location.lat, lng: gym.location.lng });
-                    } else {
-                        // Geocode if location is missing
+                    } else if (gym.address) {
+                        // Geocode using Nominatim
                         try {
-                            const result = await new Promise<google.maps.GeocoderResult | null>((resolve) => {
-                                geocoder.geocode({ address: gym.address }, (results, status) => {
-                                    if (status === 'OK' && results && results[0]) {
-                                        resolve(results[0]);
-                                    } else {
-                                        resolve(null);
-                                    }
-                                });
-                            });
-
-                            if (result) {
+                            const response = await fetch(
+                                `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+                                    gym.address
+                                )}&format=json&limit=1`
+                            );
+                            const data = await response.json();
+                            if (data && data[0]) {
                                 processed.push({
                                     ...gym,
-                                    lat: result.geometry.location.lat(),
-                                    lng: result.geometry.location.lng(),
+                                    lat: parseFloat(data[0].lat),
+                                    lng: parseFloat(data[0].lon),
                                 });
                             }
+                            // Respect Nominatim rate limit (1s delay)
+                            await new Promise((resolve) => setTimeout(resolve, 1000));
                         } catch (e) {
-                            console.error(`Geocoding failed for ${gym.name}`, e);
+                            console.error(`Geocoding failed for ${gym.address}`, e);
                         }
                     }
                 }
@@ -187,36 +86,7 @@ export default function GymMap() {
 
             processGyms();
         }
-    }, [gyms, isLoaded]);
-
-
-    if (!apiKey) {
-        return (
-            <div className="container mx-auto p-4 md:p-8">
-                <Alert variant="destructive">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>Błąd Konfiguracji Mapy</AlertTitle>
-                    <AlertDescription>
-                        Klucz API Google Maps nie został skonfigurowany. Proszę dodać go do pliku .env jako NEXT_PUBLIC_GOOGLE_MAPS_API_KEY.
-                    </AlertDescription>
-                </Alert>
-            </div>
-        );
-    }
-
-    if (loadError) {
-        return (
-            <div className="container mx-auto p-4 md:p-8">
-                <Alert variant="destructive">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>Błąd Ładowania Mapy</AlertTitle>
-                    <AlertDescription>
-                        Nie udało się załadować skryptów Google Maps. Sprawdź swój klucz API i upewnij się, że jest poprawny oraz że masz włączone odpowiednie API w Google Cloud Console.
-                    </AlertDescription>
-                </Alert>
-            </div>
-        );
-    }
+    }, [gyms]);
 
     return (
         <Card className="h-full w-full border-0 shadow-none">
@@ -226,42 +96,39 @@ export default function GymMap() {
                     Znajdź siłownie w swojej okolicy. Kliknij na znacznik, aby zobaczyć szczegóły.
                 </CardDescription>
             </CardHeader>
-            <CardContent className="h-[600px] w-full px-0 pb-0">
-                {!isLoaded || loading ? (
+            <CardContent className="h-[600px] w-full px-0 pb-0 z-0">
+                {loading ? (
                     <Skeleton className="h-full w-full rounded-lg" />
                 ) : (
-                    <GoogleMap
-                        mapContainerStyle={containerStyle}
-                        center={defaultCenter}
+                    <MapContainer
+                        center={center}
                         zoom={6}
-                        options={mapOptions}
+                        scrollWheelZoom={true}
+                        style={{ height: '100%', width: '100%', borderRadius: '0.5rem', zIndex: 0 }}
                     >
+                        <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
                         {geocodedGyms.map((gym) => (
-                            <MarkerF
-                                key={gym.id}
-                                position={{ lat: gym.lat, lng: gym.lng }}
-                                onClick={() => setSelectedGym(gym)}
-                            />
+                            <Marker key={gym._id || gym.id} position={[gym.lat, gym.lng]}>
+                                <Popup>
+                                    <div className="p-1 max-w-xs">
+                                        <h3 className="font-bold text-base mb-1">{gym.name}</h3>
+                                        <p className="text-sm flex items-start gap-1">
+                                            <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
+                                            {gym.address}
+                                        </p>
+                                        {gym.rating && (
+                                            <p className="text-xs text-yellow-600 mt-1 font-medium">
+                                                Ocena: {gym.rating}/5
+                                            </p>
+                                        )}
+                                    </div>
+                                </Popup>
+                            </Marker>
                         ))}
-
-                        {selectedGym && (
-                            <InfoWindowF
-                                position={{ lat: (selectedGym as any).lat, lng: (selectedGym as any).lng }}
-                                onCloseClick={() => setSelectedGym(null)}
-                            >
-                                <div className="p-2 max-w-xs">
-                                    <h3 className="font-bold text-lg">{selectedGym.name}</h3>
-                                    <p className="text-sm flex items-start gap-1">
-                                        <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
-                                        {selectedGym.address}
-                                    </p>
-                                    {selectedGym.rating && (
-                                        <p className="text-xs text-yellow-600 mt-1">Ocena: {selectedGym.rating}/5</p>
-                                    )}
-                                </div>
-                            </InfoWindowF>
-                        )}
-                    </GoogleMap>
+                    </MapContainer>
                 )}
             </CardContent>
         </Card>
