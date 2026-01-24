@@ -4,7 +4,9 @@ import dotenv from 'dotenv';
 import { connectToDatabase } from './db';
 import { dbRouter } from './routes/db';
 import { authRouter } from './routes/auth';
-import uploadRouter from './routes/upload';
+import legacyUploadRouter from './routes/upload';
+import { createRouteHandler } from "uploadthing/express";
+import { uploadRouter } from "./uploadthing";
 import aiRouter from './routes/ai';
 import { gamificationRouter } from './routes/gamification';
 import { notificationsRouter } from './routes/notifications';
@@ -29,7 +31,14 @@ app.get('/', (req, res) => {
 
 app.use('/api/db', dbRouter);
 app.use('/api/auth', authRouter);
-app.use('/api/upload', uploadRouter);
+app.use(
+    "/api/uploadthing",
+    createRouteHandler({
+        router: uploadRouter,
+    }),
+);
+app.use('/api/upload', legacyUploadRouter);
+
 app.use('/api/ai', aiRouter);
 app.use('/api/gamification', gamificationRouter);
 app.use('/api/notifications', notificationsRouter);

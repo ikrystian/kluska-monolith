@@ -40,45 +40,110 @@ interface AppSidebarProps {
     variant: SidebarVariant;
 }
 
-const athleteNavItems = [
-    { title: 'Dashboard', href: '/athlete/dashboard', icon: Home },
-    { title: 'Moje Treningi', href: '/athlete/workouts', icon: Dumbbell },
-    { title: 'Plany Treningowe', href: '/athlete/workout-plans', icon: BookOpen },
-    { title: 'Loguj Trening', href: '/athlete/log', icon: Activity },
-    { title: 'Historia', href: '/athlete/history', icon: History },
-    { title: 'Kalendarz', href: '/athlete/calendar', icon: Calendar },
-    { title: 'Cele', href: '/athlete/goals', icon: Target },
-    { title: 'Nawyki', href: '/athlete/habits', icon: Heart },
-    { title: 'Odznaki', href: '/athlete/gamification', icon: Trophy },
-    { title: 'Pomiary', href: '/athlete/measurements', icon: User },
-    { title: 'Bieganie', href: '/athlete/running', icon: Activity },
-    { title: 'Społeczność', href: '/athlete/social', icon: Users },
-    { title: 'Chat', href: '/athlete/chat', icon: MessageSquare },
-    { title: 'Mapa', href: '/athlete/map', icon: Map },
-    { title: 'Profil', href: '/athlete/profile', icon: User },
+const athleteNavGroups = [
+    {
+        title: 'Główne',
+        items: [
+            { title: 'Dashboard', href: '/athlete/dashboard', icon: Home },
+            { title: 'Kalendarz', href: '/athlete/calendar', icon: Calendar },
+        ],
+    },
+    {
+        title: 'Trening',
+        items: [
+            { title: 'Moje Treningi', href: '/athlete/workouts', icon: Dumbbell },
+            { title: 'Plany Treningowe', href: '/athlete/workout-plans', icon: BookOpen },
+            { title: 'Loguj Trening', href: '/athlete/log', icon: Activity },
+            { title: 'Bieganie', href: '/athlete/running', icon: Activity },
+            { title: 'Historia', href: '/athlete/history', icon: History },
+        ],
+    },
+    {
+        title: 'Postępy',
+        items: [
+            { title: 'Pomiary', href: '/athlete/measurements', icon: User },
+            { title: 'Cele', href: '/athlete/goals', icon: Target },
+            { title: 'Nawyki', href: '/athlete/habits', icon: Heart },
+            { title: 'Odznaki', href: '/athlete/gamification', icon: Trophy },
+        ],
+    },
+    {
+        title: 'Społeczność',
+        items: [
+            { title: 'Społeczność', href: '/athlete/social', icon: Users },
+            { title: 'Chat', href: '/athlete/chat', icon: MessageSquare },
+            { title: 'Mapa', href: '/athlete/map', icon: Map },
+        ],
+    },
+    {
+        title: 'Konto',
+        items: [
+            { title: 'Profil', href: '/athlete/profile', icon: User },
+        ],
+    },
 ];
 
-const trainerNavItems = [
-    { title: 'Dashboard', href: '/trainer/dashboard', icon: Home },
-    { title: 'Podopieczni', href: '/trainer/athletes', icon: Users },
-    { title: 'Ćwiczenia', href: '/trainer/exercises', icon: Dumbbell },
-    { title: 'Plany Treningowe', href: '/trainer/plans', icon: BookOpen },
-    { title: 'Pojedyncze Treningi', href: '/trainer/workouts', icon: Activity },
-    { title: 'Dieta', href: '/trainer/diet', icon: Heart },
-    { title: 'Kalendarz', href: '/trainer/schedule', icon: Calendar },
-    { title: 'Wiadomości', href: '/trainer/messages', icon: MessageSquare },
-    { title: 'Profil', href: '/trainer/profile', icon: User },
+const trainerNavGroups = [
+    {
+        title: 'Główne',
+        items: [
+            { title: 'Dashboard', href: '/trainer/dashboard', icon: Home },
+            { title: 'Kalendarz', href: '/trainer/schedule', icon: Calendar },
+        ],
+    },
+    {
+        title: 'Podopieczni',
+        items: [
+            { title: 'Podopieczni', href: '/trainer/athletes', icon: Users },
+            { title: 'Wiadomości', href: '/trainer/messages', icon: MessageSquare },
+        ],
+    },
+    {
+        title: 'Biblioteka',
+        items: [
+            { title: 'Ćwiczenia', href: '/trainer/exercises', icon: Dumbbell },
+            { title: 'Plany Treningowe', href: '/trainer/plans', icon: BookOpen },
+            { title: 'Pojedyncze Treningi', href: '/trainer/workouts', icon: Activity },
+            { title: 'Dieta', href: '/trainer/diet', icon: Heart },
+        ],
+    },
+    {
+        title: 'Konto',
+        items: [
+            { title: 'Profil', href: '/trainer/profile', icon: User },
+        ],
+    },
 ];
 
-const adminNavItems = [
-    { title: 'Dashboard', href: '/admin/dashboard', icon: Home },
-    { title: 'Użytkownicy', href: '/admin/users', icon: Users },
-    { title: 'Ćwiczenia', href: '/admin/exercises', icon: Dumbbell },
-    { title: 'Plany Treningowe', href: '/admin/plans', icon: BookOpen },
-    { title: 'Pojedyncze Treningi', href: '/admin/workouts', icon: Activity },
-    { title: 'Grupy Mięśniowe', href: '/admin/muscle-groups', icon: Activity },
-    { title: 'Siłownie', href: '/admin/gyms', icon: Database },
-    { title: 'Ustawienia', href: '/admin/settings', icon: Settings },
+const adminNavGroups = [
+    {
+        title: 'Główne',
+        items: [
+            { title: 'Dashboard', href: '/admin/dashboard', icon: Home },
+        ],
+    },
+    {
+        title: 'Zarządzanie',
+        items: [
+            { title: 'Użytkownicy', href: '/admin/users', icon: Users },
+            { title: 'Siłownie', href: '/admin/gyms', icon: Database },
+        ],
+    },
+    {
+        title: 'Biblioteka',
+        items: [
+            { title: 'Ćwiczenia', href: '/admin/exercises', icon: Dumbbell },
+            { title: 'Plany Treningowe', href: '/admin/plans', icon: BookOpen },
+            { title: 'Pojedyncze Treningi', href: '/admin/workouts', icon: Activity },
+            { title: 'Grupy Mięśniowe', href: '/admin/muscle-groups', icon: Activity },
+        ],
+    },
+    {
+        title: 'System',
+        items: [
+            { title: 'Ustawienia', href: '/admin/settings', icon: Settings },
+        ],
+    },
 ];
 
 export function AppSidebar({ variant }: AppSidebarProps) {
@@ -86,12 +151,12 @@ export function AppSidebar({ variant }: AppSidebarProps) {
     const { data: session } = useSession();
     const auth = useAuth();
 
-    const navItems =
+    const navGroups =
         variant === 'athlete'
-            ? athleteNavItems
+            ? athleteNavGroups
             : variant === 'trainer'
-                ? trainerNavItems
-                : adminNavItems;
+                ? trainerNavGroups
+                : adminNavGroups;
 
     const title =
         variant === 'athlete'
@@ -112,23 +177,25 @@ export function AppSidebar({ variant }: AppSidebarProps) {
                 <p className="text-xs text-muted-foreground mt-1">{title}</p>
             </SidebarHeader>
             <SidebarContent>
-                <SidebarGroup>
-                    <SidebarGroupLabel>Nawigacja</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            {navItems.map((item) => (
-                                <SidebarMenuItem key={item.href}>
-                                    <SidebarMenuButton asChild isActive={location.pathname === item.href}>
-                                        <Link to={item.href}>
-                                            <item.icon className="h-4 w-4" />
-                                            <span>{item.title}</span>
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                            ))}
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
+                {navGroups.map((group) => (
+                    <SidebarGroup key={group.title}>
+                        <SidebarGroupLabel>{group.title}</SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                {group.items.map((item) => (
+                                    <SidebarMenuItem key={item.href}>
+                                        <SidebarMenuButton asChild isActive={location.pathname === item.href}>
+                                            <Link to={item.href}>
+                                                <item.icon className="h-4 w-4" />
+                                                <span>{item.title}</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                ))}
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                ))}
             </SidebarContent>
             <SidebarFooter className="border-t p-4">
                 <div className="flex items-center gap-2 mb-2">

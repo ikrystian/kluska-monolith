@@ -16,9 +16,9 @@ import {
 } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { api } from '@/lib/api';
 import { useCreateDoc, useUser } from '@/lib/db-hooks';
 import { useUserProfile } from '@/contexts/UserProfileContext';
+import { useUploadThing } from '@/lib/uploadthing';
 
 const createPostSchema = z.object({
   description: z.string().max(500, 'Description must be at most 500 characters'),
@@ -41,16 +41,19 @@ export function CreatePostDialog({ open, onOpenChange, onSuccess }: CreatePostDi
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Upload file using our backend
-  const uploadImage = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await api.request<{ url: string }>('/api/upload', {
-      method: 'POST',
-      body: formData,
-    });
-    return response.url;
-  };
+  const { startUpload } = useUploadThing('imageUploader', {
+    onClientUploadComplete: (res) => {
+      console.log('Upload completed:', res);
+    },
+    onUploadError: (error) => {
+      console.error('Upload error:', error);
+      toast({
+        title: 'Upload failed',
+        description: 'Failed to upload image. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
 
   const form = useForm<CreatePostFormValues>({
     resolver: zodResolver(createPostSchema),
@@ -103,14 +106,30 @@ export function CreatePostDialog({ open, onOpenChange, onSuccess }: CreatePostDi
 
     try {
       // Upload image first
-      const imageUrl = await uploadImage(selectedFile);
+      const uploadResult = await startUpload([selectedFile]);
+
+      if (!uploadResult || uploadResult.length === 0) {
+        throw new Error('Upload failed');
+      }
+
+      const imageUrl = uploadResult[0].url; // Use full URL or ID? SPA usually needs URL.
+      // Next.js code had: const imageUrl = uploadResult[0].url.split('/').pop();
+      // If we store just ID, we need to know how to construct URL.
+      // Let's stick to Next.js logic: uploadResult[0].url.split('/').pop() if that's what backend expects?
+      // But SPA might render generic URL.
+      // Let's use the full URL if we can, OR match Next.js logic.
+      // Next.js logic: const imageUrl = uploadResult[0].url.split('/').pop();
+      // Meaning it stores the KEY/ID.
+      // I will follow Next.js logic exactly.
+
+      const imageId = uploadResult[0].url.split('/').pop();
 
       // Create post
       await createDoc('socialPosts', {
         authorId: user.uid,
         authorNickname: user.name || 'Anonymous', // This should be replaced with actual nickname
         authorAvatarUrl: userProfile?.avatarUrl || undefined,
-        imageUrl,
+        imageUrl: imageId,
         description: data.description,
         likes: [],
         likesCount: 0,
