@@ -141,6 +141,7 @@ const adminNavItems = [
   { href: '/admin/exercises', icon: Dumbbell, label: 'Wszystkie Ćwiczenia' },
   { href: '/admin/workout-plans', icon: ClipboardList, label: 'Wszystkie Plany' },
   { href: '/admin/workouts', icon: Dumbbell, label: 'Wszystkie Treningi' },
+  { href: '/admin/workout-logs', icon: History, label: 'Logi Treningowe' },
   { href: '/admin/articles', icon: BookMarked, label: 'Wszystkie Artykuły' },
   { href: '/admin/gyms', icon: Building2, label: 'Siłownie' },
 ]
