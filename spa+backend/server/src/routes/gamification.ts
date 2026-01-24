@@ -1,4 +1,5 @@
-import express, { Request, Response } from 'express';
+import express, { Response } from 'express';
+import { AuthRequest } from './auth';
 import {
     getGamificationStats,
     recordCheckin,
@@ -30,31 +31,11 @@ const router = express.Router();
 // BUT, the existing routes like `db.ts` use `req.user` if they have auth middleware.
 // Let's assume standard express request with user.
 
-// Helper to get userId
-const getUserId = (req: any): string | null => {
-    // If we have an auth middleware
-    if (req.user && req.user.id) return req.user.id;
-    // Fallback for development/testing if needed, or return null to enforce auth
-    // The Next.js code used `getServerSession`. The express app likely uses `verifyToken` middleware.
-    // I should check `routes / auth.ts` or `index.ts` to see how auth is handled.
-    // For now I'll check `req.headers['x-user-id']` as a fallback or return 401.
-    return req.headers['x-user-id'] as string || null;
-};
 
 // GET /profile - Get gamification stats
-router.get('/profile', async (req: Request, res: Response) => {
+router.get('/profile', async (req: AuthRequest, res: Response) => {
     try {
-        const userId = getUserId(req);
-        if (!userId) {
-            // Temporary: During migration we might not have proper auth middleware set up globally?
-            // Actually `index.ts` doesn't show global auth middleware.
-            // Let's check if the client sends user ID or if we should add auth middleware.
-            // For the purpose of "fixing the 404", I'll respond with 401 if no user.
-            // But commonly there's a middleware.
-            // I'll try to get it from header or fall back.
-            return res.status(401).json({ error: 'Unauthorized' });
-        }
-
+        const userId = req.user!.id;
         const stats = await getGamificationStats(userId);
         res.json(stats);
     } catch (error) {
@@ -64,10 +45,9 @@ router.get('/profile', async (req: Request, res: Response) => {
 });
 
 // POST /profile - Actions like checkin
-router.post('/profile', async (req: Request, res: Response) => {
+router.post('/profile', async (req: AuthRequest, res: Response) => {
     try {
-        const userId = getUserId(req);
-        if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+        const userId = req.user!.id;
 
         const { action } = req.body;
 
@@ -84,10 +64,9 @@ router.post('/profile', async (req: Request, res: Response) => {
 });
 
 // GET /achievements - Get achievements
-router.get('/achievements', async (req: Request, res: Response) => {
+router.get('/achievements', async (req: AuthRequest, res: Response) => {
     try {
-        const userId = getUserId(req);
-        if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+        const userId = req.user!.id;
 
         const unlockedOnly = req.query.unlocked === 'true';
 
@@ -105,10 +84,9 @@ router.get('/achievements', async (req: Request, res: Response) => {
 });
 
 // POST /achievements - Check and award achievements
-router.post('/achievements', async (req: Request, res: Response) => {
+router.post('/achievements', async (req: AuthRequest, res: Response) => {
     try {
-        const userId = getUserId(req);
-        if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+        const userId = req.user!.id;
 
         const newAchievements = await checkAndAwardAchievements(userId);
 
@@ -123,7 +101,7 @@ router.post('/achievements', async (req: Request, res: Response) => {
 });
 
 // GET /leaderboard
-router.get('/leaderboard', async (req: Request, res: Response) => {
+router.get('/leaderboard', async (req: AuthRequest, res: Response) => {
     try {
         const limit = parseInt(req.query.limit as string) || 10;
         const trainerId = req.query.trainerId as string;
@@ -137,10 +115,9 @@ router.get('/leaderboard', async (req: Request, res: Response) => {
 });
 
 // GET /rewards
-router.get('/rewards', async (req: Request, res: Response) => {
+router.get('/rewards', async (req: AuthRequest, res: Response) => {
     try {
-        const userId = getUserId(req);
-        if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+        const userId = req.user!.id;
 
         const rewards = await getAvailableRewards(userId);
         res.json(rewards);
@@ -151,10 +128,9 @@ router.get('/rewards', async (req: Request, res: Response) => {
 });
 
 // GET /history - Get point transaction history
-router.get('/history', async (req: Request, res: Response) => {
+router.get('/history', async (req: AuthRequest, res: Response) => {
     try {
-        const userId = getUserId(req);
-        if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+        const userId = req.user!.id;
 
         const limit = parseInt(req.query.limit as string) || 50;
         const history = await getPointHistory(userId, limit);
@@ -167,10 +143,9 @@ router.get('/history', async (req: Request, res: Response) => {
 });
 
 // POST /rewards - Redeem reward
-router.post('/rewards', async (req: Request, res: Response) => {
+router.post('/rewards', async (req: AuthRequest, res: Response) => {
     try {
-        const userId = getUserId(req);
-        if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+        const userId = req.user!.id;
 
         const { rewardId } = req.body;
         if (!rewardId) return res.status(400).json({ error: 'Reward ID is required' });
@@ -189,7 +164,7 @@ router.post('/rewards', async (req: Request, res: Response) => {
 });
 
 // Seed default achievements (Internal/Admin use)
-router.post('/seed-achievements', async (req: Request, res: Response) => {
+router.post('/seed-achievements', async (req: AuthRequest, res: Response) => {
     try {
         await seedDefaultAchievements();
         res.json({ message: 'Default achievements seeded' });
@@ -200,10 +175,9 @@ router.post('/seed-achievements', async (req: Request, res: Response) => {
 });
 
 // POST /goals/:goalId/complete
-router.post('/goals/:goalId/complete', async (req: Request, res: Response) => {
+router.post('/goals/:goalId/complete', async (req: AuthRequest, res: Response) => {
     try {
-        const userId = getUserId(req);
-        if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+        const userId = req.user!.id;
 
         const { goalId } = req.params;
         const { trainerApproval } = req.body;
@@ -220,7 +194,7 @@ router.post('/goals/:goalId/complete', async (req: Request, res: Response) => {
 // Admin Reward Routes
 
 // GET /admin/rewards
-router.get('/admin/rewards', async (req: Request, res: Response) => {
+router.get('/admin/rewards', async (req: AuthRequest, res: Response) => {
     try {
         // In a real app, verify admin role here
         const rewards = await Reward.find().sort({ createdAt: -1 });
@@ -232,7 +206,7 @@ router.get('/admin/rewards', async (req: Request, res: Response) => {
 });
 
 // POST /admin/rewards
-router.post('/admin/rewards', async (req: Request, res: Response) => {
+router.post('/admin/rewards', async (req: AuthRequest, res: Response) => {
     try {
         const reward = new Reward(req.body);
         await reward.save();
@@ -244,7 +218,7 @@ router.post('/admin/rewards', async (req: Request, res: Response) => {
 });
 
 // PUT /admin/rewards/:id
-router.put('/admin/rewards/:id', async (req: Request, res: Response) => {
+router.put('/admin/rewards/:id', async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
         const reward = await Reward.findByIdAndUpdate(id, req.body, { new: true });
@@ -259,7 +233,7 @@ router.put('/admin/rewards/:id', async (req: Request, res: Response) => {
 });
 
 // DELETE /admin/rewards/:id
-router.delete('/admin/rewards/:id', async (req: Request, res: Response) => {
+router.delete('/admin/rewards/:id', async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
         await Reward.findByIdAndDelete(id);

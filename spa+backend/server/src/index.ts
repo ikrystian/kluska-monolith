@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { connectToDatabase } from './db';
 import { dbRouter } from './routes/db';
-import { authRouter } from './routes/auth';
+import { authRouter, authMiddleware } from './routes/auth';
 import legacyUploadRouter from './routes/upload';
 import { createRouteHandler } from "uploadthing/express";
 import { uploadRouter } from "./uploadthing";
@@ -40,7 +40,7 @@ app.use(
 app.use('/api/upload', legacyUploadRouter);
 
 app.use('/api/ai', aiRouter);
-app.use('/api/gamification', gamificationRouter);
+app.use('/api/gamification', authMiddleware, gamificationRouter);
 app.use('/api/notifications', notificationsRouter);
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
