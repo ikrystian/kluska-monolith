@@ -33,6 +33,9 @@ export * from './Notification';
 // Habits models
 export * from './Habit';
 export * from './HabitLog';
+// Survey models
+export * from './Survey';
+export * from './SurveyResponse';
 
 // Export enums from types (no conflicts)
 export { MuscleGroupName, TrainingLevel, SetType } from './types/enums';
