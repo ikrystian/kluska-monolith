@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Play, CalendarDays, MessageSquare, User } from 'lucide-react';
+import { LayoutDashboard, Play, Dumbbell, History, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function BottomNav() {
@@ -7,9 +7,9 @@ export function BottomNav() {
 
     const items = [
         { href: '/athlete/dashboard', icon: LayoutDashboard, label: 'Panel' },
-        { href: '/athlete/calendar', icon: CalendarDays, label: 'Kalendarz' },
+        { href: '/athlete/workouts', icon: Dumbbell, label: 'Treningi' },
         { href: '/athlete/log', icon: Play, label: 'Trenuj' },
-        { href: '/athlete/chat', icon: MessageSquare, label: 'Czat' },
+        { href: '/athlete/history', icon: History, label: 'Historia' },
         { href: '/athlete/profile', icon: User, label: 'Profil' },
     ];
 

@@ -2,7 +2,7 @@
  * API Client for communicating with the Express backend
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://188.68.247.168:3001';
 
 interface ApiOptions extends RequestInit {
     token?: string;
