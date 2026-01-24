@@ -22,6 +22,55 @@ L.Marker.prototype.options.icon = DefaultIcon;
 
 const center: [number, number] = [52.237049, 21.017532]; // Center of Warsaw
 
+function GymFavorites({ gymId }: { gymId: string }) {
+    const [favorites, setFavorites] = useState<{ _id: string; name: string; avatarUrl?: string }[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchFavorites = async () => {
+            try {
+                const response = await fetch(`/api/gyms/${gymId}/favorites`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setFavorites(data);
+                }
+            } catch (error) {
+                console.error('Error fetching favorites:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchFavorites();
+    }, [gymId]);
+
+    if (loading) return <div className="h-6 w-20 animate-pulse bg-muted rounded" />;
+    if (favorites.length === 0) return null;
+
+    return (
+        <div className="mt-2 pt-2 border-t">
+            <p className="text-xs text-muted-foreground mb-1">Trenują tutaj:</p>
+            <div className="flex -space-x-2 overflow-hidden">
+                {favorites.map((user) => (
+                    <div key={user._id} className="inline-block h-6 w-6 rounded-full ring-2 ring-white" title={user.name}>
+                        {user.avatarUrl ? (
+                            <img
+                                src={user.avatarUrl}
+                                alt={user.name}
+                                className="h-full w-full rounded-full object-cover"
+                            />
+                        ) : (
+                            <div className="h-full w-full rounded-full bg-primary flex items-center justify-center text-[10px] text-primary-foreground font-bold">
+                                {user.name.charAt(0).toUpperCase()}
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 export default function GymMap() {
     const [gyms, setGyms] = useState<Gym[]>([]);
     const [loading, setLoading] = useState(true);
@@ -155,6 +204,7 @@ export default function GymMap() {
                                                 )}
                                             </div>
                                         )}
+                                        <GymFavorites gymId={gym._id || gym.id} />
                                     </div>
                                 </Popup>
                             </Marker>
