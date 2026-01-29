@@ -109,6 +109,24 @@ export async function GET(
 
     const data = await query.exec();
 
+    // Enrich conversations with athlete avatarUrl
+    if (collection === 'conversations' && data.length > 0) {
+      const athleteIds = [...new Set(data.map((conv: any) => conv.athleteId))];
+      const athletes = await User.find({ _id: { $in: athleteIds } }).lean();
+      const athleteMap = new Map(athletes.map((a: any) => [a._id.toString(), a]));
+
+      const enrichedData = data.map((conv: any) => {
+        const athlete = athleteMap.get(conv.athleteId);
+        const convObj = conv.toJSON ? conv.toJSON() : conv;
+        return {
+          ...convObj,
+          athleteAvatarUrl: athlete?.avatarUrl,
+        };
+      });
+
+      return NextResponse.json({ data: enrichedData });
+    }
+
     return NextResponse.json({ data });
   } catch (error) {
     console.error('GET /api/db/[collection] error:', error);
