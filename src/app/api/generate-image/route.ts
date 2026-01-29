@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
  * POST /api/generate-image
  * Expects JSON body: { prompt: string }
  * Returns: { imageUrl: string }
- * Uses Gemini 2.5 Flash Image model for image generation
+ * Uses OpenRouter (google/gemini-2.5-flash-image) for image generation
  */
 export async function POST(request: Request) {
     try {
@@ -14,40 +14,33 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
         }
 
-        const apiKey = process.env.GEMINI_IMAGE_API_KEY;
+        const apiKey = process.env.OPEN_ROUTER_API_KEY;
         if (!apiKey) {
-            return NextResponse.json({ error: 'Missing GEMINI_IMAGE_API_KEY' }, { status: 500 });
+            return NextResponse.json({ error: 'Missing OPEN_ROUTER_API_KEY' }, { status: 500 });
         }
 
-        // Use Gemini 2.5 Flash Image model for image generation
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent`;
-
-        const response = await fetch(endpoint, {
-            method: 'POST',
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json',
-                'x-goog-api-key': apiKey,
+                "Authorization": `Bearer ${apiKey}`,
+                "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                contents: [
+                model: "google/gemini-2.5-flash-image",
+                provider: { require_parameters: true },
+                modalities: ["image", "text"],
+                messages: [
                     {
-                        role: 'user',
-                        parts: [
-                            {
-                                text: `Generate a professional fitness exercise photo showing: ${prompt}. High quality, clear, well-lit gym setting.`
-                            }
-                        ]
+                        role: "user",
+                        content: `Generate a professional fitness exercise photo showing: ${prompt}. High quality, clear, well-lit gym setting.`
                     }
                 ],
-                generationConfig: {
-                    responseModalities: ['TEXT', 'IMAGE'],
-                }
-            }),
+            })
         });
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('Gemini API error:', errorText);
+            console.error('OpenRouter API error:', errorText);
             return NextResponse.json(
                 { error: 'Failed to generate image', details: errorText },
                 { status: 500 }
@@ -55,25 +48,26 @@ export async function POST(request: Request) {
         }
 
         const data = await response.json();
+        console.log('OpenRouter Response Data:', JSON.stringify(data, null, 2));
 
-        // Extract image from response
-        const candidate = data.candidates?.[0];
-        const parts = candidate?.content?.parts;
+        const message = data.choices?.[0]?.message;
+        const content = message?.content;
 
-        // Find the image part (inlineData)
-        const imagePart = parts?.find((part: any) => part.inlineData);
+        // Try to get image from message.images (Gemini specific on OpenRouter)
+        let imageUrl = message?.images?.[0]?.image_url?.url;
 
-        if (!imagePart?.inlineData) {
-            console.error('No image in response:', JSON.stringify(data));
-            return NextResponse.json(
-                { error: 'No image returned from Gemini' },
-                { status: 500 }
-            );
+        // Fallback: Try to extract from content markdown
+        if (!imageUrl && content) {
+            const urlMatch = content.match(/\!\[.*?\]\((.*?)\)/) || content.match(/(https?:\/\/[^\s)]+)/);
+            if (urlMatch) {
+                imageUrl = urlMatch[1];
+            }
         }
 
-        // Return as data URL
-        const { mimeType, data: base64Data } = imagePart.inlineData;
-        const imageUrl = `data:${mimeType};base64,${base64Data}`;
+        if (!imageUrl) {
+            console.error('Could not extract image URL from response');
+            return NextResponse.json({ error: 'Failed to extract image URL', response: data }, { status: 500 });
+        }
 
         return NextResponse.json({ imageUrl });
 
