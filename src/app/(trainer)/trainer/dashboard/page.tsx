@@ -60,11 +60,13 @@ interface Athlete {
   id: string;
   name: string;
   email: string;
+  avatarUrl?: string;
 }
 
 interface Conversation {
   id: string;
   athleteName: string;
+  athleteAvatarUrl?: string;
   lastMessage?: {
     text: string;
     createdAt: string;
@@ -101,12 +103,14 @@ interface CommandCenterData {
     id: string;
     name: string;
     email: string;
+    avatarUrl?: string;
     hasWorkedOutThisWeek: boolean;
   }[];
   missedWorkouts: {
     id: string;
     name: string;
     email: string;
+    avatarUrl?: string;
   }[];
   recentRecords: {
     id: string;
@@ -141,6 +145,7 @@ interface CheckIn {
   id: string;
   athleteId: string;
   athleteName: string;
+  athleteAvatarUrl?: string;
   weekStartDate: string;
   status: 'pending' | 'submitted' | 'reviewed';
   submittedAt?: string;
@@ -592,6 +597,7 @@ export default function TrainerDashboardPage() {
                         >
                           <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10">
+                              <AvatarImage src={athlete.avatarUrl} alt={athlete.name} />
                               <AvatarFallback>{athlete.name.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div>
@@ -696,6 +702,7 @@ export default function TrainerDashboardPage() {
                             <div className="flex items-center justify-between w-full pr-4">
                               <div className="flex items-center gap-3">
                                 <Avatar className="h-8 w-8">
+                                  <AvatarImage src={checkIn.athleteAvatarUrl} alt={checkIn.athleteName} />
                                   <AvatarFallback>
                                     {checkIn.athleteName.charAt(0)}
                                   </AvatarFallback>
@@ -784,6 +791,7 @@ export default function TrainerDashboardPage() {
                       <div key={workout.id} className="flex items-center justify-between border-b pb-3 last:border-0">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
+                            <AvatarImage src={athlete?.avatarUrl} alt={athlete?.name || 'Athlete'} />
                             <AvatarFallback>
                               {athlete?.name?.charAt(0) || 'A'}
                             </AvatarFallback>
@@ -842,6 +850,7 @@ export default function TrainerDashboardPage() {
                       >
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
+                            <AvatarImage src={conv.athleteAvatarUrl} alt={conv.athleteName || 'Athlete'} />
                             <AvatarFallback>
                               {conv.athleteName?.charAt(0) || 'A'}
                             </AvatarFallback>
@@ -891,9 +900,12 @@ export default function TrainerDashboardPage() {
                     return (
                       <div key={measurement.id} className="flex items-center justify-between border-b pb-3 last:border-0">
                         <div className="flex items-center gap-3">
-                          <div className="flex bg-muted h-8 w-8 items-center justify-center rounded-full">
-                            <Ruler className="h-4 w-4 text-primary" />
-                          </div>
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={athlete?.avatarUrl} alt={athlete?.name || 'Athlete'} />
+                            <AvatarFallback>
+                              {athlete?.name?.charAt(0) || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
                           <div>
                             <p className="text-sm font-medium">{athlete?.name || 'Nieznany'}</p>
                             <p className="text-xs text-muted-foreground">Waga: {measurement.weight} kg</p>

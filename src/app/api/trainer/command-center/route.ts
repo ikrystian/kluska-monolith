@@ -64,6 +64,7 @@ export async function GET(request: NextRequest) {
                 id: a._id.toString(),
                 name: a.name,
                 email: a.email,
+                avatarUrl: a.avatarUrl,
                 daysSinceLastWorkout: null // Could calculate from last workout
             }));
 
@@ -113,6 +114,7 @@ export async function GET(request: NextRequest) {
                 id: a._id.toString(),
                 name: a.name,
                 email: a.email,
+                avatarUrl: a.avatarUrl,
                 hasWorkedOutThisWeek: athletesWithWorkouts.has(a._id.toString()),
             })),
             missedWorkouts,

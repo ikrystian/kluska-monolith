@@ -57,6 +57,7 @@ export async function GET(request: NextRequest) {
                     ...c,
                     id: c._id.toString(),
                     athleteName: athlete?.name || 'Nieznany',
+                    athleteAvatarUrl: athlete?.avatarUrl,
                 };
             });
         } else {
