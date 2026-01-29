@@ -1,0 +1,141 @@
+{
+    "name": "Generate Exercise Image",
+    "nodes": [
+        {
+            "parameters": {},
+            "name": "Start",
+            "type": "n8n-nodes-base.start",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://openrouter.ai/api/v1/chat/completions",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer {{ $env.OPEN_ROUTER_API_KEY }}"
+                        },
+                        {
+                            "name": "HTTP-Referer",
+                            "value": "http://localhost:3000"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "model",
+                            "value": "google/gemini-2.5-flash-image"
+                        },
+                        {
+                            "name": "messages",
+                            "value": "={{ [ { \"role\": \"user\", \"content\": \"Generate a professional fitness exercise photo showing: \" + ($json.prompt || \"Deadlift\") + \". High quality, clear, well-lit gym setting.\"} ] }}"
+                        },
+                        {
+                            "name": "modalities",
+                            "value": "={{ [\"image\", \"text\"] }}"
+                        },
+                        {
+                            "name": "provider",
+                            "value": "={{ { \"require_parameters\": true } }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "OpenRouter Image Gen",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                460,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const base64Url = $node[\"OpenRouter Image Gen\"].json.choices[0].message.images[0].image_url.url;\nconst base64Data = base64Url.split(';base64,').pop();\nconst binaryData = Buffer.from(base64Data, 'base64');\n\nreturn [{\n  json: {\n    fileName: 'generated_image.png'\n  },\n  binary: {\n    data: {\n      data: base64Data,\n      mimeType: 'image/png',\n      fileName: 'generated_image.png',\n      fileExtension: 'png'\n    }\n  }\n}];"
+            },
+            "name": "Convert Base64 to Binary",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 1,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "http://localhost:3000/api/upload",
+                "sendBody": true,
+                "contentType": "multipart-form-data",
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "file",
+                            "parameterType": "formBinaryData",
+                            "inputDataFieldName": "data"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Upload to NextJS",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                900,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Start": {
+            "main": [
+                [
+                    {
+                        "node": "OpenRouter Image Gen",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "OpenRouter Image Gen": {
+            "main": [
+                [
+                    {
+                        "node": "Convert Base64 to Binary",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Convert Base64 to Binary": {
+            "main": [
+                [
+                    {
+                        "node": "Upload to NextJS",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
