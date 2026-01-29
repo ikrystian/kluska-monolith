@@ -27,6 +27,8 @@ export interface WorkoutSet {
   type: SetType;
   reps?: number;
   weight?: number;
+  weightUnit?: 'kg' | 'rpe';
+  rpe?: number;
   duration?: number;
   restTimeSeconds: number;
   completed?: boolean;
