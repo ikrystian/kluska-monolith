@@ -1,5 +1,9 @@
 import type { NextConfig } from 'next';
 
+const withPWA = require("@ducanh2912/next-pwa").default({
+  dest: "public",
+});
+
 const nextConfig: NextConfig = {
   /* config options here */
   allowedDevOrigins: ['http://83.168.88.80'],
@@ -35,4 +39,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withPWA(nextConfig);
