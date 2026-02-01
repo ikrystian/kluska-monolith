@@ -6,7 +6,6 @@ import {
   History,
   LayoutDashboard,
   LogOut,
-  User,
   Play,
   Library,
   Users,
@@ -106,7 +105,6 @@ export const athleteNavItems = [
 
 const trainerNavItems = [
   { href: '/trainer/dashboard', icon: LayoutDashboard, label: 'Panel Trenera' },
-  { href: '/trainer/command-center', icon: Gauge, label: 'Centrum Dowodzenia' },
   { href: '/trainer/my-athletes', icon: Users, label: 'Moi Sportowcy' },
   { href: '/trainer/surveys', icon: ClipboardList, label: 'Ankiety' },
   { href: '/trainer/schedule', icon: CalendarDays, label: 'Harmonogram' },
@@ -359,14 +357,7 @@ export function AppNav() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           )}
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip={{ children: 'Profil' }} isActive={pathname === profileHref} onClick={() => setOpenMobile(false)}>
-              <Link href={profileHref}>
-                <User />
-                <span>Profil</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip={{ children: 'Wyloguj' }} onClick={handleLogout}>
               <button>
@@ -376,7 +367,7 @@ export function AppNav() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <Link href={'/profile/' + userProfile?.id} className="flex items-center gap-3 p-2">
+        <Link href={profileHref} className="flex items-center gap-3 p-2">
           <Avatar className="h-10 w-10">
             {userProfile?.avatarUrl ? (
               <AvatarImage src={userProfile.avatarUrl} alt="Awatar użytkownika" />

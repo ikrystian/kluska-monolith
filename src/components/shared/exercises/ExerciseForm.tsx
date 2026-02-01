@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -107,6 +107,35 @@ export function ExerciseFormDialog({
       description: exercise?.description || '',
     },
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      if (exercise) {
+        form.reset({
+          name: exercise.name || '',
+          mainMuscleGroups: exercise.mainMuscleGroups?.map(mg => mg.name) ||
+            (exercise.muscleGroup ? [exercise.muscleGroup] : []),
+          secondaryMuscleGroups: exercise.secondaryMuscleGroups?.map(mg => mg.name) || [],
+          instructions: exercise.instructions || exercise.description || '',
+          mediaUrl: exercise.mediaUrl || exercise.image || '',
+          type: exercise.type || 'weight',
+          description: exercise.description || '',
+        });
+        setUploadedImageUrl(exercise.mediaUrl || exercise.image || '');
+      } else {
+        form.reset({
+          name: '',
+          mainMuscleGroups: [],
+          secondaryMuscleGroups: [],
+          instructions: '',
+          mediaUrl: '',
+          type: 'weight',
+          description: '',
+        });
+        setUploadedImageUrl('');
+      }
+    }
+  }, [exercise, isOpen, form]);
 
   const handleFormSubmit = async (data: ExerciseFormData) => {
     // Include the uploaded image URL

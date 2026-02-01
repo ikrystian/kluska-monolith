@@ -64,7 +64,7 @@ export default function RunningPage() {
 
   const { data: runningSessions, isLoading, refetch } = useCollection<RunningSession>(
     user ? 'runningSessions' : null,
-    { userId: user?.uid },
+    { ownerId: user?.uid },
     { sort: { date: -1 } }
   );
 
@@ -107,7 +107,7 @@ export default function RunningPage() {
       duration: data.duration,
       avgPace: avgPace,
       notes: data.notes,
-      userId: user.uid,
+      ownerId: user.uid,
     };
 
     try {
@@ -199,11 +199,11 @@ export default function RunningPage() {
         </Dialog>
       </div>
 
-       <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard title="Wszystkie biegi" value={stats.totalRuns.toString()} icon={Footprints} isLoading={isLoading} />
-          <StatCard title="Łączny dystans" value={`${stats.totalDistance.toFixed(2)} km`} icon={Route} isLoading={isLoading} />
-          <StatCard title="Całkowity czas" value={`${Math.round(stats.totalDuration)} min`} icon={Timer} isLoading={isLoading} />
-          <StatCard title="Średnie tempo" value={formatPace(stats.overallAvgPace)} icon={TrendingUp} isLoading={isLoading} />
+      <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard title="Wszystkie biegi" value={stats.totalRuns.toString()} icon={Footprints} isLoading={isLoading} />
+        <StatCard title="Łączny dystans" value={`${stats.totalDistance.toFixed(2)} km`} icon={Route} isLoading={isLoading} />
+        <StatCard title="Całkowity czas" value={`${Math.round(stats.totalDuration)} min`} icon={Timer} isLoading={isLoading} />
+        <StatCard title="Średnie tempo" value={formatPace(stats.overallAvgPace)} icon={TrendingUp} isLoading={isLoading} />
       </div>
 
       <Card>
@@ -249,8 +249,8 @@ export default function RunningPage() {
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center">
                     <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                        <Footprints className="h-8 w-8" />
-                        <span>Nie zarejestrowano jeszcze żadnych biegów.</span>
+                      <Footprints className="h-8 w-8" />
+                      <span>Nie zarejestrowano jeszcze żadnych biegów.</span>
                     </div>
                   </TableCell>
                 </TableRow>

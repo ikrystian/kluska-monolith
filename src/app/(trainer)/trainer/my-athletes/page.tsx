@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { PlusCircle, Search, User as UserIcon, AlertTriangle, Trash2, Loader2 } from 'lucide-react';
+import { PlusCircle, Search, User as UserIcon, AlertTriangle, Trash2, Loader2, Calendar, Activity, Dumbbell, Ruler, Weight, Users, TrendingUp, CheckCircle, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -59,6 +59,9 @@ import {
 import { Label } from "@/components/ui/label"
 import { Utensils } from 'lucide-react';
 
+type Gender = 'male' | 'female' | 'other';
+type TrainingLevelType = 'beginner' | 'intermediate' | 'advanced';
+
 interface UserProfile {
   id: string;
   name: string;
@@ -66,6 +69,20 @@ interface UserProfile {
   role: 'athlete' | 'trainer' | 'admin';
   trainerId?: string;
   assignedDietPlanId?: string;
+  gender?: Gender;
+  dateOfBirth?: Date;
+  height?: number;
+  weight?: number;
+  trainingLevel?: TrainingLevelType;
+  onboardingCompleted?: boolean;
+  createdAt?: Date;
+  avatarUrl?: string;
+}
+
+interface AthleteStats {
+  totalWorkouts: number;
+  lastWorkoutDate: string | null;
+  lastCheckInDate: string | null;
 }
 
 
@@ -80,6 +97,7 @@ type FoundUser = {
   name: string;
   email: string;
   role: string;
+  avatarUrl?: string;
 };
 
 interface DietPlan {
@@ -105,11 +123,41 @@ export default function MyAthletesPage() {
   const [assigningDietId, setAssigningDietId] = useState<string | null>(null);
   const [isDietDialogOpen, setIsDietDialogOpen] = useState(false);
   const [currentAthleteId, setCurrentAthleteId] = useState<string | null>(null);
+  const [athleteStats, setAthleteStats] = useState<Record<string, AthleteStats>>({});
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
   const router = useRouter();
+
+  const avatarImage = placeholderImages.find((img) => img.id === 'avatar-male');
+
+  // Get current user profile
+  const { data: userProfile, isLoading: userProfileLoading } = useDoc<UserProfile>('users', user?.uid || null);
+
+  // Determine if we should fetch athletes
+  // Only fetch when userProfile is loaded and user is a trainer
+  const shouldFetchAthletes = !userProfileLoading && user?.uid && userProfile?.role === 'trainer';
+
+  // Get all users with role 'athlete' and trainerId matching current user
+  // Pass null as collection to skip fetching when conditions aren't met
+  const { data: athletes, isLoading: athletesLoading, refetch: refetchAthletes } = useCollection<UserProfile>(
+    shouldFetchAthletes ? 'users' : null,
+    { role: 'athlete', trainerId: user?.uid }
+  );
+
+  const form = useForm<SearchFormValues>({
+    resolver: zodResolver(searchSchema),
+    defaultValues: { email: '' },
+  });
 
   useEffect(() => {
     fetchDiets();
   }, []);
+
+  useEffect(() => {
+    if (athletes && athletes.length > 0) {
+      fetchAthleteStats();
+    }
+  }, [athletes]);
 
   const fetchDiets = async () => {
     try {
@@ -120,6 +168,24 @@ export default function MyAthletesPage() {
       }
     } catch (error) {
       console.error('Error fetching diets:', error);
+    }
+  };
+
+  const fetchAthleteStats = async () => {
+    if (!athletes || athletes.length === 0) return;
+
+    setStatsLoading(true);
+    try {
+      const athleteIds = athletes.map(a => a.id).join(',');
+      const res = await fetch(`/api/trainer/athletes-stats?athleteIds=${athleteIds}`);
+      const data = await res.json();
+      if (data.stats) {
+        setAthleteStats(data.stats);
+      }
+    } catch (error) {
+      console.error('Error fetching athlete stats:', error);
+    } finally {
+      setStatsLoading(false);
     }
   };
 
@@ -202,26 +268,7 @@ export default function MyAthletesPage() {
     return conversation?.unreadCount?.[user.uid] || 0;
   };
 
-  const avatarImage = placeholderImages.find((img) => img.id === 'avatar-male');
 
-  // Get current user profile
-  const { data: userProfile, isLoading: userProfileLoading } = useDoc<UserProfile>('users', user?.uid || null);
-
-  // Determine if we should fetch athletes
-  // Only fetch when userProfile is loaded and user is a trainer
-  const shouldFetchAthletes = !userProfileLoading && user?.uid && userProfile?.role === 'trainer';
-
-  // Get all users with role 'athlete' and trainerId matching current user
-  // Pass null as collection to skip fetching when conditions aren't met
-  const { data: athletes, isLoading: athletesLoading, refetch: refetchAthletes } = useCollection<UserProfile>(
-    shouldFetchAthletes ? 'users' : null,
-    { role: 'athlete', trainerId: user?.uid }
-  );
-
-  const form = useForm<SearchFormValues>({
-    resolver: zodResolver(searchSchema),
-    defaultValues: { email: '' },
-  });
 
   const handleSearch = async ({ email }: SearchFormValues) => {
     // Trenerzy mogą wyszukiwać sportowców
@@ -332,13 +379,73 @@ export default function MyAthletesPage() {
     }
   };
 
+  // Utility functions
+  const calculateAge = (dateOfBirth?: Date): number | null => {
+    if (!dateOfBirth) return null;
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const formatDate = (date: string | null): string => {
+    if (!date) return 'Brak';
+    const d = new Date(date);
+    return d.toLocaleDateString('pl-PL', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const getTrainingLevelLabel = (level?: TrainingLevelType): string => {
+    if (!level) return 'Nieokreślony';
+    const labels: Record<TrainingLevelType, string> = {
+      beginner: 'Początkujący',
+      intermediate: 'Średniozaawansowany',
+      advanced: 'Zaawansowany'
+    };
+    return labels[level];
+  };
+
+  const getTrainingLevelVariant = (level?: TrainingLevelType): 'default' | 'secondary' | 'outline' => {
+    if (!level) return 'outline';
+    const variants: Record<TrainingLevelType, 'default' | 'secondary' | 'outline'> = {
+      beginner: 'secondary',
+      intermediate: 'default',
+      advanced: 'default'
+    };
+    return variants[level];
+  };
+
+  const getGenderLabel = (gender?: Gender): string => {
+    if (!gender) return 'Nieokreślona';
+    const labels: Record<Gender, string> = {
+      male: 'Mężczyzna',
+      female: 'Kobieta',
+      other: 'Inna'
+    };
+    return labels[gender];
+  };
+
 
   return (
     <div className="container mx-auto p-4 md:p-8">
-      <h1 className="mb-6 font-headline text-3xl font-bold">Moi Sportowcy</h1>
-      <div className="grid gap-8 md:grid-cols-2">
-        {/* Add Athlete Card */}
-        <Card>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="font-headline text-3xl font-bold">Moi Sportowcy</h1>
+        <Button
+          onClick={() => setShowAddForm(!showAddForm)}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          {showAddForm ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          {showAddForm ? 'Ukryj formularz' : 'Dodaj sportowca'}
+        </Button>
+      </div>
+
+      {/* Add Athlete Card - Collapsible */}
+      {showAddForm && (
+        <Card className="mb-8">
           <CardHeader>
             <CardTitle className="font-headline">Dodaj Nowego Sportowca</CardTitle>
             <CardDescription>
@@ -381,7 +488,7 @@ export default function MyAthletesPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <Avatar>
-                      {avatarImage && <AvatarImage src={avatarImage.imageUrl} alt={foundUser.name} />}
+                      <AvatarImage src={foundUser.avatarUrl || avatarImage?.imageUrl} alt={foundUser.name} />
                       <AvatarFallback>
                         {foundUser.name.charAt(0).toUpperCase()}
                       </AvatarFallback>
@@ -400,35 +507,56 @@ export default function MyAthletesPage() {
             )}
           </CardContent>
         </Card>
+      )}
 
-        {/* Assigned Athletes List */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-headline">Przypisani Sportowcy</CardTitle>
-            <CardDescription>
-              Lista sportowców, którymi obecnie zarządzasz.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {athletesLoading ? (
-              <p>Ładowanie listy sportowców...</p>
-            ) : athletes && athletes.length > 0 ? (
-              <ul className="space-y-3">
-                {athletes.map((athlete: UserProfile) => {
-                  const unreadCount = getUnreadCount(athlete.id);
-                  return (
-                    <li key={athlete.id} className="flex items-center justify-between rounded-md border p-3">
+      {/* Athletes List - Full Width */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Przypisani Sportowcy ({athletes?.length || 0})</h2>
+        </div>
+
+        {athletesLoading ? (
+          <Card className="p-8">
+            <p className="text-center text-muted-foreground">Ładowanie listy sportowców...</p>
+          </Card>
+        ) : athletes && athletes.length > 0 ? (
+          <div className="space-y-4">
+            {athletes.map((athlete: UserProfile) => {
+              const unreadCount = getUnreadCount(athlete.id);
+              const stats = athleteStats[athlete.id];
+              const age = calculateAge(athlete.dateOfBirth);
+
+              return (
+                <Card key={athlete.id} className="hover:shadow-lg transition-shadow">
+                  <CardContent className="p-6">
+                    {/* Header Section */}
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
                       <div className="flex items-center gap-4">
-                        <Avatar>
-                          {avatarImage && <AvatarImage src={avatarImage.imageUrl} alt={athlete.name} />}
-                          <AvatarFallback>{athlete.name.charAt(0).toUpperCase()}</AvatarFallback>
+                        <Avatar className="h-14 w-14">
+                          <AvatarImage src={athlete.avatarUrl || avatarImage?.imageUrl} alt={athlete.name} />
+                          <AvatarFallback className="text-lg">{athlete.name.charAt(0).toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-semibold">{athlete.name}</p>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-lg">{athlete.name}</h3>
+                            {athlete.onboardingCompleted ? (
+                              <Badge variant="default" className="gap-1">
+                                <CheckCircle className="h-3 w-3" />
+                                Onboarding
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="gap-1">
+                                <XCircle className="h-3 w-3" />
+                                Brak onboardingu
+                              </Badge>
+                            )}
+                          </div>
                           <p className="text-sm text-muted-foreground">{athlete.email}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap items-center gap-2">
                         <Button variant="ghost" size="icon" onClick={() => handleChat(athlete)} className="relative">
                           <MessageSquare className="h-4 w-4" />
                           {unreadCount > 0 && (
@@ -436,6 +564,9 @@ export default function MyAthletesPage() {
                               {unreadCount}
                             </Badge>
                           )}
+                        </Button>
+                        <Button asChild variant="outline" size="sm">
+                          <Link href={`/profile/${athlete.id}`}>Profil publiczny</Link>
                         </Button>
                         <Button asChild variant="outline" size="sm">
                           <Link href={`/trainer/my-athletes/${athlete.id}`}>Zobacz Profil</Link>
@@ -466,21 +597,116 @@ export default function MyAthletesPage() {
                           </AlertDialogContent>
                         </AlertDialog>
                       </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center">
-                <UserIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-xl font-semibold">Brak sportowców</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Nie masz jeszcze przypisanych żadnych sportowców. Użyj formularza, aby ich dodać.
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mt-4 pt-4 border-t">
+                      {/* Personal Info */}
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                          <Users className="h-3 w-3" />
+                          <span>Wiek</span>
+                        </div>
+                        <p className="font-medium">{age ? `${age} lat` : 'N/A'}</p>
+                      </div>
+
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                          <UserIcon className="h-3 w-3" />
+                          <span>Płeć</span>
+                        </div>
+                        <p className="font-medium text-sm">{getGenderLabel(athlete.gender)}</p>
+                      </div>
+
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                          <TrendingUp className="h-3 w-3" />
+                          <span>Poziom</span>
+                        </div>
+                        <Badge variant={getTrainingLevelVariant(athlete.trainingLevel)} className="w-fit text-xs">
+                          {getTrainingLevelLabel(athlete.trainingLevel)}
+                        </Badge>
+                      </div>
+
+                      {/* Physical Stats */}
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                          <Ruler className="h-3 w-3" />
+                          <span>Wzrost</span>
+                        </div>
+                        <p className="font-medium">{athlete.height ? `${athlete.height} cm` : 'N/A'}</p>
+                      </div>
+
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                          <Weight className="h-3 w-3" />
+                          <span>Waga</span>
+                        </div>
+                        <p className="font-medium">{athlete.weight ? `${athlete.weight} kg` : 'N/A'}</p>
+                      </div>
+
+                      {/* Activity Stats */}
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                          <Dumbbell className="h-3 w-3" />
+                          <span>Treningi</span>
+                        </div>
+                        <p className="font-medium">
+                          {statsLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            stats?.totalWorkouts || 0
+                          )}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Additional Activity Info */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 pt-4 border-t">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Activity className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Ostatni trening:</span>
+                        <span className="font-medium">
+                          {statsLoading ? (
+                            <Loader2 className="h-3 w-3 animate-spin inline" />
+                          ) : (
+                            formatDate(stats?.lastWorkoutDate || null)
+                          )}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-sm">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Ostatni check-in:</span>
+                        <span className="font-medium">
+                          {statsLoading ? (
+                            <Loader2 className="h-3 w-3 animate-spin inline" />
+                          ) : (
+                            formatDate(stats?.lastCheckInDate || null)
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center">
+              <UserIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-4 text-xl font-semibold">Brak sportowców</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Nie masz jeszcze przypisanych żadnych sportowców. Użyj formularza, aby ich dodać.
+              </p>
+              <Button onClick={() => setShowAddForm(true)} className="mt-4">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Dodaj pierwszego sportowca
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <Dialog open={isDietDialogOpen} onOpenChange={setIsDietDialogOpen}>

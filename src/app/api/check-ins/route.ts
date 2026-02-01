@@ -5,6 +5,7 @@ import dbConnect from '@/lib/db';
 import { WeeklyCheckIn } from '@/models/WeeklyCheckIn';
 import { User } from '@/models/User';
 import { Notification } from '@/models/Notification';
+import { BodyMeasurement } from '@/models/BodyMeasurement';
 
 // GET - List check-ins
 export async function GET(request: NextRequest) {
@@ -44,6 +45,19 @@ export async function GET(request: NextRequest) {
             .limit(limit)
             .lean();
 
+        // Get all measurement IDs and fetch measurements
+        const measurementIds = checkIns
+            .map((c: any) => c.measurementId)
+            .filter(Boolean);
+
+        const measurements = measurementIds.length > 0
+            ? await BodyMeasurement.find({ _id: { $in: measurementIds } }).lean()
+            : [];
+
+        const measurementMap = new Map(
+            measurements.map((m: any) => [m._id.toString(), m])
+        );
+
         // Enrich with athlete names for trainers
         let enrichedCheckIns = checkIns;
         if ((user as any).role === 'trainer') {
@@ -53,18 +67,34 @@ export async function GET(request: NextRequest) {
 
             enrichedCheckIns = checkIns.map((c: any) => {
                 const athlete = athleteMap.get(c.athleteId);
+                const measurement = c.measurementId ? measurementMap.get(c.measurementId) : null;
+
                 return {
                     ...c,
                     id: c._id.toString(),
                     athleteName: athlete?.name || 'Nieznany',
                     athleteAvatarUrl: athlete?.avatarUrl,
+                    measurements: measurement ? {
+                        weight: measurement.weight,
+                        circumferences: measurement.circumferences,
+                        photoURLs: measurement.photoURLs,
+                    } : undefined,
                 };
             });
         } else {
-            enrichedCheckIns = checkIns.map((c: any) => ({
-                ...c,
-                id: c._id.toString(),
-            }));
+            enrichedCheckIns = checkIns.map((c: any) => {
+                const measurement = c.measurementId ? measurementMap.get(c.measurementId) : null;
+
+                return {
+                    ...c,
+                    id: c._id.toString(),
+                    measurements: measurement ? {
+                        weight: measurement.weight,
+                        circumferences: measurement.circumferences,
+                        photoURLs: measurement.photoURLs,
+                    } : undefined,
+                };
+            });
         }
 
         return NextResponse.json({ checkIns: enrichedCheckIns });

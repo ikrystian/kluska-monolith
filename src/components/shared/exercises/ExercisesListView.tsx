@@ -356,6 +356,8 @@ export function ExercisesListView(props: ExercisesListViewProps) {
                     onDelete={handleDelete}
                     onShowProgress={handleShowProgress}
                     onClick={handleShowDetail}
+                    allowNonOwnerEdit={role === 'admin'}
+                    allowNonOwnerDelete={role === 'admin'}
                   />
                 </div>
               );

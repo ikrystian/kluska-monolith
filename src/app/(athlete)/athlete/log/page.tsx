@@ -196,7 +196,7 @@ function WorkoutBuilderView({ initialData, onStart, onCancel, allExercises, isLo
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-12rem)] md:h-auto relative">
+    <div className="flex flex-col h-[calc(100vh-12rem)] md:h-[calc(100vh-2rem)]  relative">
       <div className="flex items-center justify-between mb-6">
         <Button variant="ghost" onClick={onCancel} className="p-0 hover:bg-transparent">
           <ArrowLeft className="mr-2 h-4 w-4" /> Wróć
@@ -701,7 +701,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   const exerciseDetails = allExercises?.find(ex => ex.id === selectedExerciseId);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-12rem)] md:h-auto relative">
+    <div className="flex flex-col h-[calc(100vh-12rem)] md:h-[calc(100vh-8rem)]  relative">
       <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(() => setIsFinished(true), (errors) => {
           console.error("Validation errors:", errors);
@@ -767,7 +767,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
           ) : (
             <>
               {/* List View - Scrollable */}
-              <div className="flex-1 overflow-y-auto pb-24 px-1 scrollbar-hide">
+              <div className="flex-1 overflow-y-auto pb-0 px-1 scrollbar-hide">
                 {currentExercise ? (
                   <div className={newExerciseId === currentExercise.exerciseId ? 'animate-slide-in-up' : ''}>
                     <ExerciseCard
@@ -788,11 +788,11 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
                 )}
 
                 {/* Spacer for bottom bar */}
-                <div className="h-20"></div>
+                <div className="h-10"></div>
               </div>
 
               {/* Bottom Navigation Bar - Only for list view */}
-              <div className="fixed bottom-16 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t p-4 flex justify-between items-center z-50 md:absolute md:rounded-b-lg">
+              <div className="fixed bottom-16 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t p-4 flex justify-between items-center z-50 md:relative md:rounded-b-lg">
                 <Button
                   type="button"
                   variant="ghost"

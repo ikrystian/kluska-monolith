@@ -39,6 +39,8 @@ export interface ExerciseCardProps {
   canDelete: boolean;
   showProgress: boolean;
   showOwnerBadge: boolean;
+  allowNonOwnerEdit?: boolean;
+  allowNonOwnerDelete?: boolean;
   onEdit: (exercise: Exercise) => void;
   onDelete: (exercise: Exercise) => void;
   onShowProgress: (exercise: Exercise) => void;
