@@ -40,7 +40,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PlusCircle, Loader2, Weight, Ruler, BarChart, Armchair, Upload, Trash2, Camera } from 'lucide-react';
+import { PlusCircle, Loader2, Weight, Ruler, BarChart, Armchair, Upload, Trash2, Camera, Info } from 'lucide-react';
 import { useUploadThing } from '@/lib/uploadthing';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useCreateDoc, useUser } from '@/lib/db-hooks';
@@ -50,6 +50,8 @@ import { Label } from '@/components/ui/label';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import Link from 'next/link';
 
 
 const measurementSchema = z.object({
@@ -150,6 +152,11 @@ export default function MeasurementsPage() {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [photosToUpload, setPhotosToUpload] = useState<File[]>([]);
+
+  // Photo viewer modal state
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
 
   const { startUpload, isUploading } = useUploadThing("imageUploader", {
     onClientUploadComplete: (res) => {
@@ -383,6 +390,18 @@ export default function MeasurementsPage() {
         </Dialog>
       </div>
 
+      {/* Info Alert */}
+      <Alert className="mb-6">
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          Możesz również dodawać pomiary ciała w ramach{' '}
+          <Link href="/athlete/check-in" className="font-medium underline underline-offset-4">
+            cotygodniowych check-inów
+          </Link>
+          .
+        </AlertDescription>
+      </Alert>
+
       <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <StatCard title="Waga" value={latestMeasurement?.weight?.toFixed(1) || ' - '} unit="kg" icon={Weight} isLoading={combinedLoading} />
         <StatCard title="Talia" value={latestMeasurement?.circumferences?.waist?.toFixed(1) || ' - '} unit="cm" icon={Ruler} isLoading={combinedLoading} />
@@ -459,7 +478,14 @@ export default function MeasurementsPage() {
                     <TableCell className="font-medium">{format(new Date(session.date), 'd MMM yyyy', { locale: pl })}</TableCell>
                     <TableCell>
                       {session.photoURLs && session.photoURLs.length > 0 ? (
-                        <div className="flex -space-x-2 overflow-hidden">
+                        <div
+                          className="flex -space-x-2 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => {
+                            setSelectedPhotos(session.photoURLs!);
+                            setSelectedPhotoIndex(0);
+                            setViewerOpen(true);
+                          }}
+                        >
                           {session.photoURLs.slice(0, 3).map((url, i) => (
                             <div key={i} className="relative h-8 w-8 rounded-full border-2 border-background">
                               <Image src={url} alt="Miniaturka" layout="fill" objectFit="cover" className="rounded-full" />
@@ -500,6 +526,44 @@ export default function MeasurementsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Photo Viewer Modal */}
+      <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Zdjęcia pomiarów</DialogTitle>
+            <DialogDescription>
+              Zdjęcie {selectedPhotoIndex + 1} z {selectedPhotos.length}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="relative w-full">
+            {selectedPhotos.length > 0 && (
+              <Carousel className="w-full" opts={{ startIndex: selectedPhotoIndex }}>
+                <CarouselContent>
+                  {selectedPhotos.map((url, index) => (
+                    <CarouselItem key={index}>
+                      <div className="relative aspect-video w-full">
+                        <Image
+                          src={url}
+                          alt={`Zdjęcie ${index + 1}`}
+                          fill
+                          className="rounded-md object-contain"
+                        />
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                {selectedPhotos.length > 1 && (
+                  <>
+                    <CarouselPrevious />
+                    <CarouselNext />
+                  </>
+                )}
+              </Carousel>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

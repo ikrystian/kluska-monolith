@@ -593,7 +593,7 @@ export default function TrainerDashboardPage() {
                       {ccData.missedWorkouts.map((athlete) => (
                         <div
                           key={athlete.id}
-                          className="flex items-center justify-between rounded-lg border border-orange-200 bg-orange-50 p-4"
+                          className="flex items-center justify-between rounded-lg border border-orange-200/5 bg-orange-500/5 p-4"
                         >
                           <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10">

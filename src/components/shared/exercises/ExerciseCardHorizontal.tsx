@@ -29,13 +29,15 @@ export function ExerciseCardHorizontal({
   canDelete,
   showProgress,
   showOwnerBadge,
+  allowNonOwnerEdit = true,
+  allowNonOwnerDelete = true,
   onEdit,
   onDelete,
   onShowProgress,
 }: ExerciseCardProps) {
   const isOwner = exercise.ownerId === userId;
-  const canEditThis = canEdit && isOwner;
-  const canDeleteThis = canDelete && isOwner;
+  const canEditThis = canEdit && (isOwner || allowNonOwnerEdit);
+  const canDeleteThis = canDelete && (isOwner || allowNonOwnerDelete);
   const showActions = canEditThis || canDeleteThis || showProgress;
 
   const isVideoUrl = (url: string | undefined) => {
@@ -56,7 +58,7 @@ export function ExerciseCardHorizontal({
   return (
     <div className="flex items-stretch bg-card border rounded-lg overflow-hidden transition-all hover:shadow-md h-[120px] md:h-[120px] sm:h-[100px]">
       {/* Image Section */}
-      <div className="relative w-[100px] h-full md:w-[100px] sm:w-[80px] flex-shrink-0 bg-muted flex items-center justify-center">
+      <div className="relative w-[160px] h-full  sm:w-[80px] flex-shrink-0 bg-muted flex items-center justify-center">
         {(exercise.mediaUrl || exercise.image) ? (
           isVideoUrl(exercise.mediaUrl || exercise.image) ? (
             <div className="relative w-full h-full bg-black flex items-center justify-center">
@@ -64,11 +66,11 @@ export function ExerciseCardHorizontal({
             </div>
           ) : (
             <Image
-              src={''}
+              src={exercise.mediaUrl || exercise.image || ''}
               alt={exercise.name}
               fill
               className="object-cover"
-              sizes="100px"
+              sizes="160px"
             />
           )
         ) : (

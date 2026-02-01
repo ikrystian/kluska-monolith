@@ -294,14 +294,12 @@ function ActivityHeatmap({ dates }: { dates: string[] }) {
                     ))}
                 </div>
                 <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
-                    <span>Mniej</span>
+                    <span>Dni bez treningu</span>
                     <div className="flex gap-1">
-                        <div className="w-3 h-3 rounded-sm bg-muted/50" />
-                        <div className="w-3 h-3 rounded-sm bg-primary/30" />
-                        <div className="w-3 h-3 rounded-sm bg-primary/60" />
+                        <div className="w-3 h-3 rounded-sm bg-muted/30" />
                         <div className="w-3 h-3 rounded-sm bg-primary" />
                     </div>
-                    <span>Więcej</span>
+                    <span>Dni treningowe</span>
                 </div>
             </div>
         </TooltipProvider>

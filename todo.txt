@@ -1,20 +1,18 @@
 BRAK FUNKCJI ADMINA DO ZARZADZANIA PONIZSZYMI DANYMI:
 
-1.
-2. AchievementBadges (Odznaki) - brak panelu CRUD
-3. BodyMeasurements (Pomiary ciała) - brak wglądu i edycji pomiarów użytkowników
-4. Conversations (Konwersacje) - brak podglądu rozmów
-5. CustomProducts (Własne produkty) - brak zarządzania produktami dodanymi przez użytkowników
+ BodyMeasurements (Pomiary ciała) - brak wglądu i edycji pomiarów użytkowników
+ Conversations (Konwersacje) - brak podglądu rozmów
+ CustomProducts (Własne produkty) - brak zarządzania produktami dodanymi przez użytkowników
 6. DietPlans (Plany dietetyczne) - brak zarządzania planami
-7. GamificationProfiles - brak wglądu w profile grywalizacji
-8. Goals (Cele) - brak zarządzania celami użytkowników
-9. Habits (Nawyki) - brak zarządzania nawykami
-10. HabitLogs (Logi nawyków) - brak wglądu w historię nawyków
-11. Meals (Posiłki) - brak zarządzania posiłkami w dzienniku
-12. Messages (Wiadomości) - brak wglądu w poszczególne wiadomości
-13. MuscleGroups (Grupy mięśniowe) - brak zarządzania słownikiem grup mięśniowych
-14. Notifications (Powiadomienia) - brak systemu zarządzania powiadomieniami systemowymi
-15. NutritionGoals (Cele żywieniowe) - brak edycji celów makro/kcal
+ GamificationProfiles - brak wglądu w profile grywalizacji
+ Goals (Cele) - brak zarządzania celami użytkowników
+ Habits (Nawyki) - brak zarządzania nawykami
+. HabitLogs (Logi nawyków) - brak wglądu w historię nawyków
+ Meals (Posiłki) - brak zarządzania posiłkami w dzienniku
+ Messages (Wiadomości) - brak wglądu w poszczególne wiadomości
+ MuscleGroups (Grupy mięśniowe) - brak zarządzania słownikiem grup mięśniowych
+ Notifications (Powiadomienia) - brak systemu zarządzania powiadomieniami systemowymi
+NutritionGoals (Cele żywieniowe) - brak edycji celów makro/kcal
 16. PersonalRecords (Rekordy życiowe) - brak wglądu i weryfikacji rekordów
 17. PlannedWorkouts (Zaplanowane treningi) - brak zarządzania
 18. Rewards (Nagrody) - brak systemu zarządzania nagrodami w grywalizacji

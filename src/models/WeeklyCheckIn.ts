@@ -19,6 +19,7 @@ export interface IWeeklyCheckIn extends Document {
     submittedAt?: Date;          // Null = not filled yet
     status: CheckInStatus;
     responses?: ICheckInResponses;
+    measurementId?: string;      // Reference to BodyMeasurement document
     trainerNotes?: string;
     createdAt: Date;
     updatedAt: Date;
@@ -48,6 +49,7 @@ const WeeklyCheckInSchema = new Schema<IWeeklyCheckIn>(
             default: 'pending',
         },
         responses: { type: CheckInResponsesSchema },
+        measurementId: { type: String },
         trainerNotes: { type: String },
     },
     {

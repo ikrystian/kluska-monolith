@@ -115,7 +115,7 @@ export function SetInfoSlide({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor={`weight-${setIndex}`} className="text-sm font-medium">
-                Użyty ciężar (kg)
+                Ciężar (kg)
               </Label>
               <Input
                 id={`weight-${setIndex}`}
@@ -132,7 +132,7 @@ export function SetInfoSlide({
             </div>
             <div className="space-y-2">
               <Label htmlFor={`reps-${setIndex}`} className="text-sm font-medium">
-                Wykonane powtórzenia
+                Powtórzenia
               </Label>
               <Input
                 id={`reps-${setIndex}`}
@@ -152,7 +152,7 @@ export function SetInfoSlide({
         return (
           <div className="space-y-2">
             <Label htmlFor={`reps-${setIndex}`} className="text-sm font-medium">
-              Wykonane powtórzenia
+              Powtórzenia
             </Label>
             <Input
               id={`reps-${setIndex}`}
