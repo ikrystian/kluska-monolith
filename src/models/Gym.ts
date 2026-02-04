@@ -51,7 +51,6 @@ const GymSchema = new Schema<IGym>(
 
 GymSchema.index({ name: 'text', address: 'text' });
 GymSchema.index({ 'location.lat': 1, 'location.lng': 1 });
-GymSchema.index({ cid: 1 });
 
 export const Gym: Model<IGym> =
   mongoose.models.Gym || mongoose.model<IGym>('Gym', GymSchema);

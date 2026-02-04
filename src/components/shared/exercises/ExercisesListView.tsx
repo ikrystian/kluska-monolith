@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Exercise, MuscleGroupName, MuscleGroup, WorkoutPlan } from '@/lib/types';
 import { useCollection, useUser, useUpdateDoc, useDeleteDoc, useCreateDoc } from '@/lib/db-hooks';
@@ -56,6 +56,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const [isBulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const [displayCount, setDisplayCount] = useState(10);
 
   // Fetch exercises based on role
   const getExerciseQuery = () => {
@@ -129,6 +130,11 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   });
 
   const muscleGroupOptions = Object.values(MuscleGroupName).map(name => ({ label: name, value: name }));
+
+  // Reset display count when search or filter changes
+  useEffect(() => {
+    setDisplayCount(10);
+  }, [searchTerm, selectedMuscleGroup]);
 
   // Handlers
   const handleEdit = (exercise: Exercise) => {
@@ -260,14 +266,39 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     }
   };
 
+  // Pagination: Show only displayCount exercises
+  const paginatedExercises = useMemo(() => {
+    return filteredExercises?.slice(0, displayCount) ?? [];
+  }, [filteredExercises, displayCount]);
+
+  const hasMore = (filteredExercises?.length ?? 0) > displayCount;
+
   // Virtualization setup
   const parentRef = useRef<HTMLDivElement>(null);
   const rowVirtualizer = useVirtualizer({
-    count: filteredExercises?.length ?? 0,
+    count: paginatedExercises.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 128, // 120px height + 8px gap
     overscan: 5,
   });
+
+  // Detect scroll to load more exercises
+  useEffect(() => {
+    const scrollElement = parentRef.current;
+    if (!scrollElement) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = scrollElement;
+      const scrolledToBottom = scrollHeight - scrollTop - clientHeight < 500;
+
+      if (scrolledToBottom && hasMore && !isLoading) {
+        setDisplayCount(prev => prev + 10);
+      }
+    };
+
+    scrollElement.addEventListener('scroll', handleScroll);
+    return () => scrollElement.removeEventListener('scroll', handleScroll);
+  }, [hasMore, isLoading]);
 
   return (
     <div className="container mx-auto p-4 md:p-8 h-full flex flex-col">
@@ -316,7 +347,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
             </div>
           ))}
         </div>
-      ) : filteredExercises && filteredExercises.length > 0 ? (
+      ) : paginatedExercises && paginatedExercises.length > 0 ? (
         <div
           ref={parentRef}
           className="flex-1 overflow-auto min-h-0"
@@ -331,7 +362,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
             }}
           >
             {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-              const exercise = filteredExercises[virtualRow.index];
+              const exercise = paginatedExercises[virtualRow.index];
               return (
                 <div
                   key={exercise.id}
