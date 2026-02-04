@@ -8,9 +8,9 @@ import glob
 import time
 
 # Constants
-API_KEY = "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"
+API_KEY = "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"
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "openai/gpt-5-nano"
+MODEL = "openai/gpt-4.1-mini"
 
 # Paths
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -19,27 +19,27 @@ OLD_DIR = os.path.join(SCRIPT_DIR, "old")
 
 # Muscle Group Mapping: Polish -> English (MuscleGroupName enum)
 MUSCLE_GROUP_MAPPING = {
-    "Plecy": "Back",
-    "Biceps": "Biceps",
-    "Łydki": "Calves",
-    "Klatka piersiowa": "Chest",
-    "Klatka": "Chest",
-    "Core": "Core",
-    "Przedramiona": "Forearms",
-    "Całe ciało": "Full Body",
-    "Pośladki": "Glutes",
-    "Uda tylne": "Hamstrings",
-    "Dolna część pleców": "Lower Back",
-    "Uda przednie": "Quads",
-    "Czwórogłowy uda": "Quads",
-    "Tylne barki": "Rear Delts",
-    "Barki": "Shoulders",
-    "Mięsień piszczelowy przedni": "Anterior Tibialis",
-    "Kaptur": "Traps",
-    "Triceps": "Triceps",
-    "Przywodziciele": "Adductors",
-    "Biodra": "Hips",
-    "Odwodziciele": "Abductors",
+    "Back" : "Plecy",
+    "Biceps" : "Biceps",
+    "Calves" : "Łydki",
+    "Chest" : "Klatka piersiowa",
+    "Chest" : "Klatka",
+    "Core" : "Core",
+    "Forearms" : "Przedramiona",
+    "Full Body" : "Całe ciało",
+    "Glutes" : "Pośladki",
+    "Hamstrings" : "Uda tylne",
+    "Lower Back" : "Dolna część pleców",
+    "Quads" : "Uda przednie",
+    "Quads" : "Czwórogłowy uda",
+    "Rear Delts" : "Tylne barki",
+    "Shoulders" : "Barki",
+    "Anterior Tibialis" : "Mięsień piszczelowy przedni",
+    "Traps" : "Kaptur",
+    "Triceps" : "Triceps",
+    "Adductors" : "Przywodziciele",
+    "Hips" : "Biodra",
+    "Abductors" : "Odwodziciele"
 }
 
 def get_images():
@@ -139,39 +139,51 @@ def main():
 
         # Construct the prompt
         prompt_text = """
-        JSON NA BYC W JEZYKU POLSKIM !
-przeanalizuj zdjecia i zwroc z nich odpowiedz w formacie w jezyku polskim - DOKLADNIE TAK JAK NA OBRAZKACH
-{
-"name": "Exercise Name",
-"mainMuscleGroups": [
-{ "name": "Muscle Name 1", "imageUrl": "optional-url" },
-{ "name": "Muscle Name 2" }
-],
-"secondaryMuscleGroups": [
-{ "name": "Secondary Muscle Name" }
-],
-"setup" : [
-    { "group": "Grip", "value": "Name of grip" }
-],
-"ownerId": "public",
-"instructions": "Step-by-step instructions...",
-"description": "Equipment details, grip type, etc.",
-"mediaUrl": "optional-video-or-image-url",
-"type": "weight" // Opcje: "weight" | "duration" | "reps" (Domyślnie: "weight")
+             ZASADY NADRZĘDNE:
+                1. ZWRÓĆ WSZYSTKIE WARTOŚCI Z OBRAZKÓW - NIE POMIJAJ ŻADNYCH INFORMACJI W JEZYKU POLSKIM.
+                2. NIE ZMIENIAJ, NIE INTERPRETUJ, NIE DODAWAJ NIC OD SIEBIE W JEZYKU POLSKIM.
+                3. PRZEPISZ DOKŁADNIE TO, CO WIDZISZ NA OBRAZKACH
+                4. ZWRÓĆ DANE W JĘZYKU POLSKIM
+                5. ZACHOWAJ STRUKTURĘ JSON DOKŁADNIE JAK W PRZYKŁADZIE 
 
-}
+                ZADANIE:
+                Przeanalizuj wszystkie dostarczone zdjęcia i wyekstrahuj z nich kompletne informacje o ćwiczeniu.
+                Zwróć odpowiedź w formacie JSON zgodnie z poniższym szablonem.
 
-w setup pogrupuj wartosci z taka sama grupa - rozpoznaj po pierwszym czlonie
-mainMuscleGroups[ ].name oraz secondaryMuscleGroups[].name to jedno z (po polsku):
-Plecy, Biceps, Łydki, Klatka piersiowa, Core, Przedramiona, Całe ciało, Pośladki,
-Uda tylne, Dolna część pleców, Uda przednie, Tylne barki, Barki,
-Mięsień piszczelowy przedni, Kaptur, Triceps, Przywodziciele, Biodra, Odwodziciele
+                WYMAGANA STRUKTURA JSON:
+                {
+                "name": "Nazwa ćwiczenia (w języku polskim)",
+                "mainMuscleGroups": [
+                    { "name": "Nazwa mięśnia głównego 1", "imageUrl": "url-jeśli-dostępny" },
+                    { "name": "Nazwa mięśnia głównego 2", "imageUrl": "url-jeśli-dostępny" }
+                ],
+                "secondaryMuscleGroups": [
+                    { "name": "Nazwa mięśnia pomocniczego 1" },
+                    { "name": "Nazwa mięśnia pomocniczego 2" }
+                ],
+                "setup": [
+                    { "group": "Chwyt", "value": "rodzaj chwytu (w języku polskim)" },
+                    { "group": "Pozycja", "value": "opis pozycji (w języku polskim)" },
+                    { "group": "Sprzęt", "value": "rodzaj sprzętu (w języku polskim)" },
+                    { "group": "Ustawienie", "value": "szczegóły ustawienia (w języku polskim)" }
+                ],
+                "ownerId": "public",
+                "instructions": "Krok po kroku instrukcje wykonania ćwiczenia (wszystkie kroki z obrazka) (w języku polskim)",
+                "description": "Szczegóły dotyczące sprzętu, typu chwytu, pozycji ciała itp. (wszystkie informacje z obrazka) (w języku polskim)",
+                "type": "weight"
+                }
 
-w sekcji target sa wpisane np Chest : Primary, Triceps secondary - wtedy mainMuscleGroups: [primary], secondaryMuscleGroups: [secondary]
+                WAŻNE UWAGI:
+                - W "setup" pogrupuj WSZYSTKIE dane konfiguracyjne z obrazka (chwyt, pozycja, sprzęt, ustawienia, itp.)
+                - W "instructions" umieść WSZYSTKIE kroki wykonania ćwiczenia
+                - W "mainMuscleGroups" i "secondaryMuscleGroups" wymień WSZYSTKIE widoczne mięśnie
+                - W "description" umieść WSZYSTKIE dodatkowe informacje opisowe
+                - "type" może być: "weight" | "duration" | "reps" (wybierz odpowiedni na podstawie obrazka)
+                - Jeśli jakaś sekcja jest pusta na obrazku, zwróć pustą tablicę [] lub pusty string ""
 
-pogrupuj dane w tabliy  setup[]
-Zwróć wszystkie wartosci z obrazka w JEZYKU POLSKIM (wartosci)
-WSZYSTKIE DANE JAKO ELEMENTY Z OBRAZKOW, NIE ZMIENIAJ ANI NIE DODAWAJ NIC OD SIEBIE!!!!
+                PRZYPOMNIENIE:
+                ZWRÓĆ WSZYSTKIE WARTOŚCI Z OBRAZKÓW - KAŻDY PUNKT, KAŻDĄ INFORMACJĘ! W JEZYKU POLSKIM.
+                NIE POMIJAJ ŻADNYCH SZCZEGÓŁÓW!
 """
 
         # Prepare message content
@@ -265,7 +277,7 @@ WSZYSTKIE DANE JAKO ELEMENTY Z OBRAZKOW, NIE ZMIENIAJ ANI NIE DODAWAJ NIC OD SIE
             time.sleep(5)
 
         # Brief pause between iterations
-        time.sleep(1)
+        time.sleep(30)
 
 if __name__ == "__main__":
     main()

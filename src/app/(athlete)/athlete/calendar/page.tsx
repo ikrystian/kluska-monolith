@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { format, addMinutes, isSameDay } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { CalendarDays, Clock, MapPin, User, CheckCircle } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, User, CheckCircle, Play } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -36,7 +37,7 @@ export default function CalendarPage() {
     );
     const { data: plannedWorkouts, isLoading: plannedLoading } = useCollection<PlannedWorkout>(
         user ? 'plannedWorkouts' : null,
-        { userId: user?.uid }
+        { ownerId: user?.uid }
     );
     const { data: exercises, isLoading: exercisesLoading } = useCollection<Exercise>('exercises');
 
@@ -295,29 +296,55 @@ export default function CalendarPage() {
                                 })}
 
                                 {/* Zaplanowane */}
-                                {selectedDayEvents.planned.map((plan, index) => (
-                                    <AccordionItem value={`planned-${index}`} key={plan.id} className="border rounded-lg px-2 md:px-3">
-                                        <AccordionTrigger className="py-3">
-                                            <div className="flex flex-col sm:flex-row sm:justify-between w-full pr-2 gap-1 sm:gap-2">
-                                                <div className="text-left min-w-0 flex-1">
-                                                    <p className="font-semibold text-sm truncate">{plan.workoutName}</p>
-                                                    <p className="text-xs text-muted-foreground">{plan.exercises.length} ćwiczeń</p>
+                                {selectedDayEvents.planned.map((plan, index) => {
+                                    const planDate = new Date(plan.date);
+                                    return (
+                                        <AccordionItem value={`planned-${index}`} key={plan.id} className="border rounded-lg px-2 md:px-3">
+                                            <AccordionTrigger className="py-3">
+                                                <div className="flex flex-col sm:flex-row sm:justify-between w-full pr-2 gap-1 sm:gap-2">
+                                                    <div className="text-left min-w-0 flex-1">
+                                                        <p className="font-semibold text-sm truncate">{plan.workoutName}</p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {format(planDate, 'HH:mm')} • {plan.exercises.length} ćwiczeń
+                                                        </p>
+                                                    </div>
+                                                    <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 text-xs shrink-0 self-start sm:self-center">Zaplanowano</Badge>
                                                 </div>
-                                                <Badge variant="secondary" className="bg-accent text-accent-foreground text-xs shrink-0 self-start sm:self-center">Zaplanowano</Badge>
-                                            </div>
-                                        </AccordionTrigger>
-                                        <AccordionContent>
-                                            <ul className="space-y-1">
-                                                {plan.exercises.slice(0, 4).map((ex, exIndex) => (
-                                                    <li key={exIndex} className="text-xs flex justify-between p-1.5 rounded bg-secondary/50">
-                                                        <span>{ex.name}</span>
-                                                        <span className="text-muted-foreground">{ex.sets} x {ex.reps}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </AccordionContent>
-                                    </AccordionItem>
-                                ))}
+                                            </AccordionTrigger>
+                                            <AccordionContent>
+                                                <div className="space-y-3 pb-2">
+                                                    <ul className="space-y-1">
+                                                        {plan.exercises.slice(0, 4).map((ex, exIndex) => (
+                                                            <li key={exIndex} className="text-xs flex justify-between p-1.5 rounded bg-secondary/50">
+                                                                <span>{ex.name}</span>
+                                                                <span className="text-muted-foreground">{ex.sets} x {ex.reps}</span>
+                                                            </li>
+                                                        ))}
+                                                        {plan.exercises.length > 4 && (
+                                                            <li className="text-xs text-muted-foreground text-center p-1.5">
+                                                                +{plan.exercises.length - 4} więcej...
+                                                            </li>
+                                                        )}
+                                                    </ul>
+                                                    {(plan as any).workoutId && (
+                                                        <div className="flex gap-2 pt-2">
+                                                            <Button size="sm" asChild>
+                                                                <Link href={`/athlete/log?workoutId=${(plan as any).workoutId}`}>
+                                                                    <Play className="mr-1 h-3 w-3" /> Rozpocznij
+                                                                </Link>
+                                                            </Button>
+                                                            <Button variant="outline" size="sm" asChild>
+                                                                <Link href={`/athlete/workouts/${(plan as any).workoutId}`}>
+                                                                    Szczegóły
+                                                                </Link>
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                    );
+                                })}
                             </Accordion>
                         )}
                     </CardContent>

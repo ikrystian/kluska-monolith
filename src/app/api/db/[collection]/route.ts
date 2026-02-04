@@ -29,7 +29,8 @@ import {
   Habit,
   HabitLog,
   Survey,
-  SurveyResponse
+  SurveyResponse,
+  StravaActivity
 } from '@/models';
 
 const modelMap: Record<string, any> = {
@@ -58,6 +59,7 @@ const modelMap: Record<string, any> = {
   habitlogs: HabitLog,
   surveys: Survey,
   surveyResponses: SurveyResponse,
+  stravaActivities: StravaActivity,
 };
 
 // GET - Fetch collection

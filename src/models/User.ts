@@ -27,6 +27,11 @@ export interface IUser extends Document {
   height?: number; // w cm
   weight?: number; // w kg
   trainingLevel?: TrainingLevelType;
+  // Strava integration
+  stravaAccessToken?: string;
+  stravaRefreshToken?: string;
+  stravaTokenExpiresAt?: Date;
+  stravaAthleteId?: string;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -55,6 +60,11 @@ const UserSchema = new Schema<IUser>(
     height: { type: Number }, // w cm
     weight: { type: Number }, // w kg
     trainingLevel: { type: String, enum: ['beginner', 'intermediate', 'advanced'] },
+    // Strava integration
+    stravaAccessToken: { type: String },
+    stravaRefreshToken: { type: String },
+    stravaTokenExpiresAt: { type: Date },
+    stravaAthleteId: { type: String },
   },
   {
     timestamps: true,

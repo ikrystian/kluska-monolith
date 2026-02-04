@@ -39,6 +39,11 @@ const workoutSetSchema = z.object({
         .min(0, 'Ciężar nie może być ujemny')
         .max(500, 'Maksymalnie 500 kg')
         .optional(),
+    weightUnit: z.enum(['kg', 'rpe']).optional(),
+    rpe: z.coerce.number()
+        .min(1, 'RPE minimum 1')
+        .max(10, 'RPE maksimum 10')
+        .optional(),
     duration: z.coerce.number()
         .min(0, 'Minimum 0 sekund')
         .max(3600, 'Maksymalnie 1 godzina')
@@ -46,6 +51,18 @@ const workoutSetSchema = z.object({
     restTimeSeconds: z.coerce.number()
         .min(0, 'Przerwa nie może być ujemna')
         .max(600, 'Maksymalnie 10 minut przerwy'),
+}).refine(data => {
+    // If weightUnit is 'rpe', ensure rpe is provided
+    if (data.weightUnit === 'rpe' && !data.rpe) {
+        return false;
+    }
+    // If weightUnit is 'kg', ensure weight is provided
+    if (data.weightUnit === 'kg' && data.weight === undefined) {
+        return false;
+    }
+    return true;
+}, {
+    message: 'Podaj wartość dla wybranej jednostki (kg lub RPE)',
 });
 
 const exerciseSeriesSchema = z.object({
@@ -123,6 +140,8 @@ export function EditWorkout({ workoutId, onSuccess, redirectPath }: EditWorkoutP
                         weight: set.weight,
                         duration: set.duration,
                         restTimeSeconds: set.restTimeSeconds || 60,
+                        weightUnit: set.weightUnit || 'kg',
+                        rpe: set.rpe,
                     })),
                 })),
             };
@@ -416,6 +435,7 @@ function ExerciseSeriesItem({
     onToggle: () => void
 }) {
     const [exerciseDialogOpen, setExerciseDialogOpen] = useState(false);
+    const [weightUnit, setWeightUnit] = useState<'kg' | 'rpe'>('kg');
     const { toast } = useToast();
     const { fields: setFields, append: appendSet, remove: removeSet } = useFieldArray({
         control: form.control,
@@ -433,7 +453,20 @@ function ExerciseSeriesItem({
         if (lastSet) {
             appendSet({ ...lastSet, type });
         } else {
-            appendSet({ type, reps: 10, weight: 0, restTimeSeconds: 60 });
+            const defaultSet: any = {
+                type,
+                reps: 10,
+                restTimeSeconds: 60,
+                weightUnit
+            };
+
+            if (weightUnit === 'kg') {
+                defaultSet.weight = 0;
+            } else {
+                defaultSet.rpe = 7;
+            }
+
+            appendSet(defaultSet);
         }
     };
 
@@ -578,6 +611,49 @@ function ExerciseSeriesItem({
                             </div>
                         </div>
 
+                        {selectedExerciseId && exerciseType === 'weight' && (
+                            <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-md">
+                                <Label className="text-xs text-muted-foreground">Jednostka:</Label>
+                                <div className="flex gap-1">
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant={weightUnit === 'kg' ? 'default' : 'outline'}
+                                        onClick={() => {
+                                            setWeightUnit('kg');
+                                            // Update all existing sets to use kg
+                                            const sets = form.getValues(`exerciseSeries.${index}.sets`);
+                                            sets.forEach((_: any, setIndex: number) => {
+                                                form.setValue(`exerciseSeries.${index}.sets.${setIndex}.weightUnit`, 'kg');
+                                            });
+                                        }}
+                                        className="h-7 px-3"
+                                    >
+                                        kg
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant={weightUnit === 'rpe' ? 'default' : 'outline'}
+                                        onClick={() => {
+                                            setWeightUnit('rpe');
+                                            // Update all existing sets to use RPE
+                                            const sets = form.getValues(`exerciseSeries.${index}.sets`);
+                                            sets.forEach((_: any, setIndex: number) => {
+                                                form.setValue(`exerciseSeries.${index}.sets.${setIndex}.weightUnit`, 'rpe');
+                                            });
+                                        }}
+                                        className="h-7 px-3"
+                                    >
+                                        RPE
+                                    </Button>
+                                </div>
+                                <span className="text-xs text-muted-foreground ml-2">
+                                    {weightUnit === 'kg' ? 'Kilogramy' : 'Rate of Perceived Exertion (1-10)'}
+                                </span>
+                            </div>
+                        )}
+
                         {selectedExerciseId && (
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center flex-wrap gap-2">
@@ -599,7 +675,9 @@ function ExerciseSeriesItem({
                                         <Label className="col-span-2 text-[10px] text-muted-foreground">Typ</Label>
                                         {exerciseType === 'weight' ? (
                                             <>
-                                                <Label className="col-span-2 text-[10px] text-muted-foreground">kg</Label>
+                                                <Label className="col-span-2 text-[10px] text-muted-foreground">
+                                                    {weightUnit === 'kg' ? 'kg' : 'RPE'}
+                                                </Label>
                                                 <Label className="col-span-2 text-[10px] text-muted-foreground">Powt.</Label>
                                             </>
                                         ) : exerciseType === 'reps' ? (
@@ -637,14 +715,31 @@ function ExerciseSeriesItem({
                                                 <>
                                                     <div className="col-span-1 md:col-span-2">
                                                         <div className="relative md:static">
-                                                            <Input
-                                                                type="number"
-                                                                step="0.5"
-                                                                className="h-8 text-xs text-center"
-                                                                placeholder="0"
-                                                                {...form.register(`exerciseSeries.${index}.sets.${setIndex}.weight`)}
-                                                            />
-                                                            <span className="md:hidden absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">kg</span>
+                                                            {weightUnit === 'kg' ? (
+                                                                <>
+                                                                    <Input
+                                                                        type="number"
+                                                                        step="0.5"
+                                                                        className="h-8 text-xs text-center"
+                                                                        placeholder="0"
+                                                                        {...form.register(`exerciseSeries.${index}.sets.${setIndex}.weight`)}
+                                                                    />
+                                                                    <span className="md:hidden absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">kg</span>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <Input
+                                                                        type="number"
+                                                                        step="0.5"
+                                                                        min="1"
+                                                                        max="10"
+                                                                        className="h-8 text-xs text-center"
+                                                                        placeholder="7"
+                                                                        {...form.register(`exerciseSeries.${index}.sets.${setIndex}.rpe`)}
+                                                                    />
+                                                                    <span className="md:hidden absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">RPE</span>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     </div>
                                                     <div className="col-span-1 md:col-span-2">

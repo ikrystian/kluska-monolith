@@ -38,6 +38,8 @@ export * from './Survey';
 export * from './SurveyResponse';
 // Check-in models
 export * from './WeeklyCheckIn';
+// Strava models
+export * from './StravaActivity';
 
 // Export enums from types (no conflicts)
 export { MuscleGroupName, TrainingLevel, SetType } from './types/enums';

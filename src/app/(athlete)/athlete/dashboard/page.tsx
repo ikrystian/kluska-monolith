@@ -144,6 +144,24 @@ export default function AthleteDashboardPage() {
     { ownerId: user?.uid }
   );
 
+  // Upcoming planned workouts (next 7 days)
+  const sevenDaysLater = useMemo(() => {
+    const date = new Date();
+    date.setDate(date.getDate() + 7);
+    return date;
+  }, []);
+
+  const todayIso = useMemo(() => new Date().toISOString(), []);
+
+  const { data: upcomingPlannedWorkouts, isLoading: upcomingPlannedLoading } = useCollection<PlannedWorkout>(
+    user ? 'plannedWorkouts' : null,
+    {
+      ownerId: user?.uid,
+      date: { $gte: todayIso, $lte: sevenDaysLater.toISOString() }
+    },
+    { sort: { date: 1 } }
+  );
+
   // Filter upcoming sessions (next 7 days, not cancelled)
   const upcomingTrainerSessions = useMemo(() => {
     if (!trainerSessions) return [];
@@ -597,8 +615,8 @@ export default function AthleteDashboardPage() {
                 return (
                   <Link key={habit.id} href="/athlete/habits" className="block">
                     <div className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${isCompletedToday
-                        ? 'bg-green-500/10 border-green-500/30'
-                        : 'hover:bg-secondary/50'
+                      ? 'bg-green-500/10 border-green-500/30'
+                      : 'hover:bg-secondary/50'
                       }`}>
                       <span className="text-2xl">{habit.icon || '💪'}</span>
                       <div className="flex-1 min-w-0">
@@ -630,6 +648,80 @@ export default function AthleteDashboardPage() {
                 </Button>
               </div>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Upcoming Planned Workouts */}
+      {upcomingPlannedWorkouts && upcomingPlannedWorkouts.length > 0 && (
+        <Card className="mt-6 border-blue-500/30 bg-blue-500/5">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/20">
+                <CalendarIcon className="h-5 w-5 text-blue-500" />
+              </div>
+              <div>
+                <CardTitle className="font-headline">Zaplanowane Treningi</CardTitle>
+                <CardDescription>Twoje nadchodzące sesje treningowe</CardDescription>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/athlete/calendar">Zobacz kalendarz</Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {upcomingPlannedWorkouts.slice(0, 6).map((workout) => {
+                const workoutDate = new Date(workout.date);
+                const now = new Date();
+                const diffTime = workoutDate.getTime() - now.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                let timeBadge = '';
+                if (diffDays === 0) {
+                  timeBadge = 'Dzisiaj';
+                } else if (diffDays === 1) {
+                  timeBadge = 'Jutro';
+                } else {
+                  timeBadge = `Za ${diffDays} dni`;
+                }
+
+                return (
+                  <div key={workout.id} className="p-4 rounded-lg border border-blue-500/20 hover:bg-blue-500/10 transition-colors">
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-semibold">{workout.workoutName}</h4>
+                      <Badge className="bg-blue-500 hover:bg-blue-600">{timeBadge}</Badge>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                      <CalendarIcon className="h-3 w-3" />
+                      <span>{format(workoutDate, 'EEEE, d MMM', { locale: pl })}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                      <Clock className="h-3 w-3" />
+                      <span>{format(workoutDate, 'HH:mm')}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+                      <Dumbbell className="h-3 w-3" />
+                      <span>{workout.exercises.length} ćwiczeń</span>
+                    </div>
+                    {(workout as any).workoutId && (
+                      <div className="flex gap-2">
+                        <Button size="sm" className="flex-1" asChild>
+                          <Link href={`/athlete/log?workoutId=${(workout as any).workoutId}`}>
+                            Rozpocznij
+                          </Link>
+                        </Button>
+                        <Button size="sm" variant="outline" asChild>
+                          <Link href={`/athlete/workouts/${(workout as any).workoutId}`}>
+                            Szczegóły
+                          </Link>
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       )}

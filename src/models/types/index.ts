@@ -6,3 +6,4 @@ export * from './user';
 export * from './nutrition';
 export * from './social';
 export * from './common';
+export * from './strava';

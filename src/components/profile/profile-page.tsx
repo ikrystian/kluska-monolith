@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Instagram, Facebook, Twitter, Loader2, Camera } from 'lucide-react';
+import { Instagram, Facebook, Twitter, Loader2, Camera, Activity, CheckCircle2, XCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -45,6 +45,7 @@ export function ProfilePage() {
   const { user } = useUser();
   const avatarImage = placeholderImages.find((img) => img.id === 'avatar-male');
   const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
 
   const { data: userProfile, isLoading: profileLoading, refetch } = useDoc<UserProfile>('users', user?.uid || null);
   const { refetch: refetchProfileContext } = useUserProfile();
@@ -67,6 +68,35 @@ export function ProfilePage() {
 
   const isLoading = profileLoading || gymsLoading;
   const { updateDoc } = useUpdateDoc();
+
+  const isStravaConnected = !!userProfile?.stravaAccessToken;
+
+  const handleDisconnectStrava = async () => {
+    setIsDisconnecting(true);
+    try {
+      const response = await fetch('/api/strava/disconnect', {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to disconnect Strava');
+      }
+
+      await refetch();
+      toast({
+        title: 'Sukces!',
+        description: 'Strava została odłączona.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Błąd!',
+        description: 'Nie udało się odłączyć Strava.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDisconnecting(false);
+    }
+  };
 
   const handleAvatarUpload = async (url: string) => {
     if (!user || !userProfile) return;
@@ -259,6 +289,62 @@ export function ProfilePage() {
                           )}
                         />
                       </>
+                    )}
+                  </div>
+
+                  <div className="space-y-4 pt-4 border-t">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <Activity className="h-5 w-5 text-[#FC4C02]" />
+                      Integracja Strava
+                    </h3>
+                    {isLoading ? (
+                      <Skeleton className="h-20 w-full" />
+                    ) : isStravaConnected ? (
+                      <div className="rounded-lg border bg-muted/50 p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <CheckCircle2 className="h-6 w-6 text-green-500" />
+                            <div>
+                              <p className="font-medium">Połączono ze Strava</p>
+                              <p className="text-sm text-muted-foreground">
+                                Twoje aktywności biegowe są synchronizowane
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleDisconnectStrava}
+                            disabled={isDisconnecting}
+                          >
+                            {isDisconnecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Odłącz
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <XCircle className="h-6 w-6 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium">Nie połączono</p>
+                              <p className="text-sm text-muted-foreground">
+                                Połącz ze Strava, aby automatycznie importować swoje biegi
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="bg-[#FC4C02] hover:bg-[#E34402] text-white"
+                            onClick={() => window.location.href = '/api/strava/connect'}
+                          >
+                            <Activity className="mr-2 h-4 w-4" />
+                            Połącz ze Strava
+                          </Button>
+                        </div>
+                      </div>
                     )}
                   </div>
 

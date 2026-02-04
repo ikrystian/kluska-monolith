@@ -25,6 +25,11 @@ export interface UserProfile {
   height?: number;
   weight?: number;
   trainingLevel?: TrainingLevelType;
+  // Strava integration
+  stravaAccessToken?: string;
+  stravaRefreshToken?: string;
+  stravaTokenExpiresAt?: string;
+  stravaAthleteId?: string;
 }
 
 
