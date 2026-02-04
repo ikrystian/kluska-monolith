@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Instagram, Facebook, Twitter, Loader2, Camera, Activity, CheckCircle2, XCircle } from 'lucide-react';
+import { Camera, Instagram, Facebook, Twitter, Loader2, Activity, CheckCircle2, XCircle, Footprints, Globe } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { placeholderImages } from '@/lib/placeholder-images';
-import { useDoc, useUser, useCollection, useUpdateDoc } from '@/lib/db-hooks';
+import { useDoc, useCollection, useUser, useUpdateDoc } from '@/lib/db-hooks';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import type { UserProfile, Gym } from '@/lib/types';
@@ -26,6 +26,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { Switch } from '@/components/ui/switch';
 import { AvatarUploadDialog } from './AvatarUploadDialog';
 import { useUserProfile } from '@/contexts/UserProfileContext';
+import type { RunningSession, StravaActivity } from '@/lib/types';
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Imię jest wymagane.'),
@@ -51,6 +52,33 @@ export function ProfilePage() {
   const { refetch: refetchProfileContext } = useUserProfile();
 
   const { data: allGyms, isLoading: gymsLoading } = useCollection<Gym>('gyms');
+
+  // Fetch running sessions and Strava activities
+  const { data: runningSessions } = useCollection<RunningSession>(
+    user ? 'runningSessions' : null,
+    { ownerId: user?.uid }
+  );
+  const { data: stravaActivities } = useCollection<StravaActivity>(
+    user ? 'stravaActivities' : null,
+    { ownerId: user?.uid }
+  );
+
+  // Calculate total running distance
+  const totalRunningKm = useMemo(() => {
+    let total = 0;
+    // Add manual running sessions
+    if (runningSessions) {
+      total += runningSessions.reduce((sum, session) => sum + session.distance, 0);
+    }
+    // Add Strava activities (convert meters to km)
+    if (stravaActivities) {
+      total += stravaActivities.reduce((sum, activity) => sum + (activity.distance / 1000), 0);
+    }
+    return total;
+  }, [runningSessions, stravaActivities]);
+
+  const EARTH_EQUATOR_KM = 40075;
+  const earthPercentage = (totalRunningKm / EARTH_EQUATOR_KM) * 100;
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -183,6 +211,57 @@ export function ProfilePage() {
                 onUploadComplete={handleAvatarUpload}
                 currentAvatarUrl={userProfile?.avatarUrl}
               />
+            </CardContent>
+          </Card>
+
+          {/* Running Statistics Card */}
+          <Card className="mt-8">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Footprints className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Statystyki Biegowe</h3>
+                  <p className="text-sm text-muted-foreground">Łącznie przebiegli</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-bold text-primary">{totalRunningKm.toFixed(2)}</span>
+                    <span className="text-xl text-muted-foreground">km</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-blue-500" />
+                      <span className="text-muted-foreground">Szerokość Ziemi na równiku</span>
+                    </div>
+                    <span className="font-medium">{EARTH_EQUATOR_KM.toLocaleString()} km</span>
+                  </div>
+
+                  <div className="w-full bg-secondary rounded-full h-3 overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-500"
+                      style={{ width: `${Math.min(earthPercentage, 100)}%` }}
+                    />
+                  </div>
+
+                  <div className="flex justify-between items-center text-xs text-muted-foreground">
+                    <span>{earthPercentage.toFixed(2)}% szerokości Ziemi</span>
+                    {earthPercentage >= 100 && (
+                      <span className="text-green-600 font-semibold">🎉 Okrążono Ziemię!</span>
+                    )}
+                    {earthPercentage < 100 && (
+                      <span>Pozostało: {(EARTH_EQUATOR_KM - totalRunningKm).toFixed(0)} km</span>
+                    )}
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>

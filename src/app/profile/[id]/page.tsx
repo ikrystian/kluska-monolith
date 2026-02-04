@@ -39,6 +39,8 @@ import {
     Heart,
     ImageIcon,
     X,
+    Footprints,
+    Globe,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -780,6 +782,69 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
                     </div>
                 </div>
             </section>
+
+            {/* Running Statistics Section */}
+            {(stats.totalRunningKm > 0) && (
+                <section className="px-4 pb-8 relative z-10">
+                    <div className="max-w-5xl mx-auto">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 1.4 }}
+                        >
+                            <Card className="border-0 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl overflow-hidden">
+                                <CardContent className="p-6">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="p-2 rounded-lg bg-primary/10">
+                                            <Footprints className="h-6 w-6 text-primary" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-semibold text-lg">Statystyki Biegowe</h3>
+                                            <p className="text-sm text-muted-foreground">Łącznie przebiegli</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-4xl font-bold text-primary">{stats.totalRunningKm.toFixed(2)}</span>
+                                                <span className="text-xl text-muted-foreground">km</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between text-sm">
+                                                <div className="flex items-center gap-2">
+                                                    <Globe className="h-4 w-4 text-blue-500" />
+                                                    <span className="text-muted-foreground">Szerokość Ziemi na równiku</span>
+                                                </div>
+                                                <span className="font-medium">40,075 km</span>
+                                            </div>
+
+                                            <div className="w-full bg-secondary rounded-full h-3 overflow-hidden">
+                                                <div
+                                                    className="h-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-500"
+                                                    style={{ width: `${Math.min(stats.earthEquatorPercentage, 100)}%` }}
+                                                />
+                                            </div>
+
+                                            <div className="flex justify-between items-center text-xs text-muted-foreground">
+                                                <span>{stats.earthEquatorPercentage.toFixed(2)}% szerokości Ziemi</span>
+                                                {stats.earthEquatorPercentage >= 100 && (
+                                                    <span className="text-green-600 font-semibold">🎉 Okrążono Ziemię!</span>
+                                                )}
+                                                {stats.earthEquatorPercentage < 100 && (
+                                                    <span>Pozostało: {(40075 - stats.totalRunningKm).toFixed(0)} km</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    </div>
+                </section>
+            )}
 
             {/* Activity Heatmap */}
             {activityCalendar.length > 0 && (

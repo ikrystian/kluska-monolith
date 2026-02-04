@@ -7,6 +7,8 @@ import { Gym } from '@/models/Gym';
 import { PersonalRecord } from '@/models/PersonalRecord';
 import { SocialProfile } from '@/models/SocialProfile';
 import { SocialPost } from '@/models/SocialPost';
+import { RunningSession } from '@/models/RunningSession';
+import { StravaActivity } from '@/models/StravaActivity';
 
 interface VolumeTrend {
     date: string;
@@ -51,6 +53,8 @@ interface PublicProfileResponse {
         avgWorkoutsPerWeek: number;
         bestWorkoutTonnage: number;
         longestStreak: number;
+        totalRunningKm: number;
+        earthEquatorPercentage: number;
     };
     gamification: {
         level: number;
@@ -236,6 +240,23 @@ export async function GET(
         const currentXP = gamificationProfile?.experiencePoints || 0;
         const xpForNextLevel = calculateXPForNextLevel(currentLevel);
 
+        // Fetch running statistics
+        const runningSessions = await RunningSession.find({ ownerId: athleteId }).lean();
+        const stravaActivities = await StravaActivity.find({ ownerId: athleteId }).lean();
+
+        let totalRunningKm = 0;
+        // Add manual running sessions
+        if (runningSessions) {
+            totalRunningKm += runningSessions.reduce((sum, session) => sum + session.distance, 0);
+        }
+        // Add Strava activities (convert meters to km)
+        if (stravaActivities) {
+            totalRunningKm += stravaActivities.reduce((sum, activity) => sum + (activity.distance / 1000), 0);
+        }
+
+        const EARTH_EQUATOR_KM = 40075;
+        const earthEquatorPercentage = (totalRunningKm / EARTH_EQUATOR_KM) * 100;
+
         const response: PublicProfileResponse = {
             user: {
                 id: athleteId,
@@ -257,6 +278,8 @@ export async function GET(
                 avgWorkoutsPerWeek,
                 bestWorkoutTonnage: Math.round(bestWorkoutTonnage),
                 longestStreak,
+                totalRunningKm: Math.round(totalRunningKm * 100) / 100,
+                earthEquatorPercentage: Math.round(earthEquatorPercentage * 100) / 100,
             },
             gamification: {
                 level: currentLevel,
