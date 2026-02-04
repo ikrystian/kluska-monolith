@@ -22,6 +22,9 @@ export interface ExercisesListViewProps {
   /** Show owner badges - admin feature (default: true for admin) */
   showOwnerBadge?: boolean;
 
+  /** Show bulk delete button - admin feature (default: false) */
+  showBulkDelete?: boolean;
+
   /** Custom title */
   title?: string;
 
@@ -39,6 +42,7 @@ export interface ExerciseCardProps {
   onEdit: (exercise: Exercise) => void;
   onDelete: (exercise: Exercise) => void;
   onShowProgress: (exercise: Exercise) => void;
+  onClick?: (exercise: Exercise) => void;
 }
 
 export interface ExerciseFormProps {
@@ -101,6 +105,7 @@ export const roleDefaults: Record<ExercisesRole, Partial<ExercisesListViewProps>
     canDelete: true,
     showProgress: false,
     showOwnerBadge: true,
+    showBulkDelete: true,
     title: 'Wszystkie Ćwiczenia',
     emptyMessage: 'Brak ćwiczeń spełniających kryteria.',
   },

@@ -18,12 +18,13 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Dumbbell, Loader2 } from 'lucide-react';
+import { PlusCircle, Dumbbell, Loader2, Trash2 } from 'lucide-react';
 
 import { ExerciseCardHorizontal } from './ExerciseCardHorizontal';
 import { ExerciseFilters } from './ExerciseFilters';
 import { ExerciseFormDialog } from './ExerciseForm';
 import { ProgressDialog } from './ProgressDialog';
+import { ExerciseDetailDialog } from './ExerciseDetailDialog';
 import { ExercisesListViewProps, ExerciseFormData, roleDefaults } from './types';
 
 export function ExercisesListView(props: ExercisesListViewProps) {
@@ -36,6 +37,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const canDelete = props.canDelete ?? defaults.canDelete ?? false;
   const showProgress = props.showProgress ?? defaults.showProgress ?? false;
   const showOwnerBadge = props.showOwnerBadge ?? defaults.showOwnerBadge ?? false;
+  const showBulkDelete = props.showBulkDelete ?? defaults.showBulkDelete ?? false;
   const title = props.title ?? defaults.title ?? 'Biblioteka Ćwiczeń';
   const emptyMessage = props.emptyMessage ?? defaults.emptyMessage ?? 'Nie znaleziono żadnych ćwiczeń.';
 
@@ -50,6 +52,8 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const [isFormDialogOpen, setFormDialogOpen] = useState(false);
   const [isProgressDialogOpen, setProgressDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDetailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [isBulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
 
@@ -61,8 +65,14 @@ export function ExercisesListView(props: ExercisesListViewProps) {
       return undefined; // Admin sees all
     }
 
-    // Athlete and Trainer see public + own exercises
-    return { ownerId: { $in: ['public', user.uid] } };
+    // Athlete and Trainer see public + own exercises + legacy (no owner)
+    return {
+      $or: [
+        { ownerId: { $in: ['public', user.uid] } },
+        { ownerId: { $exists: false } },
+        { ownerId: null }
+      ]
+    };
   };
 
   const { data: exercises, isLoading: exercisesLoading, refetch: refetchExercises } = useCollection<Exercise>(
@@ -134,6 +144,11 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const handleShowProgress = (exercise: Exercise) => {
     setSelectedExercise(exercise);
     setProgressDialogOpen(true);
+  };
+
+  const handleShowDetail = (exercise: Exercise) => {
+    setSelectedExercise(exercise);
+    setDetailDialogOpen(true);
   };
 
   const handleCreate = () => {
@@ -221,6 +236,30 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     }
   };
 
+  const handleBulkDeleteConfirm = async () => {
+    if (!allExercises || allExercises.length === 0) return;
+    setIsSubmitting(true);
+
+    try {
+      // Delete all exercises
+      await Promise.all(allExercises.map(ex => deleteDoc('exercises', ex.id)));
+      toast({
+        title: "Sukces!",
+        description: `Usunięto ${allExercises.length} ćwiczeń.`
+      });
+      setBulkDeleteDialogOpen(false);
+      refetchExercises();
+    } catch (error) {
+      toast({
+        title: 'Błąd',
+        description: error instanceof Error ? error.message : 'Nie udało się usunąć ćwiczeń.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Virtualization setup
   const parentRef = useRef<HTMLDivElement>(null);
   const rowVirtualizer = useVirtualizer({
@@ -242,6 +281,15 @@ export function ExercisesListView(props: ExercisesListViewProps) {
             onMuscleGroupChange={setSelectedMuscleGroup}
             muscleGroupOptions={muscleGroupOptions}
           />
+          {showBulkDelete && allExercises && allExercises.length > 0 && (
+            <Button
+              onClick={() => setBulkDeleteDialogOpen(true)}
+              variant="destructive"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Usuń wszystkie ({allExercises.length})
+            </Button>
+          )}
           {canCreate && (
             <Button onClick={handleCreate}>
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -307,6 +355,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onShowProgress={handleShowProgress}
+                    onClick={handleShowDetail}
                   />
                 </div>
               );
@@ -353,6 +402,13 @@ export function ExercisesListView(props: ExercisesListViewProps) {
         />
       )}
 
+      {/* Detail Dialog */}
+      <ExerciseDetailDialog
+        exercise={selectedExercise}
+        open={isDetailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+      />
+
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
@@ -375,6 +431,33 @@ export function ExercisesListView(props: ExercisesListViewProps) {
             >
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Usuń
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Czy na pewno chcesz usunąć WSZYSTKIE ćwiczenia?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tej operacji nie można cofnąć. To spowoduje trwałe usunięcie
+              <span className="font-semibold"> {allExercises?.length || 0} ćwiczeń </span>
+              z bazy danych.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>
+              Anuluj
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDeleteConfirm}
+              disabled={isSubmitting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Usuń wszystkie
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -26,10 +26,16 @@ interface MuscleGroupPayload {
     imageUrl?: string;
 }
 
+interface SetupPayload {
+    group: string;
+    value: string;
+}
+
 interface ExercisePayload {
     name: string;
     mainMuscleGroups: MuscleGroupPayload[];
     secondaryMuscleGroups?: MuscleGroupPayload[];
+    setup?: SetupPayload[];
     instructions?: string;
     description?: string;
     mediaUrl?: string;
@@ -98,11 +104,15 @@ export async function POST(request: NextRequest) {
                 name: mg.name.trim(),
                 imageUrl: mg.imageUrl
             })) || [],
+            setup: body.setup?.map(s => ({
+                group: s.group.trim(),
+                value: s.value.trim()
+            })) || [],
             instructions: body.instructions,
             description: body.description,
             mediaUrl: body.mediaUrl,
             type: body.type || 'weight',
-            ownerId: 'admin',
+            ownerId: 'public',
         };
 
         const exercise = new Exercise(exerciseData);

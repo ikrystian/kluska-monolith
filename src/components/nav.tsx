@@ -369,7 +369,7 @@ export function AppNav() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <div className="flex items-center gap-3 p-2">
+        <Link href={'/profile/' + userProfile?.id} className="flex items-center gap-3 p-2">
           <Avatar className="h-10 w-10">
             {userProfile?.avatarUrl ? (
               <AvatarImage src={userProfile.avatarUrl} alt="Awatar użytkownika" />
@@ -382,7 +382,7 @@ export function AppNav() {
             <span className="font-semibold text-sm">{userProfile?.name || 'Użytkownik'}</span>
             <span className="text-xs text-muted-foreground capitalize">{userProfile?.role || '...'}</span>
           </div>
-        </div>
+        </Link>
       </SidebarFooter>
 
       <Dialog open={isImpersonationDialogOpen} onOpenChange={setIsImpersonationDialogOpen}>

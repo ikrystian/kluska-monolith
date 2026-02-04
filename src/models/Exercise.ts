@@ -5,12 +5,18 @@ export interface IMuscleGroup {
   imageUrl?: string;
 }
 
+export interface ISetupItem {
+  group: string;
+  value: string;
+}
+
 export interface IExercise extends Document {
   _id: mongoose.Types.ObjectId;
   name: string;
   // New fields
   mainMuscleGroups: IMuscleGroup[];
   secondaryMuscleGroups: IMuscleGroup[];
+  setup: ISetupItem[];
   instructions?: string;
   mediaUrl?: string;
   // Legacy fields
@@ -29,12 +35,18 @@ const MuscleGroupSchema = new Schema<IMuscleGroup>({
   imageUrl: { type: String }
 });
 
+const SetupItemSchema = new Schema<ISetupItem>({
+  group: { type: String, required: true },
+  value: { type: String, required: true }
+});
+
 const ExerciseSchema = new Schema<IExercise>(
   {
     name: { type: String, required: true },
     // New fields
     mainMuscleGroups: [MuscleGroupSchema],
     secondaryMuscleGroups: [MuscleGroupSchema],
+    setup: [SetupItemSchema],
     instructions: { type: String },
     mediaUrl: { type: String },
     // Legacy fields

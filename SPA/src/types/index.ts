@@ -1,15 +1,15 @@
 // Enums for the application
 
 export enum MuscleGroupName {
-  Back = 'Plecy',
+  Back = 'Back',
   Biceps = 'Biceps',
-  Calves = 'Łydki',
-  Chest = 'Klata',
+  Calves = 'Calves',
+  Chest = 'Chest',
   Core = 'Core',
-  Forearms = 'Przedramiona',
+  Forearms = 'Forearms',
   FullBody = 'Full Body',
-  Glutes = 'Pośladki',
-  Hamstrings = 'Dwugłowe uda',
+  Glutes = 'Glutes',
+  Hamstrings = 'Hamstrings',
   LowerBack = 'Lower Back',
   Quads = 'Quads',
   RearDelts = 'Rear Delts',
