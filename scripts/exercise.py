@@ -8,9 +8,9 @@ import glob
 import time
 
 # Constants
-API_KEY = "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"
+API_KEY = "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"
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "openai/gpt-5-mini"
+MODEL = "openai/gpt-5-nano"
 
 # Paths
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))

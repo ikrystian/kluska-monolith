@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="089e4cf2-3282-40de-b932-0426a3240ff8" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/public/manifest.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/public/sw.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/public/workbox-f1770938.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/response.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/(admin)/admin/badges/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/(admin)/admin/diet-plans/[id]/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/(admin)/admin/diet-plans/create/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/(admin)/admin/diet-plans/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/(admin)/admin/workout-logs/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/(athlete)/athlete/check-in/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/(athlete)/athlete/progress/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/(trainer)/trainer/surveys/[surveyId]/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/(trainer)/trainer/surveys/new/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/(trainer)/trainer/surveys/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/api/admin/achievements/[id]/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/api/admin/achievements/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/api/admin/diet-plans/[id]/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/api/admin/diet-plans/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/api/admin/gyms/import/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/api/admin/workout-logs/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/api/athlete/progress/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/api/check-ins/[id]/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/api/check-ins/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/api/gamification/admin/badges/[id]/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/api/gamification/admin/badges/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/api/gyms/[id]/favorites/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/api/public/profile/[id]/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/api/trainer/athletes-stats/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/api/trainer/command-center/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/profile/[id]/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/admin/badges/BadgeForm.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/admin/badges/BadgeList.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/admin/badges/BadgesManager.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/admin/diet-plans/DietPlanForm.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/lib/one-rm.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/models/Survey.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/models/SurveyResponse.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/models/WeeklyCheckIn.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/todo.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/workflow.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/kluska-monolith.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/php.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/PLAN.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/index.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/package-lock.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/package.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/App.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/api/auth.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/api/client.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/api/db.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/api/gamification.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/api/upload.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/layout/AppNav.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/layout/AthleteLayout.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/layout/BottomNav.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/layout/ProtectedRoute.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/shared/WorkoutsListView.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/shared/exercises/ExerciseCardHorizontal.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/shared/exercises/ExerciseFilters.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/shared/exercises/ExercisesListView.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/shared/exercises/index.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/shared/exercises/types.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/theme-provider.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/accordion.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/alert-dialog.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/alert.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/avatar.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/badge.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/button.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/card.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/carousel.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/chart.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/checkbox.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/combobox.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/command.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/dialog.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/dropdown-menu.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/form.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/input.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/label.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/popover.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/progress.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/radio-group.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/scroll-area.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/select.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/separator.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/sheet.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/skeleton.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/sonner.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/switch.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/table.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/tabs.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/components/ui/textarea.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/config/env.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/contexts/ActiveWorkoutContext.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/contexts/AuthContext.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/contexts/UserProfileContext.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/hooks/index.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/hooks/useCollection.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/hooks/useDoc.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/hooks/useMobile.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/hooks/useMutation.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/hooks/useRestTimer.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/hooks/useUnsavedChanges.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/index.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/lib/utils.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/main.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/ArticleDetailPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/CalendarPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/ChatPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/DashboardPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/ExercisesPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/GamificationPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/GoalsPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/HabitsPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/HistoryDetailPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/HistoryPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/KnowledgeManagePage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/KnowledgeZonePage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/LogPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/MapPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/MeasurementsPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/OnboardingPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/ProfilePage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/RunningPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/SocialPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/TemplatesPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/WorkoutCreatePage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/WorkoutDetailPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/WorkoutEditPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/WorkoutPlansPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/athlete/WorkoutsPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/auth/LoginPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/pages/auth/RegisterPage.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/types/index.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/src/vite-env.d.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/tailwind.config.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/tsconfig.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SPA/vite.config.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build_log.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/backend.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/blueprint.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/chat-restructure-plan.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/exercises-visibility-bug-analysis.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/onboarding-plan.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/refactoring-plan.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/social-feature-plan.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/workout-creation-improvement-plan.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/workout-edit-plan.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/workout-training-bug-analysis.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/next.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/next.config.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/fix-exercise-schema.cjs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/fix-workout-plan-schema.cjs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/test-autocomplete.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/test-fatsecret.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/test-image.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/test-upload.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/verify-db.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(admin)/admin/gyms/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(admin)/admin/gyms/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(admin)/admin/users/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(admin)/admin/users/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(admin)/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(admin)/layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(athlete)/athlete/log/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(athlete)/athlete/log/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(athlete)/athlete/measurements/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(athlete)/athlete/measurements/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(athlete)/athlete/running/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(athlete)/athlete/running/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(trainer)/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(trainer)/layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(trainer)/trainer/dashboard/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(trainer)/trainer/dashboard/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(trainer)/trainer/my-athletes/[athleteId]/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(trainer)/trainer/my-athletes/[athleteId]/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(trainer)/trainer/my-athletes/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(trainer)/trainer/my-athletes/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/api/db/[collection]/[id]/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/api/db/[collection]/[id]/route.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/api/db/[collection]/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/api/db/[collection]/route.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/api/generate-image/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/api/generate-image/route.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/globals.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/globals.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/GymMap.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/GymMap.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/bottom-nav.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/bottom-nav.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/nav.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/nav.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/shared/exercises/ExerciseCardHorizontal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/shared/exercises/ExerciseCardHorizontal.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/shared/exercises/ExerciseForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/shared/exercises/ExerciseForm.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/shared/exercises/ExercisesListView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/shared/exercises/ExercisesListView.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/shared/exercises/ProgressDialog.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/shared/exercises/ProgressDialog.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/shared/exercises/types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/shared/exercises/types.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/workout/SetInfoSlide.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/workout/SetInfoSlide.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/workouts/CreateWorkout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/workouts/CreateWorkout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models/Gym.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/Gym.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/index.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models/types/common.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/types/common.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models/types/exercise.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/types/exercise.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsc_output.txt" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ComposerSettings">
+    <execution />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="PhpWorkspaceProjectConfiguration" interpreter_name="/bin/php" />
+  <component name="ProjectColorInfo"><![CDATA[{
+  "customColor": "",
+  "associatedIndex": 1
+}]]></component>
+  <component name="ProjectId" id="39C84cla40ZGYo8kTIVhTNzmqzD" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "git-widget-placeholder": "Merging main",
+    "js.debugger.nextJs.config.created.client": "true",
+    "js.debugger.nextJs.config.created.server": "true",
+    "last_opened_file_path": "/home/krystian/Projects/kluska-monolith",
+    "nodejs_package_manager_path": "npm",
+    "ts.external.directory.path": "/home/krystian/Projects/kluska-monolith/node_modules/typescript/lib",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RunManager" selected="npm.Next.js: server-side">
+    <configuration name="Next.js: debug client-side" type="JavascriptDebugType" uri="http://localhost:3000/">
+      <method v="2" />
+    </configuration>
+    <configuration name="Next.js: server-side" type="js.build_tools.npm">
+      <package-json value="$PROJECT_DIR$/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="dev" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-PS-253.30387.85" />
+        <option value="bundled-php-predefined-a98d8de5180a-0e0d91225499-com.jetbrains.php.sharedIndexes-PS-253.30387.85" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="089e4cf2-3282-40de-b932-0426a3240ff8" name="Changes" comment="" />
+      <created>1770188501893</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1770188501893</updated>
+      <workItem from="1770188505914" duration="1439000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="main" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

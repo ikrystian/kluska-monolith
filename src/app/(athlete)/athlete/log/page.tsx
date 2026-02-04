@@ -1225,6 +1225,12 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
     user?.uid ? { trainerId: user.uid } : undefined
   );
 
+  // Fetch workout templates (user's own + public)
+  const { data: workoutTemplates, isLoading: templatesLoading } = useCollection<Workout>(
+    user?.uid ? 'workouts' : null,
+    user?.uid ? { $or: [{ ownerId: 'public' }, { ownerId: user.uid }] } : undefined
+  );
+
   // Fetch history logs
   const { data: historyLogs, isLoading: historyLoading } = useCollection<WorkoutLog>(
     user?.uid ? 'workoutLogs' : null,
@@ -1291,7 +1297,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
     });
   }
 
-  const isLoading = assignedPlansLoading || myPlansLoading || historyLoading;
+  const isLoading = assignedPlansLoading || myPlansLoading || historyLoading || templatesLoading;
 
   return (
     <div className="space-y-6">
@@ -1318,7 +1324,74 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
               <ChevronRight className="ml-auto h-5 w-5 text-muted-foreground" />
             </CardContent>
           </Card>
+
+          {/* Workout Templates Section */}
+          {workoutTemplates && workoutTemplates.length > 0 && (
+            <>
+              <div className="flex items-center gap-2 mt-6">
+                <Dumbbell className="h-4 w-4 text-muted-foreground" />
+                <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Szablony Treningowe</h3>
+              </div>
+              <div className="space-y-3">
+                {workoutTemplates.map(template => (
+                  <AlertDialog key={template.id}>
+                    <AlertDialogTrigger asChild>
+                      <Card className="cursor-pointer hover:bg-secondary/50 transition-colors">
+                        <CardContent className="flex items-center p-4 gap-4">
+                          <div className="h-12 w-12 rounded-lg overflow-hidden bg-secondary/30 flex items-center justify-center flex-shrink-0">
+                            {template.imageUrl ? (
+                              <Image
+                                src={template.imageUrl}
+                                alt={template.name}
+                                width={48}
+                                height={48}
+                                className="object-cover w-full h-full"
+                              />
+                            ) : (
+                              <Dumbbell className="h-6 w-6 text-muted-foreground/40" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-lg">{template.name}</h3>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {template.durationMinutes} min
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Dumbbell className="h-3 w-3" />
+                                {template.exerciseSeries?.length || 0} ćwiczeń
+                              </span>
+                              {template.ownerId === 'public' && (
+                                <Badge variant="secondary" className="text-xs">Publiczny</Badge>
+                              )}
+                            </div>
+                          </div>
+                          <ChevronRight className="ml-auto h-5 w-5 text-muted-foreground" />
+                        </CardContent>
+                      </Card>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Rozpocząć trening?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Czy chcesz rozpocząć trening "{template.name}"? Zostaną załadowane wszystkie ćwiczenia z tego szablonu.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleStartWorkout(template)}>
+                          Rozpocznij
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                ))}
+              </div>
+            </>
+          )}
         </TabsContent>
+
 
         <TabsContent value="plans" className="space-y-4 mt-4">
           {isLoading ? (
@@ -1430,7 +1503,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
           )}
         </TabsContent>
       </Tabs>
-    </div>
+    </div >
   );
 }
 
