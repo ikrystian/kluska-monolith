@@ -1,9 +1,9 @@
 BRAK FUNKCJI ADMINA DO ZARZADZANIA PONIZSZYMI DANYMI:
+DietPlans (Plany dietetyczne) - brak zarządzania planami
 
  BodyMeasurements (Pomiary ciała) - brak wglądu i edycji pomiarów użytkowników
  Conversations (Konwersacje) - brak podglądu rozmów
  CustomProducts (Własne produkty) - brak zarządzania produktami dodanymi przez użytkowników
-6. DietPlans (Plany dietetyczne) - brak zarządzania planami
  GamificationProfiles - brak wglądu w profile grywalizacji
  Goals (Cele) - brak zarządzania celami użytkowników
  Habits (Nawyki) - brak zarządzania nawykami

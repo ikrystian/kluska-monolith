@@ -142,6 +142,7 @@ const adminNavItems = [
   { href: '/admin/workout-logs', icon: History, label: 'Logi Treningowe' },
   { href: '/admin/articles', icon: BookMarked, label: 'Wszystkie Artykuły' },
   { href: '/admin/gyms', icon: Building2, label: 'Siłownie' },
+  { href: '/admin/diet-plans', icon: Salad, label: 'Plany Dietetyczne' },
 ]
 
 export function AppNav() {
