@@ -53,6 +53,8 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useUser } from '@/lib/db-hooks';
+import { ChallengeDialog } from '@/components/challenges/ChallengeDialog';
 
 interface PublicProfileData {
     user: {
@@ -409,6 +411,8 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
     const [selectedPhoto, setSelectedPhoto] = useState<PublicProfileData['socialPhotos'][0] | null>(null);
+    const [isChallengeDialogOpen, setIsChallengeDialogOpen] = useState(false);
+    const { user: currentUser } = useUser();
 
     useEffect(() => {
         async function fetchProfile() {
@@ -543,12 +547,22 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
                 className="relative pt-8 sm:pt-12 pb-8 px-4"
             >
                 <div className="max-w-5xl mx-auto">
-                    {/* Share button */}
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="flex justify-end mb-4"
+                        className="flex justify-end gap-2 mb-4"
                     >
+                        {currentUser && currentUser.uid !== id && (
+                            <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => setIsChallengeDialogOpen(true)}
+                                className="bg-purple-600 hover:bg-purple-700"
+                            >
+                                <Footprints className="h-4 w-4 mr-2" />
+                                Wyzwij do biegu
+                            </Button>
+                        )}
                         <Button
                             variant="outline"
                             size="sm"
@@ -559,6 +573,15 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
                             {copied ? 'Skopiowano!' : 'Udostępnij'}
                         </Button>
                     </motion.div>
+
+                    {data && (
+                        <ChallengeDialog
+                            open={isChallengeDialogOpen}
+                            onOpenChange={setIsChallengeDialogOpen}
+                            challengedUserId={id}
+                            challengedUserName={data.user.name}
+                        />
+                    )}
 
                     {/* Profile Card */}
                     <motion.div

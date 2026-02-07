@@ -149,3 +149,25 @@ export interface HabitLog {
   createdAt: string;
   updatedAt: string;
 }
+
+export type ChallengeStatus = 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled';
+
+export interface Challenge {
+  id: string;
+  challengerId: string;
+  challengerName: string;
+  challengerAvatarUrl?: string;
+  challengedId: string;
+  challengedName: string;
+  challengedAvatarUrl?: string;
+  targetKm: number;
+  startDate?: string;
+  endDate: string;
+  status: ChallengeStatus;
+  challengerProgress: number;
+  challengedProgress: number;
+  winnerId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+

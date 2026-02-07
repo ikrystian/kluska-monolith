@@ -40,6 +40,8 @@ export * from './SurveyResponse';
 export * from './WeeklyCheckIn';
 // Strava models
 export * from './StravaActivity';
+// Challenge models
+export * from './Challenge';
 
 // Export enums from types (no conflicts)
 export { MuscleGroupName, TrainingLevel, SetType } from './types/enums';
@@ -92,4 +94,5 @@ export type {
   Message as MessageType,
   Habit as HabitType,
   HabitLog as HabitLogType,
+  Challenge as ChallengeType,
 } from './types';

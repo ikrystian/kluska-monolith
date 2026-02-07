@@ -14,6 +14,7 @@ import { useCollection, useDoc, useUser } from '@/lib/db-hooks';
 import type { WorkoutLog, Goal, BodyMeasurement, RunningSession, LoggedMeal, PlannedWorkout, UserProfile, TrainingPlan, Habit, HabitLog } from '@/lib/types';
 import { Activity, Target, Weight, Footprints, ChefHat, Calendar as CalendarIcon, TrendingUp, Dumbbell, Clock, Award, Layers, User, MapPin, Bell, CheckSquare } from 'lucide-react';
 import type { TrainingSessionData } from '@/components/schedule/SessionDetailsDialog';
+import { ActiveChallenges } from '@/components/challenges/ActiveChallenges';
 
 const StatCard = ({
   title,
@@ -348,6 +349,9 @@ export default function AthleteDashboardPage() {
           href="/athlete/calendar"
         />
       </div>
+
+      {/* Running Challenges */}
+      <ActiveChallenges />
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Recent Workouts */}
