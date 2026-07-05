@@ -5,6 +5,7 @@ const envSchema = z.object({
     NEXTAUTH_SECRET: z.string().min(1, 'NEXTAUTH_SECRET is required'),
     NEXTAUTH_URL: z.string().url().optional(),
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: z.string().optional(),
+    CORS_ORIGIN: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getRequestUser } from '@/lib/api-auth';
 import dbConnect from '@/lib/db';
 import { WeeklyCheckIn } from '@/models/WeeklyCheckIn';
 import { User } from '@/models/User';
@@ -13,8 +12,8 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) {
+        const user = await getRequestUser(request);
+        if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -28,7 +27,7 @@ export async function GET(
         }
 
         // Verify access
-        const userId = session.user.id;
+        const userId = user.id;
         if ((checkIn as any).athleteId !== userId && (checkIn as any).trainerId !== userId) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
@@ -66,8 +65,8 @@ export async function PATCH(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) {
+        const authUser = await getRequestUser(request);
+        if (!authUser) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -81,13 +80,13 @@ export async function PATCH(
             return NextResponse.json({ error: 'Check-in not found' }, { status: 404 });
         }
 
-        const user = await User.findById(session.user.id).lean();
+        const user = await User.findById(authUser.id).lean();
         if (!user) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        const isAthlete = checkIn.athleteId === session.user.id;
-        const isTrainer = checkIn.trainerId === session.user.id;
+        const isAthlete = checkIn.athleteId === authUser.id;
+        const isTrainer = checkIn.trainerId === authUser.id;
 
         if (!isAthlete && !isTrainer) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -137,7 +136,7 @@ export async function PATCH(
                 } else {
                     // Create new measurement
                     const bodyMeasurement = await BodyMeasurement.create({
-                        ownerId: session.user.id,
+                        ownerId: authUser.id,
                         date: new Date(),
                         weight: measurements.weight,
                         circumferences: {
@@ -215,8 +214,8 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) {
+        const user = await getRequestUser(request);
+        if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -230,7 +229,7 @@ export async function DELETE(
         }
 
         // Only athlete can delete their own check-in
-        if (checkIn.athleteId !== session.user.id) {
+        if (checkIn.athleteId !== user.id) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { User } from '@/models/User';
 
@@ -39,9 +38,9 @@ export async function GET(
     { params }: { params: Promise<{ activityId: string }> }
 ) {
     try {
-        const session = await getServerSession(authOptions);
+        const authUser = await getRequestUser(request);
 
-        if (!session?.user?.id) {
+        if (!authUser) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -50,7 +49,7 @@ export async function GET(
         const { activityId } = await params;
 
         // Get user with Strava credentials
-        const user = await User.findById(session.user.id);
+        const user = await User.findById(authUser.id);
 
         if (!user?.stravaAccessToken || !user?.stravaRefreshToken) {
             return NextResponse.json(
@@ -68,7 +67,7 @@ export async function GET(
                 accessToken = tokenData.access_token;
 
                 // Update user with new tokens
-                await User.findByIdAndUpdate(session.user.id, {
+                await User.findByIdAndUpdate(user.id, {
                     stravaAccessToken: tokenData.access_token,
                     stravaRefreshToken: tokenData.refresh_token,
                     stravaTokenExpiresAt: new Date(tokenData.expires_at * 1000),

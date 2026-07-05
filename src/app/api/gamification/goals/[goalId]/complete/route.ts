@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getRequestUser } from '@/lib/api-auth';
 import { awardGoalCompletionPoints, checkAndAwardAchievements } from '@/lib/gamification';
 import { connectToDatabase } from '@/lib/mongodb';
 import { Goal } from '@/models/Goal';
@@ -10,9 +9,9 @@ export async function POST(
   { params }: { params: { goalId: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await getRequestUser(request);
 
-    if (!session?.user?.id) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -28,7 +27,7 @@ export async function POST(
       return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
     }
 
-    if (goal.ownerId !== session.user.id) {
+    if (goal.ownerId !== user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -44,12 +43,12 @@ export async function POST(
     // Award points
     const pointsResult = await awardGoalCompletionPoints(
       goalId,
-      session.user.id,
+      user.id,
       trainerApproval
     );
 
     // Check for new achievements
-    const newAchievements = await checkAndAwardAchievements(session.user.id);
+    const newAchievements = await checkAndAwardAchievements(user.id);
 
     return NextResponse.json({
       success: true,

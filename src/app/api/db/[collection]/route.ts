@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Model } from 'mongoose';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
 
 import {
@@ -70,14 +69,14 @@ export async function GET(
   { params }: { params: Promise<{ collection: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await getRequestUser(request);
 
     const { collection } = await params;
 
     // Public collections that don't require authentication
     const PUBLIC_COLLECTIONS = ['articles', 'articleCategories', 'muscleGroups', 'gyms', 'socialPosts'];
 
-    if (!PUBLIC_COLLECTIONS.includes(collection) && !session) {
+    if (!PUBLIC_COLLECTIONS.includes(collection) && !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -147,9 +146,9 @@ export async function POST(
   { params }: { params: Promise<{ collection: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await getRequestUser(request);
 
-    if (!session) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

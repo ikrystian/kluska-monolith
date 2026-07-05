@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getRequestUser } from '@/lib/api-auth';
 import dbConnect from '@/lib/db';
 import { Notification } from '@/models';
 
 export async function GET(req: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user) {
+        const user = await getRequestUser(req);
+        if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -18,7 +17,7 @@ export async function GET(req: NextRequest) {
         const skip = parseInt(searchParams.get('skip') || '0');
         const unreadOnly = searchParams.get('unreadOnly') === 'true';
 
-        const query: any = { userId: session.user.id };
+        const query: any = { userId: user.id };
         if (unreadOnly) {
             query.isRead = false;
         }
@@ -29,7 +28,7 @@ export async function GET(req: NextRequest) {
             .limit(limit);
 
         const total = await Notification.countDocuments(query);
-        const unreadCount = await Notification.countDocuments({ userId: session.user.id, isRead: false });
+        const unreadCount = await Notification.countDocuments({ userId: user.id, isRead: false });
 
         return NextResponse.json({
             data: notifications,
@@ -48,7 +47,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
+        const user = await getRequestUser(req);
         // Allow admins to create notifications for anyone, or users for themselves (unlikely but possible)
         // For now, let's say only system actions create notifications, but this endpoint is useful for testing
         // or if we have a client-side trigger (though usually backend triggers notifications).
@@ -56,7 +55,7 @@ export async function POST(req: NextRequest) {
         // Ideally, notifications are created by other backend services. 
         // If we want to allow an admin to send a notification via UI, we need to check admin role.
 
-        if (!session?.user) {
+        if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -69,7 +68,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Security check: Only admin can send to others, or user to themselves
-        if (session.user.role !== 'admin' && body.userId !== session.user.id) {
+        if (user.role !== 'admin' && body.userId !== user.id) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getRequestUser } from '@/lib/api-auth';
 import {
   getAchievementsWithProgress,
   getUnlockedAchievements,
@@ -9,9 +8,9 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await getRequestUser(request);
 
-    if (!session?.user?.id) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -19,11 +18,11 @@ export async function GET(request: NextRequest) {
     const unlockedOnly = searchParams.get('unlocked') === 'true';
 
     if (unlockedOnly) {
-      const achievements = await getUnlockedAchievements(session.user.id);
+      const achievements = await getUnlockedAchievements(user.id);
       return NextResponse.json(achievements);
     }
 
-    const achievementsWithProgress = await getAchievementsWithProgress(session.user.id);
+    const achievementsWithProgress = await getAchievementsWithProgress(user.id);
 
     return NextResponse.json(achievementsWithProgress);
   } catch (error) {
@@ -37,14 +36,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await getRequestUser(request);
 
-    if (!session?.user?.id) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Check and award any new achievements
-    const newAchievements = await checkAndAwardAchievements(session.user.id);
+    const newAchievements = await checkAndAwardAchievements(user.id);
 
     return NextResponse.json({
       newAchievements,

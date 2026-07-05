@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getRequestUser } from '@/lib/api-auth';
 
 const STRAVA_CLIENT_ID = process.env.STRAVA_CLIENT_ID;
 const REDIRECT_URI = `${process.env.NEXTAUTH_URL}/api/strava/callback`;
 
 export async function GET(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
+        const user = await getRequestUser(request);
 
-        if (!session?.user?.id) {
+        if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -23,7 +22,7 @@ export async function GET(request: NextRequest) {
         authUrl.searchParams.append('redirect_uri', REDIRECT_URI);
         authUrl.searchParams.append('response_type', 'code');
         authUrl.searchParams.append('scope', 'read,activity:read_all');
-        authUrl.searchParams.append('state', session.user.id); // Use user ID as state for verification
+        authUrl.searchParams.append('state', user.id); // Use user ID as state for verification
 
         // Redirect to Strava authorization page
         return NextResponse.redirect(authUrl.toString());

@@ -8,7 +8,8 @@
     "build": "NODE_ENV=production next build --turbopack",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:seed": "npx tsx scripts/seed.ts"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",

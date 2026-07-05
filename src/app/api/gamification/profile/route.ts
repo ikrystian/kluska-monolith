@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getRequestUser } from '@/lib/api-auth';
 import { getGamificationStats, recordCheckin } from '@/lib/gamification';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await getRequestUser(request);
 
-    if (!session?.user?.id) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const stats = await getGamificationStats(session.user.id);
+    const stats = await getGamificationStats(user.id);
 
     return NextResponse.json(stats);
   } catch (error) {
@@ -25,9 +24,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await getRequestUser(request);
 
-    if (!session?.user?.id) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -35,7 +34,7 @@ export async function POST(request: NextRequest) {
     const { action } = body;
 
     if (action === 'checkin') {
-      const result = await recordCheckin(session.user.id);
+      const result = await recordCheckin(user.id);
       return NextResponse.json(result);
     }
 

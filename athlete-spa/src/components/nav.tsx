@@ -1,0 +1,188 @@
+import {
+  CalendarDays,
+  Dumbbell,
+  History,
+  LayoutDashboard,
+  LogOut,
+  Play,
+  BookOpen,
+  Ruler,
+  MessageSquare,
+  Map,
+  ClipboardList,
+  ChevronRight,
+  Users2,
+  Layers,
+  TrendingUp,
+  CheckSquare,
+  ClipboardCheck,
+  Trophy,
+  Footprints,
+} from 'lucide-react';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarFooter,
+  useSidebar,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
+} from '@/components/ui/sidebar';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { placeholderImages } from '@/lib/placeholder-images';
+import { useUserProfile } from '@/contexts/UserProfileContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
+export const athleteNavItems = [
+  { href: '/athlete/dashboard', icon: LayoutDashboard, label: 'Panel' },
+  {
+    label: 'Trening',
+    icon: Dumbbell,
+    items: [
+      { href: '/athlete/log', label: 'Trenuj Teraz', icon: Play },
+      { href: '/athlete/workouts', label: 'Szablony', icon: ClipboardList },
+      { href: '/athlete/workout-plans', label: 'Mój Program', icon: Layers },
+      { href: '/athlete/exercises', label: 'Ćwiczenia', icon: Dumbbell },
+      { href: '/athlete/running', label: 'Bieganie', icon: Footprints },
+      { href: '/athlete/history', label: 'Historia', icon: History },
+    ]
+  },
+  {
+    label: 'Postępy',
+    icon: TrendingUp,
+    items: [
+      { href: '/athlete/progress', label: 'Dashboard Postępów', icon: TrendingUp },
+      { href: '/athlete/measurements', label: 'Pomiary', icon: Ruler },
+      { href: '/athlete/goals', label: 'Cele i Trofea', icon: Trophy },
+      { href: '/athlete/habits', label: 'Nawyki', icon: CheckSquare },
+      { href: '/athlete/calendar', label: 'Kalendarz', icon: CalendarDays },
+    ]
+  },
+  {
+    label: 'Społeczność',
+    icon: Users2,
+    items: [
+      { href: '/athlete/chat', label: 'Czat', icon: MessageSquare },
+      { href: '/athlete/social', label: 'Social', icon: Users2 },
+    ]
+  },
+  { href: '/athlete/check-in', icon: ClipboardCheck, label: 'Tygodniowy Check-in' },
+  { href: '/athlete/knowledge-zone', icon: BookOpen, label: 'Strefa Wiedzy' },
+  { href: '/athlete/map', icon: Map, label: 'Mapa Siłowni' },
+];
+
+export function AppNav() {
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const avatarImage = placeholderImages.find(img => img.id === 'avatar-male');
+  const { setOpenMobile } = useSidebar();
+  const { userProfile } = useUserProfile();
+  const { logout } = useAuth();
+
+  // Conversations/unread counts aren't wired up yet (matches the web app).
+  const totalUnreadCount = 0;
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const getInitials = (name: string | null | undefined) => {
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  }
+
+  return (
+    <Sidebar>
+      <SidebarHeader>
+        <Link to="/athlete/dashboard" className="flex items-center gap-2 font-bold text-primary">
+          <span className="font-headline text-xl">Leniwa Kluska</span>
+        </Link>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarMenu>
+          {athleteNavItems.map((item: any) => (
+            item.items ? (
+              <Collapsible key={item.label} asChild defaultOpen={item.items.some((subItem: any) => pathname.startsWith(subItem.href))} className="group/collapsible">
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton tooltip={item.label}>
+                      <item.icon />
+                      <span>{item.label}</span>
+                      <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {item.items.map((subItem: any) => (
+                        <SidebarMenuSubItem key={subItem.href}>
+                          <SidebarMenuSubButton asChild isActive={pathname === subItem.href}>
+                            <Link to={subItem.href}>
+                              <span>{subItem.label}</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+            ) : (
+              <SidebarMenuItem key={item.href}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname.startsWith(item.href) && (item.href !== '/athlete/dashboard' || pathname === item.href)}
+                  tooltip={{ children: item.label }}
+                  onClick={() => setOpenMobile(false)}
+                >
+                  <Link to={item.href} className="relative">
+                    <item.icon />
+                    <span>{item.label}</span>
+                    {item.href.endsWith('/chat') && totalUnreadCount > 0 && (
+                      <Badge className="absolute right-2 top-1/2 -translate-y-1/2 h-5 min-w-[1.25rem] justify-center px-1.5 group-data-[state=collapsed]:right-auto group-data-[state=collapsed]:left-1/2 group-data-[state=collapsed]:-top-1">
+                        {totalUnreadCount}
+                      </Badge>
+                    )}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          ))}
+        </SidebarMenu>
+      </SidebarContent>
+      <SidebarFooter className="space-y-2">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip={{ children: 'Wyloguj' }} onClick={handleLogout}>
+              <button>
+                <LogOut />
+                <span>Wyloguj</span>
+              </button>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+        <Link to="/athlete/profile" className="flex items-center gap-3 p-2">
+          <Avatar className="h-10 w-10">
+            {userProfile?.avatarUrl ? (
+              <AvatarImage src={userProfile.avatarUrl} alt="Awatar użytkownika" />
+            ) : avatarImage ? (
+              <AvatarImage src={avatarImage.imageUrl} alt="Awatar użytkownika" />
+            ) : null}
+            <AvatarFallback>{getInitials(userProfile?.name)}</AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col">
+            <span className="font-semibold text-sm">{userProfile?.name || 'Użytkownik'}</span>
+            <span className="text-xs text-muted-foreground capitalize">{userProfile?.role || '...'}</span>
+          </div>
+        </Link>
+      </SidebarFooter>
+    </Sidebar>
+  );
+}

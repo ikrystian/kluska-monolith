@@ -5,6 +5,42 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { User } from '@/models/User';
 import { env } from '@/lib/env';
 
+export interface VerifiedCredentialsUser {
+  id: string;
+  email: string;
+  name: string;
+  role: 'athlete' | 'trainer' | 'admin';
+}
+
+/**
+ * Shared email/password check used by both the NextAuth credentials provider
+ * (cookie-based sessions, web app) and the /api/auth/token endpoint (Bearer
+ * tokens for the athlete SPA/Capacitor). Keeping one implementation avoids
+ * the two auth paths drifting apart.
+ */
+export async function verifyCredentials(email: string, password: string): Promise<VerifiedCredentialsUser> {
+  await connectToDatabase();
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new Error('No user found with this email');
+  }
+
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+
+  if (!isPasswordValid) {
+    throw new Error('Invalid password');
+  }
+
+  return {
+    id: user._id.toString(),
+    email: user.email,
+    name: user.name,
+    role: user.role,
+  };
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -39,23 +75,10 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email and password are required');
         }
 
-        const user = await User.findOne({ email: credentials.email });
-
-        if (!user) {
-          throw new Error('No user found with this email');
-        }
-
-        const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
-
-        if (!isPasswordValid) {
-          throw new Error('Invalid password');
-        }
+        const user = await verifyCredentials(credentials.email, credentials.password);
 
         return {
-          id: user._id.toString(),
-          email: user.email,
-          name: user.name,
-          role: user.role,
+          ...user,
           rememberMe: credentials.rememberMe === 'true',
         };
       },

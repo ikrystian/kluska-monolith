@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { TrainingSession, User } from '@/models';
 
@@ -10,9 +9,9 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const session = await getServerSession(authOptions);
+        const authUser = await getRequestUser(request);
 
-        if (!session?.user?.id) {
+        if (!authUser) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -26,7 +25,7 @@ export async function GET(
         }
 
         // Sprawdź uprawnienia - tylko trener lub sportowiec z tej sesji
-        if (trainingSession.trainerId !== session.user.id && trainingSession.athleteId !== session.user.id) {
+        if (trainingSession.trainerId !== authUser.id && trainingSession.athleteId !== authUser.id) {
             return NextResponse.json({ error: 'Access denied' }, { status: 403 });
         }
 
@@ -46,9 +45,9 @@ export async function PATCH(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const session = await getServerSession(authOptions);
+        const authUser = await getRequestUser(request);
 
-        if (!session?.user?.id) {
+        if (!authUser) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -61,11 +60,11 @@ export async function PATCH(
             return NextResponse.json({ error: 'Session not found' }, { status: 404 });
         }
 
-        const user = await User.findById(session.user.id);
+        const user = await User.findById(authUser.id);
         const body = await request.json();
 
         // Trener może edytować wszystko, sportowiec tylko status (potwierdzenie)
-        if (trainingSession.trainerId === session.user.id) {
+        if (trainingSession.trainerId === authUser.id) {
             // Trener - pełna edycja
             const allowedFields = ['title', 'description', 'date', 'duration', 'location', 'status', 'notes', 'workoutId'];
             for (const field of allowedFields) {
@@ -77,7 +76,7 @@ export async function PATCH(
                     }
                 }
             }
-        } else if (trainingSession.athleteId === session.user.id) {
+        } else if (trainingSession.athleteId === authUser.id) {
             // Sportowiec - tylko zmiana statusu na confirmed
             if (body.status === 'confirmed' && trainingSession.status === 'scheduled') {
                 trainingSession.status = 'confirmed';
@@ -106,9 +105,9 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const session = await getServerSession(authOptions);
+        const authUser = await getRequestUser(request);
 
-        if (!session?.user?.id) {
+        if (!authUser) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -122,7 +121,7 @@ export async function DELETE(
         }
 
         // Tylko trener może usunąć sesję
-        if (trainingSession.trainerId !== session.user.id) {
+        if (trainingSession.trainerId !== authUser.id) {
             return NextResponse.json({ error: 'Only the trainer can delete this session' }, { status: 403 });
         }
 

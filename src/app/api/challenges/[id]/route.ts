@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { Challenge, RunningSession, StravaActivity } from '@/models';
 
@@ -39,9 +38,9 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const session = await getServerSession(authOptions);
+        const user = await getRequestUser(request);
 
-        if (!session?.user?.id) {
+        if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -56,7 +55,7 @@ export async function GET(
         }
 
         // Check if user is involved in this challenge
-        if (challenge.challengerId !== session.user.id && challenge.challengedId !== session.user.id) {
+        if (challenge.challengerId !== user.id && challenge.challengedId !== user.id) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
@@ -110,9 +109,9 @@ export async function PATCH(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const session = await getServerSession(authOptions);
+        const user = await getRequestUser(request);
 
-        if (!session?.user?.id) {
+        if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -138,7 +137,7 @@ export async function PATCH(
         // Validate permissions based on action
         if (action === 'accept' || action === 'decline') {
             // Only the challenged user can accept or decline
-            if (challenge.challengedId !== session.user.id) {
+            if (challenge.challengedId !== user.id) {
                 return NextResponse.json(
                     { error: 'Only the challenged user can accept or decline' },
                     { status: 403 }
@@ -155,7 +154,7 @@ export async function PATCH(
 
         if (action === 'cancel') {
             // Only the challenger can cancel a pending challenge
-            if (challenge.challengerId !== session.user.id) {
+            if (challenge.challengerId !== user.id) {
                 return NextResponse.json(
                     { error: 'Only the challenger can cancel' },
                     { status: 403 }

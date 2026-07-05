@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getRequestUser } from '@/lib/api-auth';
 import dbConnect from '@/lib/db';
 import { WeeklyCheckIn } from '@/models/WeeklyCheckIn';
 import { User } from '@/models/User';
@@ -10,8 +9,8 @@ import { BodyMeasurement } from '@/models/BodyMeasurement';
 // GET - List check-ins
 export async function GET(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) {
+        const authUser = await getRequestUser(request);
+        if (!authUser) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -21,7 +20,7 @@ export async function GET(request: NextRequest) {
         const status = searchParams.get('status');
         const limit = parseInt(searchParams.get('limit') || '20');
 
-        const user = await User.findById(session.user.id).lean();
+        const user = await User.findById(authUser.id).lean();
         if (!user) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
@@ -29,9 +28,9 @@ export async function GET(request: NextRequest) {
         let query: any = {};
 
         if ((user as any).role === 'trainer') {
-            query.trainerId = session.user.id;
+            query.trainerId = authUser.id;
         } else if ((user as any).role === 'athlete') {
-            query.athleteId = session.user.id;
+            query.athleteId = authUser.id;
         } else {
             return NextResponse.json({ error: 'Invalid role' }, { status: 403 });
         }
@@ -107,15 +106,15 @@ export async function GET(request: NextRequest) {
 // POST - Create check-in (trainer) or submit responses (athlete)
 export async function POST(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) {
+        const authUser = await getRequestUser(request);
+        if (!authUser) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         await dbConnect();
 
         const body = await request.json();
-        const user = await User.findById(session.user.id).lean();
+        const user = await User.findById(authUser.id).lean();
 
         if (!user) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -141,14 +140,14 @@ export async function POST(request: NextRequest) {
                 // Check if check-in already exists for this week
                 const existing = await WeeklyCheckIn.findOne({
                     athleteId,
-                    trainerId: session.user.id,
+                    trainerId: authUser.id,
                     weekStartDate: mondayDate,
                 });
 
                 if (!existing) {
                     const checkIn = await WeeklyCheckIn.create({
                         athleteId,
-                        trainerId: session.user.id,
+                        trainerId: authUser.id,
                         weekStartDate: mondayDate,
                         status: 'pending',
                     });

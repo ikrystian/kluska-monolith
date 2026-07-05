@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { User } from '@/models/User';
 import { z } from 'zod';
@@ -22,9 +21,9 @@ const onboardingSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await getRequestUser(request);
 
-    if (!session?.user?.id) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -49,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     // Update user with onboarding data
     const updatedUser = await User.findByIdAndUpdate(
-      session.user.id,
+      user.id,
       {
         name,
         gender,

@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { User } from '@/models/User';
 
 export async function POST(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
+        const user = await getRequestUser(request);
 
-        if (!session?.user?.id) {
+        if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         await connectToDatabase();
 
         // Remove Strava credentials from user
-        await User.findByIdAndUpdate(session.user.id, {
+        await User.findByIdAndUpdate(user.id, {
             $unset: {
                 stravaAccessToken: '',
                 stravaRefreshToken: '',

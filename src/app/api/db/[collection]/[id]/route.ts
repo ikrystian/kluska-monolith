@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { isValidObjectId } from 'mongoose';
 
@@ -65,10 +64,10 @@ export async function GET(
   { params }: { params: Promise<{ collection: string; id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await getRequestUser(request);
 
     // Some collections might be public, adjust as needed
-    // if (!session) {
+    // if (!user) {
     //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     // }
 
@@ -108,9 +107,9 @@ export async function PATCH(
   { params }: { params: Promise<{ collection: string; id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await getRequestUser(request);
 
-    if (!session) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -189,9 +188,9 @@ export async function DELETE(
   { params }: { params: Promise<{ collection: string; id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await getRequestUser(request);
 
-    if (!session) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

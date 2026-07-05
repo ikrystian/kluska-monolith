@@ -79,6 +79,8 @@ Ensure you have the following installed:
 - `npm start`: Starts the production server.
 - `npm run lint`: Runs ESLint to check for code quality issues.
 - `npm run typecheck`: Runs TypeScript type checking.
+- `npm run db:seed`: Seeds the database with default mock data (users, exercises, gyms, habits, articles, challenges, rewards, badges).
+
 
 ## Project Structure
 

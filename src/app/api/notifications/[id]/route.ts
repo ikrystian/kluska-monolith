@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getRequestUser } from '@/lib/api-auth';
 import dbConnect from '@/lib/db';
 import { Notification } from '@/models';
 
@@ -9,8 +8,8 @@ export async function PATCH(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user) {
+        const user = await getRequestUser(req);
+        if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -25,7 +24,7 @@ export async function PATCH(
         }
 
         // Security check: Ensure user owns the notification
-        if (notification.userId !== session.user.id) {
+        if (notification.userId !== user.id) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 

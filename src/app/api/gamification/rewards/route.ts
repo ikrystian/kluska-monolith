@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getRequestUser } from '@/lib/api-auth';
 import { getAvailableRewards, redeemReward } from '@/lib/gamification';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await getRequestUser(request);
 
-    if (!session?.user?.id) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const rewards = await getAvailableRewards(session.user.id);
+    const rewards = await getAvailableRewards(user.id);
 
     return NextResponse.json(rewards);
   } catch (error) {
@@ -25,9 +24,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await getRequestUser(request);
 
-    if (!session?.user?.id) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -38,7 +37,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Reward ID is required' }, { status: 400 });
     }
 
-    const result = await redeemReward(session.user.id, rewardId);
+    const result = await redeemReward(user.id, rewardId);
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });

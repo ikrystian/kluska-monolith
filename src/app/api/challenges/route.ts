@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { Challenge, User, RunningSession, StravaActivity } from '@/models';
 
@@ -36,15 +35,15 @@ async function calculateProgress(userId: string, startDate: Date, endDate: Date)
 // GET - Fetch user's challenges (as challenger or challenged) with calculated progress
 export async function GET(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
+        const user = await getRequestUser(request);
 
-        if (!session?.user?.id) {
+        if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         await connectToDatabase();
 
-        const userId = session.user.id;
+        const userId = user.id;
 
         // Get all challenges where user is involved
         const challenges = await Challenge.find({
@@ -110,9 +109,9 @@ export async function GET(request: NextRequest) {
 // POST - Create new challenge
 export async function POST(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
+        const user = await getRequestUser(request);
 
-        if (!session?.user?.id) {
+        if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -129,7 +128,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Cannot challenge yourself
-        if (challengedId === session.user.id) {
+        if (challengedId === user.id) {
             return NextResponse.json(
                 { error: 'Cannot challenge yourself' },
                 { status: 400 }
@@ -138,7 +137,7 @@ export async function POST(request: NextRequest) {
 
         // Get both user profiles
         const [challenger, challenged] = await Promise.all([
-            User.findById(session.user.id),
+            User.findById(user.id),
             User.findById(challengedId)
         ]);
 
@@ -153,8 +152,8 @@ export async function POST(request: NextRequest) {
         // Check for existing active challenge between these users
         const existingChallenge = await Challenge.findOne({
             $or: [
-                { challengerId: session.user.id, challengedId, status: { $in: ['pending', 'accepted'] } },
-                { challengerId: challengedId, challengedId: session.user.id, status: { $in: ['pending', 'accepted'] } }
+                { challengerId: user.id, challengedId, status: { $in: ['pending', 'accepted'] } },
+                { challengerId: challengedId, challengedId: user.id, status: { $in: ['pending', 'accepted'] } }
             ]
         });
 
@@ -167,7 +166,7 @@ export async function POST(request: NextRequest) {
 
         // Create challenge
         const challenge = new Challenge({
-            challengerId: session.user.id,
+            challengerId: user.id,
             challengedId,
             challengerName: challenger.name,
             challengedName: challenged.name,
