@@ -161,7 +161,9 @@ async function seed() {
       }
     ];
 
-    const seededExercises = await Exercise.insertMany(exercisesData);
+    const seededExercises = await Exercise.insertMany(
+      exercisesData.map(ex => ({ ...ex, ownerId: 'public' }))
+    );
     console.log(`✅ Dodano ${seededExercises.length} ćwiczeń.`);
 
     // 4. Users (Użytkownicy)

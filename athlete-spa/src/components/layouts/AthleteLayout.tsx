@@ -93,9 +93,16 @@ function AthleteLayoutContent() {
       <ActiveWorkoutProvider>
         <div className="flex min-h-screen w-full">
           <AppNav />
-          <main className="flex-1 flex flex-col overflow-hidden bg-secondary/30">
+          <main className="relative flex-1 flex flex-col overflow-hidden bg-background">
+            {/* Aurora — ambient light field behind every screen */}
+            <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+              <div className="absolute -left-32 -top-40 h-96 w-96 rounded-full bg-primary/[0.14] blur-[110px]" />
+              <div className="absolute -right-40 top-1/4 h-[30rem] w-[30rem] rounded-full bg-[hsl(var(--chart-4)/0.10)] blur-[130px]" />
+              <div className="absolute -bottom-40 left-1/4 h-96 w-96 rounded-full bg-[hsl(var(--volt)/0.07)] blur-[120px]" />
+              <div className="texture-grain absolute inset-0" />
+            </div>
             <AppHeader />
-            <div className="flex-1 overflow-y-auto min-h-0 pt-16 pb-16 md:pb-0 sm:pt-0">
+            <div className="relative z-10 flex-1 overflow-y-auto min-h-0 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-0">
               <Outlet />
             </div>
             <BottomNav />

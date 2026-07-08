@@ -6,7 +6,7 @@ const withPWA = require("@ducanh2912/next-pwa").default({
 
 const nextConfig: NextConfig = {
   /* config options here */
-  allowedDevOrigins: ['http://83.168.88.80', 'http://localhost:5173'],
+  allowedDevOrigins: ['http://83.168.88.80', 'http://localhost:5173', 'http://0.0.0.0'],
   typescript: {
     ignoreBuildErrors: true,
   },

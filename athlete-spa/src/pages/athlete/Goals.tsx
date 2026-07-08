@@ -694,17 +694,22 @@ export default function GoalsAndAchievementsPage() {
       />
       <div className="container mx-auto p-4 md:p-8">
         {/* --- Header --- */}
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <h1 className="font-headline text-3xl font-bold">Cele i Trofea</h1>
-          <Button onClick={() => { setEditingGoal(null); setGoalDialogOpen(true); }}>
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-muted-foreground">Motywacja</p>
+            <h1 className="mt-2 font-display text-3xl font-extrabold uppercase tracking-tight md:text-4xl">
+              Cele i <span className="text-gradient-ember">trofea</span>
+            </h1>
+          </div>
+          <Button className="shadow-glow" onClick={() => { setEditingGoal(null); setGoalDialogOpen(true); }}>
             <PlusCircle className="mr-2 h-4 w-4" />
-            Ustaw Nowy Cel
+            Ustaw nowy cel
           </Button>
         </div>
 
         {/* --- Active Goals Section --- */}
         <section className="mb-12">
-          <h2 className="mb-4 font-headline text-2xl font-semibold">Aktywne Cele</h2>
+          <h2 className="mb-4 font-headline text-lg font-bold tracking-tight md:text-xl">Aktywne cele</h2>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {isLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
@@ -718,12 +723,14 @@ export default function GoalsAndAchievementsPage() {
               const progress = Math.min((goal.current / goal.target) * 100, 100);
               const isCompleted = progress >= 100;
               return (
-                <Card key={goal.id} className="flex flex-col">
+                <Card key={goal.id} className={`flex flex-col ${isCompleted ? 'border-volt/40 bg-volt/[0.04]' : ''}`}>
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div>
                         <CardTitle className="font-headline">{goal.title}</CardTitle>
-                        <CardDescription>Termin: {format(new Date(goal.deadline), 'd MMM yyyy', { locale: pl })}</CardDescription>
+                        <CardDescription className="text-xs uppercase tracking-wider">
+                          Termin: {format(new Date(goal.deadline), 'd MMM yyyy', { locale: pl })}
+                        </CardDescription>
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -747,17 +754,19 @@ export default function GoalsAndAchievementsPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="flex-grow">
-                    <div className="mb-2 flex items-baseline justify-center gap-2">
-                      <span className="text-4xl font-bold">{goal.current.toLocaleString()}</span>
-                      <span className="text-muted-foreground">/ {goal.target.toLocaleString()} {goal.unit}</span>
+                    <div className="mb-3 flex items-baseline justify-center gap-2">
+                      <span className="font-headline text-4xl font-extrabold tabular-nums tracking-tight">{goal.current.toLocaleString()}</span>
+                      <span className="text-sm text-muted-foreground">/ {goal.target.toLocaleString()} {goal.unit}</span>
                     </div>
-                    <Progress value={progress} aria-label={`${goal.title} postęp`} className={isCompleted ? '[&>div]:bg-green-500' : ''} />
-                    <p className="text-center text-sm text-muted-foreground mt-2">{progress.toFixed(0)}% ukończono</p>
+                    <Progress value={progress} aria-label={`${goal.title} postęp`} />
+                    <p className={`mt-2 text-center text-[11px] font-bold uppercase tracking-wider ${isCompleted ? 'text-volt' : 'text-muted-foreground'}`}>
+                      {progress.toFixed(0)}% ukończono
+                    </p>
                   </CardContent>
                   <CardFooter className="flex-col gap-2">
                     {isCompleted ? (
-                      <Button onClick={() => setGoalToConvert(goal)} className="w-full bg-green-600 hover:bg-green-700">
-                        <Trophy className="mr-2 h-4 w-4" /> Zamień w Trofeum
+                      <Button onClick={() => setGoalToConvert(goal)} className="w-full bg-volt font-bold text-volt-foreground shadow-glow-volt hover:bg-volt/90">
+                        <Trophy className="mr-2 h-4 w-4" /> Zamień w trofeum
                       </Button>
                     ) : (
                       <p className="text-xs text-muted-foreground w-full text-center">
@@ -769,61 +778,56 @@ export default function GoalsAndAchievementsPage() {
               );
             })}
 
-            <Card onClick={() => { setEditingGoal(null); setGoalDialogOpen(true); }} className="flex flex-col items-center justify-center border-dashed hover:border-primary hover:bg-secondary/30 transition-colors cursor-pointer min-h-[280px]">
-              <CardContent className="text-center p-6">
-                <PlusCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="font-headline text-xl font-semibold mb-2">Stwórz Nowy Cel</h3>
-                <p className="text-muted-foreground mb-4">Zdefiniuj swój następny cel i pozostań zmotywowany.</p>
-                <Button variant="outline">Ustaw Nowy Cel</Button>
-              </CardContent>
-            </Card>
+            <div
+              onClick={() => { setEditingGoal(null); setGoalDialogOpen(true); }}
+              className="flex min-h-[280px] cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-card/50 p-6 text-center transition-all hover:border-primary/50 hover:bg-secondary/30 active:scale-[0.99]"
+            >
+              <span className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-secondary text-primary">
+                <PlusCircle className="h-7 w-7" />
+              </span>
+              <h3 className="mb-1 font-headline text-lg font-bold">Stwórz nowy cel</h3>
+              <p className="mb-4 text-sm text-muted-foreground">Zdefiniuj swój następny cel i pozostań zmotywowany.</p>
+              <Button variant="outline" size="sm">Ustaw nowy cel</Button>
+            </div>
           </div>
         </section>
 
         {/* --- Gamification Badges Section --- */}
         <section className="mb-12">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-headline text-2xl font-semibold flex items-center gap-2">
-              <Medal className="h-6 w-6 text-yellow-500" />
-              Odznaki Gamifikacji
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 font-headline text-lg font-bold tracking-tight md:text-xl">
+              <Medal className="h-5 w-5 text-[hsl(var(--chart-5))]" />
+              Odznaki gamifikacji
             </h2>
             {gamificationStats && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Sparkles className="h-4 w-4 text-primary" />
+              <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-bold">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
                 <span>Poziom {gamificationStats.level}</span>
-                <span>•</span>
-                <span>{gamificationStats.currentFitCoins} FitCoins</span>
+                <span className="text-muted-foreground">·</span>
+                <span className="text-volt">{gamificationStats.currentFitCoins} FitCoins</span>
               </div>
             )}
           </div>
 
           {/* Mini stats card */}
           {gamificationStats && (
-            <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10">
-                <CardContent className="p-4 text-center">
-                  <p className="text-2xl font-bold">{gamificationStats.level}</p>
-                  <p className="text-xs text-muted-foreground">Poziom</p>
-                </CardContent>
-              </Card>
-              <Card className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10">
-                <CardContent className="p-4 text-center">
-                  <p className="text-2xl font-bold">{gamificationStats.currentFitCoins}</p>
-                  <p className="text-xs text-muted-foreground">FitCoins</p>
-                </CardContent>
-              </Card>
-              <Card className="bg-gradient-to-br from-orange-500/10 to-red-500/10">
-                <CardContent className="p-4 text-center">
-                  <p className="text-2xl font-bold">{gamificationStats.streaks.goals}</p>
-                  <p className="text-xs text-muted-foreground">Seria celów</p>
-                </CardContent>
-              </Card>
-              <Card className="bg-gradient-to-br from-purple-500/10 to-pink-500/10">
-                <CardContent className="p-4 text-center">
-                  <p className="text-2xl font-bold">{gamificationStats.achievementCount}</p>
-                  <p className="text-xs text-muted-foreground">Odznaki</p>
-                </CardContent>
-              </Card>
+            <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+              <div className="rounded-2xl border border-border/60 bg-card p-4 text-center shadow-soft">
+                <p className="font-headline text-2xl font-bold tabular-nums">{gamificationStats.level}</p>
+                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Poziom</p>
+              </div>
+              <div className="rounded-2xl border border-border/60 bg-card p-4 text-center shadow-soft">
+                <p className="font-headline text-2xl font-bold tabular-nums text-volt">{gamificationStats.currentFitCoins}</p>
+                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">FitCoins</p>
+              </div>
+              <div className="rounded-2xl border border-border/60 bg-card p-4 text-center shadow-soft">
+                <p className="font-headline text-2xl font-bold tabular-nums text-primary">{gamificationStats.streaks.goals}</p>
+                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Seria celów</p>
+              </div>
+              <div className="rounded-2xl border border-border/60 bg-card p-4 text-center shadow-soft">
+                <p className="font-headline text-2xl font-bold tabular-nums">{gamificationStats.achievementCount}</p>
+                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Odznaki</p>
+              </div>
             </div>
           )}
 
@@ -838,13 +842,13 @@ export default function GoalsAndAchievementsPage() {
               ))}
             </div>
           ) : badges.length === 0 ? (
-            <Card className="flex flex-col items-center justify-center border-dashed py-12">
-              <CardContent className="text-center">
-                <Medal className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="font-headline text-xl font-semibold mb-2">Brak dostępnych odznak</h3>
-                <p className="text-muted-foreground">Zdobywaj odznaki kończąc cele i treningi!</p>
-              </CardContent>
-            </Card>
+            <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-card/50 py-12 text-center">
+              <span className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-secondary text-primary">
+                <Medal className="h-7 w-7" />
+              </span>
+              <h3 className="mb-1 font-headline text-lg font-bold">Brak dostępnych odznak</h3>
+              <p className="text-sm text-muted-foreground">Zdobywaj odznaki kończąc cele i treningi!</p>
+            </div>
           ) : (
             <AchievementsGrid achievements={badges} />
           )}
@@ -852,24 +856,24 @@ export default function GoalsAndAchievementsPage() {
 
         {/* --- Achievements Section --- */}
         <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-headline text-2xl font-semibold">Zdobyte Trofea</h2>
-            <Button variant="outline" onClick={() => setAchievementDialogOpen(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Dodaj Trofeum
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="font-headline text-lg font-bold tracking-tight md:text-xl">Zdobyte trofea</h2>
+            <Button variant="outline" size="sm" onClick={() => setAchievementDialogOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" /> Dodaj trofeum
             </Button>
           </div>
           {isLoading ? (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-96 w-full" />)}
+              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-96 w-full rounded-3xl" />)}
             </div>
           ) : achievements?.length === 0 ? (
-            <Card className="flex flex-col items-center justify-center border-dashed py-20">
-              <CardContent className="text-center">
-                <Trophy className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="font-headline text-xl font-semibold mb-2">Brak Trofeów</h3>
-                <p className="text-muted-foreground">Osiągnij swoje cele lub dodaj osiągnięcie ręcznie, aby zapełnić tę galerię chwały!</p>
-              </CardContent>
-            </Card>
+            <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-card/50 py-20 text-center">
+              <span className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-secondary text-primary">
+                <Trophy className="h-7 w-7" />
+              </span>
+              <h3 className="mb-1 font-headline text-lg font-bold">Brak trofeów</h3>
+              <p className="max-w-sm text-sm text-muted-foreground">Osiągnij swoje cele lub dodaj osiągnięcie ręcznie, aby zapełnić tę galerię chwały!</p>
+            </div>
           ) : (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {achievements?.map((achievement) => (

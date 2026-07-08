@@ -1,63 +1,96 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { format, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Calendar } from '@/components/ui/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 import { useCollection, useDoc, useUser } from '@/lib/db-hooks';
 import type { WorkoutLog, Goal, BodyMeasurement, RunningSession, LoggedMeal, PlannedWorkout, UserProfile, TrainingPlan, Habit, HabitLog } from '@/lib/types';
-import { Activity, Target, Weight, Footprints, ChefHat, Calendar as CalendarIcon, TrendingUp, Dumbbell, Clock, Award, Layers, User, MapPin, Bell, CheckSquare } from 'lucide-react';
+import { Activity, Target, Weight, Footprints, ChefHat, Calendar as CalendarIcon, TrendingUp, Dumbbell, Clock, Award, Layers, User, MapPin, CheckSquare, Play, ArrowRight, Check } from 'lucide-react';
 import type { TrainingSessionData } from '@/components/schedule/SessionDetailsDialog';
 import { ActiveChallenges } from '@/components/challenges/ActiveChallenges';
 
-const StatCard = ({
-  title,
-  value,
-  unit,
-  icon: Icon,
-  isLoading,
-  trend,
-  href
-}: {
-  title: string;
-  value: string | number;
-  unit?: string;
-  icon: React.ElementType;
-  isLoading: boolean;
-  trend?: string;
-  href?: string;
-}) => {
-  const CardComponent = (href ? Link : 'div') as React.ElementType;
-  const linkProps = href ? { to: href } : {};
-  return (
-    <CardComponent {...linkProps} className={href ? 'block' : ''}>
-      <Card className={href ? 'transition-all hover:shadow-lg' : ''}>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">{title}</CardTitle>
-          <Icon className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <Skeleton className="h-8 w-24" />
-          ) : (
-            <div className="text-2xl font-bold">
-              {value} {unit && <span className="text-base font-normal text-muted-foreground">{unit}</span>}
-            </div>
-          )}
-          {trend && !isLoading && (
-            <p className="text-xs text-muted-foreground mt-1">{trend}</p>
-          )}
-        </CardContent>
-      </Card>
-    </CardComponent>
-  );
+/* ---------- Bento building blocks ---------- */
+
+const Tile = ({ to, className, children }: { to?: string; className?: string; children: ReactNode }) => {
+  const base = 'group relative block overflow-hidden rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-soft transition-all duration-200';
+  if (to) {
+    return (
+      <Link to={to} className={cn(base, 'hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lifted active:scale-[0.97]', className)}>
+        {children}
+      </Link>
+    );
+  }
+  return <div className={cn(base, className)}>{children}</div>;
 };
+
+const TileLabel = ({ children }: { children: ReactNode }) => (
+  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{children}</p>
+);
+
+const TileValue = ({ value, unit, isLoading }: { value: string | number; unit?: string; isLoading?: boolean }) =>
+  isLoading ? (
+    <Skeleton className="mt-2 h-8 w-20" />
+  ) : (
+    <p className="mt-2 font-headline text-[1.7rem] font-bold leading-none tracking-tight tabular-nums">
+      {value}
+      {unit && <span className="ml-1 text-sm font-semibold text-muted-foreground">{unit}</span>}
+    </p>
+  );
+
+function ProgressRing({ value, max, size = 116, stroke = 11, children }: { value: number; max: number; size?: number; stroke?: number; children?: ReactNode }) {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const pct = max > 0 ? Math.min(value / max, 1) : 0;
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <defs>
+          <linearGradient id="ring-ember" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="hsl(var(--primary))" />
+            <stop offset="100%" stopColor="hsl(var(--volt))" />
+          </linearGradient>
+        </defs>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={stroke} className="stroke-foreground/10" />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          stroke="url(#ring-ember)"
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - pct)}
+          className="transition-[stroke-dashoffset] duration-700 ease-out"
+        />
+      </svg>
+      <div className="absolute inset-0 grid place-items-center">{children}</div>
+    </div>
+  );
+}
+
+const SectionHeader = ({ title, sub, href, linkLabel = 'Wszystkie' }: { title: string; sub?: string; href?: string; linkLabel?: string }) => (
+  <div className="mb-3 flex items-end justify-between gap-3">
+    <div className="min-w-0">
+      <h2 className="font-headline text-lg font-bold tracking-tight md:text-xl">{title}</h2>
+      {sub && <p className="text-xs text-muted-foreground md:text-sm">{sub}</p>}
+    </div>
+    {href && (
+      <Link
+        to={href}
+        className="flex shrink-0 items-center gap-1 pb-0.5 text-[11px] font-bold uppercase tracking-wider text-primary transition-colors hover:text-primary/80"
+      >
+        {linkLabel} <ArrowRight className="h-3.5 w-3.5" />
+      </Link>
+    )}
+  </div>
+);
 
 export default function AthleteDashboardPage() {
   const { user } = useUser();
@@ -129,7 +162,7 @@ export default function AthleteDashboardPage() {
   );
 
   // Upcoming trainer sessions
-  const { data: trainerSessions, isLoading: trainerSessionsLoading } = useCollection<TrainingSessionData>(
+  const { data: trainerSessions } = useCollection<TrainingSessionData>(
     user ? 'trainingSessions' : null,
     { athleteId: user?.uid }
   );
@@ -155,7 +188,7 @@ export default function AthleteDashboardPage() {
 
   const todayIso = useMemo(() => new Date().toISOString(), []);
 
-  const { data: upcomingPlannedWorkouts, isLoading: upcomingPlannedLoading } = useCollection<PlannedWorkout>(
+  const { data: upcomingPlannedWorkouts } = useCollection<PlannedWorkout>(
     user ? 'plannedWorkouts' : null,
     {
       ownerId: user?.uid,
@@ -283,95 +316,189 @@ export default function AthleteDashboardPage() {
 
   const isLoading = workoutsLoading || goalsLoading || measurementsLoading || runningLoading || mealsLoading || assignedPlansLoading || habitsLoading;
 
+  const plannedTodayCount = plannedWorkouts?.filter(p =>
+    format(new Date(p.date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+  ).length || 0;
+
+  const weeklyTarget = Math.max(plannedWorkouts?.length || 0, stats.thisWeekWorkouts, 3);
+
+  // Current week, day by day: completed / planned / rest
+  const weekDays = useMemo(() => {
+    const todayKey = format(new Date(), 'yyyy-MM-dd');
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(weekStart);
+      d.setDate(d.getDate() + i);
+      const key = format(d, 'yyyy-MM-dd');
+      return {
+        label: format(d, 'EEEEEE', { locale: pl }),
+        isToday: key === todayKey,
+        done: recentWorkouts?.some(w => format(new Date(w.endTime), 'yyyy-MM-dd') === key) || false,
+        planned: plannedWorkouts?.some(p => format(new Date(p.date), 'yyyy-MM-dd') === key) || false,
+      };
+    });
+  }, [recentWorkouts, plannedWorkouts, weekStart]);
+
+  const firstName = userProfile?.name?.split(' ')[0] || 'Sportowcu';
+
   return (
-    <div className="container mx-auto p-4 md:p-8">
-      <div className="mb-6">
-        <h1 className="font-headline text-3xl font-bold">Panel Sportowca</h1>
-        <p className="text-muted-foreground">Witaj, {userProfile?.name}! Oto Twój przegląd postępów.</p>
-      </div>
+    <div className="container mx-auto max-w-7xl px-4 pb-10 pt-5 md:px-8 md:pt-8">
+      <div className="stagger-rise">
+        {/* Hero — typographic statement */}
+        <section className="mb-6 md:mb-10">
+          <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-muted-foreground">
+            {format(new Date(), 'EEEE · d MMMM yyyy', { locale: pl })}
+          </p>
+          <h1 className="mt-2.5 font-display text-[1.85rem] font-extrabold uppercase leading-[1.08] tracking-tight md:text-5xl">
+            Cześć, {firstName}!
+            <br />
+            <span className="text-gradient-ember">Czas na ruch</span>
+          </h1>
+        </section>
 
-      {/* Statistics Grid */}
-      <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Treningi w tym tygodniu"
-          value={stats.thisWeekWorkouts}
-          icon={Dumbbell}
-          isLoading={isLoading}
-          trend={`z ${stats.totalWorkouts} łącznie`}
-          href="/athlete/history"
-        />
-        <StatCard
-          title="Objętość tego tygodnia"
-          value={stats.thisWeekVolume.toLocaleString()}
-          unit="kg"
-          icon={Activity}
-          isLoading={isLoading}
-          href="/athlete/history"
-        />
-        <StatCard
-          title="Ukończone cele"
-          value={`${stats.completedGoals}/${stats.totalGoals}`}
-          icon={Target}
-          isLoading={isLoading}
-          href="/athlete/goals"
-        />
-        <StatCard
-          title="Aktualna waga"
-          value={stats.currentWeight.toFixed(1)}
-          unit="kg"
-          icon={Weight}
-          isLoading={isLoading}
-          href="/athlete/measurements"
-        />
-        <StatCard
-          title="Bieganie (30 dni)"
-          value={stats.totalRunningDistance.toFixed(1)}
-          unit="km"
-          icon={Footprints}
-          isLoading={isLoading}
-          trend={`${Math.round(stats.totalRunningTime)} min łącznie`}
-          href="/athlete/running"
-        />
-        <StatCard
-          title="Przypisane plany"
-          value={assignedPlans?.length || 0}
-          icon={Award}
-          isLoading={isLoading}
-          href="/athlete/workout-plans"
-        />
-        <StatCard
-          title="Zaplanowane na dziś"
-          value={plannedWorkouts?.filter(p => {
-            const today = new Date();
-            return format(new Date(p.date), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
-          }).length || 0}
-          icon={CalendarIcon}
-          isLoading={plannedLoading}
-          href="/athlete/calendar"
-        />
-      </div>
-
-      {/* Running Challenges */}
-      <ActiveChallenges />
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Recent Workouts */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="font-headline">Ostatnie Treningi</CardTitle>
-              <CardDescription>Twoja najnowsza aktywność treningowa</CardDescription>
+        {/* Bento grid */}
+        <section className="grid grid-cols-2 gap-3 md:grid-flow-dense md:grid-cols-4 md:gap-4">
+          {/* CTA */}
+          <Link
+            to="/athlete/log"
+            className="hero-ember texture-grain group relative col-span-2 flex items-center justify-between gap-4 overflow-hidden rounded-[1.75rem] p-5 text-white shadow-glow transition-transform duration-200 active:scale-[0.98] md:p-6"
+          >
+            <div aria-hidden className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full border-[1.1rem] border-white/10" />
+            <div className="relative min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/75">Trenuj teraz</p>
+              <p className="mt-1 font-display text-xl font-extrabold uppercase leading-tight md:text-2xl">
+                Rozpocznij trening
+              </p>
+              {plannedTodayCount > 0 && (
+                <span className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-black/25 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider backdrop-blur-sm">
+                  <CalendarIcon className="h-3 w-3" /> Dziś: {plannedTodayCount} zaplanowane
+                </span>
+              )}
             </div>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/athlete/history">Zobacz wszystkie</Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
+            <span className="relative grid h-14 w-14 shrink-0 place-items-center rounded-full bg-white text-primary shadow-lg transition-transform duration-200 group-hover:scale-105 group-active:scale-95">
+              <Play className="h-6 w-6 fill-current" />
+            </span>
+          </Link>
+
+          {/* Weekly ring */}
+          <Tile to="/athlete/history" className="row-span-2 flex flex-col items-center justify-between gap-2 py-5">
+            <TileLabel>Ten tydzień</TileLabel>
+            <ProgressRing value={stats.thisWeekWorkouts} max={weeklyTarget}>
+              <div className="text-center">
+                <p className="font-display text-3xl font-extrabold leading-none tabular-nums">
+                  {isLoading ? '–' : stats.thisWeekWorkouts}
+                </p>
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">/ {weeklyTarget}</p>
+              </div>
+            </ProgressRing>
+            <p className="text-center text-[11px] leading-tight text-muted-foreground">
+              treningi
+              <br />
+              łącznie {stats.totalWorkouts}
+            </p>
+          </Tile>
+
+          {/* Volume */}
+          <Tile to="/athlete/history">
+            <div className="flex items-center justify-between">
+              <TileLabel>Objętość</TileLabel>
+              <Activity className="h-4 w-4 text-muted-foreground/50 transition-colors group-hover:text-primary" />
+            </div>
+            <TileValue value={stats.thisWeekVolume.toLocaleString()} unit="kg" isLoading={isLoading} />
+            <p className="mt-1 text-[11px] text-muted-foreground">w tym tygodniu</p>
+          </Tile>
+
+          {/* Weight */}
+          <Tile to="/athlete/measurements">
+            <div className="flex items-center justify-between">
+              <TileLabel>Waga</TileLabel>
+              <Weight className="h-4 w-4 text-muted-foreground/50 transition-colors group-hover:text-primary" />
+            </div>
+            <TileValue value={stats.currentWeight.toFixed(1)} unit="kg" isLoading={isLoading} />
+            <p className="mt-1 text-[11px] text-muted-foreground">ostatni pomiar</p>
+          </Tile>
+
+          {/* Week strip */}
+          <Tile className="col-span-2 md:col-span-2">
+            <TileLabel>Twój tydzień</TileLabel>
+            <div className="mt-3 flex items-center justify-between">
+              {weekDays.map((d, i) => (
+                <span
+                  key={i}
+                  title={d.label}
+                  className={cn(
+                    'grid h-9 w-9 place-items-center rounded-full text-[10px] font-bold uppercase transition-all md:h-10 md:w-10',
+                    d.done
+                      ? 'hero-ember text-white shadow-glow'
+                      : d.planned
+                        ? 'border-2 border-volt/70 text-volt'
+                        : 'border border-border text-muted-foreground/60',
+                    d.isToday && !d.done && 'ring-2 ring-primary/60 ring-offset-2 ring-offset-card'
+                  )}
+                >
+                  {d.done ? <Check className="h-4 w-4" strokeWidth={3} /> : d.label}
+                </span>
+              ))}
+            </div>
+          </Tile>
+
+          {/* Running */}
+          <Tile to="/athlete/running">
+            <div className="flex items-center justify-between">
+              <TileLabel>Bieganie</TileLabel>
+              <Footprints className="h-4 w-4 text-muted-foreground/50 transition-colors group-hover:text-primary" />
+            </div>
+            <TileValue value={stats.totalRunningDistance.toFixed(1)} unit="km" isLoading={isLoading} />
+            <p className="mt-1 text-[11px] text-muted-foreground">30 dni · {Math.round(stats.totalRunningTime)} min</p>
+          </Tile>
+
+          {/* Goals */}
+          <Tile to="/athlete/goals">
+            <div className="flex items-center justify-between">
+              <TileLabel>Cele</TileLabel>
+              <Target className="h-4 w-4 text-muted-foreground/50 transition-colors group-hover:text-primary" />
+            </div>
+            <TileValue value={`${stats.completedGoals}/${stats.totalGoals}`} isLoading={isLoading} />
+            <Progress
+              value={stats.totalGoals > 0 ? (stats.completedGoals / stats.totalGoals) * 100 : 0}
+              className="mt-2.5 h-1.5"
+            />
+          </Tile>
+
+          {/* Calories today */}
+          <Tile>
+            <div className="flex items-center justify-between">
+              <TileLabel>Kalorie</TileLabel>
+              <ChefHat className="h-4 w-4 text-muted-foreground/50" />
+            </div>
+            <TileValue value={stats.todayCalories.toLocaleString()} unit="kcal" isLoading={isLoading} />
+            <p className="mt-1 text-[11px] text-muted-foreground">zjedzone dziś</p>
+          </Tile>
+
+          {/* Assigned plans */}
+          <Tile to="/athlete/workout-plans">
+            <div className="flex items-center justify-between">
+              <TileLabel>Programy</TileLabel>
+              <Award className="h-4 w-4 text-muted-foreground/50 transition-colors group-hover:text-primary" />
+            </div>
+            <TileValue value={assignedPlans?.length || 0} isLoading={isLoading} />
+            <p className="mt-1 text-[11px] text-muted-foreground">od trenera</p>
+          </Tile>
+        </section>
+
+        {/* Running Challenges */}
+        <section className="mt-8">
+          <ActiveChallenges />
+        </section>
+
+        {/* Recent workouts + goals */}
+        <section className="mt-8 grid gap-8 lg:grid-cols-5">
+          <div className="lg:col-span-3">
+            <SectionHeader title="Ostatnie treningi" sub="Twoja najnowsza aktywność" href="/athlete/history" />
             {isLoading ? (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-md border">
-                    <div className="space-y-1">
+                  <div key={i} className="flex items-center justify-between rounded-2xl border border-border/60 bg-card p-4">
+                    <div className="space-y-1.5">
                       <Skeleton className="h-4 w-32" />
                       <Skeleton className="h-3 w-24" />
                     </div>
@@ -380,7 +507,7 @@ export default function AthleteDashboardPage() {
                 ))}
               </div>
             ) : recentWorkouts && recentWorkouts.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {recentWorkouts.map(workout => {
                   const totalVolume = workout.exercises.reduce((acc, ex) => {
                     if (ex.exercise?.type !== 'weight') return acc;
@@ -389,49 +516,45 @@ export default function AthleteDashboardPage() {
                   }, 0);
 
                   return (
-                    <Link key={workout.id} to={`/athlete/history/${workout.id}`}>
-                      <div className="flex items-center justify-between p-3 rounded-md border hover:bg-secondary/50 transition-colors">
-                        <div>
-                          <p className="font-semibold">{workout.workoutName}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {format(new Date(workout.endTime), 'd MMM yyyy', { locale: pl })} • {workout.duration} min
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-semibold">{totalVolume.toLocaleString()} kg</p>
-                          <p className="text-sm text-muted-foreground">{workout.exercises.length} ćwiczeń</p>
-                        </div>
+                    <Link
+                      key={workout.id}
+                      to={`/athlete/history/${workout.id}`}
+                      className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-3.5 shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted active:scale-[0.99]"
+                    >
+                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-secondary text-primary">
+                        <Dumbbell className="h-5 w-5" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold">{workout.workoutName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(workout.endTime), 'd MMM yyyy', { locale: pl })} · {workout.duration} min
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="font-headline font-bold tabular-nums">{totalVolume.toLocaleString()} kg</p>
+                        <p className="text-xs text-muted-foreground">{workout.exercises.length} ćwiczeń</p>
                       </div>
                     </Link>
                   );
                 })}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Brak ostatnich treningów</p>
-                <Button variant="outline" className="mt-2" asChild>
+              <div className="rounded-[1.75rem] border border-dashed border-border bg-card/50 p-8 text-center">
+                <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-secondary text-primary">
+                  <Dumbbell className="h-7 w-7" />
+                </span>
+                <p className="text-sm text-muted-foreground">Brak ostatnich treningów</p>
+                <Button variant="outline" size="sm" className="mt-3" asChild>
                   <Link to="/athlete/log">Rozpocznij trening</Link>
                 </Button>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Active Goals */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="font-headline">Aktywne Cele</CardTitle>
-              <CardDescription>Twój postęp w osiąganiu celów</CardDescription>
-            </div>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/athlete/goals">Zobacz wszystkie</Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
+          <div className="lg:col-span-2">
+            <SectionHeader title="Aktywne cele" sub="Twój postęp" href="/athlete/goals" />
             {isLoading ? (
-              <div className="space-y-4">
+              <div className="space-y-4 rounded-[1.75rem] border border-border/60 bg-card p-5">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="space-y-2">
                     <Skeleton className="h-4 w-full" />
@@ -441,21 +564,24 @@ export default function AthleteDashboardPage() {
                 ))}
               </div>
             ) : goals && goals.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-5 rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-soft">
                 {goals.slice(0, 3).map(goal => {
                   const progress = Math.min((goal.current / goal.target) * 100, 100);
                   const isCompleted = progress >= 100;
 
                   return (
                     <div key={goal.id} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <p className="font-semibold text-sm">{goal.title}</p>
-                        <Badge variant={isCompleted ? "default" : "secondary"}>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate text-sm font-semibold">{goal.title}</p>
+                        <Badge
+                          variant={isCompleted ? 'default' : 'secondary'}
+                          className={isCompleted ? 'border-transparent bg-volt text-volt-foreground' : ''}
+                        >
                           {progress.toFixed(0)}%
                         </Badge>
                       </div>
-                      <Progress value={progress} className={isCompleted ? '[&>div]:bg-green-500' : ''} />
-                      <p className="text-xs text-muted-foreground">
+                      <Progress value={progress} />
+                      <p className="text-xs tabular-nums text-muted-foreground">
                         {goal.current.toLocaleString()} / {goal.target.toLocaleString()} {goal.unit}
                       </p>
                     </div>
@@ -463,69 +589,60 @@ export default function AthleteDashboardPage() {
                 })}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <Target className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Brak aktywnych celów</p>
-                <Button variant="outline" className="mt-2" asChild>
+              <div className="rounded-[1.75rem] border border-dashed border-border bg-card/50 p-8 text-center">
+                <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-secondary text-primary">
+                  <Target className="h-7 w-7" />
+                </span>
+                <p className="text-sm text-muted-foreground">Brak aktywnych celów</p>
+                <Button variant="outline" size="sm" className="mt-3" asChild>
                   <Link to="/athlete/goals">Ustaw cel</Link>
                 </Button>
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </section>
 
-      {/* Upcoming Trainer Sessions */}
-      {upcomingTrainerSessions.length > 0 && (
-        <Card className="mt-6 border-orange-500/30 bg-orange-500/5">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500/20">
-                <Bell className="h-5 w-5 text-orange-500" />
-              </div>
-              <div>
-                <CardTitle className="font-headline">Sesje z Trenerem</CardTitle>
-                <CardDescription>Nadchodzące spotkania treningowe</CardDescription>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/athlete/calendar">Zobacz kalendarz</Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+        {/* Upcoming Trainer Sessions */}
+        {upcomingTrainerSessions.length > 0 && (
+          <section className="mt-8">
+            <SectionHeader title="Sesje z trenerem" sub="Nadchodzące spotkania" href="/athlete/calendar" linkLabel="Kalendarz" />
+            <div className="no-scrollbar -mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-3">
               {upcomingTrainerSessions.slice(0, 3).map((session) => {
                 const sessionDate = new Date(session.date);
                 return (
-                  <Link key={session.id} to="/athlete/calendar" className="block">
-                    <div className="p-4 rounded-lg border border-orange-500/20 hover:bg-orange-500/10 transition-colors">
-                      <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-semibold">{session.title}</h4>
-                        <Badge
-                          className={session.status === 'confirmed'
-                            ? 'bg-green-500 hover:bg-green-600'
-                            : 'bg-orange-500 hover:bg-orange-600'
-                          }
-                        >
-                          {session.status === 'confirmed' ? 'Potwierdzona' : 'Oczekuje'}
-                        </Badge>
+                  <Link
+                    key={session.id}
+                    to="/athlete/calendar"
+                    className="w-[16.5rem] shrink-0 snap-start rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted active:scale-[0.98] md:w-auto"
+                  >
+                    <div className="mb-3 flex items-start justify-between gap-2">
+                      <h4 className="min-w-0 truncate font-semibold">{session.title}</h4>
+                      <Badge
+                        className={session.status === 'confirmed'
+                          ? 'border-transparent bg-volt text-volt-foreground'
+                          : 'border-transparent bg-secondary text-foreground'
+                        }
+                      >
+                        {session.status === 'confirmed' ? 'Potwierdzona' : 'Oczekuje'}
+                      </Badge>
+                    </div>
+                    <div className="space-y-1.5 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <CalendarIcon className="h-3.5 w-3.5" />
+                        <span className="capitalize">{format(sessionDate, 'EEEE, d MMM', { locale: pl })}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                        <CalendarIcon className="h-3 w-3" />
-                        <span>{format(sessionDate, 'EEEE, d MMM', { locale: pl })}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                        <Clock className="h-3 w-3" />
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-3.5 w-3.5" />
                         <span>{format(sessionDate, 'HH:mm')} ({session.duration} min)</span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <User className="h-3 w-3" />
+                      <div className="flex items-center gap-2">
+                        <User className="h-3.5 w-3.5" />
                         <span>{session.trainerName}</span>
                       </div>
                       {session.location && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                          <MapPin className="h-3 w-3" />
-                          <span>{session.location}</span>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-3.5 w-3.5" />
+                          <span className="truncate">{session.location}</span>
                         </div>
                       )}
                     </div>
@@ -533,83 +650,60 @@ export default function AthleteDashboardPage() {
                 );
               })}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </section>
+        )}
 
-      {/* Assigned Workout Plans */}
-      {assignedPlans && assignedPlans.length > 0 && (
-        <Card className="mt-6">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="font-headline">Plany Treningowe od Trenera</CardTitle>
-              <CardDescription>Przypisane Ci programy treningowe</CardDescription>
-            </div>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/athlete/workout-plans">Zobacz szczegóły</Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {/* Assigned Workout Plans */}
+        {assignedPlans && assignedPlans.length > 0 && (
+          <section className="mt-8">
+            <SectionHeader title="Plany od trenera" sub="Przypisane programy" href="/athlete/workout-plans" linkLabel="Szczegóły" />
+            <div className="no-scrollbar -mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-3">
               {assignedPlans.slice(0, 3).map((plan) => {
                 const totalWeeks = plan.stages.reduce((acc, stage) => acc + stage.weeks.length, 0);
                 return (
-                  <Link key={plan.id} to="/athlete/workout-plans" className="block">
-                    <div className="p-4 rounded-lg border hover:bg-secondary/50 transition-colors">
-                      <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-semibold">{plan.name}</h4>
-                        <Badge variant="outline" className="text-xs">{plan.level}</Badge>
+                  <Link
+                    key={plan.id}
+                    to="/athlete/workout-plans"
+                    className="w-[16.5rem] shrink-0 snap-start rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted active:scale-[0.98] md:w-auto"
+                  >
+                    <div className="mb-3 flex items-start justify-between gap-2">
+                      <h4 className="min-w-0 truncate font-semibold">{plan.name}</h4>
+                      <Badge variant="outline">{plan.level}</Badge>
+                    </div>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <Layers className="h-3.5 w-3.5" />
+                        <span>{plan.stages.length} etapów</span>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Layers className="h-3 w-3" />
-                          <span>{plan.stages.length} etapów</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <CalendarIcon className="h-3 w-3" />
-                          <span>{totalWeeks} tyg.</span>
-                        </div>
+                      <div className="flex items-center gap-1.5">
+                        <CalendarIcon className="h-3.5 w-3.5" />
+                        <span>{totalWeeks} tyg.</span>
                       </div>
                     </div>
                   </Link>
                 );
               })}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </section>
+        )}
 
-      {/* Habits Section */}
-      {habits && habits.length > 0 && (
-        <Card className="mt-6 border-green-500/30 bg-green-500/5">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/20">
-                <CheckSquare className="h-5 w-5 text-green-500" />
+        {/* Habits */}
+        {habits && habits.length > 0 && (
+          <section className="mt-8">
+            <SectionHeader title="Nawyki" sub="Codzienna konsekwencja" href="/athlete/habits" linkLabel="Zarządzaj" />
+            <div className="mb-3 flex gap-2.5">
+              <div className="flex-1 rounded-2xl border border-border/60 bg-card p-3 text-center shadow-soft">
+                <p className="font-headline text-xl font-bold tabular-nums text-volt">{habitsStats.completionRate}%</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">ten tydzień</p>
               </div>
-              <div>
-                <CardTitle className="font-headline">Nawyki</CardTitle>
-                <CardDescription>Twoje codzienne nawyki i postępy</CardDescription>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/athlete/habits">Zarządzaj</Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {/* Stats row */}
-            <div className="flex flex-wrap gap-4 mb-4 p-3 rounded-lg bg-background/50">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-green-500">{habitsStats.completionRate}%</span>
-                <span className="text-sm text-muted-foreground">wykonanych w tym tygodniu</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-semibold">{habitsStats.completedToday}/{habitsStats.totalHabits}</span>
-                <span className="text-sm text-muted-foreground">ukończonych dziś</span>
+              <div className="flex-1 rounded-2xl border border-border/60 bg-card p-3 text-center shadow-soft">
+                <p className="font-headline text-xl font-bold tabular-nums">
+                  {habitsStats.completedToday}/{habitsStats.totalHabits}
+                </p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">dziś</p>
               </div>
             </div>
 
-            {/* Habits list */}
             <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
               {habits.slice(0, 6).map((habit) => {
                 const today = format(new Date(), 'yyyy-MM-dd');
@@ -619,13 +713,17 @@ export default function AthleteDashboardPage() {
 
                 return (
                   <Link key={habit.id} to="/athlete/habits" className="block">
-                    <div className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${isCompletedToday
-                      ? 'bg-green-500/10 border-green-500/30'
-                      : 'hover:bg-secondary/50'
-                      }`}>
+                    <div
+                      className={cn(
+                        'flex items-center gap-3 rounded-2xl border p-3 transition-all active:scale-[0.99]',
+                        isCompletedToday
+                          ? 'border-volt/40 bg-volt/10'
+                          : 'border-border/60 bg-card hover:bg-secondary/50'
+                      )}
+                    >
                       <span className="text-2xl">{habit.icon || '💪'}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className={`font-medium truncate ${isCompletedToday ? 'text-green-600 dark:text-green-400' : ''}`}>
+                      <div className="min-w-0 flex-1">
+                        <p className={cn('truncate font-medium', isCompletedToday && 'text-volt')}>
                           {habit.name}
                         </p>
                         <p className="text-xs text-muted-foreground">
@@ -638,7 +736,7 @@ export default function AthleteDashboardPage() {
                         </p>
                       </div>
                       {isCompletedToday && (
-                        <CheckSquare className="h-5 w-5 text-green-500 shrink-0" />
+                        <CheckSquare className="h-5 w-5 shrink-0 text-volt" />
                       )}
                     </div>
                   </Link>
@@ -653,29 +751,14 @@ export default function AthleteDashboardPage() {
                 </Button>
               </div>
             )}
-          </CardContent>
-        </Card>
-      )}
+          </section>
+        )}
 
-      {/* Upcoming Planned Workouts */}
-      {upcomingPlannedWorkouts && upcomingPlannedWorkouts.length > 0 && (
-        <Card className="mt-6 border-blue-500/30 bg-blue-500/5">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/20">
-                <CalendarIcon className="h-5 w-5 text-blue-500" />
-              </div>
-              <div>
-                <CardTitle className="font-headline">Zaplanowane Treningi</CardTitle>
-                <CardDescription>Twoje nadchodzące sesje treningowe</CardDescription>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/athlete/calendar">Zobacz kalendarz</Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+        {/* Upcoming Planned Workouts */}
+        {upcomingPlannedWorkouts && upcomingPlannedWorkouts.length > 0 && (
+          <section className="mt-8">
+            <SectionHeader title="Zaplanowane treningi" sub="Nadchodzące sesje" href="/athlete/calendar" linkLabel="Kalendarz" />
+            <div className="no-scrollbar -mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-3">
               {upcomingPlannedWorkouts.slice(0, 6).map((workout) => {
                 const workoutDate = new Date(workout.date);
                 const now = new Date();
@@ -692,25 +775,32 @@ export default function AthleteDashboardPage() {
                 }
 
                 return (
-                  <div key={workout.id} className="p-4 rounded-lg border border-blue-500/20 hover:bg-blue-500/10 transition-colors">
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-semibold">{workout.workoutName}</h4>
-                      <Badge className="bg-blue-500 hover:bg-blue-600">{timeBadge}</Badge>
+                  <div
+                    key={workout.id}
+                    className="w-[16.5rem] shrink-0 snap-start rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted md:w-auto"
+                  >
+                    <div className="mb-3 flex items-start justify-between gap-2">
+                      <h4 className="min-w-0 truncate font-semibold">{workout.workoutName}</h4>
+                      <Badge className={diffDays === 0 ? '' : 'border-transparent bg-secondary text-foreground'}>
+                        {timeBadge}
+                      </Badge>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                      <CalendarIcon className="h-3 w-3" />
-                      <span>{format(workoutDate, 'EEEE, d MMM', { locale: pl })}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                      <Clock className="h-3 w-3" />
-                      <span>{format(workoutDate, 'HH:mm')}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                      <Dumbbell className="h-3 w-3" />
-                      <span>{workout.exercises.length} ćwiczeń</span>
+                    <div className="space-y-1.5 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <CalendarIcon className="h-3.5 w-3.5" />
+                        <span className="capitalize">{format(workoutDate, 'EEEE, d MMM', { locale: pl })}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span>{format(workoutDate, 'HH:mm')}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Dumbbell className="h-3.5 w-3.5" />
+                        <span>{workout.exercises.length} ćwiczeń</span>
+                      </div>
                     </div>
                     {(workout as any).workoutId && (
-                      <div className="flex gap-2">
+                      <div className="mt-3 flex gap-2">
                         <Button size="sm" className="flex-1" asChild>
                           <Link to={`/athlete/log?workoutId=${(workout as any).workoutId}`}>
                             Rozpocznij
@@ -727,39 +817,50 @@ export default function AthleteDashboardPage() {
                 );
               })}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </section>
+        )}
 
-      {/* Quick Actions */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle className="font-headline">Szybkie Akcje</CardTitle>
-          <CardDescription>Najczęściej używane funkcje</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Button asChild className="h-auto p-4 flex-col">
-              <Link to="/athlete/log">
-                <Dumbbell className="h-8 w-8 mb-2" />
-                <span>Rozpocznij Trening</span>
-              </Link>
-            </Button>
-            <Button variant="outline" asChild className="h-auto p-4 flex-col">
-              <Link to="/athlete/measurements">
-                <Weight className="h-8 w-8 mb-2" />
-                <span>Dodaj Pomiary</span>
-              </Link>
-            </Button>
-            <Button variant="outline" asChild className="h-auto p-4 flex-col">
-              <Link to="/athlete/running">
-                <Footprints className="h-8 w-8 mb-2" />
-                <span>Zapisz Bieg</span>
-              </Link>
-            </Button>
+        {/* Quick Actions */}
+        <section className="mt-8">
+          <SectionHeader title="Szybkie akcje" sub="Najczęściej używane funkcje" />
+          <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
+            <Link
+              to="/athlete/log"
+              className="hero-ember texture-grain group relative flex flex-col items-center justify-center gap-2.5 overflow-hidden rounded-[1.75rem] p-5 text-white shadow-glow transition-transform duration-200 hover:-translate-y-0.5 active:scale-[0.96]"
+            >
+              <Play className="h-7 w-7 fill-current" />
+              <span className="text-center text-[11px] font-bold uppercase tracking-wider leading-tight">Rozpocznij trening</span>
+            </Link>
+            <Link
+              to="/athlete/measurements"
+              className="group flex flex-col items-center justify-center gap-2.5 rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lifted active:scale-[0.96]"
+            >
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-secondary text-primary">
+                <Weight className="h-5 w-5" />
+              </span>
+              <span className="text-center text-[11px] font-bold uppercase tracking-wider leading-tight">Dodaj pomiary</span>
+            </Link>
+            <Link
+              to="/athlete/running"
+              className="group flex flex-col items-center justify-center gap-2.5 rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lifted active:scale-[0.96]"
+            >
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-secondary text-primary">
+                <Footprints className="h-5 w-5" />
+              </span>
+              <span className="text-center text-[11px] font-bold uppercase tracking-wider leading-tight">Zapisz bieg</span>
+            </Link>
+            <Link
+              to="/athlete/progress"
+              className="group flex flex-col items-center justify-center gap-2.5 rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lifted active:scale-[0.96]"
+            >
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-secondary text-primary">
+                <TrendingUp className="h-5 w-5" />
+              </span>
+              <span className="text-center text-[11px] font-bold uppercase tracking-wider leading-tight">Zobacz postępy</span>
+            </Link>
           </div>
-        </CardContent>
-      </Card>
+        </section>
+      </div>
     </div>
   );
 }

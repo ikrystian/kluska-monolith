@@ -11,7 +11,7 @@ import { PlusCircle, Trash2, Save, Loader2, Dumbbell, Upload, Search, ArrowLeft,
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -124,23 +124,23 @@ function AddExerciseSheet({ allExercises, onAddExercise }: { allExercises: Exerc
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="icon" className="h-12 w-12 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90">
+        <Button size="icon" className="hero-ember h-12 w-12 rounded-full text-white shadow-glow transition-transform hover:opacity-95 active:scale-90">
           <PlusCircle className="h-6 w-6" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="h-[85vh]">
+      <SheetContent side="bottom" className="h-[85vh] rounded-t-[2rem]">
         <SheetHeader>
-          <SheetTitle>Wybierz Ćwiczenie</SheetTitle>
+          <SheetTitle className="font-headline">Wybierz ćwiczenie</SheetTitle>
           <SheetDescription>Znajdź i dodaj ćwiczenie do swojego treningu.</SheetDescription>
         </SheetHeader>
         <div className="py-4">
-          <div className="flex items-center space-x-2 mb-4">
-            <Search className="h-4 w-4 text-muted-foreground" />
+          <div className="relative mb-4">
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Szukaj ćwiczenia..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1"
+              className="rounded-full pl-11"
             />
           </div>
           <ScrollArea className="h-[60vh]">
@@ -149,15 +149,17 @@ function AddExerciseSheet({ allExercises, onAddExercise }: { allExercises: Exerc
                 <div
                   key={ex.id}
                   onClick={() => handleSelectExercise(ex.id)}
-                  className="flex justify-between items-center p-3 rounded-md border cursor-pointer hover:bg-secondary"
+                  className="flex cursor-pointer items-center justify-between rounded-2xl border border-border/60 bg-card p-3.5 transition-all hover:border-primary/30 active:scale-[0.99]"
                 >
-                  <div>
-                    <p className="font-semibold">{ex.name}</p>
-                    <p className="text-sm text-muted-foreground">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold">{ex.name}</p>
+                    <p className="truncate text-sm text-muted-foreground">
                       {ex.mainMuscleGroups?.map(mg => mg.name).join(', ') || 'Ogólnorozwojowe'}
                     </p>
                   </div>
-                  <Button variant="ghost" size="icon"><PlusCircle className="h-5 w-5 text-primary" /></Button>
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary text-primary">
+                    <PlusCircle className="h-5 w-5" />
+                  </span>
                 </div>
               ))}
             </div>
@@ -235,44 +237,43 @@ function WorkoutBuilderView({ initialData, onStart, onCancel, allExercises, isLo
             </div>
 
             {fields.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-48 rounded-lg border-2 border-dashed p-8 text-center bg-secondary/20">
-                <Dumbbell className="mx-auto h-10 w-10 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Brak ćwiczeń. Dodaj pierwsze ćwiczenie!</p>
+              <div className="flex h-48 flex-col items-center justify-center rounded-[1.75rem] border border-dashed border-border bg-card/50 p-8 text-center">
+                <span className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-secondary text-primary">
+                  <Dumbbell className="h-6 w-6" />
+                </span>
+                <p className="text-sm text-muted-foreground">Brak ćwiczeń. Dodaj pierwsze ćwiczenie!</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {fields.map((field, index) => {
                   const exerciseDetails = allExercises?.find(ex => ex.id === field.exerciseId);
                   return (
-                    <Card key={field.id} className="relative overflow-hidden">
-                      <CardContent className="p-4 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
-                            {index + 1}
-                          </div>
-                          <div>
-                            <p className="font-semibold">{exerciseDetails?.name || (isLoadingExercises ? 'Ładowanie...' : 'Nieznane ćwiczenie')}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {exerciseDetails?.mainMuscleGroups?.map(mg => mg.name).join(', ') || 'Ogólnorozwojowe'}
-                            </p>
-                          </div>                 </div>
-                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </CardContent>
-                    </Card>
+                    <div key={field.id} className="flex items-center justify-between rounded-2xl border border-border/60 bg-card p-3.5 shadow-soft">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary font-headline text-sm font-bold text-primary">
+                          {index + 1}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold">{exerciseDetails?.name || (isLoadingExercises ? 'Ładowanie...' : 'Nieznane ćwiczenie')}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {exerciseDetails?.mainMuscleGroups?.map(mg => mg.name).join(', ') || 'Ogólnorozwojowe'}
+                          </p>
+                        </div>
+                      </div>
+                      <Button type="button" variant="ghost" size="icon" className="shrink-0" onClick={() => remove(index)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   );
                 })}
               </div>
             )}
           </div>
 
-          <div className="fixed bottom-16 left-0 right-0 bg-background/95 backdrop-blur border-t p-4 flex justify-between items-center z-50 md:absolute md:rounded-b-lg gap-4">
-            <div className="w-full">
-              <AddExerciseSheet allExercises={allExercises} onAddExercise={handleAddExercise} />
-            </div>
-            <Button type="submit" className="w-full" size="lg">
-              <Play className="mr-2 h-4 w-4" /> Rozpocznij Trening
+          <div className="glass fixed inset-x-4 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-lg items-center gap-3 rounded-[2rem] p-3 md:absolute md:inset-x-0 md:bottom-4 md:rounded-2xl">
+            <AddExerciseSheet allExercises={allExercises} onAddExercise={handleAddExercise} />
+            <Button type="submit" className="h-12 flex-1 text-base font-bold shadow-glow">
+              <Play className="mr-2 h-4 w-4 fill-current" /> Rozpocznij trening
             </Button>
           </div>
         </form>
@@ -641,17 +642,30 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
 
   if (isFinished) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-headline text-center text-2xl text-primary">Zakończyć Trening?</CardTitle>
-          <CardDescription className="text-center">Przejrzyj podsumowanie i zapisz swoją sesję.</CardDescription>
-        </CardHeader>
-        <CardContent className="text-center space-y-4">
-          <p><span className="font-semibold">Nazwa:</span> {form.getValues('workoutName')}</p>
-          <p><span className="font-semibold">Ćwiczenia:</span> {form.getValues('exerciseSeries').length}</p>
-          <p><span className="font-semibold">Czas trwania:</span> {Math.round((new Date().getTime() - startTime.getTime()) / (1000 * 60))} minut</p>
+      <Card className="overflow-hidden rounded-[2rem]">
+        <div className="hero-ember texture-grain relative p-6 text-center text-white">
+          <div aria-hidden className="pointer-events-none absolute -right-10 -top-14 h-36 w-36 rounded-full border-[1rem] border-white/10" />
+          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/75">Dobra robota!</p>
+          <h2 className="mt-1.5 font-display text-2xl font-extrabold uppercase leading-tight">Zakończyć trening?</h2>
+          <p className="mt-1 text-sm text-white/80">Przejrzyj podsumowanie i zapisz swoją sesję.</p>
+        </div>
+        <CardContent className="space-y-4 pt-5 text-center">
+          <div className="grid grid-cols-3 gap-2.5">
+            <div className="rounded-2xl border border-border/60 bg-secondary/40 p-3">
+              <p className="truncate font-headline text-sm font-bold">{form.getValues('workoutName')}</p>
+              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">nazwa</p>
+            </div>
+            <div className="rounded-2xl border border-border/60 bg-secondary/40 p-3">
+              <p className="font-headline text-sm font-bold tabular-nums">{form.getValues('exerciseSeries').length}</p>
+              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">ćwiczenia</p>
+            </div>
+            <div className="rounded-2xl border border-border/60 bg-secondary/40 p-3">
+              <p className="font-headline text-sm font-bold tabular-nums">{Math.round((new Date().getTime() - startTime.getTime()) / (1000 * 60))} min</p>
+              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">czas</p>
+            </div>
+          </div>
 
-          <div className="pt-4 space-y-4">
+          <div className="space-y-4 pt-2">
             {photoPreview && (
               <div className="relative w-full aspect-video rounded-md overflow-hidden mb-2">
                 <img src={photoPreview} alt="Podgląd zdjęcia" className="absolute inset-0 w-full h-full object-cover" />
@@ -666,7 +680,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
 
         </CardContent>
         <CardFooter className="flex-col gap-2">
-          <Button onClick={form.handleSubmit(handleSaveWorkout)} className="w-full" disabled={isSaving}>
+          <Button onClick={form.handleSubmit(handleSaveWorkout)} className="h-12 w-full text-base font-bold shadow-glow" disabled={isSaving}>
             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
             Zapisz i Zakończ
           </Button>
@@ -714,24 +728,26 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
 
           {/* Header Section */}
           <div className="flex justify-between items-center mb-4 px-1">
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <FormField
                 control={form.control}
                 name="workoutName"
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <Input {...field} className="text-xl font-headline font-bold border-0 shadow-none p-0 focus-visible:ring-0 bg-transparent" />
+                      <Input {...field} className="h-auto rounded-none border-0 bg-transparent p-0 font-headline text-xl font-bold shadow-none focus-visible:ring-0" />
                     </FormControl>
                   </FormItem>
                 )}
               />
-              <p className="text-xs text-muted-foreground">{format(startTime, "EEEE, d MMMM, HH:mm", { locale: pl })}</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                {format(startTime, "EEEE, d MMM · HH:mm", { locale: pl })}
+              </p>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center text-sm font-mono bg-secondary px-2 py-1 rounded">
-                <Clock className="h-3 w-3 mr-1" />
-                {Math.round((new Date().getTime() - startTime.getTime()) / (1000 * 60))}m
+            <div className="flex shrink-0 items-center gap-2">
+              <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 font-headline text-sm font-bold tabular-nums">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-volt" />
+                {Math.round((new Date().getTime() - startTime.getTime()) / (1000 * 60))} min
               </div>
               <Button type="submit" size="sm" disabled={fields.length === 0}>
                 Zakończ
@@ -740,10 +756,10 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
           </div>
 
           {/* View Mode Toggle */}
-          <div className="flex items-center justify-center gap-3 mb-4 p-2 bg-secondary/30 rounded-lg">
+          <div className="mb-4 flex items-center justify-center gap-3 rounded-full bg-secondary/50 p-2">
             <div className="flex items-center gap-2">
               <LayoutList className={`h-4 w-4 ${viewMode === 'list' ? 'text-primary' : 'text-muted-foreground'}`} />
-              <span className={`text-sm ${viewMode === 'list' ? 'font-medium' : 'text-muted-foreground'}`}>Lista</span>
+              <span className={`text-xs font-bold uppercase tracking-wider ${viewMode === 'list' ? 'text-foreground' : 'text-muted-foreground'}`}>Lista</span>
             </div>
             <Switch
               checked={viewMode === 'carousel'}
@@ -751,7 +767,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
             />
             <div className="flex items-center gap-2">
               <Timer className={`h-4 w-4 ${viewMode === 'carousel' ? 'text-primary' : 'text-muted-foreground'}`} />
-              <span className={`text-sm ${viewMode === 'carousel' ? 'font-medium' : 'text-muted-foreground'}`}>Karuzela</span>
+              <span className={`text-xs font-bold uppercase tracking-wider ${viewMode === 'carousel' ? 'text-foreground' : 'text-muted-foreground'}`}>Karuzela</span>
             </div>
           </div>
 
@@ -780,10 +796,12 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
                     />
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-64 rounded-lg border-2 border-dashed p-8 text-center">
-                    <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h3 className="mt-4 text-xl font-semibold">Rozpocznij trening</h3>
-                    <p className="mt-1 text-sm text-muted-foreground mb-4">Dodaj pierwsze ćwiczenie, aby zacząć.</p>
+                  <div className="flex h-64 flex-col items-center justify-center rounded-[1.75rem] border border-dashed border-border bg-card/50 p-8 text-center">
+                    <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-secondary text-primary">
+                      <Dumbbell className="h-7 w-7" />
+                    </span>
+                    <h3 className="mt-4 font-headline text-lg font-bold">Rozpocznij trening</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">Dodaj pierwsze ćwiczenie, aby zacząć.</p>
                   </div>
                 )}
 
@@ -792,7 +810,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
               </div>
 
               {/* Bottom Navigation Bar - Only for list view */}
-              <div className="fixed bottom-16 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t p-4 flex justify-between items-center z-50 md:relative md:rounded-b-lg">
+              <div className="glass fixed inset-x-4 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-lg items-center justify-between rounded-[2rem] px-4 py-3 md:relative md:inset-x-auto md:bottom-auto md:rounded-2xl">
                 <Button
                   type="button"
                   variant="ghost"
@@ -950,13 +968,13 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
   const tip = watch(`exerciseSeries.${index}.tip`);
 
   return (
-    <Card className="bg-secondary/50">
+    <Card className="rounded-[1.75rem]">
       <CardHeader className="flex-row items-center justify-between pb-4">
         <div>
-          <CardTitle className="text-lg font-semibold">{exerciseDetails?.name || (isLoadingExercises ? "Ładowanie..." : "Wybierz ćwiczenie")}</CardTitle>
-          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-1">
-            {tempo && <Badge variant="outline" className="text-xs">Tempo: {tempo}</Badge>}
-            {tip && <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-600 border-yellow-500/20">Tip</Badge>}
+          <CardTitle className="font-headline text-lg font-bold">{exerciseDetails?.name || (isLoadingExercises ? "Ładowanie..." : "Wybierz ćwiczenie")}</CardTitle>
+          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-1.5">
+            {tempo && <Badge variant="outline">Tempo: {tempo}</Badge>}
+            {tip && <Badge variant="outline" className="border-[hsl(var(--chart-5)/0.3)] bg-[hsl(var(--chart-5)/0.12)] text-[hsl(var(--chart-5))]">Tip</Badge>}
             {exerciseHistory && (
               <ExerciseHistoryBadge lastWorkoutDate={exerciseHistory.lastWorkoutDate} lastWorkoutName={exerciseHistory.lastWorkoutName} />
             )}
@@ -1012,11 +1030,11 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
             return (
               <div
                 key={setField.id}
-                className={`grid grid-cols-12 gap-2 items-center p-2 rounded-md transition-all ${newSetId === setField.id ? 'animate-fade-in' : ''
+                className={`grid grid-cols-12 gap-2 items-center p-2 rounded-xl transition-all ${newSetId === setField.id ? 'animate-fade-in' : ''
                   } ${isCompleted
-                    ? 'opacity-50 bg-secondary/30'
+                    ? 'opacity-55 bg-volt/[0.06]'
                     : isActive
-                      ? 'border-2 border-primary bg-primary/5 shadow-sm scale-[1.01]'
+                      ? 'ring-1 ring-primary/60 bg-primary/10 shadow-soft'
                       : 'bg-transparent'
                   }`}
               >
@@ -1060,7 +1078,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                                 field.onChange(e);
                                 clearValidationError(setIndex);
                               }}
-                              className={`h-8 text-center ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (field.value === undefined || field.value === null || field.value === '') ? "border-destructive ring-destructive/20 ring-1" : ""}`}
+                              className={`h-9 rounded-lg text-center tabular-nums ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (field.value === undefined || field.value === null || field.value === '') ? "border-destructive ring-destructive/20 ring-1" : ""}`}
                             />
                           </FormControl>
                         </FormItem>
@@ -1081,7 +1099,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                                 field.onChange(e);
                                 clearValidationError(setIndex);
                               }}
-                              className={`h-8 text-center ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
+                              className={`h-9 rounded-lg text-center tabular-nums ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
                             />
                           </FormControl>
                         </FormItem>
@@ -1103,7 +1121,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                               field.onChange(e);
                               clearValidationError(setIndex);
                             }}
-                            className={`h-8 text-center ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
+                            className={`h-9 rounded-lg text-center tabular-nums ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
                           />
                         </FormControl>
                       </FormItem>
@@ -1125,7 +1143,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                                 field.onChange(e);
                                 clearValidationError(setIndex);
                               }}
-                              className={`h-8 text-center pr-6 ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
+                              className={`h-9 rounded-lg text-center tabular-nums pr-6 ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
                             />
                             <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
                           </div>
@@ -1142,7 +1160,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                     <FormItem className="col-span-3 space-y-0">
                       <FormControl>
                         <div className="relative">
-                          <Input type="number" placeholder="60" {...field} className={`h-8 text-center pr-6 ${isActive ? "border-primary font-semibold" : ""}`} />
+                          <Input type="number" placeholder="60" {...field} className={`h-9 rounded-lg text-center tabular-nums pr-6 ${isActive ? "border-primary font-semibold" : ""}`} />
                           <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
                         </div>
                       </FormControl>
@@ -1163,7 +1181,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                             className={`focus:outline-none transition-transform ${isActive ? 'scale-110' : ''} ${validationErrors[setIndex] ? 'animate-shake' : ''}`}
                           >
                             {field.value ? (
-                              <CheckCircle2 className="h-6 w-6 text-green-500" />
+                              <CheckCircle2 className="h-6 w-6 text-volt" />
                             ) : validationErrors[setIndex] ? (
                               <AlertCircle className="h-6 w-6 text-destructive" />
                             ) : (
@@ -1198,8 +1216,8 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
               </div>
             )
           })}
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" size="sm" className="flex-1" onClick={handleAddSet}>
+          <div className="flex gap-2 pt-1">
+            <Button type="button" variant="outline" size="sm" className="h-10 flex-1 border-dashed" onClick={handleAddSet}>
               <PlusCircle className="mr-2 h-4 w-4" /> Dodaj serię
             </Button>
           </div>
@@ -1309,67 +1327,63 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
         </TabsList>
 
         <TabsContent value="quick" className="space-y-4 mt-4">
-          <Card
-            className="cursor-pointer hover:bg-secondary/50 transition-colors border-dashed"
+          <button
+            type="button"
             onClick={handleStartEmpty}
+            className="hero-ember texture-grain group relative flex w-full items-center gap-4 overflow-hidden rounded-[1.75rem] p-5 text-left text-white shadow-glow transition-transform duration-200 active:scale-[0.98]"
           >
-            <CardContent className="flex items-center p-6 gap-4">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <PlusCircle className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">Pusty Trening</h3>
-                <p className="text-sm text-muted-foreground">Stwórz trening od zera</p>
-              </div>
-              <ChevronRight className="ml-auto h-5 w-5 text-muted-foreground" />
-            </CardContent>
-          </Card>
+            <div aria-hidden className="pointer-events-none absolute -right-10 -top-14 h-36 w-36 rounded-full border-[1rem] border-white/10" />
+            <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white text-primary shadow-lg transition-transform duration-200 group-active:scale-95">
+              <PlusCircle className="h-6 w-6" />
+            </span>
+            <span className="relative min-w-0">
+              <span className="block text-[10px] font-bold uppercase tracking-[0.25em] text-white/75">Szybki start</span>
+              <span className="mt-0.5 block font-display text-lg font-extrabold uppercase leading-tight">Pusty trening</span>
+              <span className="block text-xs text-white/80">Stwórz trening od zera</span>
+            </span>
+            <ChevronRight className="relative ml-auto h-5 w-5 shrink-0 text-white/70" />
+          </button>
 
           {/* Workout Templates Section */}
           {workoutTemplates && workoutTemplates.length > 0 && (
             <>
-              <div className="flex items-center gap-2 mt-6">
-                <Dumbbell className="h-4 w-4 text-muted-foreground" />
-                <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Szablony Treningowe</h3>
-              </div>
-              <div className="space-y-3">
+              <p className="mt-6 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Szablony treningowe</p>
+              <div className="space-y-2.5">
                 {workoutTemplates.map(template => (
                   <AlertDialog key={template.id}>
                     <AlertDialogTrigger asChild>
-                      <Card className="cursor-pointer hover:bg-secondary/50 transition-colors">
-                        <CardContent className="flex items-center p-4 gap-4">
-                          <div className="h-12 w-12 rounded-lg overflow-hidden bg-secondary/30 flex items-center justify-center flex-shrink-0">
-                            {template.imageUrl ? (
-                              <img
-                                src={template.imageUrl}
-                                alt={template.name}
-                                width={48}
-                                height={48}
-                                className="object-cover w-full h-full"
-                              />
-                            ) : (
-                              <Dumbbell className="h-6 w-6 text-muted-foreground/40" />
+                      <div className="flex cursor-pointer items-center gap-3.5 rounded-2xl border border-border/60 bg-card p-3.5 shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted active:scale-[0.99]">
+                        <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-secondary">
+                          {template.imageUrl ? (
+                            <img
+                              src={template.imageUrl}
+                              alt={template.name}
+                              width={48}
+                              height={48}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <Dumbbell className="h-6 w-6 text-primary" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="truncate font-semibold">{template.name}</h3>
+                          <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {template.durationMinutes} min
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Dumbbell className="h-3 w-3" />
+                              {template.exerciseSeries?.length || 0} ćwiczeń
+                            </span>
+                            {template.ownerId === 'public' && (
+                              <Badge variant="secondary">Publiczny</Badge>
                             )}
                           </div>
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-lg">{template.name}</h3>
-                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {template.durationMinutes} min
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Dumbbell className="h-3 w-3" />
-                                {template.exerciseSeries?.length || 0} ćwiczeń
-                              </span>
-                              {template.ownerId === 'public' && (
-                                <Badge variant="secondary" className="text-xs">Publiczny</Badge>
-                              )}
-                            </div>
-                          </div>
-                          <ChevronRight className="ml-auto h-5 w-5 text-muted-foreground" />
-                        </CardContent>
-                      </Card>
+                        </div>
+                        <ChevronRight className="ml-auto h-5 w-5 shrink-0 text-muted-foreground" />
+                      </div>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
@@ -1399,26 +1413,24 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
               {[1, 2].map(i => <div key={i} className="h-24 rounded-lg bg-secondary animate-pulse" />)}
             </div>
           ) : workoutPlans.length === 0 ? (
-            <div className="text-center p-8 border rounded-lg bg-secondary/20">
-              <p className="text-muted-foreground">Nie masz jeszcze żadnych planów.</p>
+            <div className="rounded-[1.75rem] border border-dashed border-border bg-card/50 p-8 text-center">
+              <p className="text-sm text-muted-foreground">Nie masz jeszcze żadnych planów.</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {workoutPlans.map(plan => (
                 <Sheet key={plan.id}>
                   <SheetTrigger asChild>
-                    <Card className="cursor-pointer hover:bg-secondary/50 transition-colors">
-                      <CardContent className="flex items-center p-6 gap-4">
-                        <div className="h-12 w-12 rounded-full bg-blue-500/10 flex items-center justify-center">
-                          <Calendar className="h-6 w-6 text-blue-500" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-lg">{plan.name}</h3>
-                          <p className="text-sm text-muted-foreground">{plan.stages?.length || 0} etapów</p>
-                        </div>
-                        <ChevronRight className="ml-auto h-5 w-5 text-muted-foreground" />
-                      </CardContent>
-                    </Card>
+                    <div className="flex cursor-pointer items-center gap-3.5 rounded-2xl border border-border/60 bg-card p-4 shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted active:scale-[0.99]">
+                      <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-secondary text-primary">
+                        <Calendar className="h-6 w-6" />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="truncate font-semibold">{plan.name}</h3>
+                        <p className="text-xs text-muted-foreground">{plan.stages?.length || 0} etapów</p>
+                      </div>
+                      <ChevronRight className="ml-auto h-5 w-5 shrink-0 text-muted-foreground" />
+                    </div>
                   </SheetTrigger>
                   <SheetContent side="bottom" className="h-[85vh]">
                     <SheetHeader className="text-left mb-4">
@@ -1480,24 +1492,26 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
               {[1, 2].map(i => <div key={i} className="h-24 rounded-lg bg-secondary animate-pulse" />)}
             </div>
           ) : !historyLogs || historyLogs.length === 0 ? (
-            <div className="text-center p-8 border rounded-lg bg-secondary/20">
-              <p className="text-muted-foreground">Brak historii treningów.</p>
+            <div className="rounded-[1.75rem] border border-dashed border-border bg-card/50 p-8 text-center">
+              <p className="text-sm text-muted-foreground">Brak historii treningów.</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {historyLogs.map(log => (
-                <Card key={log.id} className="cursor-pointer hover:bg-secondary/50 transition-colors" onClick={() => handleRepeatWorkout(log)}>
-                  <CardContent className="flex items-center p-4 gap-4">
-                    <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                      <RotateCcw className="h-5 w-5 text-green-600" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{log.workoutName}</h3>
-                      <p className="text-xs text-muted-foreground">{format(new Date(log.endTime as unknown as string | number | Date), 'd MMMM yyyy', { locale: pl })}</p>
-                    </div>
-                    <Button size="sm" variant="ghost">Powtórz</Button>
-                  </CardContent>
-                </Card>
+                <div
+                  key={log.id}
+                  onClick={() => handleRepeatWorkout(log)}
+                  className="flex cursor-pointer items-center gap-3.5 rounded-2xl border border-border/60 bg-card p-3.5 shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted active:scale-[0.99]"
+                >
+                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-volt/15 text-volt">
+                    <RotateCcw className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate font-semibold">{log.workoutName}</h3>
+                    <p className="text-xs text-muted-foreground">{format(new Date(log.endTime as unknown as string | number | Date), 'd MMMM yyyy', { locale: pl })}</p>
+                  </div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-primary">Powtórz</span>
+                </div>
               ))}
             </div>
           )}
@@ -1522,10 +1536,16 @@ export default function LogWorkoutPage() {
     return ids;
   }, [user?.uid, userProfile?.trainerId]);
 
-  // Fetch exercises (public, user's own, and trainer's)
+  // Fetch exercises (public, user's own, and trainer's + legacy exercises with no owner)
   const { data: allExercises, isLoading: exercisesLoading } = useCollection<Exercise>(
     'exercises',
-    user?.uid ? { ownerId: { $in: ownerIds } } : undefined
+    user?.uid ? {
+      $or: [
+        { ownerId: { $in: ownerIds } },
+        { ownerId: { $exists: false } },
+        { ownerId: null }
+      ]
+    } : undefined
   );
 
   // Check for active workout
@@ -1685,7 +1705,14 @@ export default function LogWorkoutPage() {
 
   return (
     <div className="container mx-auto p-4 md:p-8">
-      <h1 className="mb-6 font-headline text-3xl font-bold">Trenuj Teraz</h1>
+      <div className="mb-6">
+        <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-muted-foreground">
+          {format(new Date(), 'EEEE · d MMMM', { locale: pl })}
+        </p>
+        <h1 className="mt-2 font-display text-3xl font-extrabold uppercase tracking-tight md:text-4xl">
+          Trenuj <span className="text-gradient-ember">teraz</span>
+        </h1>
+      </div>
       <WorkoutSelectionView
         onStartBuilder={handleStartBuilder}
         allExercises={allExercises}

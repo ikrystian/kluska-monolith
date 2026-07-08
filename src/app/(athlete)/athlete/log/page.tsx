@@ -1522,10 +1522,16 @@ export default function LogWorkoutPage() {
     return ids;
   }, [user?.uid, userProfile?.trainerId]);
 
-  // Fetch exercises (public, user's own, and trainer's)
+  // Fetch exercises (public, user's own, and trainer's + legacy exercises with no owner)
   const { data: allExercises, isLoading: exercisesLoading } = useCollection<Exercise>(
     'exercises',
-    user?.uid ? { ownerId: { $in: ownerIds } } : undefined
+    user?.uid ? {
+      $or: [
+        { ownerId: { $in: ownerIds } },
+        { ownerId: { $exists: false } },
+        { ownerId: null }
+      ]
+    } : undefined
   );
 
   // Check for active workout

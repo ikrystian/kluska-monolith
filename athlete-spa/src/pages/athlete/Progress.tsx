@@ -14,7 +14,6 @@ import {
     CartesianGrid,
     Tooltip,
     ResponsiveContainer,
-    Legend,
 } from 'recharts';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -95,29 +94,28 @@ const StatCard = ({
     trend?: number;
     isLoading: boolean;
 }) => (
-    <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{title}</CardTitle>
-            <Icon className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-            {isLoading ? (
-                <Skeleton className="h-8 w-24" />
-            ) : (
-                <div className="flex items-baseline gap-2">
-                    <div className="text-2xl font-bold">
-                        {value} <span className="text-base font-normal text-muted-foreground">{unit}</span>
-                    </div>
-                    {trend !== undefined && trend !== 0 && (
-                        <div className={`flex items-center text-sm ${trend > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                            {trend > 0 ? <TrendingUp className="h-4 w-4 mr-1" /> : <TrendingDown className="h-4 w-4 mr-1" />}
-                            {Math.abs(trend)}%
-                        </div>
-                    )}
-                </div>
-            )}
-        </CardContent>
-    </Card>
+    <div className="rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-soft">
+        <div className="flex items-center justify-between">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{title}</p>
+            <Icon className="h-4 w-4 text-muted-foreground/50" />
+        </div>
+        {isLoading ? (
+            <Skeleton className="mt-2 h-8 w-24" />
+        ) : (
+            <div className="mt-2 flex flex-wrap items-baseline gap-2">
+                <p className="font-headline text-2xl font-bold leading-none tracking-tight tabular-nums">
+                    {value}
+                    {unit && <span className="ml-1 text-sm font-semibold text-muted-foreground">{unit}</span>}
+                </p>
+                {trend !== undefined && trend !== 0 && (
+                    <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${trend > 0 ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-destructive/15 text-destructive'}`}>
+                        {trend > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                        {Math.abs(trend)}%
+                    </span>
+                )}
+            </div>
+        )}
+    </div>
 );
 
 const periods = [
@@ -136,16 +134,6 @@ const circumferenceLabels: Record<string, string> = {
     thigh: 'Udo',
     calf: 'Łydka',
     neck: 'Szyja',
-};
-
-const circumferenceColors: Record<string, string> = {
-    biceps: 'hsl(210, 100%, 50%)',
-    chest: 'hsl(150, 100%, 40%)',
-    waist: 'hsl(30, 100%, 50%)',
-    hips: 'hsl(280, 100%, 50%)',
-    thigh: 'hsl(0, 100%, 50%)',
-    calf: 'hsl(60, 100%, 40%)',
-    neck: 'hsl(180, 100%, 40%)',
 };
 
 export default function ProgressPage() {
@@ -188,21 +176,21 @@ export default function ProgressPage() {
     const volumeChartConfig = {
         volume: {
             label: 'Objętość (kg)',
-            color: 'hsl(var(--primary))',
+            color: 'hsl(var(--chart-1))',
         },
     };
 
     const oneRMChartConfig = {
         estimated1RM: {
             label: 'Szacowane 1RM',
-            color: 'hsl(var(--primary))',
+            color: 'hsl(var(--chart-1))',
         },
     };
 
     const weightChartConfig = {
         weight: {
             label: 'Waga (kg)',
-            color: 'hsl(var(--primary))',
+            color: 'hsl(var(--chart-1))',
         },
     };
 
@@ -257,23 +245,27 @@ export default function ProgressPage() {
     const combinedLoading = isUserLoading || isLoading;
 
     const NoDataMessage = ({ message }: { message: string }) => (
-        <div className="h-64 flex flex-col items-center justify-center text-center p-4 border-2 border-dashed rounded-lg">
-            <BarChart3 className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">{message}</p>
-            <p className="text-sm text-muted-foreground">Dodaj więcej treningów, aby zobaczyć wykresy.</p>
+        <div className="flex h-64 flex-col items-center justify-center rounded-[1.75rem] border border-dashed border-border bg-card/50 p-4 text-center">
+            <span className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-secondary text-primary">
+                <BarChart3 className="h-6 w-6" />
+            </span>
+            <p className="text-sm text-muted-foreground">{message}</p>
+            <p className="text-xs text-muted-foreground">Dodaj więcej treningów, aby zobaczyć wykresy.</p>
         </div>
     );
 
     return (
         <div className="container mx-auto p-4 md:p-8">
-            <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
-                    <h1 className="font-headline text-3xl font-bold">Dashboard Postępów</h1>
-                    <p className="text-muted-foreground mt-1">Śledź swoje postępy w czasie</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-muted-foreground">Analiza wyników</p>
+                    <h1 className="mt-2 font-display text-3xl font-extrabold uppercase tracking-tight md:text-4xl">
+                        Twoje <span className="text-gradient-ember">postępy</span>
+                    </h1>
                 </div>
                 <Select value={period} onValueChange={setPeriod}>
-                    <SelectTrigger className="w-[180px]">
-                        <Calendar className="h-4 w-4 mr-2" />
+                    <SelectTrigger className="h-11 w-full rounded-full px-4 md:w-[180px]">
+                        <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
                         <SelectValue placeholder="Wybierz okres" />
                     </SelectTrigger>
                     <SelectContent>
@@ -287,9 +279,9 @@ export default function ProgressPage() {
             </div>
 
             {/* Summary Cards */}
-            <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="mb-6 grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
                 <StatCard
-                    title="Całkowita Objętość"
+                    title="Objętość"
                     value={data?.summary?.totalVolume?.toLocaleString() || '0'}
                     unit="kg"
                     icon={Dumbbell}
@@ -297,23 +289,21 @@ export default function ProgressPage() {
                     isLoading={combinedLoading}
                 />
                 <StatCard
-                    title="Liczba Treningów"
+                    title="Treningi"
                     value={data?.summary?.workoutCount || 0}
-                    unit=""
                     icon={Activity}
                     isLoading={combinedLoading}
                 />
                 <StatCard
-                    title="Obecna Waga"
+                    title="Obecna waga"
                     value={data?.bodyWeight?.at(-1)?.weight?.toFixed(1) || '-'}
                     unit="kg"
                     icon={Weight}
                     isLoading={combinedLoading}
                 />
                 <StatCard
-                    title="Top Ćwiczenie"
+                    title="Top ćwiczenie"
                     value={data?.summary?.topExercises?.[0]?.name || '-'}
-                    unit=""
                     icon={TrendingUp}
                     isLoading={combinedLoading}
                 />
@@ -344,7 +334,7 @@ export default function ProgressPage() {
                 <TabsContent value="volume">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Trendy Objętości Treningowej</CardTitle>
+                            <CardTitle>Trendy objętości treningowej</CardTitle>
                             <CardDescription>Całkowity tonaż (kg) w poszczególnych dniach</CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -359,11 +349,11 @@ export default function ProgressPage() {
                                     <AreaChart data={formattedVolumeData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id="volumeGradient" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                                                <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.3} />
+                                                <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0} />
                                             </linearGradient>
                                         </defs>
-                                        <CartesianGrid vertical={false} />
+                                        <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.6} />
                                         <XAxis
                                             dataKey="formattedDate"
                                             tickLine={false}
@@ -394,7 +384,7 @@ export default function ProgressPage() {
                                         <Area
                                             type="monotone"
                                             dataKey="volume"
-                                            stroke="hsl(var(--primary))"
+                                            stroke="hsl(var(--chart-1))"
                                             strokeWidth={2}
                                             fill="url(#volumeGradient)"
                                         />
@@ -408,14 +398,14 @@ export default function ProgressPage() {
                 {/* Strength (1RM) Tab */}
                 <TabsContent value="strength">
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
+                        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                                <CardTitle>Szacowane 1RM w Czasie</CardTitle>
+                                <CardTitle>Szacowane 1RM w czasie</CardTitle>
                                 <CardDescription>Postęp siły wg formuły Brzycki</CardDescription>
                             </div>
                             {exerciseOptions.length > 0 && (
                                 <Select value={selectedExercise || ''} onValueChange={setSelectedExercise}>
-                                    <SelectTrigger className="w-[200px]">
+                                    <SelectTrigger className="h-10 w-full rounded-full px-4 sm:w-[200px]">
                                         <SelectValue placeholder="Wybierz ćwiczenie" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -438,7 +428,7 @@ export default function ProgressPage() {
                             ) : (
                                 <ChartContainer config={oneRMChartConfig} className="min-h-[300px] w-full">
                                     <LineChart data={formattedOneRMData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                                        <CartesianGrid vertical={false} />
+                                        <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.6} />
                                         <XAxis
                                             dataKey="formattedDate"
                                             tickLine={false}
@@ -469,10 +459,10 @@ export default function ProgressPage() {
                                         <Line
                                             type="monotone"
                                             dataKey="estimated1RM"
-                                            stroke="hsl(var(--primary))"
-                                            strokeWidth={3}
-                                            dot={{ r: 4, fill: 'hsl(var(--primary))' }}
-                                            activeDot={{ r: 6 }}
+                                            stroke="hsl(var(--chart-1))"
+                                            strokeWidth={2}
+                                            dot={{ r: 4, fill: 'hsl(var(--chart-1))', strokeWidth: 0 }}
+                                            activeDot={{ r: 6, stroke: 'hsl(var(--card))', strokeWidth: 2 }}
                                         />
                                     </LineChart>
                                 </ChartContainer>
@@ -485,7 +475,7 @@ export default function ProgressPage() {
                 <TabsContent value="weight">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Waga Ciała w Czasie</CardTitle>
+                            <CardTitle>Waga ciała w czasie</CardTitle>
                             <CardDescription>Historia pomiarów wagi</CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -498,7 +488,7 @@ export default function ProgressPage() {
                             ) : (
                                 <ChartContainer config={weightChartConfig} className="min-h-[300px] w-full">
                                     <LineChart data={formattedWeightData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                                        <CartesianGrid vertical={false} />
+                                        <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.6} />
                                         <XAxis
                                             dataKey="formattedDate"
                                             tickLine={false}
@@ -527,10 +517,10 @@ export default function ProgressPage() {
                                         <Line
                                             type="monotone"
                                             dataKey="weight"
-                                            stroke="hsl(var(--primary))"
-                                            strokeWidth={3}
-                                            dot={{ r: 4, fill: 'hsl(var(--primary))' }}
-                                            activeDot={{ r: 6 }}
+                                            stroke="hsl(var(--chart-1))"
+                                            strokeWidth={2}
+                                            dot={{ r: 4, fill: 'hsl(var(--chart-1))', strokeWidth: 0 }}
+                                            activeDot={{ r: 6, stroke: 'hsl(var(--card))', strokeWidth: 2 }}
                                         />
                                     </LineChart>
                                 </ChartContainer>
@@ -539,15 +529,13 @@ export default function ProgressPage() {
                     </Card>
                 </TabsContent>
 
-                {/* Circumferences Tab */}
+                {/* Circumferences Tab — small multiples, one panel per body part */}
                 <TabsContent value="circumferences">
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4">
-                            <div>
-                                <CardTitle>Obwody Ciała w Czasie</CardTitle>
-                                <CardDescription>Porównaj zmiany różnych partii ciała</CardDescription>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
+                        <CardHeader>
+                            <CardTitle>Obwody ciała w czasie</CardTitle>
+                            <CardDescription>Każda partia na osobnym mini-wykresie</CardDescription>
+                            <div className="flex flex-wrap gap-2 pt-2">
                                 {Object.entries(circumferenceLabels).map(([key, label]) => (
                                     <Button
                                         key={key}
@@ -573,41 +561,72 @@ export default function ProgressPage() {
                                 </div>
                             ) : formattedCircumferencesData.length < 2 ? (
                                 <NoDataMessage message="Za mało danych do wyświetlenia wykresu obwodów." />
+                            ) : selectedCircumferences.length === 0 ? (
+                                <p className="py-10 text-center text-sm text-muted-foreground">Wybierz partie ciała powyżej.</p>
                             ) : (
-                                <div className="min-h-[300px] w-full">
-                                    <ResponsiveContainer width="100%" height={300}>
-                                        <LineChart data={formattedCircumferencesData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                                            <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                                            <XAxis
-                                                dataKey="formattedDate"
-                                                tickLine={false}
-                                                axisLine={false}
-                                                tickMargin={8}
-                                            />
-                                            <YAxis
-                                                tickLine={false}
-                                                axisLine={false}
-                                                tickMargin={8}
-                                                domain={['dataMin - 2', 'dataMax + 2']}
-                                            />
-                                            <Tooltip
-                                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                                            />
-                                            <Legend />
-                                            {selectedCircumferences.map(key => (
-                                                <Line
-                                                    key={key}
-                                                    type="monotone"
-                                                    dataKey={key}
-                                                    name={circumferenceLabels[key]}
-                                                    stroke={circumferenceColors[key]}
-                                                    strokeWidth={2}
-                                                    dot={{ r: 3 }}
-                                                    activeDot={{ r: 5 }}
-                                                />
-                                            ))}
-                                        </LineChart>
-                                    </ResponsiveContainer>
+                                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                    {selectedCircumferences.map(key => {
+                                        const series = formattedCircumferencesData.filter(
+                                            d => d[key as keyof CircumferencesEntry] != null
+                                        );
+                                        const latest = series.at(-1)?.[key as keyof CircumferencesEntry] as number | undefined;
+                                        const first = series[0]?.[key as keyof CircumferencesEntry] as number | undefined;
+                                        const delta = latest != null && first != null ? latest - first : null;
+
+                                        return (
+                                            <div key={key} className="rounded-2xl border border-border/60 bg-card p-4 shadow-soft">
+                                                <div className="flex items-center justify-between">
+                                                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                                                        {circumferenceLabels[key]}
+                                                    </p>
+                                                    {delta != null && delta !== 0 && (
+                                                        <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-bold tabular-nums text-foreground">
+                                                            {delta > 0 ? '+' : ''}{delta.toFixed(1)} cm
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="mt-1 font-headline text-2xl font-bold tabular-nums">
+                                                    {latest != null ? latest.toFixed(1) : '–'}
+                                                    <span className="ml-1 text-sm font-semibold text-muted-foreground">cm</span>
+                                                </p>
+                                                {series.length >= 2 ? (
+                                                    <div className="mt-2 h-14">
+                                                        <ResponsiveContainer width="100%" height="100%">
+                                                            <AreaChart data={series} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+                                                                <defs>
+                                                                    <linearGradient id={`spark-${key}`} x1="0" y1="0" x2="0" y2="1">
+                                                                        <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.3} />
+                                                                        <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0} />
+                                                                    </linearGradient>
+                                                                </defs>
+                                                                <YAxis hide domain={['dataMin - 1', 'dataMax + 1']} />
+                                                                <Tooltip
+                                                                    cursor={{ stroke: 'hsl(var(--border))' }}
+                                                                    content={({ active, payload }) =>
+                                                                        active && payload?.length ? (
+                                                                            <div className="rounded-lg border border-border/60 bg-popover px-2.5 py-1.5 text-xs shadow-lifted">
+                                                                                <p className="font-medium">{(payload[0].payload as any).formattedDateFull}</p>
+                                                                                <p className="tabular-nums text-muted-foreground">{Number(payload[0].value).toFixed(1)} cm</p>
+                                                                            </div>
+                                                                        ) : null
+                                                                    }
+                                                                />
+                                                                <Area
+                                                                    type="monotone"
+                                                                    dataKey={key}
+                                                                    stroke="hsl(var(--chart-1))"
+                                                                    strokeWidth={2}
+                                                                    fill={`url(#spark-${key})`}
+                                                                />
+                                                            </AreaChart>
+                                                        </ResponsiveContainer>
+                                                    </div>
+                                                ) : (
+                                                    <p className="mt-2 text-xs text-muted-foreground">Za mało pomiarów</p>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </CardContent>
@@ -619,25 +638,25 @@ export default function ProgressPage() {
             {data?.summary?.topExercises && data.summary.topExercises.length > 0 && (
                 <Card className="mt-6">
                     <CardHeader>
-                        <CardTitle>Najbardziej Obciążające Ćwiczenia</CardTitle>
+                        <CardTitle>Najbardziej obciążające ćwiczenia</CardTitle>
                         <CardDescription>Top 5 ćwiczeń wg całkowitej objętości</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                             {data.summary.topExercises.map((exercise, index) => (
-                                <div key={exercise.name} className="flex items-center gap-4">
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-bold">
+                                <div key={exercise.name} className="flex items-center gap-3.5 rounded-2xl border border-border/60 bg-secondary/30 p-3">
+                                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary font-headline text-sm font-bold text-primary">
                                         {index + 1}
                                     </div>
-                                    <div className="flex-1">
-                                        <div className="font-medium">{exercise.name}</div>
-                                        <div className="text-sm text-muted-foreground">
+                                    <div className="min-w-0 flex-1">
+                                        <div className="truncate font-semibold">{exercise.name}</div>
+                                        <div className="text-xs tabular-nums text-muted-foreground">
                                             {exercise.volume.toLocaleString()} kg objętości
                                         </div>
                                     </div>
-                                    <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+                                    <div className="h-2 w-20 shrink-0 overflow-hidden rounded-full bg-secondary md:w-28">
                                         <div
-                                            className="h-full bg-primary rounded-full"
+                                            className="h-full rounded-full bg-[hsl(var(--chart-1))]"
                                             style={{
                                                 width: `${(exercise.volume / data.summary.topExercises[0].volume) * 100}%`,
                                             }}

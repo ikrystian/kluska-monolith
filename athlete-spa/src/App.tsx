@@ -41,7 +41,7 @@ import WorkoutEditPage from '@/pages/athlete/WorkoutEdit';
 
 export default function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
     <AuthProvider>
       <Routes>
         <Route path="/" element={<Navigate to="/athlete/dashboard" replace />} />

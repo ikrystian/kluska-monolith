@@ -139,29 +139,34 @@ export default function CalendarPage() {
         selectedDayEvents.planned.length > 0;
 
     return (
-        <div className="container mx-auto p-4 md:p-8">
-            <h1 className="mb-6 font-headline text-3xl font-bold flex items-center gap-2">
-                <CalendarDays className="h-8 w-8" />
-                Kalendarz treningowy
-            </h1>
+        <div className="container mx-auto max-w-7xl p-4 pb-8 md:p-8">
+            <div className="mb-6 flex items-center gap-3">
+                <span className="hero-ember flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-glow">
+                    <CalendarDays className="h-5 w-5" />
+                </span>
+                <div>
+                    <h1 className="font-headline text-2xl font-extrabold tracking-tight md:text-3xl">Kalendarz treningowy</h1>
+                    <p className="text-sm text-muted-foreground">Wszystkie Twoje treningi w jednym miejscu</p>
+                </div>
+            </div>
 
             {/* Legend */}
-            <div className="flex flex-wrap gap-2 md:gap-4 text-xs md:text-sm mb-6">
-                <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 md:h-3 md:w-3 rounded-full shrink-0" style={{ backgroundColor: statusColors.scheduled.bg }} />
-                    <span>Z trenerem</span>
+            <div className="no-scrollbar mb-6 flex gap-2 overflow-x-auto pb-1 text-xs md:flex-wrap md:text-sm">
+                <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1.5">
+                    <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: statusColors.scheduled.bg }} />
+                    <span className="font-medium">Z trenerem</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 md:h-3 md:w-3 rounded-full shrink-0" style={{ backgroundColor: statusColors.confirmed.bg }} />
-                    <span>Potwierdzone</span>
+                <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1.5">
+                    <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: statusColors.confirmed.bg }} />
+                    <span className="font-medium">Potwierdzone</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 md:h-3 md:w-3 rounded-full shrink-0" style={{ backgroundColor: statusColors.workout.bg }} />
-                    <span>Ukończone</span>
+                <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1.5">
+                    <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: statusColors.workout.bg }} />
+                    <span className="font-medium">Ukończone</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 md:h-3 md:w-3 rounded-full shrink-0" style={{ backgroundColor: statusColors.planned.bg }} />
-                    <span>Zaplanowane</span>
+                <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1.5">
+                    <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: statusColors.planned.bg }} />
+                    <span className="font-medium">Zaplanowane</span>
                 </div>
             </div>
 

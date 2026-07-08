@@ -175,64 +175,74 @@ export function ProfilePage() {
   };
 
   return (
-    <div className="container mx-auto p-4 md:p-8">
-      <h1 className="mb-6 font-headline text-3xl font-bold">Twój Profil</h1>
-      <div className="grid gap-8 md:grid-cols-3">
-        <div className="md:col-span-1">
-          <Card>
-            <CardContent className="flex flex-col items-center p-6 text-center">
-              <Avatar className="mb-4 h-24 w-24 border-2 border-primary">
-                {userProfile?.avatarUrl ? (
-                  <AvatarImage src={userProfile.avatarUrl} alt="Awatar użytkownika" />
-                ) : avatarImage ? (
-                  <AvatarImage src={avatarImage.imageUrl} alt="Awatar użytkownika" />
-                ) : null}
-                <AvatarFallback>
-                  {isLoading ? <Skeleton className="h-full w-full" /> : getInitials(userProfile?.name)}
-                </AvatarFallback>
-              </Avatar>
+    <div className="container mx-auto max-w-6xl pb-8">
+      {/* Cover + avatar hero */}
+      <section className="relative">
+        <div className="hero-ember texture-grain relative h-32 w-full overflow-hidden rounded-b-3xl shadow-glow md:h-40 md:rounded-3xl" />
+        <div className="px-4 md:px-8">
+          <div className="-mt-12 flex flex-col items-center text-center md:-mt-14 md:flex-row md:items-end md:gap-5 md:text-left">
+            <Avatar className="h-24 w-24 border-4 border-background shadow-lifted md:h-28 md:w-28">
+              {userProfile?.avatarUrl ? (
+                <AvatarImage src={userProfile.avatarUrl} alt="Awatar użytkownika" />
+              ) : avatarImage ? (
+                <AvatarImage src={avatarImage.imageUrl} alt="Awatar użytkownika" />
+              ) : null}
+              <AvatarFallback className="text-xl">
+                {isLoading ? <Skeleton className="h-full w-full" /> : getInitials(userProfile?.name)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="mt-3 min-w-0 flex-1 md:mb-2 md:mt-0">
               {isLoading ? (
                 <>
-                  <Skeleton className="h-8 w-3/4" />
-                  <Skeleton className="mt-2 h-5 w-1/2" />
+                  <Skeleton className="mx-auto h-7 w-40 md:mx-0" />
+                  <Skeleton className="mx-auto mt-2 h-4 w-24 md:mx-0" />
                 </>
               ) : (
                 <>
-                  <h2 className="font-headline text-2xl font-semibold">{userProfile?.name}</h2>
-                  <p className="text-muted-foreground capitalize">{userProfile?.role}</p>
+                  <h1 className="truncate font-headline text-2xl font-extrabold tracking-tight">{userProfile?.name}</h1>
+                  <p className="text-sm capitalize text-muted-foreground">{userProfile?.role}</p>
                 </>
               )}
-              <Button variant="outline" size="sm" className="mt-4" onClick={() => setIsAvatarDialogOpen(true)}>
-                <Camera className="mr-2 h-4 w-4" />
-                Zmień zdjęcie
-              </Button>
-              <AvatarUploadDialog
-                open={isAvatarDialogOpen}
-                onOpenChange={setIsAvatarDialogOpen}
-                onUploadComplete={handleAvatarUpload}
-                currentAvatarUrl={userProfile?.avatarUrl}
-              />
-            </CardContent>
-          </Card>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3 rounded-xl md:mt-0"
+              onClick={() => setIsAvatarDialogOpen(true)}
+            >
+              <Camera className="mr-2 h-4 w-4" />
+              Zmień zdjęcie
+            </Button>
+            <AvatarUploadDialog
+              open={isAvatarDialogOpen}
+              onOpenChange={setIsAvatarDialogOpen}
+              onUploadComplete={handleAvatarUpload}
+              currentAvatarUrl={userProfile?.avatarUrl}
+            />
+          </div>
+        </div>
+      </section>
 
+      <div className="grid gap-6 px-4 pt-6 md:grid-cols-3 md:gap-8 md:px-8">
+        <div className="md:col-span-1">
           {/* Running Statistics Card */}
-          <Card className="mt-8">
-            <CardContent className="p-6">
+          <Card className="overflow-hidden border-sky-500/20 bg-sky-500/[0.03]">
+            <CardContent className="p-5 md:p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Footprints className="h-6 w-6 text-primary" />
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-500/15 text-sky-600 dark:text-sky-400">
+                  <Footprints className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg">Statystyki Biegowe</h3>
-                  <p className="text-sm text-muted-foreground">Łącznie przebiegli</p>
+                  <h3 className="font-semibold">Statystyki Biegowe</h3>
+                  <p className="text-xs text-muted-foreground">Łącznie przebiegli</p>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold text-primary">{totalRunningKm.toFixed(2)}</span>
-                    <span className="text-xl text-muted-foreground">km</span>
+                    <span className="font-headline text-4xl font-extrabold tabular-nums text-sky-600 dark:text-sky-400">{totalRunningKm.toFixed(2)}</span>
+                    <span className="text-lg font-semibold text-muted-foreground">km</span>
                   </div>
                 </div>
 
@@ -245,9 +255,9 @@ export function ProfilePage() {
                     <span className="font-medium">{EARTH_EQUATOR_KM.toLocaleString()} km</span>
                   </div>
 
-                  <div className="w-full bg-secondary rounded-full h-3 overflow-hidden">
+                  <div className="w-full bg-secondary rounded-full h-2.5 overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-500"
+                      className="h-full rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 transition-all duration-500"
                       style={{ width: `${Math.min(earthPercentage, 100)}%` }}
                     />
                   </div>
@@ -380,10 +390,10 @@ export function ProfilePage() {
                     {isLoading ? (
                       <Skeleton className="h-20 w-full" />
                     ) : isStravaConnected ? (
-                      <div className="rounded-lg border bg-muted/50 p-4">
-                        <div className="flex items-start justify-between">
+                      <div className="rounded-xl border bg-muted/50 p-4">
+                        <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
                           <div className="flex items-center gap-3">
-                            <CheckCircle2 className="h-6 w-6 text-green-500" />
+                            <CheckCircle2 className="h-6 w-6 shrink-0 text-green-500" />
                             <div>
                               <p className="font-medium">Połączono ze Strava</p>
                               <p className="text-sm text-muted-foreground">
@@ -394,6 +404,7 @@ export function ProfilePage() {
                           <Button
                             variant="outline"
                             size="sm"
+                            className="w-full rounded-lg sm:w-auto"
                             onClick={handleDisconnectStrava}
                             disabled={isDisconnecting}
                           >
@@ -403,10 +414,10 @@ export function ProfilePage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="rounded-lg border p-4">
-                        <div className="flex items-start justify-between">
+                      <div className="rounded-xl border p-4">
+                        <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
                           <div className="flex items-center gap-3">
-                            <XCircle className="h-6 w-6 text-muted-foreground" />
+                            <XCircle className="h-6 w-6 shrink-0 text-muted-foreground" />
                             <div>
                               <p className="font-medium">Nie połączono</p>
                               <p className="text-sm text-muted-foreground">
@@ -417,7 +428,7 @@ export function ProfilePage() {
                           <Button
                             variant="default"
                             size="sm"
-                            className="bg-[#FC4C02] hover:bg-[#E34402] text-white"
+                            className="w-full rounded-lg bg-[#FC4C02] text-white hover:bg-[#E34402] sm:w-auto"
                             onClick={() => {
                               const token = getStoredToken();
                               window.location.href = `${getApiBaseUrl()}/api/strava/connect?token=${encodeURIComponent(token ?? '')}`;
@@ -486,26 +497,26 @@ export function ProfilePage() {
                     <ThemeToggle />
                   </div>
 
-                  <div className="space-y-4 pt-4">
+                  <div className="space-y-3 pt-4">
                     <h3 className="font-medium">Ustawienia Powiadomień</h3>
-                    <div className="flex items-center justify-between rounded-md border p-4">
-                      <div>
+                    <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
+                      <div className="min-w-0">
                         <FormLabel htmlFor="workout-reminders">Przypomnienia o treningu</FormLabel>
                         <p className="text-sm text-muted-foreground">Otrzymuj powiadomienia przed zaplanowanymi treningami.</p>
                       </div>
-                      <Switch id="workout-reminders" defaultChecked />
+                      <Switch id="workout-reminders" defaultChecked className="shrink-0" />
                     </div>
-                    <div className="flex items-center justify-between rounded-md border p-4">
-                      <div>
+                    <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
+                      <div className="min-w-0">
                         <FormLabel htmlFor="weekly-summary">Tygodniowe podsumowanie</FormLabel>
                         <p className="text-sm text-muted-foreground">Otrzymuj podsumowanie swoich postępów co tydzień.</p>
                       </div>
-                      <Switch id="weekly-summary" />
+                      <Switch id="weekly-summary" className="shrink-0" />
                     </div>
                   </div>
 
                   <div className="flex justify-end pt-4">
-                    <Button type="submit" disabled={form.formState.isSubmitting || isLoading}>
+                    <Button type="submit" className="w-full rounded-xl sm:w-auto" disabled={form.formState.isSubmitting || isLoading}>
                       {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Zapisz Zmiany
                     </Button>

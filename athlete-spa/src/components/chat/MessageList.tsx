@@ -30,11 +30,13 @@ export function MessageList({ messages, currentUserId, isLoading }: MessageListP
                     const isMe = message.senderId === currentUserId;
                     return (
                         <div key={message.id} className={cn("flex", isMe ? 'justify-end' : 'justify-start')}>
-                            <div className={cn("max-w-xs md:max-w-md lg:max-w-lg p-3 rounded-lg",
-                                isMe ? 'bg-primary text-primary-foreground' : 'bg-secondary'
+                            <div className={cn("max-w-[80%] md:max-w-md lg:max-w-lg px-3.5 py-2.5 shadow-soft",
+                                isMe
+                                    ? 'hero-ember rounded-2xl rounded-br-md text-white'
+                                    : 'rounded-2xl rounded-bl-md bg-card border border-border/60'
                             )}>
-                                <p>{message.text}</p>
-                                <p className={cn("text-xs mt-1", isMe ? 'text-primary-foreground/70' : 'text-muted-foreground')}>
+                                <p className="text-sm leading-relaxed">{message.text}</p>
+                                <p className={cn("text-[10px] mt-1", isMe ? 'text-white/70' : 'text-muted-foreground')}>
                                     {message.createdAt ? formatDistanceToNow(new Date(message.createdAt), { addSuffix: true, locale: pl }) : 'teraz'}
                                 </p>
                             </div>

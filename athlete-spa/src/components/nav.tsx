@@ -102,8 +102,16 @@ export function AppNav() {
   return (
     <Sidebar>
       <SidebarHeader>
-        <Link to="/athlete/dashboard" className="flex items-center gap-2 font-bold text-primary">
-          <span className="font-headline text-xl">Leniwa Kluska</span>
+        <Link
+          to="/athlete/dashboard"
+          className="flex items-center gap-2.5 rounded-lg p-1.5 transition-colors hover:bg-accent/60 group-data-[state=collapsed]:justify-center"
+        >
+          <span className="hero-ember flex h-9 w-9 shrink-0 items-center justify-center rounded-xl shadow-glow">
+            <Dumbbell className="h-5 w-5 text-white" />
+          </span>
+          <span className="font-display text-[11px] font-bold uppercase leading-[1.3] tracking-[0.22em] group-data-[state=collapsed]:hidden">
+            Leniwa<br />Kluska
+          </span>
         </Link>
       </SidebarHeader>
       <SidebarContent>
@@ -124,7 +132,8 @@ export function AppNav() {
                       {item.items.map((subItem: any) => (
                         <SidebarMenuSubItem key={subItem.href}>
                           <SidebarMenuSubButton asChild isActive={pathname === subItem.href}>
-                            <Link to={subItem.href}>
+                            <Link to={subItem.href} onClick={() => setOpenMobile(false)}>
+                              <subItem.icon />
                               <span>{subItem.label}</span>
                             </Link>
                           </SidebarMenuSubButton>
@@ -157,31 +166,35 @@ export function AppNav() {
           ))}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter className="space-y-2">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip={{ children: 'Wyloguj' }} onClick={handleLogout}>
-              <button>
-                <LogOut />
-                <span>Wyloguj</span>
-              </button>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        <Link to="/athlete/profile" className="flex items-center gap-3 p-2">
-          <Avatar className="h-10 w-10">
-            {userProfile?.avatarUrl ? (
-              <AvatarImage src={userProfile.avatarUrl} alt="Awatar użytkownika" />
-            ) : avatarImage ? (
-              <AvatarImage src={avatarImage.imageUrl} alt="Awatar użytkownika" />
-            ) : null}
-            <AvatarFallback>{getInitials(userProfile?.name)}</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col">
-            <span className="font-semibold text-sm">{userProfile?.name || 'Użytkownik'}</span>
-            <span className="text-xs text-muted-foreground capitalize">{userProfile?.role || '...'}</span>
-          </div>
-        </Link>
+      <SidebarFooter>
+        <div className="flex items-center gap-1 group-data-[state=collapsed]:flex-col">
+          <Link
+            to="/athlete/profile"
+            onClick={() => setOpenMobile(false)}
+            className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-2 transition-colors hover:bg-accent/60 group-data-[state=collapsed]:flex-none group-data-[state=collapsed]:p-1"
+          >
+            <Avatar className="h-9 w-9 ring-2 ring-primary/20">
+              {userProfile?.avatarUrl ? (
+                <AvatarImage src={userProfile.avatarUrl} alt="Awatar użytkownika" />
+              ) : avatarImage ? (
+                <AvatarImage src={avatarImage.imageUrl} alt="Awatar użytkownika" />
+              ) : null}
+              <AvatarFallback>{getInitials(userProfile?.name)}</AvatarFallback>
+            </Avatar>
+            <div className="flex min-w-0 flex-col group-data-[state=collapsed]:hidden">
+              <span className="truncate text-sm font-semibold">{userProfile?.name || 'Użytkownik'}</span>
+              <span className="text-xs text-muted-foreground">Zobacz profil</span>
+            </div>
+          </Link>
+          <button
+            onClick={handleLogout}
+            title="Wyloguj"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="sr-only">Wyloguj</span>
+          </button>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );

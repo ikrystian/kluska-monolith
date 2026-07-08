@@ -3,71 +3,89 @@
 @plugin "tailwindcss-animate";
 
 
+/*
+ * Design system "Volt Ember" — dark-first.
+ * Niemal czarne, ciepłe tło + elektryczny pomarańcz (ember) + neonowa limonka (volt).
+ * Jasny motyw: porcelana + atrament + ember. Wszystkie wartości w HSL (bez funkcji),
+ * konsumowane przez tailwind.config.ts. Tokeny --chart-1..5 zwalidowane pod CVD
+ * (skill dataviz) — nie podmieniać "na oko".
+ */
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 222 47% 11%;
+    color-scheme: light;
+    --background: 36 33% 96%;
+    --foreground: 24 22% 8%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 24 22% 8%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 210 100% 50%;
+    --popover-foreground: 24 22% 8%;
+    --primary: 18 92% 47%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 214 32% 91%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 220 90% 45%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 210 100% 50%;
-    --radius: 0.75rem;
-    --chart-1: 210 100% 50%;
-    --chart-2: 220 90% 45%;
-    --chart-3: 200 95% 55%;
-    --chart-4: 190 95% 50%;
-    --chart-5: 180 85% 55%;
+    --secondary: 30 20% 92%;
+    --secondary-foreground: 24 15% 15%;
+    --muted: 30 18% 93%;
+    --muted-foreground: 25 10% 42%;
+    --accent: 22 90% 93%;
+    --accent-foreground: 18 90% 28%;
+    --destructive: 0 74% 46%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 30 15% 88%;
+    --input: 30 12% 84%;
+    --ring: 18 92% 50%;
+    --radius: 1.125rem;
+    --volt: 74 87% 33%;
+    --volt-foreground: 0 0% 100%;
+    --chart-1: 20 88% 48%;
+    --chart-2: 190 85% 36%;
+    --chart-3: 74 87% 33%;
+    --chart-4: 260 66% 58%;
+    --chart-5: 37 94% 40%;
     --sidebar: 0 0% 100%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 210 100% 50%;
+    --sidebar-foreground: 24 22% 8%;
+    --sidebar-primary: 18 92% 47%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 214 32% 91%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 210 100% 50%;
+    --sidebar-accent: 22 90% 93%;
+    --sidebar-accent-foreground: 18 90% 28%;
+    --sidebar-border: 30 15% 89%;
+    --sidebar-ring: 18 92% 50%;
   }
 
   .dark {
-    --background: 225 30% 5%;
-    --foreground: 0 0% 98%;
-    --card: 222 47% 11%;
-    --card-foreground: 0 0% 98%;
-    --popover: 222 47% 11%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 215 100% 60%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 223 47% 11%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 220 90% 50%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 215 100% 60%;
-    --sidebar: 222 47% 11%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 215 100% 60%;
-    --sidebar-primary-foreground: 222 47% 11%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 215 100% 60%;
+    color-scheme: dark;
+    --background: 24 20% 4%;
+    --foreground: 36 40% 96%;
+    --card: 26 15% 8%;
+    --card-foreground: 36 40% 96%;
+    --popover: 26 15% 7%;
+    --popover-foreground: 36 40% 96%;
+    --primary: 18 100% 58%;
+    --primary-foreground: 20 60% 5%;
+    --secondary: 26 12% 13%;
+    --secondary-foreground: 36 30% 92%;
+    --muted: 26 12% 12%;
+    --muted-foreground: 30 10% 64%;
+    --accent: 26 14% 15%;
+    --accent-foreground: 36 40% 96%;
+    --destructive: 0 78% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 28 14% 15%;
+    --input: 28 12% 19%;
+    --ring: 18 100% 58%;
+    --volt: 74 92% 56%;
+    --volt-foreground: 75 100% 7%;
+    --chart-1: 17 88% 50%;
+    --chart-2: 192 85% 37%;
+    --chart-3: 74 84% 34%;
+    --chart-4: 265 85% 67%;
+    --chart-5: 37 94% 41%;
+    --sidebar: 25 18% 5%;
+    --sidebar-foreground: 36 40% 96%;
+    --sidebar-primary: 18 100% 58%;
+    --sidebar-primary-foreground: 20 60% 5%;
+    --sidebar-accent: 26 14% 13%;
+    --sidebar-accent-foreground: 36 40% 96%;
+    --sidebar-border: 28 14% 12%;
+    --sidebar-ring: 18 100% 58%;
   }
 }
 
@@ -76,8 +94,133 @@
     @apply border-border;
   }
 
+  html {
+    scrollbar-color: hsl(var(--border)) transparent;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: none;
+    min-height: 100svh;
+  }
+
+  button, a, [role="button"] {
+    touch-action: manipulation;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-headline tracking-tight;
+    text-wrap: balance;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.25);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+/* Mobile-first helpers */
+
+/* Hide scrollbars on horizontal snap carousels while keeping them scrollable */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Frosted glass surface — panels floating over the aurora background */
+.glass {
+  background: hsl(var(--card) / 0.55);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid hsl(var(--foreground) / 0.08);
+}
+
+/* Ember hero surface — electric gradient with a hot top light */
+.hero-ember {
+  background:
+    radial-gradient(120% 140% at 0% 0%, hsl(35 100% 55% / 0.85) 0%, transparent 55%),
+    radial-gradient(120% 160% at 100% 100%, hsl(5 80% 32%) 0%, transparent 60%),
+    linear-gradient(135deg, hsl(20 95% 50%) 0%, hsl(8 90% 42%) 100%);
+}
+
+.dark .hero-ember {
+  background:
+    radial-gradient(120% 140% at 0% 0%, hsl(40 100% 60% / 0.55) 0%, transparent 55%),
+    radial-gradient(120% 160% at 100% 100%, hsl(4 85% 28%) 0%, transparent 60%),
+    linear-gradient(135deg, hsl(18 100% 55%) 0%, hsl(6 92% 40%) 100%);
+}
+
+/* Display gradient text: ember → amber → volt */
+.text-gradient-ember {
+  background: linear-gradient(92deg, hsl(var(--primary)) 0%, hsl(var(--chart-5)) 55%, hsl(var(--volt)) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Subtle grain so large gradient surfaces don't band */
+.texture-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0.35;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Staggered section entrance for page loads */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger-rise > * {
+  animation: rise-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.stagger-rise > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-rise > *:nth-child(2) { animation-delay: 60ms; }
+.stagger-rise > *:nth-child(3) { animation-delay: 120ms; }
+.stagger-rise > *:nth-child(4) { animation-delay: 180ms; }
+.stagger-rise > *:nth-child(5) { animation-delay: 240ms; }
+.stagger-rise > *:nth-child(6) { animation-delay: 300ms; }
+.stagger-rise > *:nth-child(7) { animation-delay: 360ms; }
+.stagger-rise > *:nth-child(8) { animation-delay: 420ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .stagger-rise > * {
+    animation: none;
   }
 }
 
@@ -144,11 +287,11 @@
 
   0%,
   100% {
-    box-shadow: 0 0 20px rgba(var(--primary), 0.3);
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
   }
 
   50% {
-    box-shadow: 0 0 40px rgba(var(--primary), 0.6);
+    box-shadow: 0 0 40px hsl(var(--primary) / 0.6);
   }
 }
 

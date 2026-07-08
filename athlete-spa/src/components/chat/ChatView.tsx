@@ -31,18 +31,18 @@ export function ChatView({
     }
 
     return (
-        <div className="flex flex-col h-full">
-            <header className="flex items-center gap-4 p-4 border-b bg-background">
-                <Button variant="ghost" size="icon" className="md:hidden" onClick={onBack}>
-                    <ArrowLeft className="h-6 w-6" />
+        <div className="flex flex-col h-full bg-background">
+            <header className="flex items-center gap-3 p-4 border-b border-border/60 bg-card/60 backdrop-blur-sm">
+                <Button variant="ghost" size="icon" className="-ml-1 shrink-0 md:hidden" onClick={onBack}>
+                    <ArrowLeft className="h-5 w-5" />
                 </Button>
-                <Avatar>
+                <Avatar className="h-10 w-10 ring-2 ring-primary/20">
                     <AvatarImage src={placeholderImages.find(p => p.id === 'avatar-male')?.imageUrl} />
                     <AvatarFallback>{otherParticipant?.name.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <div>
-                    <h2 className="font-semibold text-lg">{otherParticipant?.name}</h2>
-                    <p className="text-sm text-muted-foreground capitalize">{otherParticipant?.role}</p>
+                <div className="min-w-0">
+                    <h2 className="truncate font-semibold leading-tight">{otherParticipant?.name}</h2>
+                    <p className="text-xs text-muted-foreground capitalize">{otherParticipant?.role}</p>
                 </div>
             </header>
 

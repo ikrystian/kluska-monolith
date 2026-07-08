@@ -111,7 +111,7 @@ export default function AthleteChatPage() {
                 onDelete={(c) => deleteConversation(c.id)}
                 header={
                     <div className="flex items-center justify-between">
-                        <h1 className="font-headline text-2xl font-bold">Czat</h1>
+                        <h1 className="font-headline text-xl font-extrabold tracking-tight">Czat</h1>
                         <NewConversationDialog
                             potentialContacts={potentialContacts}
                             isLoading={trainerLoading}
@@ -132,10 +132,12 @@ export default function AthleteChatPage() {
                         onBack={handleBackToList}
                     />
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                        <MessageSquare className="h-16 w-16 mb-4" />
-                        <h2 className="text-xl font-semibold">Wybierz konwersację</h2>
-                        <p>Wybierz rozmowę z listy, aby wyświetlić wiadomości.</p>
+                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 text-center">
+                        <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                            <MessageSquare className="h-8 w-8" />
+                        </span>
+                        <h2 className="text-lg font-semibold text-foreground">Wybierz konwersację</h2>
+                        <p className="text-sm">Wybierz rozmowę z listy, aby wyświetlić wiadomości.</p>
                     </div>
                 )}
             </main>
