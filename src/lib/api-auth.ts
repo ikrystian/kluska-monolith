@@ -7,6 +7,8 @@ export interface RequestUser {
   email: string;
   name: string;
   role: 'athlete' | 'trainer' | 'admin';
+  /** True for per-device guest accounts (Capacitor app without registration). */
+  isGuest?: boolean;
 }
 
 /**
@@ -37,6 +39,7 @@ export async function getRequestUser(request: Request): Promise<RequestUser | nu
       email: payload.email,
       name: payload.name,
       role: payload.role,
+      isGuest: payload.isGuest,
     };
   }
 

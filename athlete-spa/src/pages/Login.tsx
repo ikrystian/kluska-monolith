@@ -14,9 +14,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGuestLoading, setIsGuestLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { login } = useAuth();
+  const { login, loginAsGuest } = useAuth();
 
   const handleLogin = async () => {
     setIsLoading(true);
@@ -41,6 +42,22 @@ export default function LoginPage() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    setIsGuestLoading(true);
+    try {
+      await loginAsGuest();
+      navigate('/athlete/dashboard');
+    } catch (error: any) {
+      toast({
+        title: 'Błąd trybu gościa',
+        description: error.message || 'Nie udało się uruchomić trybu gościa. Spróbuj ponownie.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGuestLoading(false);
     }
   };
 
@@ -122,11 +139,23 @@ export default function LoginPage() {
           <Button
             className="h-[3.25rem] w-full rounded-2xl text-base font-bold shadow-glow"
             onClick={handleLogin}
-            disabled={isLoading}
+            disabled={isLoading || isGuestLoading}
           >
             {isLoading ? 'Logowanie...' : 'Zaloguj się'}
           </Button>
         </div>
+
+        <Button
+          variant="outline"
+          className="mt-4 h-12 w-full rounded-2xl text-base font-semibold"
+          onClick={handleGuestLogin}
+          disabled={isLoading || isGuestLoading}
+        >
+          {isGuestLoading ? 'Uruchamianie...' : 'Kontynuuj bez konta'}
+        </Button>
+        <p className="mt-2 text-center text-xs text-muted-foreground">
+          Twoje dane zostaną zapisane na tym urządzeniu — konto możesz założyć później.
+        </p>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Nie masz konta?{' '}

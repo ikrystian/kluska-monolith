@@ -175,7 +175,7 @@ export function useOnboarding(initialName: string = ''): UseOnboardingReturn {
 
       toast({
         title: 'Sukces!',
-        description: 'Twój profil został skonfigurowany. Witaj w GymProgress!',
+        description: 'Twój profil został skonfigurowany. Witaj w #leniwakluska!',
       });
 
       // Refetch user profile to update the cached data

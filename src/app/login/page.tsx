@@ -95,7 +95,7 @@ export default function LoginPage() {
             <Dumbbell className="h-7 w-7 text-primary-foreground" />
           </div>
           <CardTitle className="font-headline text-2xl font-extrabold">Witaj z powrotem</CardTitle>
-          <CardDescription className="text-base">Zaloguj się do swojego konta GymProgress</CardDescription>
+          <CardDescription className="text-base">Zaloguj się do swojego konta #leniwakluska</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-5">
           <div className="grid gap-2">

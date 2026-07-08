@@ -10,6 +10,10 @@ export interface IUser extends Document {
   email: string;
   password: string;
   role: 'athlete' | 'trainer' | 'admin';
+  // Guest accounts (Capacitor devices without registration): one user per
+  // device, looked up by the device identifier instead of credentials.
+  isGuest?: boolean;
+  guestDeviceId?: string;
   avatarUrl?: string;
   location?: string;
   socialLinks?: {
@@ -43,6 +47,8 @@ const UserSchema = new Schema<IUser>(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['athlete', 'trainer', 'admin'], required: true },
+    isGuest: { type: Boolean, default: false },
+    guestDeviceId: { type: String, unique: true, sparse: true },
     avatarUrl: { type: String },
     location: { type: String },
     socialLinks: {

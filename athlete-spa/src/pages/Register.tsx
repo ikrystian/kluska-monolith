@@ -7,6 +7,7 @@ import { Dumbbell } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiFetch } from '@/lib/api-client';
+import { getDeviceId } from '@/lib/device-id';
 import { PageTransition } from '@/components/motion';
 
 export default function RegisterPage() {
@@ -16,7 +17,8 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { login } = useAuth();
+  const { login, user } = useAuth();
+  const isGuestUpgrade = Boolean(user?.isGuest);
 
   const handleRegister = async () => {
     if (password.length < 6) {
@@ -29,11 +31,14 @@ export default function RegisterPage() {
     }
     setIsLoading(true);
     try {
-      // Register user via API (this SPA only manages athlete accounts)
+      // Register user via API (this SPA only manages athlete accounts).
+      // A guest sends the device id so the backend upgrades the existing
+      // per-device account in place instead of creating a fresh one.
+      const guestDeviceId = isGuestUpgrade ? await getDeviceId() : undefined;
       const response = await apiFetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, role: 'athlete' }),
+        body: JSON.stringify({ name, email, password, role: 'athlete', guestDeviceId }),
       });
 
       const data = await response.json();
@@ -44,7 +49,7 @@ export default function RegisterPage() {
 
       toast({
         title: 'Rejestracja udana!',
-        description: 'Witaj w GymProgress! Logowanie...',
+        description: 'Witaj w #leniwakluska! Logowanie...',
       });
 
       // Auto-login after registration
@@ -91,7 +96,9 @@ export default function RegisterPage() {
           <span className="text-gradient-ember">swoją grę</span>
         </h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          Stwórz konto i rozpocznij podróż fitness z Leniwą Kluską.
+          {isGuestUpgrade
+            ? 'Załóż konto, aby zachować dostęp do swoich danych z każdego urządzenia. Wszystko, co zapisałeś jako gość, zostanie zachowane.'
+            : 'Stwórz konto i rozpocznij podróż fitness z Leniwą Kluską.'}
         </p>
 
         {/* Form */}

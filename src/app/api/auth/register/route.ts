@@ -4,7 +4,7 @@ import { User } from '@/models/User';
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password, role } = await request.json();
+    const { name, email, password, role, guestDeviceId } = await request.json();
 
 
 
@@ -31,6 +31,34 @@ export async function POST(request: NextRequest) {
         { error: 'Użytkownik z tym adresem e-mail już istnieje.' },
         { status: 400 }
       );
+    }
+
+    // A guest (per-device) account registering keeps its user document — and
+    // with it all data created on that device — instead of starting over.
+    if (guestDeviceId && role === 'athlete') {
+      const guestUser = await User.findOne({ guestDeviceId, isGuest: true });
+      if (guestUser) {
+        guestUser.name = name.trim();
+        guestUser.email = email.toLowerCase().trim();
+        guestUser.password = password; // Will be hashed by pre-save middleware
+        guestUser.isGuest = false;
+        // Free the device id so the device can start a fresh guest account later.
+        guestUser.guestDeviceId = undefined;
+        await guestUser.save();
+
+        return NextResponse.json(
+          {
+            message: 'Konto zostało utworzone, a dotychczasowe dane zachowane.',
+            user: {
+              id: guestUser._id.toString(),
+              name: guestUser.name,
+              email: guestUser.email,
+              role: guestUser.role,
+            }
+          },
+          { status: 201 }
+        );
+      }
     }
 
     // Create user (password hashing is handled in the User model pre-save middleware)

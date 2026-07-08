@@ -18,7 +18,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'GymProgress - Monitoruj Swój Progres',
+  title: '#leniwakluska - Monitoruj Swój Progres',
   description: 'Śledź swoje postępy na siłowni, planuj treningi i osiągaj swoje cele fitness.',
   manifest: "/manifest.json",
   appleWebApp: {

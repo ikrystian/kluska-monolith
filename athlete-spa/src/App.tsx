@@ -10,6 +10,7 @@ import RegisterPage from '@/pages/Register';
 import AthleteLayout from '@/components/layouts/AthleteLayout';
 import OnboardingLayout from '@/components/layouts/OnboardingLayout';
 import KnowledgeZoneLayout from '@/components/layouts/KnowledgeZoneLayout';
+import { RequireFullAccount } from '@/components/guest-gate';
 
 import DashboardPage from '@/pages/athlete/Dashboard';
 import DietPage from '@/pages/athlete/Diet';
@@ -56,8 +57,15 @@ export default function App() {
 
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="calendar" element={<CalendarPage />} />
-          <Route path="chat" element={<ChatPage />} />
-          <Route path="check-in" element={<CheckInPage />} />
+
+          {/* Features tied to a trainer/community need a full account; guests
+              (per-device accounts) see an upgrade prompt instead. */}
+          <Route element={<RequireFullAccount />}>
+            <Route path="chat" element={<ChatPage />} />
+            <Route path="check-in" element={<CheckInPage />} />
+            <Route path="social" element={<SocialPage />} />
+          </Route>
+
           <Route path="diet" element={<DietPage />} />
           <Route path="exercises" element={<ExercisesPage />} />
           <Route path="gamification" element={<GamificationPage />} />
@@ -78,7 +86,6 @@ export default function App() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="progress" element={<ProgressPage />} />
           <Route path="running" element={<RunningPage />} />
-          <Route path="social" element={<SocialPage />} />
           <Route path="templates" element={<TemplatesPage />} />
           <Route path="workout-plans" element={<WorkoutPlansPage />} />
 

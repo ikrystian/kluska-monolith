@@ -57,7 +57,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
         transition={{ delay: 0.3, duration: 0.5 }}
         className="text-4xl font-bold text-center mb-4 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent"
       >
-        Witaj w GymProgress!
+        Witaj w #leniwakluska!
       </motion.h1>
 
       <motion.p

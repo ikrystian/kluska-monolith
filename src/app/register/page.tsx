@@ -77,7 +77,7 @@ export default function RegisterPage() {
 
       toast({
         title: 'Rejestracja udana!',
-        description: 'Witaj w GymProgress! Logowanie...',
+        description: 'Witaj w #leniwakluska! Logowanie...',
       });
 
       // Auto-login after registration
@@ -118,7 +118,7 @@ export default function RegisterPage() {
             <Dumbbell className="h-7 w-7 text-primary-foreground" />
           </div>
           <CardTitle className="font-headline text-2xl font-extrabold">Stwórz Konto</CardTitle>
-          <CardDescription className="text-base">Rozpocznij swoją podróż fitness z GymProgress</CardDescription>
+          <CardDescription className="text-base">Rozpocznij swoją podróż fitness z #leniwakluska</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-5">
           <div className="grid gap-2">

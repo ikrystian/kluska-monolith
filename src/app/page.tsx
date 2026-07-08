@@ -184,7 +184,7 @@ export default function LandingPage() {
                 Gotowy na zmianę?
               </h2>
               <p className="mt-4 text-lg text-muted-foreground">
-                Dołącz do tysięcy użytkowników, którzy już osiągają swoje cele fitness z GymProgress.
+                Dołącz do tysięcy użytkowników, którzy już osiągają swoje cele fitness z #leniwakluska.
               </p>
               <Button size="lg" asChild className="mt-8 text-base font-bold">
                 <Link href="/register">

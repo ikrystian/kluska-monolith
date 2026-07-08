@@ -443,7 +443,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: `Profil ${data?.user.name} - GymProgress`,
+                    title: `Profil ${data?.user.name} - LerniwaKluska`,
                     url,
                 });
             } catch (err) {
@@ -1292,7 +1292,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
             <footer className="py-8 text-center text-sm text-muted-foreground border-t border-border/50">
                 <div className="flex items-center justify-center gap-2">
                     <Dumbbell className="h-4 w-4" />
-                    <p>Profil utworzony przy użyciu GymProgress</p>
+                    <p>Profil utworzony przy użyciu #leniwakluska</p>
                 </div>
                 {gamification.currentFitCoins > 0 && (
                     <p className="mt-2">
