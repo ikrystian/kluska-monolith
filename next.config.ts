@@ -9,6 +9,7 @@ const getDevOrigins = (): string[] => {
     'http://localhost:5173',
     'http://localhost:8080',
     'capacitor://localhost',
+    '188.68.236.161:3001',
     'capacitor://*',
     'http://0.0.0.0',
     'http://83.168.88.80',
