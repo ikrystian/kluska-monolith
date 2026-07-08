@@ -72,6 +72,7 @@ import {
 } from '@/lib/db-hooks';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { AnimatePresence, motion, listItemMotion } from '@/components/motion';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
@@ -1025,8 +1026,10 @@ export default function HabitsPage() {
                             <>
                                 {/* Mobile View - Card Layout */}
                                 <div className="block md:hidden space-y-3">
+                                    <AnimatePresence initial={false}>
                                     {habits.map((habit) => (
-                                        <Card key={habit.id} className="overflow-hidden">
+                                        <motion.div key={habit.id} {...listItemMotion}>
+                                        <Card className="overflow-hidden">
                                             <CardContent className="p-0">
                                                 {/* Habit Header */}
                                                 <div className="flex items-center gap-3 p-3 border-b bg-muted/30">
@@ -1104,7 +1107,9 @@ export default function HabitsPage() {
                                                 </div>
                                             </CardContent>
                                         </Card>
+                                        </motion.div>
                                     ))}
+                                    </AnimatePresence>
                                 </div>
 
                                 {/* Desktop View - Grid Layout */}
@@ -1131,9 +1136,10 @@ export default function HabitsPage() {
                                     </CardHeader>
                                     <CardContent className="px-4">
                                         <div className="space-y-1">
+                                            <AnimatePresence initial={false}>
                                             {habits.map((habit) => (
+                                                <motion.div key={habit.id} {...listItemMotion}>
                                                 <div
-                                                    key={habit.id}
                                                     className="grid grid-cols-[minmax(150px,1fr)_repeat(7,48px)] gap-2 items-center py-3 border-b last:border-b-0"
                                                 >
                                                     <div className="flex items-center gap-2 min-w-0">
@@ -1193,7 +1199,9 @@ export default function HabitsPage() {
                                                         );
                                                     })}
                                                 </div>
+                                                </motion.div>
                                             ))}
+                                            </AnimatePresence>
                                         </div>
                                     </CardContent>
                                 </Card>

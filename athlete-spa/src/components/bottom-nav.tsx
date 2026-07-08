@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Play, CalendarDays, MessageSquare, User } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 export function BottomNav() {
@@ -59,13 +60,20 @@ export function BottomNav() {
                         >
                             <span
                                 className={cn(
-                                    "flex h-8 w-[3.25rem] items-center justify-center rounded-full transition-all duration-300",
+                                    "relative flex h-8 w-[3.25rem] items-center justify-center rounded-full transition-colors duration-300",
                                     isActive
-                                        ? "bg-secondary text-primary shadow-soft"
+                                        ? "text-primary"
                                         : "text-muted-foreground active:scale-90"
                                 )}
                             >
-                                <Icon className={cn("h-5 w-5 transition-transform duration-300", isActive && "-translate-y-px scale-110")} strokeWidth={isActive ? 2.4 : 2} />
+                                {isActive && (
+                                    <motion.span
+                                        layoutId="bottom-nav-pill"
+                                        transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                                        className="absolute inset-0 rounded-full bg-secondary shadow-soft"
+                                    />
+                                )}
+                                <Icon className={cn("relative z-10 h-5 w-5 transition-transform duration-300", isActive && "-translate-y-px scale-110")} strokeWidth={isActive ? 2.4 : 2} />
                             </span>
                             <span
                                 className={cn(

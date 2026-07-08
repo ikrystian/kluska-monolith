@@ -54,6 +54,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { CarouselWorkoutView } from '@/components/workout/CarouselWorkoutView';
 import { SetTypeButton } from '@/components/workout/SetTypeModal';
 import { type ExerciseType } from '@/lib/set-type-config';
+import { AnimatePresence, motion, listItemMotion } from '@/components/motion';
 
 
 // --- HELPER FUNCTIONS ---
@@ -245,10 +246,12 @@ function WorkoutBuilderView({ initialData, onStart, onCancel, allExercises, isLo
               </div>
             ) : (
               <div className="space-y-2.5">
+                <AnimatePresence initial={false}>
                 {fields.map((field, index) => {
                   const exerciseDetails = allExercises?.find(ex => ex.id === field.exerciseId);
                   return (
-                    <div key={field.id} className="flex items-center justify-between rounded-2xl border border-border/60 bg-card p-3.5 shadow-soft">
+                    <motion.div key={field.id} {...listItemMotion}>
+                    <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-card p-3.5 shadow-soft">
                       <div className="flex min-w-0 items-center gap-3">
                         <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary font-headline text-sm font-bold text-primary">
                           {index + 1}
@@ -264,8 +267,10 @@ function WorkoutBuilderView({ initialData, onStart, onCancel, allExercises, isLo
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
+                    </motion.div>
                   );
                 })}
+                </AnimatePresence>
               </div>
             )}
           </div>
@@ -853,7 +858,6 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
     control,
     name: `exerciseSeries.${index}.sets`
   });
-  const [newSetId, setNewSetId] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<number, string>>({});
   const { toast } = useToast();
 
@@ -1020,6 +1024,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
             <Label className="col-span-3 text-xs text-muted-foreground">Przerwa</Label>
             <Label className="col-span-2 text-xs text-muted-foreground">✓</Label>
           </div>
+          <AnimatePresence initial={false}>
           {fields.map((setField, setIndex) => {
             const isCompleted = watch(`exerciseSeries.${index}.sets.${setIndex}.completed`);
             const sets = watch(`exerciseSeries.${index}.sets`);
@@ -1028,10 +1033,9 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
             const isActive = firstUncompletedIndex === setIndex;
 
             return (
+              <motion.div key={setField.id} {...listItemMotion}>
               <div
-                key={setField.id}
-                className={`grid grid-cols-12 gap-2 items-center p-2 rounded-xl transition-all ${newSetId === setField.id ? 'animate-fade-in' : ''
-                  } ${isCompleted
+                className={`grid grid-cols-12 gap-2 items-center p-2 rounded-xl transition-all ${isCompleted
                     ? 'opacity-55 bg-volt/[0.06]'
                     : isActive
                       ? 'ring-1 ring-primary/60 bg-primary/10 shadow-soft'
@@ -1214,8 +1218,10 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                   </div>
                 )}
               </div>
+              </motion.div>
             )
           })}
+          </AnimatePresence>
           <div className="flex gap-2 pt-1">
             <Button type="button" variant="outline" size="sm" className="h-10 flex-1 border-dashed" onClick={handleAddSet}>
               <PlusCircle className="mr-2 h-4 w-4" /> Dodaj serię

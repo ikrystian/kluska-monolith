@@ -67,6 +67,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAchievements, useGamificationProfile } from '@/hooks/useGamification';
 import { AchievementsGrid, GamificationStatsCard, AchievementNotification, useAchievementNotifications } from '@/components/gamification';
+import { AnimatePresence, motion, cardItemMotion } from '@/components/motion';
 import { Award } from 'lucide-react';
 
 // --- SCHEMAS ---
@@ -719,11 +720,14 @@ export default function GoalsAndAchievementsPage() {
                   <CardFooter><Skeleton className="h-4 w-1/3 mx-auto" /></CardFooter>
                 </Card>
               ))
-            ) : goals?.map((goal) => {
-              const progress = Math.min((goal.current / goal.target) * 100, 100);
-              const isCompleted = progress >= 100;
-              return (
-                <Card key={goal.id} className={`flex flex-col ${isCompleted ? 'border-volt/40 bg-volt/[0.04]' : ''}`}>
+            ) : (
+              <AnimatePresence initial={false}>
+                {goals?.map((goal) => {
+                  const progress = Math.min((goal.current / goal.target) * 100, 100);
+                  const isCompleted = progress >= 100;
+                  return (
+                    <motion.div key={goal.id} {...cardItemMotion}>
+                      <Card className={`flex h-full flex-col ${isCompleted ? 'border-volt/40 bg-volt/[0.04]' : ''}`}>
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div>
@@ -775,8 +779,11 @@ export default function GoalsAndAchievementsPage() {
                     )}
                   </CardFooter>
                 </Card>
-              );
-            })}
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            )}
 
             <div
               onClick={() => { setEditingGoal(null); setGoalDialogOpen(true); }}

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { AppNav } from '@/components/nav';
@@ -11,6 +11,7 @@ import { ActiveWorkoutWidget } from '@/components/workout/ActiveWorkoutWidget';
 import { UserProfileProvider, useUserProfile } from '@/contexts/UserProfileContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { AnimatedOutlet } from '@/components/motion';
 
 function WrongRoleScreen() {
   const { logout } = useAuth();
@@ -40,6 +41,13 @@ function AthleteLayoutContent() {
 
   const isLoading = isUserLoading || isProfileLoading;
   const isOnboardingPage = location.pathname.startsWith('/athlete/onboarding');
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Scroll the content container back to top on route change so the
+  // page transition starts from a clean position.
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0 });
+  }, [location.pathname]);
 
   useEffect(() => {
     // This effect handles redirection after loading is complete
@@ -102,8 +110,8 @@ function AthleteLayoutContent() {
               <div className="texture-grain absolute inset-0" />
             </div>
             <AppHeader />
-            <div className="relative z-10 flex-1 overflow-y-auto min-h-0 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-0">
-              <Outlet />
+            <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto min-h-0 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-0">
+              <AnimatedOutlet />
             </div>
             <BottomNav />
           </main>

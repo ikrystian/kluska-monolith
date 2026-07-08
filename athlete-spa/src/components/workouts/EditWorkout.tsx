@@ -19,6 +19,7 @@ import { SetTypeButton } from '@/components/workout/SetTypeModal';
 import { type ExerciseType } from '@/lib/set-type-config';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
+import { AnimatePresence, motion, listItemMotion } from '@/components/motion';
 import { FormFieldWithValidation } from '@/components/workout/FormFieldWithValidation';
 import { FormProgressIndicator } from '@/components/workout/FormProgressIndicator';
 import { SetTemplateSelector } from '@/components/workout/SetTemplateSelector';
@@ -382,9 +383,10 @@ export function EditWorkout({ workoutId, onSuccess, redirectPath }: EditWorkoutP
             </Card>
 
             <div className="space-y-4">
+                <AnimatePresence initial={false}>
                 {exerciseFields.map((field, index) => (
+                    <motion.div key={field.id} {...listItemMotion}>
                     <ExerciseSeriesItem
-                        key={field.id}
                         index={index}
                         form={form}
                         remove={handleRemoveExercise}
@@ -395,7 +397,9 @@ export function EditWorkout({ workoutId, onSuccess, redirectPath }: EditWorkoutP
                         isOpen={openExerciseIndex === index}
                         onToggle={() => setOpenExerciseIndex(openExerciseIndex === index ? null : index)}
                     />
+                    </motion.div>
                 ))}
+                </AnimatePresence>
                 <div className="flex justify-end">
                     <Button type="button" onClick={handleAddExercise}>
                         <Plus className="mr-2 h-4 w-4" /> Dodaj Ćwiczenie
@@ -689,8 +693,10 @@ function ExerciseSeriesItem({
                                         <Label className="col-span-2 text-[10px] text-muted-foreground">Akcje</Label>
                                     </div>
 
+                                    <AnimatePresence initial={false}>
                                     {setFields.map((setField: any, setIndex: number) => (
-                                        <div key={setField.id} className="grid grid-cols-2 md:grid-cols-12 gap-2 items-center border rounded-md p-2 md:border-0 md:p-0 bg-muted/20 md:bg-transparent">
+                                        <motion.div key={setField.id} {...listItemMotion}>
+                                        <div className="grid grid-cols-2 md:grid-cols-12 gap-2 items-center border rounded-md p-2 md:border-0 md:p-0 bg-muted/20 md:bg-transparent">
                                             <div className="col-span-2 md:col-span-1 flex justify-between md:justify-center items-center text-sm font-mono text-muted-foreground md:mb-0 mb-2">
                                                 <span className="md:hidden text-xs font-bold">Seria {setIndex + 1}</span>
                                                 <span className="hidden md:inline">{setIndex + 1}</span>
@@ -799,7 +805,9 @@ function ExerciseSeriesItem({
                                                 </Button>
                                             </div>
                                         </div>
+                                        </motion.div>
                                     ))}
+                                    </AnimatePresence>
                                 </div>
                             </div>
                         )}

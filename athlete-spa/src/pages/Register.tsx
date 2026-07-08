@@ -7,6 +7,7 @@ import { Dumbbell } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiFetch } from '@/lib/api-client';
+import { PageTransition } from '@/components/motion';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -72,7 +73,7 @@ export default function RegisterPage() {
         <div className="texture-grain absolute inset-0" />
       </div>
 
-      <div className="relative mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 py-10">
+      <PageTransition className="relative mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 py-10">
         {/* Brand */}
         <div className="mb-8 flex items-center gap-3">
           <span className="hero-ember texture-grain relative grid h-11 w-11 place-items-center rounded-2xl shadow-glow">
@@ -153,7 +154,7 @@ export default function RegisterPage() {
             Zaloguj się
           </Link>
         </p>
-      </div>
+      </PageTransition>
     </div>
   );
 }
