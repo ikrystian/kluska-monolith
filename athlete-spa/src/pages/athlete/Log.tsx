@@ -116,6 +116,31 @@ function AddExerciseSheet({ allExercises, onAddExercise }: { allExercises: Exerc
     );
   }, [allExercises, searchTerm]);
 
+  // Sections by muscle group; an exercise with several main muscle groups
+  // shows up under each of them, so it's findable whichever part you browse.
+  const groupedExercises = useMemo(() => {
+    const groups = new Map<string, Exercise[]>();
+    for (const ex of filteredExercises) {
+      const names = ex.mainMuscleGroups?.length
+        ? ex.mainMuscleGroups.map(mg => mg.name)
+        : ['Ogólnorozwojowe'];
+      for (const name of names) {
+        const list = groups.get(name);
+        if (list) {
+          list.push(ex);
+        } else {
+          groups.set(name, [ex]);
+        }
+      }
+    }
+    return [...groups.entries()]
+      .sort(([a], [b]) => a.localeCompare(b, 'pl'))
+      .map(([name, exercises]) => ({
+        name,
+        exercises: [...exercises].sort((a, b) => a.name.localeCompare(b.name, 'pl')),
+      }));
+  }, [filteredExercises]);
+
   const handleSelectExercise = (exerciseId: string) => {
     onAddExercise(exerciseId);
     setOpen(false);
@@ -145,22 +170,32 @@ function AddExerciseSheet({ allExercises, onAddExercise }: { allExercises: Exerc
             />
           </div>
           <ScrollArea className="h-[60vh]">
-            <div className="space-y-2 pr-4">
-              {filteredExercises?.map(ex => (
-                <div
-                  key={ex.id}
-                  onClick={() => handleSelectExercise(ex.id)}
-                  className="flex cursor-pointer items-center justify-between rounded-2xl border border-border/60 bg-card p-3.5 transition-all hover:border-primary/30 active:scale-[0.99]"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold">{ex.name}</p>
-                    <p className="truncate text-sm text-muted-foreground">
-                      {ex.mainMuscleGroups?.map(mg => mg.name).join(', ') || 'Ogólnorozwojowe'}
-                    </p>
+            <div className="space-y-4 pr-4">
+              {groupedExercises.map(group => (
+                <div key={group.name}>
+                  <p className="sticky top-0 z-10 -mx-1 bg-background/95 px-1 py-2 text-xs font-bold uppercase tracking-[0.14em] text-primary backdrop-blur-sm">
+                    {group.name}
+                    <span className="ml-2 font-semibold text-muted-foreground">{group.exercises.length}</span>
+                  </p>
+                  <div className="space-y-2">
+                    {group.exercises.map(ex => (
+                      <div
+                        key={ex.id}
+                        onClick={() => handleSelectExercise(ex.id)}
+                        className="flex cursor-pointer items-center justify-between rounded-2xl border border-border/60 bg-card p-3.5 transition-all hover:border-primary/30 active:scale-[0.99]"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold">{ex.name}</p>
+                          <p className="truncate text-sm text-muted-foreground">
+                            {ex.mainMuscleGroups?.map(mg => mg.name).join(', ') || 'Ogólnorozwojowe'}
+                          </p>
+                        </div>
+                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary text-primary">
+                          <PlusCircle className="h-5 w-5" />
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary text-primary">
-                    <PlusCircle className="h-5 w-5" />
-                  </span>
                 </div>
               ))}
             </div>
