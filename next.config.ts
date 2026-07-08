@@ -13,6 +13,7 @@ const getDevOrigins = (): string[] => {
     'capacitor://*',
     'http://0.0.0.0',
     'http://83.168.88.80',
+    'https://kluska.studio-ai.com.pl'
   ];
 
   const origins = new Set<string>(baseOrigins);
