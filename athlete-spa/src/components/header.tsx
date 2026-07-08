@@ -24,7 +24,7 @@ export function AppHeader() {
       <button
         onClick={toggleSidebar}
         aria-label="Otwórz menu"
-        className="flex min-w-0 items-center gap-3 text-left transition-opacity active:opacity-70 md:hidden"
+        className="pressable flex min-w-0 items-center gap-3 text-left transition-opacity active:opacity-70 md:hidden"
       >
         <span className="relative shrink-0">
           <Avatar className="h-10 w-10 ring-2 ring-primary/40 ring-offset-2 ring-offset-background">

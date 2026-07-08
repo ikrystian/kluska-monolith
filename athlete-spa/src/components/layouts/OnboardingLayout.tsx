@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { useNavigate, Outlet } from 'react-router-dom';
 import { useUser, useDoc } from '@/lib/db-hooks';
 import { Loader2 } from 'lucide-react';
 import { UserProfile } from '@/lib/types';

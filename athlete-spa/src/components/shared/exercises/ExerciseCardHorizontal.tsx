@@ -19,6 +19,7 @@ import {
   Repeat,
   Timer,
 } from 'lucide-react';
+import { motion } from '@/components/motion';
 import { ExerciseCardProps } from './types';
 
 export function ExerciseCardHorizontal({
@@ -56,7 +57,9 @@ export function ExerciseCardHorizontal({
   };
 
   return (
-    <div
+    <motion.div
+      whileTap={{ scale: 0.98 }}
+      transition={{ duration: 0.1 }}
       className="flex items-stretch bg-card border rounded-lg overflow-hidden transition-all hover:shadow-md h-[120px] md:h-[120px] sm:h-[100px] cursor-pointer"
       onClick={() => onClick?.(exercise)}
     >
@@ -148,6 +151,6 @@ export function ExerciseCardHorizontal({
           {exercise.instructions || exercise.description || 'Brak opisu'}
         </p>
       </div>
-    </div>
+    </motion.div>
   );
 }

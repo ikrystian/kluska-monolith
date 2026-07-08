@@ -1,6 +1,13 @@
 import { type ReactNode } from 'react';
-import { AnimatePresence, motion, type HTMLMotionProps, type Transition } from 'framer-motion';
-import { useLocation, useOutlet } from 'react-router-dom';
+import {
+  AnimatePresence,
+  motion,
+  type HTMLMotionProps,
+  type Transition,
+  type Variants,
+} from 'framer-motion';
+import { useLocation, useOutlet, useNavigationType } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 
 /* ------------------------------------------------------------------ */
 /* Shared transitions                                                  */
@@ -17,44 +24,93 @@ export const springSnappy: Transition = {
   damping: 30,
 };
 
+export const springSoft: Transition = {
+  type: 'spring',
+  stiffness: 300,
+  damping: 28,
+};
+
+/* ------------------------------------------------------------------ */
+/* Navigation direction detection                                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Returns the perceived navigation direction for the current route change.
+ * POP (browser back/forward, refresh) is treated as "back"; PUSH/REPLACE are
+ * treated as "forward". Combined with AnimatePresence initial={false}, this
+ * produces a native mobile stack slide without edge-cases on first mount.
+ */
+export function useNavigationDirection(): 'forward' | 'back' {
+  const type = useNavigationType();
+  return type === 'POP' ? 'back' : 'forward';
+}
+
 /* ------------------------------------------------------------------ */
 /* Page transitions                                                    */
 /* ------------------------------------------------------------------ */
 
-export const pageVariants = {
-  initial: { opacity: 0, y: 12, scale: 0.995 },
+const pageTransition: Transition = {
+  duration: 0.3,
+  ease: [0.32, 0.72, 0, 1] as const,
+};
+
+const pageExitTransition: Transition = {
+  duration: 0.2,
+  ease: [0.4, 0, 0.2, 1] as const,
+};
+
+/** Native mobile push: new screen enters from the right. */
+export const pageVariantsPush: Variants = {
+  initial: { opacity: 0, x: '100%' },
   animate: {
     opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: easeOutExpo,
+    x: 0,
+    transition: pageTransition,
   },
   exit: {
-    opacity: 0,
-    y: -8,
-    scale: 0.995,
-    transition: { duration: 0.18, ease: [0.4, 0, 1, 1] as const },
+    opacity: 0.2,
+    x: '-30%',
+    transition: pageExitTransition,
+  },
+};
+
+/** Native mobile pop: previous screen re-enters from the left. */
+export const pageVariantsPop: Variants = {
+  initial: { opacity: 0, x: '-100%' },
+  animate: {
+    opacity: 1,
+    x: 0,
+    transition: pageTransition,
+  },
+  exit: {
+    opacity: 0.2,
+    x: '30%',
+    transition: pageExitTransition,
   },
 };
 
 /**
  * Drop-in replacement for react-router's <Outlet /> that animates
- * transitions between routes. The exiting page is kept frozen while
- * it fades out, then the new page slides in.
+ * transitions between routes using mobile native push/pop directions.
+ *
+ * Place inside a relatively positioned container with overflow hidden
+ * for the smoothest stack-like behaviour.
  */
-export function AnimatedOutlet() {
+export function AnimatedOutlet({ className }: { className?: string }) {
   const location = useLocation();
   const outlet = useOutlet();
+  const direction = useNavigationDirection();
+  const variants = direction === 'back' ? pageVariantsPop : pageVariantsPush;
 
   return (
-    <AnimatePresence mode="popLayout" initial={false}>
+    <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={location.pathname}
-        variants={pageVariants}
+        variants={variants}
         initial="initial"
         animate="animate"
         exit="exit"
-        className="min-h-full"
+        className={cn('min-h-full w-full', className)}
       >
         {outlet}
       </motion.div>
@@ -63,13 +119,19 @@ export function AnimatedOutlet() {
 }
 
 /**
- * Wrapper for standalone pages (login/register) to get a consistent
- * entrance animation.
+ * Wrapper for standalone pages (login/register/onboarding) to get a consistent
+ * forward entrance animation.
  */
-export function PageTransition({ children, className }: { children: ReactNode; className?: string }) {
+export function PageTransition({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <motion.div
-      variants={pageVariants}
+      variants={pageVariantsPush}
       initial="initial"
       animate="animate"
       className={className}
@@ -95,43 +157,139 @@ export function PageTransition({ children, className }: { children: ReactNode; c
  */
 export const listItemMotion: HTMLMotionProps<'div'> = {
   layout: true,
-  initial: { opacity: 0, height: 0, scale: 0.97 },
+  initial: { opacity: 0, y: 16, scale: 0.97 },
   animate: {
     opacity: 1,
-    height: 'auto',
+    y: 0,
     scale: 1,
     transition: { ...springSnappy, opacity: { duration: 0.2 } },
   },
   exit: {
     opacity: 0,
-    height: 0,
-    scale: 0.97,
+    x: -40,
     transition: { duration: 0.2, ease: 'easeIn' },
   },
-  style: { overflow: 'hidden' },
 };
+
+/** Pre-wrapped list item for convenience. */
+export function AnimatedListItem({
+  children,
+  className,
+  ...props
+}: HTMLMotionProps<'div'>) {
+  return (
+    <motion.div
+      {...listItemMotion}
+      className={className}
+      {...props}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 /** Simpler variant for grid cards where height-collapse looks odd. */
 export const cardItemMotion: HTMLMotionProps<'div'> = {
   layout: true,
-  initial: { opacity: 0, scale: 0.95 },
-  animate: { opacity: 1, scale: 1, transition: springSnappy },
-  exit: { opacity: 0, scale: 0.95, transition: { duration: 0.18, ease: 'easeIn' } },
+  initial: { opacity: 0, y: 20, scale: 0.94 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: springSnappy,
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.9,
+    transition: { duration: 0.18, ease: 'easeIn' },
+  },
+};
+
+/** Pre-wrapped card item for convenience. */
+export function AnimatedCard({
+  children,
+  className,
+  ...props
+}: HTMLMotionProps<'div'>) {
+  return (
+    <motion.div
+      {...cardItemMotion}
+      className={className}
+      {...props}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/**
+ * For <TableRow> elements. Height-collapse breaks table layout, so we
+ * only animate opacity + a small vertical nudge. Spread onto a
+ * <motion.tr> rendered inside <AnimatePresence> (with <motion.tr> as the row).
+ */
+export const tableRowMotion: HTMLMotionProps<'tr'> = {
+  layout: true,
+  initial: { opacity: 0, y: -6 },
+  animate: { opacity: 1, y: 0, transition: easeOutExpo },
+  exit: { opacity: 0, y: 6, transition: { duration: 0.16, ease: 'easeIn' } },
+  style: { display: 'table-row' as const },
 };
 
 /* ------------------------------------------------------------------ */
 /* Staggered entrance for static lists/sections                        */
 /* ------------------------------------------------------------------ */
 
-export const staggerContainer = {
+export const staggerContainer: Variants = {
   animate: {
     transition: { staggerChildren: 0.05 },
   },
 };
 
-export const staggerItem = {
+export const staggerItem: Variants = {
   initial: { opacity: 0, y: 10 },
   animate: { opacity: 1, y: 0, transition: easeOutExpo },
 };
+
+/* ------------------------------------------------------------------ */
+/* Micro-interactions                                                  */
+/* ------------------------------------------------------------------ */
+
+/** A subtle pressable wrapper that scales down on tap/click. */
+export function Pressable({
+  children,
+  className,
+  scale = 0.97,
+  ...props
+}: HTMLMotionProps<'div'> & { scale?: number }) {
+  return (
+    <motion.div
+      whileTap={{ scale }}
+      transition={{ duration: 0.1 }}
+      className={className}
+      {...props}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/** Shorthand for a button-like pressable div. */
+export function PressableButton({
+  children,
+  className,
+  ...props
+}: HTMLMotionProps<'button'>) {
+  return (
+    <motion.button
+      whileTap={{ scale: 0.97 }}
+      whileHover={{ scale: 1.01 }}
+      transition={{ duration: 0.1 }}
+      className={className}
+      {...props}
+    >
+      {children}
+    </motion.button>
+  );
+}
 
 export { AnimatePresence, motion };

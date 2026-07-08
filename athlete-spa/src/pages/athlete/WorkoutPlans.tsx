@@ -12,6 +12,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Dumbbell, MessageSquare, User, CheckCircle2, Star, Calendar, Clock, Layers } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { placeholderImages } from '@/lib/placeholder-images';
+import { AnimatePresence, motion, cardItemMotion } from '@/components/motion';
 
 // Component: Trainer Info Card
 function TrainerInfoCard({ trainer }: { trainer: UserProfile }) {
@@ -227,9 +228,13 @@ function AssignedPlansView({ trainer, plans }: { trainer: UserProfile; plans: Tr
 
       {/* Plans Grid */}
       <section className="grid gap-6 md:grid-cols-2">
-        {plans.map((plan) => (
-          <WorkoutPlanCard key={plan.id} plan={plan} />
-        ))}
+        <AnimatePresence initial={false}>
+          {plans.map((plan) => (
+            <motion.div key={plan.id} {...cardItemMotion}>
+              <WorkoutPlanCard plan={plan} />
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </section>
     </div>
   );

@@ -30,7 +30,7 @@ export function BottomNav() {
                                 key={item.href}
                                 to={item.href}
                                 aria-label={item.label}
-                                className="group relative -top-6 flex flex-col items-center"
+                                className="pressable-sm group relative -top-6 flex flex-col items-center"
                             >
                                 <span
                                     aria-hidden
@@ -56,7 +56,7 @@ export function BottomNav() {
                             key={item.href}
                             to={item.href}
                             aria-label={item.label}
-                            className="relative flex h-full min-w-[3.5rem] flex-col items-center justify-center gap-1"
+                            className="pressable relative flex h-full min-w-[3.5rem] flex-col items-center justify-center gap-1"
                         >
                             <span
                                 className={cn(

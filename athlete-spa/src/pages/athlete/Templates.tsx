@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { AnimatePresence, motion, cardItemMotion } from '@/components/motion';
 
 export default function AthleteTemplatesPage() {
   const { user } = useUser();
@@ -190,8 +191,11 @@ export default function AthleteTemplatesPage() {
             </Button>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {workoutsLoading ? <p>Ładowanie...</p> : workouts?.map(workout => (
-              <Card key={workout.id}>
+            {workoutsLoading ? <p>Ładowanie...</p> : (
+              <AnimatePresence initial={false}>
+                {workouts?.map(workout => (
+                  <motion.div key={workout.id} {...cardItemMotion}>
+              <Card>
                 <CardHeader>
                   <CardTitle className="flex justify-between items-start">
                     <span>{workout.name}</span>
@@ -224,7 +228,10 @@ export default function AthleteTemplatesPage() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            )}
             {!workoutsLoading && workouts?.length === 0 && (
               <div className="col-span-full text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
                 <Dumbbell className="mx-auto h-12 w-12 mb-4" />
@@ -241,51 +248,57 @@ export default function AthleteTemplatesPage() {
             </Button>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {(myPlansLoading || assignedPlansLoading) ? <p>Ładowanie...</p> : allPlans?.map(plan => {
-              const isMyPlan = plan.trainerId === user?.uid;
-              return (
-                <Card key={plan.id}>
-                  <CardHeader>
-                    <CardTitle className="flex justify-between items-start">
-                      <span>{plan.name}</span>
-                      <div className="flex gap-2">
-                        <Badge variant="outline">{plan.level}</Badge>
-                        {!isMyPlan && <Badge variant="secondary">Od trenera</Badge>}
-                      </div>
-                    </CardTitle>
-                    <CardDescription>{plan.stages.length} etapów</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex justify-end gap-2">
-                      {isMyPlan && (
-                        <>
-                          <Button variant="ghost" size="sm" onClick={() => { setEditingItem(plan); setView('edit-plan'); }}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                                <Trash2 className="h-4 w-4" />
+            {(myPlansLoading || assignedPlansLoading) ? <p>Ładowanie...</p> : (
+              <AnimatePresence initial={false}>
+                {allPlans?.map(plan => {
+                  const isMyPlan = plan.trainerId === user?.uid;
+                  return (
+                    <motion.div key={plan.id} {...cardItemMotion}>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex justify-between items-start">
+                          <span>{plan.name}</span>
+                          <div className="flex gap-2">
+                            <Badge variant="outline">{plan.level}</Badge>
+                            {!isMyPlan && <Badge variant="secondary">Od trenera</Badge>}
+                          </div>
+                        </CardTitle>
+                        <CardDescription>{plan.stages.length} etapów</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex justify-end gap-2">
+                          {isMyPlan && (
+                            <>
+                              <Button variant="ghost" size="sm" onClick={() => { setEditingItem(plan); setView('edit-plan'); }}>
+                                <Edit className="h-4 w-4" />
                               </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Usuń plan</AlertDialogTitle>
-                                <AlertDialogDescription>Czy na pewno chcesz usunąć ten plan?</AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDeletePlan(plan.id)}>Usuń</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Usuń plan</AlertDialogTitle>
+                                    <AlertDialogDescription>Czy na pewno chcesz usunąć ten plan?</AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeletePlan(plan.id)}>Usuń</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            )}
             {(!myPlansLoading && !assignedPlansLoading) && allPlans?.length === 0 && (
               <div className="col-span-full text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
                 <Calendar className="mx-auto h-12 w-12 mb-4" />

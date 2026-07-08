@@ -110,7 +110,7 @@ function AthleteLayoutContent() {
               <div className="texture-grain absolute inset-0" />
             </div>
             <AppHeader />
-            <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto min-h-0 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-0">
+            <div ref={scrollRef} className="relative z-10 flex-1 overflow-x-hidden overflow-y-auto min-h-0 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-0">
               <AnimatedOutlet />
             </div>
             <BottomNav />

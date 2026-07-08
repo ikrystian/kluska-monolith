@@ -37,12 +37,15 @@ import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2 } from 'lucide-react';
+import { AnimatePresence, motion, listItemMotion } from '@/components/motion';
 
 export default function HistoryPage() {
   const { user } = useUser();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const MotionAccordionItem = motion(AccordionItem);
 
   // Fetch workout logs for the current user, sorted by endTime descending
   // Limit to 50 records to prevent loading too much data at once
@@ -104,17 +107,19 @@ export default function HistoryPage() {
                     </AccordionTrigger>
                   </AccordionItem>
                 ))
-              ) : workoutLogs?.map((log) => {
-                if (log.status === 'in-progress') return null;
+              ) : (
+                <AnimatePresence mode="popLayout" initial={false}>
+                  {workoutLogs?.map((log) => {
+                    if (log.status === 'in-progress') return null;
 
-                const totalVolume = log.exercises.reduce((acc, ex) => {
-                  if (ex.exercise?.type !== 'weight') return acc;
-                  const exVolume = ex.sets.reduce((setAcc, set) => setAcc + (set.reps || 0) * (set.weight ?? 0), 0);
-                  return acc + exVolume;
-                }, 0);
+                    const totalVolume = log.exercises.reduce((acc, ex) => {
+                      if (ex.exercise?.type !== 'weight') return acc;
+                      const exVolume = ex.sets.reduce((setAcc, set) => setAcc + (set.reps || 0) * (set.weight ?? 0), 0);
+                      return acc + exVolume;
+                    }, 0);
 
-                return (
-                  <AccordionItem value={log.id} key={log.id}>
+                    return (
+                      <MotionAccordionItem value={log.id} key={log.id} {...listItemMotion}>
                     <div className="flex items-center">
                       <AccordionTrigger className="hover:no-underline flex-grow" onClick={() => navigate(`/athlete/history/${log.id}`)}>
                         <div className="flex w-full items-center justify-between pr-4">
@@ -165,9 +170,11 @@ export default function HistoryPage() {
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </div>
-                  </AccordionItem>
+                  </MotionAccordionItem>
                 );
               })}
+                </AnimatePresence>
+              )}
             </Accordion>
           </CardContent>
         </Card>

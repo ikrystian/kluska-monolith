@@ -1,5 +1,5 @@
-import { Outlet } from 'react-router-dom';
 import { BookOpen } from 'lucide-react';
+import { Outlet } from 'react-router-dom';
 
 export default function KnowledgeZoneLayout() {
   return (

@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { PlusCircle, Dumbbell, Clock, Signal, Search, Plus, Edit, Trash2, BarChart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { AnimatePresence, AnimatedCard } from '@/components/motion';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -254,8 +255,9 @@ export function WorkoutsListView({
                         </Card>
                     ))
                 ) : filteredWorkouts && filteredWorkouts.length > 0 ? (
-                    filteredWorkouts.map((workout) => (
-                        <Card key={workout.id} className="overflow-hidden flex flex-col hover:shadow-lg transition-shadow">
+                    <AnimatePresence mode="popLayout" initial={false}>
+                    {filteredWorkouts.map((workout) => (
+                        <AnimatedCard key={workout.id} className="overflow-hidden flex flex-col hover:shadow-lg transition-shadow">
                             {/* Image section - not shown for admin */}
                             {role !== 'admin' && (
                                 <div className="relative h-48 w-full bg-muted">
@@ -362,8 +364,9 @@ export function WorkoutsListView({
                                     </Link>
                                 )}
                             </CardFooter>
-                        </Card>
-                    ))
+                        </AnimatedCard>
+                    ))}
+                    </AnimatePresence>
                 ) : (
                     role === 'admin' ? (
                         <Card className="sm:col-span-2 lg:col-span-3 xl:col-span-4 text-center py-20">
