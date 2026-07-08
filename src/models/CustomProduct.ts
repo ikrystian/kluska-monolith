@@ -7,7 +7,8 @@ export interface ICustomProduct extends Document {
     carbs: number;
     fat: number;
     unit: string;
-    trainerId: string;
+    trainerId?: string;
+    source: 'manual' | 'ai';
     createdAt: Date;
     updatedAt: Date;
 }
@@ -20,7 +21,9 @@ const CustomProductSchema: Schema = new Schema(
         carbs: { type: Number, required: true },
         fat: { type: Number, required: true },
         unit: { type: String, default: 'g' },
-        trainerId: { type: String, required: true, index: true },
+        // AI-sourced products are global (no trainerId) so every trainer can reuse them
+        trainerId: { type: String, index: true },
+        source: { type: String, enum: ['manual', 'ai'], default: 'manual' },
     },
     { timestamps: true }
 );

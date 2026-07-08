@@ -210,10 +210,7 @@ function WorkoutBuilderView({ initialData, onStart, onCancel, allExercises, isLo
 
       <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(onStart)} className="flex flex-col h-full space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Szczegóły</CardTitle>
-            </CardHeader>
+          <Card className="hidden">
             <CardContent>
               <FormField
                 control={form.control}
@@ -720,7 +717,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   const exerciseDetails = allExercises?.find(ex => ex.id === selectedExerciseId);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-12rem)] md:h-[calc(100vh-8rem)]  relative">
+    <div className="relative flex h-full min-h-0 flex-col">
       <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(() => setIsFinished(true), (errors) => {
           console.error("Validation errors:", errors);
@@ -778,7 +775,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
 
           {/* Main Content - Conditional based on view mode */}
           {viewMode === 'carousel' ? (
-            <div className="flex-1 overflow-hidden pb-20">
+            <div className="flex-1 overflow-hidden pb-2">
               <CarouselWorkoutView
                 allExercises={allExercises}
                 isLoadingExercises={isLoadingExercises}
@@ -811,11 +808,11 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
                 )}
 
                 {/* Spacer for bottom bar */}
-                <div className="h-10"></div>
+                <div className="h-24"></div>
               </div>
 
               {/* Bottom Navigation Bar - Only for list view */}
-              <div className="glass fixed inset-x-4 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-lg items-center justify-between rounded-[2rem] px-4 py-3 md:relative md:inset-x-auto md:bottom-auto md:rounded-2xl">
+              <div className="glass fixed inset-x-4 bottom-[calc(1.25rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-lg items-center justify-between rounded-[2rem] px-4 py-3 md:relative md:inset-x-auto md:bottom-auto md:rounded-2xl">
                 <Button
                   type="button"
                   variant="ghost"
@@ -1678,8 +1675,8 @@ export default function LogWorkoutPage() {
 
   if (view === 'active' && builderData) {
     return (
-      <div className="container mx-auto p-4 md:p-8 flex justify-center">
-        <div className="w-full max-w-lg">
+      <div className="container mx-auto flex h-full justify-center p-4 md:p-8">
+        <div className="flex h-full w-full max-w-lg flex-col">
           <ActiveWorkoutView
             initialWorkout={builderData}
             onFinishWorkout={handleFinishWorkout}

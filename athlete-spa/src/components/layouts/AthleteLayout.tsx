@@ -12,6 +12,7 @@ import { UserProfileProvider, useUserProfile } from '@/contexts/UserProfileConte
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { AnimatedOutlet } from '@/components/motion';
+import { cn } from '@/lib/utils';
 
 function WrongRoleScreen() {
   const { logout } = useAuth();
@@ -41,6 +42,9 @@ function AthleteLayoutContent() {
 
   const isLoading = isUserLoading || isProfileLoading;
   const isOnboardingPage = location.pathname.startsWith('/athlete/onboarding');
+  // Active workout session hides the bottom nav, so the content area gets the
+  // full height (no bottom clearance) and pages can stretch with h-full.
+  const isActiveWorkoutSession = location.pathname === '/athlete/log' && new URLSearchParams(location.search).has('logId');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Scroll the content container back to top on route change so the
@@ -99,7 +103,7 @@ function AthleteLayoutContent() {
   return (
     <SidebarProvider>
       <ActiveWorkoutProvider>
-        <div className="flex min-h-screen w-full">
+        <div className="flex h-dvh w-full">
           <AppNav />
           <main className="relative flex-1 flex flex-col overflow-hidden bg-background">
             {/* Aurora — ambient light field behind every screen */}
@@ -110,8 +114,17 @@ function AthleteLayoutContent() {
               <div className="texture-grain absolute inset-0" />
             </div>
             <AppHeader />
-            <div ref={scrollRef} className="relative z-10 flex-1 overflow-x-hidden overflow-y-auto min-h-0 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-0">
-              <AnimatedOutlet />
+            <div
+              ref={scrollRef}
+              id="outlet"
+              className={cn(
+                'relative z-10 flex-1 overflow-x-hidden overflow-y-auto min-h-0',
+                isActiveWorkoutSession
+                  ? 'pb-[env(safe-area-inset-bottom)]'
+                  : 'pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-0'
+              )}
+            >
+              <AnimatedOutlet className={isActiveWorkoutSession ? 'h-full' : undefined} />
             </div>
             <BottomNav />
           </main>

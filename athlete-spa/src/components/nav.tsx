@@ -18,6 +18,7 @@ import {
   ClipboardCheck,
   Trophy,
   Footprints,
+  UtensilsCrossed,
 } from 'lucide-react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import {
@@ -65,6 +66,7 @@ export const athleteNavItems = [
       { href: '/athlete/calendar', label: 'Kalendarz', icon: CalendarDays },
     ]
   },
+  { href: '/athlete/diet', icon: UtensilsCrossed, label: 'Dieta' },
   {
     label: 'Społeczność',
     icon: Users2,

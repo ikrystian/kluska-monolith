@@ -42,7 +42,8 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const query = searchParams.get('query');
 
-        let filter: any = { trainerId: session.user.id };
+        // Trainer's own products + AI-sourced global products
+        let filter: any = { $or: [{ trainerId: session.user.id }, { source: 'ai' }] };
 
         if (query) {
             // Case-insensitive regex search

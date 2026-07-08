@@ -4,7 +4,14 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 export function BottomNav() {
-    const { pathname } = useLocation();
+    const { pathname, search } = useLocation();
+
+    // During an active workout session (/athlete/log?logId=...) the nav is
+    // hidden so it doesn't cover the workout controls.
+    const isActiveWorkoutSession = pathname === '/athlete/log' && new URLSearchParams(search).has('logId');
+    if (isActiveWorkoutSession) {
+        return null;
+    }
 
     const items = [
         { href: '/athlete/dashboard', icon: LayoutDashboard, label: 'Panel' },

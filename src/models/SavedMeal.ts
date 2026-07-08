@@ -9,7 +9,7 @@ export interface ISavedMeal extends Document {
         protein: number;
         carbs: number;
         fat: number;
-        source: 'fatsecret' | 'manual';
+        source: 'fatsecret' | 'manual' | 'ai';
         fatSecretId?: string;
         amount?: number; // in grams or serving units
         unit?: string;
@@ -33,7 +33,7 @@ const SavedMealSchema = new Schema<ISavedMeal>(
             protein: { type: Number, required: true },
             carbs: { type: Number, required: true },
             fat: { type: Number, required: true },
-            source: { type: String, enum: ['fatsecret', 'manual'], required: true },
+            source: { type: String, enum: ['fatsecret', 'manual', 'ai'], required: true },
             fatSecretId: { type: String },
             amount: { type: Number },
             unit: { type: String },

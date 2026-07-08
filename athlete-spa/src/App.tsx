@@ -12,6 +12,7 @@ import OnboardingLayout from '@/components/layouts/OnboardingLayout';
 import KnowledgeZoneLayout from '@/components/layouts/KnowledgeZoneLayout';
 
 import DashboardPage from '@/pages/athlete/Dashboard';
+import DietPage from '@/pages/athlete/Diet';
 import CalendarPage from '@/pages/athlete/Calendar';
 import ChatPage from '@/pages/athlete/Chat';
 import CheckInPage from '@/pages/athlete/CheckIn';
@@ -57,6 +58,7 @@ export default function App() {
           <Route path="calendar" element={<CalendarPage />} />
           <Route path="chat" element={<ChatPage />} />
           <Route path="check-in" element={<CheckInPage />} />
+          <Route path="diet" element={<DietPage />} />
           <Route path="exercises" element={<ExercisesPage />} />
           <Route path="gamification" element={<GamificationPage />} />
           <Route path="goals" element={<GoalsPage />} />

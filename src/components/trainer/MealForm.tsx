@@ -18,7 +18,7 @@ interface Ingredient {
     protein: number;
     carbs: number;
     fat: number;
-    source: 'fatsecret' | 'manual';
+    source: 'fatsecret' | 'manual' | 'ai';
     fatSecretId?: string;
     amount: number;
     unit: string;
@@ -57,10 +57,17 @@ export default function MealForm({ initialData }: MealFormProps) {
         if (!searchQuery) return;
         setIsSearching(true);
         try {
-            const res = await fetch(`/api/fatsecret/search?query=${encodeURIComponent(searchQuery)}`);
+            const res = await fetch(`/api/trainer/food-search?query=${encodeURIComponent(searchQuery)}`);
             const data = await res.json();
-            if (data.foods) {
-                setSearchResults(data.foods);
+            if (data.products) {
+                setSearchResults(data.products.map((p: any) => ({
+                    ...p,
+                    food_name: p.name,
+                    food_description: `${p.calories} kcal | B: ${p.protein} | W: ${p.carbs} | T: ${p.fat} (na 100${p.unit || 'g'})`,
+                })));
+                if (data.origin === 'ai' && data.products.length > 0) {
+                    toast({ title: 'Znaleziono w internecie', description: 'Produkty zapisano w lokalnej bazie.' });
+                }
             } else {
                 setSearchResults([]);
             }
@@ -72,49 +79,27 @@ export default function MealForm({ initialData }: MealFormProps) {
         }
     };
 
-    const addFatSecretFood = async (food: any) => {
-        try {
-            let servings = food.servings?.serving;
-
-            // If not present in search result, fetch details
-            if (!servings) {
-                const res = await fetch(`/api/fatsecret/search?foodId=${food.food_id}`);
-                const data = await res.json();
-                servings = data.servings;
+    const addProductAsIngredient = (item: any) => {
+        const baseAmount = 100;
+        const newIngredient: Ingredient = {
+            name: item.name,
+            calories: item.calories,
+            protein: item.protein,
+            carbs: item.carbs,
+            fat: item.fat,
+            source: item.source === 'ai' ? 'ai' : 'manual',
+            amount: baseAmount,
+            unit: item.unit || 'g',
+            baseValues: {
+                amount: baseAmount,
+                calories: item.calories,
+                protein: item.protein,
+                carbs: item.carbs,
+                fat: item.fat,
             }
-
-            if (servings) {
-                // Default to the first serving or let user choose (simplified for now)
-                const serving = Array.isArray(servings) ? servings[0] : servings;
-                const baseAmount = parseFloat(serving.metric_serving_amount || '100');
-
-                const newIngredient: Ingredient = {
-                    name: food.food_name,
-                    calories: parseFloat(serving.calories),
-                    protein: parseFloat(serving.protein),
-                    carbs: parseFloat(serving.carbohydrate),
-                    fat: parseFloat(serving.fat),
-                    source: 'fatsecret',
-                    fatSecretId: food.food_id,
-                    amount: baseAmount,
-                    unit: serving.metric_serving_unit || 'g',
-                    baseValues: {
-                        amount: baseAmount,
-                        calories: parseFloat(serving.calories),
-                        protein: parseFloat(serving.protein),
-                        carbs: parseFloat(serving.carbohydrate),
-                        fat: parseFloat(serving.fat),
-                    }
-                };
-                setIngredients([...ingredients, newIngredient]);
-                toast({ title: 'Dodano', description: `${food.food_name} dodano do posiłku.` });
-            } else {
-                toast({ title: 'Błąd', description: 'Brak informacji o porcji', variant: 'destructive' });
-            }
-        } catch (error) {
-            console.error('Add food error:', error);
-            toast({ title: 'Błąd', description: 'Nie udało się pobrać szczegółów produktu', variant: 'destructive' });
-        }
+        };
+        setIngredients(prev => [...prev, newIngredient]);
+        toast({ title: 'Dodano', description: `${item.name} dodano do posiłku.` });
     };
 
     const onManualSubmit = async (data: any) => {
@@ -267,7 +252,7 @@ export default function MealForm({ initialData }: MealFormProps) {
                         <CardContent>
                             <Tabs defaultValue="manual">
                                 <TabsList className="grid w-full grid-cols-2">
-                                    <TabsTrigger value="search">Szukaj w FatSecret</TabsTrigger>
+                                    <TabsTrigger value="search">Szukaj w Bazie</TabsTrigger>
                                     <TabsTrigger value="manual">Ręczne Wprowadzanie</TabsTrigger>
                                 </TabsList>
 
@@ -275,42 +260,26 @@ export default function MealForm({ initialData }: MealFormProps) {
                                     <div className="flex gap-2 relative">
                                         <div className="relative w-full">
                                             <Input
-                                                placeholder="Szukaj produktu (np. Chicken Breast)"
+                                                placeholder="Szukaj produktu (np. Pierś z kurczaka)"
                                                 value={searchQuery}
                                                 onChange={(e) => {
                                                     setSearchQuery(e.target.value);
                                                     if (e.target.value.length > 2) {
                                                         const query = encodeURIComponent(e.target.value);
 
-                                                        // Fetch both local and FatSecret suggestions
-                                                        Promise.all([
-                                                            fetch(`/api/trainer/products?query=${query}`).then(res => res.json()),
-                                                            fetch(`/api/fatsecret/search?query=${query}&autocomplete=true`).then(res => res.json())
-                                                        ]).then(([localData, fatSecretData]) => {
-                                                            let combinedResults: any[] = [];
-
-                                                            // Add Local Results
-                                                            if (localData.products) {
-                                                                combinedResults = [...combinedResults, ...localData.products.map((p: any) => ({
-                                                                    ...p,
-                                                                    food_name: p.name,
-                                                                    food_description: `${p.calories} kcal | B: ${p.protein} | W: ${p.carbs} | T: ${p.fat}`,
-                                                                    isLocal: true,
-                                                                    isSuggestion: false // Local products are full items, not just suggestions
-                                                                }))];
-                                                            }
-
-                                                            // Add FatSecret Suggestions
-                                                            if (fatSecretData.suggestions) {
-                                                                combinedResults = [...combinedResults, ...fatSecretData.suggestions.map((s: string) => ({
-                                                                    food_name: s,
-                                                                    isSuggestion: true,
-                                                                    isLocal: false
-                                                                }))];
-                                                            }
-
-                                                            setSearchResults(combinedResults);
-                                                        });
+                                                        // Live suggestions from the local database only
+                                                        fetch(`/api/trainer/products?query=${query}`)
+                                                            .then(res => res.json())
+                                                            .then((localData) => {
+                                                                if (localData.products) {
+                                                                    setSearchResults(localData.products.map((p: any) => ({
+                                                                        ...p,
+                                                                        food_name: p.name,
+                                                                        food_description: `${p.calories} kcal | B: ${p.protein} | W: ${p.carbs} | T: ${p.fat} (na 100${p.unit || 'g'})`,
+                                                                    })));
+                                                                }
+                                                            })
+                                                            .catch(() => { });
                                                     }
                                                 }}
                                                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -321,90 +290,36 @@ export default function MealForm({ initialData }: MealFormProps) {
                                         </Button>
                                     </div>
 
+                                    {isSearching && (
+                                        <p className="text-sm text-muted-foreground text-center">
+                                            Szukam w bazie, a jeśli trzeba — w internecie (AI)...
+                                        </p>
+                                    )}
+
                                     <div className="space-y-2 max-h-96 overflow-y-auto">
                                         {searchResults.map((item, idx) => (
-                                            <div key={idx} className={`flex justify-between items-center p-3 border rounded hover:bg-accent cursor-pointer ${item.isLocal ? 'bg-green-50/50 border-green-200' : ''}`}
-                                                onClick={() => {
-                                                    if (item.isSuggestion) {
-                                                        setSearchQuery(item.food_name);
-                                                        handleSearch(); // Trigger full search for FatSecret suggestion
-                                                    } else if (item.isLocal) {
-                                                        // Directly add local product
-                                                        const baseAmount = 100; // Default for local products
-                                                        const newIngredient: Ingredient = {
-                                                            name: item.name,
-                                                            calories: item.calories,
-                                                            protein: item.protein,
-                                                            carbs: item.carbs,
-                                                            fat: item.fat,
-                                                            source: 'manual', // Treat as manual/custom
-                                                            amount: baseAmount,
-                                                            unit: item.unit || 'g',
-                                                            baseValues: {
-                                                                amount: baseAmount,
-                                                                calories: item.calories,
-                                                                protein: item.protein,
-                                                                carbs: item.carbs,
-                                                                fat: item.fat,
-                                                            }
-                                                        };
-                                                        setIngredients([...ingredients, newIngredient]);
-                                                        toast({ title: 'Dodano', description: `${item.name} dodano do posiłku.` });
-                                                    }
-                                                }}
+                                            <div key={idx} className={`flex justify-between items-center p-3 border rounded hover:bg-accent cursor-pointer ${item.source === 'ai' ? 'bg-blue-50/50 border-blue-200' : 'bg-green-50/50 border-green-200'}`}
+                                                onClick={() => addProductAsIngredient(item)}
                                             >
                                                 <div>
                                                     <div className="flex items-center gap-2">
                                                         <p className="font-medium">{item.food_name}</p>
-                                                        {item.isLocal && <span className="text-[10px] bg-green-100 text-green-800 px-1 rounded">Moje</span>}
+                                                        {item.source === 'ai'
+                                                            ? <span className="text-[10px] bg-blue-100 text-blue-800 px-1 rounded">AI</span>
+                                                            : <span className="text-[10px] bg-green-100 text-green-800 px-1 rounded">Moje</span>}
                                                     </div>
-                                                    {!item.isSuggestion && <p className="text-sm text-muted-foreground">{item.food_description}</p>}
+                                                    <p className="text-sm text-muted-foreground">{item.food_description}</p>
                                                 </div>
-                                                {!item.isSuggestion && (
-                                                    <Button size="sm" variant="outline" onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        if (item.isLocal) {
-                                                            // Duplicate logic from onClick above, refactor ideally
-                                                            const baseAmount = 100;
-                                                            const newIngredient: Ingredient = {
-                                                                name: item.name,
-                                                                calories: item.calories,
-                                                                protein: item.protein,
-                                                                carbs: item.carbs,
-                                                                fat: item.fat,
-                                                                source: 'manual',
-                                                                amount: baseAmount,
-                                                                unit: item.unit || 'g',
-                                                                baseValues: {
-                                                                    amount: baseAmount,
-                                                                    calories: item.calories,
-                                                                    protein: item.protein,
-                                                                    carbs: item.carbs,
-                                                                    fat: item.fat,
-                                                                }
-                                                            };
-                                                            setIngredients([...ingredients, newIngredient]);
-                                                            toast({ title: 'Dodano', description: `${item.name} dodano do posiłku.` });
-                                                        } else {
-                                                            addFatSecretFood(item);
-                                                        }
-                                                    }}>
-                                                        <Plus className="w-4 h-4" />
-                                                    </Button>
-                                                )}
-                                                {item.isSuggestion && (
-                                                    <Button size="sm" variant="ghost" onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setSearchQuery(item.food_name);
-                                                        handleSearch();
-                                                    }}>
-                                                        <Search className="w-4 h-4" />
-                                                    </Button>
-                                                )}
+                                                <Button size="sm" variant="outline" onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    addProductAsIngredient(item);
+                                                }}>
+                                                    <Plus className="w-4 h-4" />
+                                                </Button>
                                             </div>
                                         ))}
                                         {searchResults.length === 0 && !isSearching && searchQuery && (
-                                            <p className="text-center text-muted-foreground py-4">Brak wyników.</p>
+                                            <p className="text-center text-muted-foreground py-4">Brak wyników. Naciśnij Enter lub lupę, aby wyszukać w internecie.</p>
                                         )}
                                     </div>
                                 </TabsContent>
