@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import useSWR from 'swr';
 import { apiFetch } from '@/lib/api-client';
+import { useFrozenDuringTransition } from '@/lib/page-transition';
 
 export { useUser } from '@/contexts/AuthContext';
 
@@ -17,8 +19,22 @@ export interface UseDocResult<T> {
   refetch: () => void;
 }
 
+async function swrFetcher(url: string) {
+  const response = await apiFetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch: ${response.statusText}`);
+  }
+  const result = await response.json();
+  return result.data;
+}
+
 /**
  * Hook to fetch a collection from MongoDB via API
+ *
+ * Backed by SWR: results are cached globally, so returning to a page renders
+ * its content immediately (stale-while-revalidate) instead of re-showing
+ * skeletons on every navigation. During a route transition animation the
+ * returned snapshot is frozen so data never pops in mid-slide.
  *
  * @param collection - Collection name or null to skip fetching
  * @param query - MongoDB query filter (optional)
@@ -32,56 +48,36 @@ export function useCollection<T>(
   query?: Record<string, any>,
   options?: { sort?: Record<string, 1 | -1>; limit?: number }
 ): UseCollectionResult<T> {
-  const [data, setData] = useState<T[] | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
+  // Serialize query and options for a stable cache key
+  const queryString = query && Object.keys(query).length > 0 ? JSON.stringify(query) : '';
+  const sortString = options?.sort ? JSON.stringify(options.sort) : '';
+  const limitString = options?.limit ? options.limit.toString() : '';
 
-  // Serialize query and options for stable dependency comparison
-  const queryString = query ? JSON.stringify(query) : '';
-  const optionsString = options ? JSON.stringify(options) : '';
+  const key = useMemo(() => {
+    if (!collection) return null;
+    const params = new URLSearchParams();
+    if (queryString) params.append('query', queryString);
+    if (sortString) params.append('sort', sortString);
+    if (limitString) params.append('limit', limitString);
+    return `/api/db/${collection}?${params.toString()}`;
+  }, [collection, queryString, sortString, limitString]);
 
-  const fetchData = useCallback(async () => {
-    // If collection is null, clear data and don't fetch
-    if (!collection) {
-      setData(null);
-      setIsLoading(false);
-      setError(null);
-      return;
-    }
+  const { data, error, isLoading, mutate } = useSWR<T[]>(key, swrFetcher);
 
-    setIsLoading(true);
-    setError(null);
+  const refetch = useCallback(() => {
+    void mutate();
+  }, [mutate]);
 
-    try {
-      const params = new URLSearchParams();
-      if (query && Object.keys(query).length > 0) {
-        params.append('query', JSON.stringify(query));
-      }
-      if (options?.sort) params.append('sort', JSON.stringify(options.sort));
-      if (options?.limit) params.append('limit', options.limit.toString());
+  const snapshot = useMemo(
+    () => ({
+      data: data ?? null,
+      isLoading,
+      error: error instanceof Error ? error : error ? new Error('Unknown error') : null,
+    }),
+    [data, isLoading, error]
+  );
 
-      const response = await apiFetch(`/api/db/${collection}?${params.toString()}`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch ${collection}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      setData(result.data || []);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
-      setData(null);
-    } finally {
-      setIsLoading(false);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collection, queryString, optionsString]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  return { data, isLoading, error, refetch: fetchData };
+  return { ...useFrozenDuringTransition(snapshot), refetch };
 }
 
 /**
@@ -91,43 +87,24 @@ export function useDoc<T>(
   collection: string | null,
   id: string | null
 ): UseDocResult<T> {
-  const [data, setData] = useState<T | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
+  const key = collection && id ? `/api/db/${collection}/${id}` : null;
 
-  const fetchData = useCallback(async () => {
-    if (!collection || !id) {
-      setData(null);
-      setIsLoading(false);
-      setError(null);
-      return;
-    }
+  const { data, error, isLoading, mutate } = useSWR<T>(key, swrFetcher);
 
-    setIsLoading(true);
-    setError(null);
+  const refetch = useCallback(() => {
+    void mutate();
+  }, [mutate]);
 
-    try {
-      const response = await apiFetch(`/api/db/${collection}/${id}`);
+  const snapshot = useMemo(
+    () => ({
+      data: data ?? null,
+      isLoading,
+      error: error instanceof Error ? error : error ? new Error('Unknown error') : null,
+    }),
+    [data, isLoading, error]
+  );
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch document: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      setData(result.data || null);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
-      setData(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [collection, id]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  return { data, isLoading, error, refetch: fetchData };
+  return { ...useFrozenDuringTransition(snapshot), refetch };
 }
 
 /**

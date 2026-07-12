@@ -37,7 +37,7 @@ export function BottomNav() {
                                 key={item.href}
                                 to={item.href}
                                 aria-label={item.label}
-                                className="pressable-sm group relative -top-6 flex flex-col items-center"
+                                className="pressable-sm group relative flex flex-col items-center"
                             >
                                 <span
                                     aria-hidden

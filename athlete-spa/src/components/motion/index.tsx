@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import {
   AnimatePresence,
   motion,
@@ -8,6 +8,7 @@ import {
 } from 'framer-motion';
 import { useLocation, useOutlet, useNavigationType } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { beginPageTransition, endPageTransition } from '@/lib/page-transition';
 
 /* ------------------------------------------------------------------ */
 /* Shared transitions                                                  */
@@ -102,6 +103,17 @@ export function AnimatedOutlet({ className }: { className?: string }) {
   const direction = useNavigationDirection();
   const variants = direction === 'back' ? pageVariantsPop : pageVariantsPush;
 
+  // Freeze data-hook output for the whole exit+enter animation so async
+  // responses landing mid-slide don't reflow the moving screens. Unfrozen
+  // when the enter animation completes (or by the store's safety timeout).
+  const prevPathRef = useRef(location.pathname);
+  useLayoutEffect(() => {
+    if (prevPathRef.current !== location.pathname) {
+      prevPathRef.current = location.pathname;
+      beginPageTransition();
+    }
+  }, [location.pathname]);
+
   return (
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
@@ -110,6 +122,9 @@ export function AnimatedOutlet({ className }: { className?: string }) {
         initial="initial"
         animate="animate"
         exit="exit"
+        onAnimationComplete={(definition) => {
+          if (definition === 'animate') endPageTransition();
+        }}
         className={cn('min-h-full w-full', className)}
       >
         {outlet}
