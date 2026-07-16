@@ -7,6 +7,9 @@ export interface ICustomProduct extends Document {
     carbs: number;
     fat: number;
     unit: string;
+    /** EAN/UPC barcode when the product was resolved from a scan. */
+    barcode?: string;
+    brand?: string;
     trainerId?: string;
     source: 'manual' | 'ai';
     createdAt: Date;
@@ -21,6 +24,8 @@ const CustomProductSchema: Schema = new Schema(
         carbs: { type: Number, required: true },
         fat: { type: Number, required: true },
         unit: { type: String, default: 'g' },
+        barcode: { type: String, index: true, sparse: true },
+        brand: { type: String },
         // AI-sourced products are global (no trainerId) so every trainer can reuse them
         trainerId: { type: String, index: true },
         source: { type: String, enum: ['manual', 'ai'], default: 'manual' },

@@ -5,14 +5,19 @@ export interface AIFoodResult {
     carbs: number;
     fat: number;
     unit: string;
+    brand?: string;
 }
 
-/**
- * Searches for food nutrition data using OpenRouter (google/gemini-2.5-flash-lite)
- * with the Web Search plugin (engine: auto, context size: medium).
- * Returns nutrition values per 100g.
- */
-export async function searchFoodWithAI(query: string): Promise<AIFoodResult[]> {
+const JSON_FORMAT_RULES = `Zwróć WYŁĄCZNIE poprawny JSON (bez markdown, bez komentarzy) w formacie:
+{"products":[{"name":"nazwa po polsku","brand":"marka lub pusty string","calories":liczba,"protein":liczba,"carbs":liczba,"fat":liczba,"unit":"g"}]}
+Zasady:
+- wartości odżywcze ZAWSZE w przeliczeniu na 100 g produktu (kalorie w kcal, makroskładniki w gramach)
+- przykład: twaróg półtłusty o wartości 120 kcal, 17 g białka, 4 g węglowodanów, 4 g tłuszczu na 100 g to {"name":"Twaróg półtłusty","brand":"","calories":120,"protein":17,"carbs":4,"fat":4,"unit":"g"}
+- kalorie na 100 g mieszczą się w zakresie 0-900, makroskładniki w zakresie 0-100
+- liczby jako number, nie string; kropka jako separator dziesiętny; bez wartości null
+- pomiń produkty, dla których nie znalazłeś wiarygodnych danych; jeśli brak jakichkolwiek, zwróć {"products":[]}`;
+
+async function runFoodPrompt(systemPrompt: string, userContent: string): Promise<AIFoodResult[]> {
     const apiKey = process.env.OPEN_ROUTER_API_KEY;
     if (!apiKey) {
         throw new Error('Missing OPEN_ROUTER_API_KEY in environment variables.');
@@ -29,23 +34,8 @@ export async function searchFoodWithAI(query: string): Promise<AIFoodResult[]> {
             plugins: [{ id: 'web' }],
             web_search_options: { search_context_size: 'medium' },
             messages: [
-                {
-                    role: 'system',
-                    content: `Jesteś asystentem dietetycznym. Użytkownik poda nazwę produktu spożywczego. Wyszukaj w internecie aktualne wartości odżywcze tego produktu (na 100 g).
-Zwróć WYŁĄCZNIE poprawny JSON (bez markdown, bez komentarzy) w formacie:
-{"products":[{"name":"nazwa po polsku","calories":liczba,"protein":liczba,"carbs":liczba,"fat":liczba,"unit":"g"}]}
-Zasady:
-- wartości odżywcze ZAWSZE w przeliczeniu na 100 g produktu (kalorie w kcal, makroskładniki w gramach)
-- przykład: twaróg półtłusty o wartości 120 kcal, 17 g białka, 4 g węglowodanów, 4 g tłuszczu na 100 g to {"name":"Twaróg półtłusty","calories":120,"protein":17,"carbs":4,"fat":4,"unit":"g"}
-- kalorie na 100 g mieszczą się w zakresie 0-900, makroskładniki w zakresie 0-100
-- maksymalnie 5 najbardziej trafnych produktów/wariantów
-- liczby jako number, nie string; kropka jako separator dziesiętny; bez wartości null
-- pomiń produkty, dla których nie znalazłeś wiarygodnych danych; jeśli brak jakichkolwiek, zwróć {"products":[]}`,
-                },
-                {
-                    role: 'user',
-                    content: query,
-                },
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userContent },
             ],
         }),
         cache: 'no-store',
@@ -75,6 +65,7 @@ Zasady:
             .filter((p: any) => p && typeof p.name === 'string')
             .map((p: any) => ({
                 name: p.name,
+                brand: typeof p.brand === 'string' && p.brand.trim() ? p.brand.trim() : undefined,
                 calories: Number(p.calories) || 0,
                 protein: Number(p.protein) || 0,
                 carbs: Number(p.carbs) || 0,
@@ -92,4 +83,34 @@ Zasady:
         console.error('[OpenRouter] Failed to parse food JSON:', error, content);
         return [];
     }
+}
+
+/**
+ * Searches for food nutrition data by name using OpenRouter (google/gemini-2.5-flash-lite)
+ * with the Web Search plugin. Returns nutrition values per 100g.
+ */
+export async function searchFoodWithAI(query: string): Promise<AIFoodResult[]> {
+    return runFoodPrompt(
+        `Jesteś asystentem dietetycznym. Użytkownik poda nazwę produktu spożywczego. Wyszukaj w internecie aktualne wartości odżywcze tego produktu (na 100 g).
+${JSON_FORMAT_RULES}
+- maksymalnie 5 najbardziej trafnych produktów/wariantów`,
+        query
+    );
+}
+
+/**
+ * Identifies a product by its EAN/UPC barcode using AI web search.
+ * Returns at most one product (nutrition per 100g).
+ */
+export async function searchFoodByBarcodeWithAI(barcode: string): Promise<AIFoodResult | null> {
+    const results = await runFoodPrompt(
+        `Jesteś asystentem dietetycznym. Użytkownik poda kod kreskowy (EAN/UPC) produktu spożywczego. Wyszukaj w internecie, jaki to produkt (np. w bazach kodów kreskowych, Open Food Facts, sklepach internetowych) i podaj jego wartości odżywcze na 100 g.
+${JSON_FORMAT_RULES}
+- zwróć dokładnie JEDEN produkt, który najlepiej pasuje do tego kodu kreskowego
+- w polu "name" podaj pełną nazwę produktu wraz z marką
+- jeśli nie potrafisz wiarygodnie zidentyfikować produktu po tym kodzie, zwróć {"products":[]}`,
+        `Kod kreskowy: ${barcode}`
+    );
+
+    return results[0] ?? null;
 }

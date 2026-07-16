@@ -29,6 +29,7 @@ import KnowledgeZoneManagePage from '@/pages/athlete/KnowledgeZoneManage';
 import LogPage from '@/pages/athlete/Log';
 import MapPage from '@/pages/athlete/Map';
 import MeasurementsPage from '@/pages/athlete/Measurements';
+import NutritionPage from '@/pages/athlete/Nutrition';
 import OnboardingPage from '@/pages/athlete/Onboarding';
 import ProfilePage from '@/pages/athlete/Profile';
 import ProgressPage from '@/pages/athlete/Progress';
@@ -82,6 +83,7 @@ export default function App() {
 
           <Route path="log" element={<LogPage />} />
           <Route path="map" element={<MapPage />} />
+          <Route path="nutrition" element={<NutritionPage />} />
           <Route path="measurements" element={<MeasurementsPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="progress" element={<ProgressPage />} />

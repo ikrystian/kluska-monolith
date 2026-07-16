@@ -13,6 +13,7 @@ import {
     Wheat,
     Droplets,
     CalendarDays,
+    NotebookPen,
 } from 'lucide-react';
 
 import { apiFetch } from '@/lib/api-client';
@@ -210,12 +211,20 @@ function NoDietView() {
                         Twój trener nie przypisał Ci jeszcze planu żywieniowego. Gdy to zrobi, zobaczysz tutaj
                         wszystkie dni, posiłki i makroskładniki.
                     </p>
-                    <Button size="lg" className="rounded-full" asChild>
-                        <Link to="/athlete/chat">
-                            <MessageSquare className="mr-2 h-4 w-4" />
-                            Napisz do Trenera
-                        </Link>
-                    </Button>
+                    <div className="flex flex-wrap justify-center gap-3">
+                        <Button size="lg" className="rounded-full" asChild>
+                            <Link to="/athlete/chat">
+                                <MessageSquare className="mr-2 h-4 w-4" />
+                                Napisz do Trenera
+                            </Link>
+                        </Button>
+                        <Button size="lg" variant="outline" className="rounded-full" asChild>
+                            <Link to="/athlete/nutrition">
+                                <NotebookPen className="mr-2 h-4 w-4" />
+                                Dzienniczek Kalorii
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
             </section>
         </div>
@@ -319,6 +328,12 @@ export default function AthleteDietPage() {
                             </span>
                         )}
                     </div>
+                    <Button variant="outline" size="sm" className="rounded-full" asChild>
+                        <Link to="/athlete/nutrition">
+                            <NotebookPen className="mr-2 h-4 w-4" />
+                            Dzienniczek Kalorii
+                        </Link>
+                    </Button>
                 </div>
             </section>
 

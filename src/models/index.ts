@@ -22,6 +22,7 @@ export * from './PersonalRecord';
 export * from './SocialProfile';
 export * from './SocialPost';
 export * from './CustomProduct';
+export * from './FoodDiaryEntry';
 export * from './DietPlan';
 export * from './SavedMeal';
 export * from './TrainingSession';
