@@ -396,3 +396,19 @@ a.pressable,
     transform: none;
   }
 }
+
+/* Touch-only press feedback for ad-hoc clickable elements (cards, list rows,
+   table rows) that use cursor-pointer or role="button" without opting into
+   .pressable. Opacity only — no transform, so it stays safe on table rows
+   and elements with their own transforms. */
+@media (hover: none) and (pointer: coarse) {
+  .cursor-pointer,
+  [role="button"] {
+    transition: opacity 0.12s ease;
+  }
+
+  .cursor-pointer:active:not(:disabled, [aria-disabled="true"]),
+  [role="button"]:active:not(:disabled, [aria-disabled="true"]) {
+    opacity: 0.7;
+  }
+}
