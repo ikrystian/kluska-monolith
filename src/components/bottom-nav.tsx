@@ -1,20 +1,29 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { LayoutDashboard, Play, CalendarDays, MessageSquare, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { usePreloadAthleteViews } from '@/lib/preload-athlete-views';
+
+const items = [
+    { href: '/athlete/dashboard', icon: LayoutDashboard, label: 'Panel' },
+    { href: '/athlete/calendar', icon: CalendarDays, label: 'Kalendarz' },
+    { href: '/athlete/log', icon: Play, label: 'Trenuj' },
+    { href: '/athlete/chat', icon: MessageSquare, label: 'Czat' },
+    { href: '/athlete/profile', icon: User, label: 'Profil' },
+];
 
 export function BottomNav() {
     const pathname = usePathname();
+    const router = useRouter();
 
-    const items = [
-        { href: '/athlete/dashboard', icon: LayoutDashboard, label: 'Panel' },
-        { href: '/athlete/calendar', icon: CalendarDays, label: 'Kalendarz' },
-        { href: '/athlete/log', icon: Play, label: 'Trenuj' },
-        { href: '/athlete/chat', icon: MessageSquare, label: 'Czat' },
-        { href: '/athlete/profile', icon: User, label: 'Profil' },
-    ];
+    // Wstępne załadowanie tras i danych widoków, żeby nawigacja była płynna
+    useEffect(() => {
+        items.forEach((item) => router.prefetch(item.href));
+    }, [router]);
+    usePreloadAthleteViews();
 
     return (
         <div id="bottom-nav" className="fixed bottom-0 left-0 right-0 z-50 block border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden">
@@ -27,6 +36,7 @@ export function BottomNav() {
                         <Link
                             key={item.href}
                             href={item.href}
+                            prefetch={true}
                             className={cn(
                                 "flex flex-col items-center justify-center gap-1 rounded-lg p-2 text-xs font-medium transition-colors",
                                 isActive

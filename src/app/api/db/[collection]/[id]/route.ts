@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { isValidObjectId } from 'mongoose';
+import { jsonWithEtag } from '@/lib/http-cache';
 
 // Import all models
 import { User } from '@/models/User';
@@ -91,7 +92,7 @@ export async function GET(
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ data: doc.toJSON() });
+    return jsonWithEtag(request, { data: doc.toJSON() });
   } catch (error) {
     console.error('GET /api/db/[collection]/[id] error:', error);
     return NextResponse.json(

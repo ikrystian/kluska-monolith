@@ -1,24 +1,96 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import useSWR, { mutate as globalMutate, preload } from 'swr';
 
 export interface UseCollectionResult<T> {
   data: T[] | null;
   isLoading: boolean;
   error: Error | null;
-  refetch: () => void;
+  refetch: () => Promise<void>;
 }
 
 export interface UseDocResult<T> {
   data: T | null;
   isLoading: boolean;
   error: Error | null;
-  refetch: () => void;
+  refetch: () => Promise<void>;
+}
+
+function buildCollectionKey(
+  collection: string,
+  query?: Record<string, any>,
+  options?: { sort?: Record<string, 1 | -1>; limit?: number }
+): string {
+  const params = new URLSearchParams();
+  if (query && Object.keys(query).length > 0) {
+    params.append('query', JSON.stringify(query));
+  }
+  if (options?.sort) params.append('sort', JSON.stringify(options.sort));
+  if (options?.limit) params.append('limit', options.limit.toString());
+  return `/api/db/${collection}?${params.toString()}`;
+}
+
+async function collectionFetcher(url: string) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
+  }
+  const result = await response.json();
+  return result.data || [];
+}
+
+async function docFetcher(url: string) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch document: ${response.statusText}`);
+  }
+  const result = await response.json();
+  return result.data || null;
 }
 
 /**
- * Hook to fetch a collection from MongoDB via API
+ * Revalidate every cached query (lists and single docs) for a collection.
+ * Called automatically after create/update/delete so views refresh only
+ * when the data actually changed.
+ */
+export function mutateCollection(collection: string) {
+  const prefix = `/api/db/${collection}`;
+  return globalMutate(
+    (key) =>
+      typeof key === 'string' &&
+      (key.startsWith(`${prefix}?`) || key.startsWith(`${prefix}/`)),
+    undefined,
+    { revalidate: true }
+  );
+}
+
+/**
+ * Warm the SWR cache for a collection query before the view mounts.
+ * The arguments must match the target useCollection call exactly,
+ * otherwise the cache key won't line up.
+ */
+export function preloadCollection(
+  collection: string,
+  query?: Record<string, any>,
+  options?: { sort?: Record<string, 1 | -1>; limit?: number }
+) {
+  return preload(buildCollectionKey(collection, query, options), collectionFetcher);
+}
+
+/**
+ * Warm the SWR cache for a single document before the view mounts.
+ */
+export function preloadDoc(collection: string, id: string) {
+  return preload(`/api/db/${collection}/${id}`, docFetcher);
+}
+
+/**
+ * Hook to fetch a collection from MongoDB via API.
+ *
+ * Backed by SWR: results are cached across navigations, so remounting a view
+ * renders instantly from cache and revalidates in the background.
  *
  * @param collection - Collection name or null to skip fetching
  * @param query - MongoDB query filter (optional)
@@ -26,109 +98,56 @@ export interface UseDocResult<T> {
  *
  * IMPORTANT: Pass `null` as collection to skip fetching entirely.
  * This is useful when you need to wait for other data before fetching.
+ * For the cache to work across visits, query values must be stable between
+ * mounts (avoid `new Date()` timestamps — round to day boundaries instead).
  */
 export function useCollection<T>(
   collection: string | null,
   query?: Record<string, any>,
   options?: { sort?: Record<string, 1 | -1>; limit?: number }
 ): UseCollectionResult<T> {
-  const [data, setData] = useState<T[] | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
-  const { data: session } = useSession();
+  const key = collection ? buildCollectionKey(collection, query, options) : null;
 
-  // Serialize query and options for stable dependency comparison
-  const queryString = query ? JSON.stringify(query) : '';
-  const optionsString = options ? JSON.stringify(options) : '';
+  const { data, error, isLoading, mutate } = useSWR<T[]>(key, collectionFetcher, {
+    keepPreviousData: true,
+  });
 
-  const fetchData = useCallback(async () => {
-    // If collection is null, clear data and don't fetch
-    if (!collection) {
-      setData(null);
-      setIsLoading(false);
-      setError(null);
-      return;
-    }
+  const refetch = useCallback(async () => {
+    await mutate();
+  }, [mutate]);
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const params = new URLSearchParams();
-      if (query && Object.keys(query).length > 0) {
-        params.append('query', JSON.stringify(query));
-      }
-      if (options?.sort) params.append('sort', JSON.stringify(options.sort));
-      if (options?.limit) params.append('limit', options.limit.toString());
-
-      const response = await fetch(`/api/db/${collection}?${params.toString()}`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch ${collection}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      setData(result.data || []);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
-      setData(null);
-    } finally {
-      setIsLoading(false);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collection, queryString, optionsString]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  return { data, isLoading, error, refetch: fetchData };
+  return {
+    data: data ?? null,
+    isLoading,
+    error: error instanceof Error ? error : error ? new Error('Unknown error') : null,
+    refetch,
+  };
 }
 
 /**
- * Hook to fetch a single document from MongoDB via API
+ * Hook to fetch a single document from MongoDB via API.
+ * Cached across navigations the same way as useCollection.
  */
 export function useDoc<T>(
   collection: string | null,
   id: string | null
 ): UseDocResult<T> {
-  const [data, setData] = useState<T | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
+  const key = collection && id ? `/api/db/${collection}/${id}` : null;
 
-  const fetchData = useCallback(async () => {
-    if (!collection || !id) {
-      setData(null);
-      setIsLoading(false);
-      setError(null);
-      return;
-    }
+  const { data, error, isLoading, mutate } = useSWR<T>(key, docFetcher, {
+    keepPreviousData: true,
+  });
 
-    setIsLoading(true);
-    setError(null);
+  const refetch = useCallback(async () => {
+    await mutate();
+  }, [mutate]);
 
-    try {
-      const response = await fetch(`/api/db/${collection}/${id}`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch document: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      setData(result.data || null);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
-      setData(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [collection, id]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  return { data, isLoading, error, refetch: fetchData };
+  return {
+    data: data ?? null,
+    isLoading,
+    error: error instanceof Error ? error : error ? new Error('Unknown error') : null,
+    refetch,
+  };
 }
 
 /**
@@ -154,6 +173,7 @@ export function useCreateDoc() {
       }
 
       const result = await response.json();
+      void mutateCollection(collection);
       return result.data;
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Unknown error');
@@ -190,6 +210,7 @@ export function useUpdateDoc() {
       }
 
       const result = await response.json();
+      void mutateCollection(collection);
       return result.data;
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Unknown error');
@@ -223,6 +244,7 @@ export function useDeleteDoc() {
         throw new Error(`Failed to delete document: ${response.statusText}`);
       }
 
+      void mutateCollection(collection);
       return true;
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Unknown error');
@@ -253,4 +275,3 @@ export function useUser() {
     userError: null,
   };
 }
-

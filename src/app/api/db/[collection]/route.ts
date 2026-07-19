@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Model } from 'mongoose';
 import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
+import { jsonWithEtag } from '@/lib/http-cache';
 
 import {
   User,
@@ -127,10 +128,10 @@ export async function GET(
         };
       });
 
-      return NextResponse.json({ data: enrichedData });
+      return jsonWithEtag(request, { data: enrichedData });
     }
 
-    return NextResponse.json({ data });
+    return jsonWithEtag(request, { data });
   } catch (error) {
     console.error('GET /api/db/[collection] error:', error);
     return NextResponse.json(

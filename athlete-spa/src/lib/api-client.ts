@@ -14,6 +14,20 @@ export function getApiBaseUrl(): string {
   return API_BASE_URL;
 }
 
+/**
+ * Media URLs are stored relative (e.g. `/api/images/<id>`) so they work in the
+ * same-origin Next.js app; this SPA runs on a different origin, so plain
+ * <img src> would resolve them against the SPA host. Prefixes the backend URL
+ * for relative paths, passes absolute/data/blob URLs through untouched.
+ */
+export function resolveMediaUrl(url: string): string;
+export function resolveMediaUrl(url: string | null | undefined): string | undefined;
+export function resolveMediaUrl(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  if (/^(https?:|data:|blob:)/.test(url)) return url;
+  return `${API_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+}
+
 export function getStoredToken(): string | null {
   return localStorage.getItem(TOKEN_STORAGE_KEY);
 }

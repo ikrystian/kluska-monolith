@@ -1,6 +1,6 @@
 'use client';
 
-import { apiFetch } from '@/lib/api-client';
+import { apiFetch, resolveMediaUrl } from '@/lib/api-client';
 import React, { useState, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
@@ -56,7 +56,7 @@ function GymFavorites({ gymId }: { gymId: string }) {
                     <div key={user._id} className="inline-block h-6 w-6 rounded-full ring-2 ring-white" title={user.name}>
                         {user.avatarUrl ? (
                             <img
-                                src={user.avatarUrl}
+                                src={resolveMediaUrl(user.avatarUrl)}
                                 alt={user.name}
                                 className="h-full w-full rounded-full object-cover"
                             />

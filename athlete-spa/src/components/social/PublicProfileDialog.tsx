@@ -1,6 +1,6 @@
 'use client';
 
-import { apiFetch } from '@/lib/api-client';
+import { apiFetch, resolveMediaUrl } from '@/lib/api-client';
 import React, { useState, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -109,7 +109,7 @@ export function PublicProfileDialog({ open, onOpenChange, userId }: PublicProfil
             {/* Profile Header */}
             <div className="flex items-center space-x-4">
               <Avatar className="h-16 w-16">
-                <AvatarImage src={profileData.profile.avatarUrl} />
+                <AvatarImage src={resolveMediaUrl(profileData.profile.avatarUrl)} />
                 <AvatarFallback>{getInitials(profileData.profile.nickname)}</AvatarFallback>
               </Avatar>
               <div>

@@ -52,6 +52,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { placeholderImages } from '@/lib/placeholder-images';
 import { useUserProfile } from '@/contexts/UserProfileContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { resolveMediaUrl } from '@/lib/api-client';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -208,7 +209,7 @@ export function AppNav() {
           >
             <Avatar className="h-9 w-9 ring-2 ring-primary/20">
               {userProfile?.avatarUrl ? (
-                <AvatarImage src={userProfile.avatarUrl} alt="Awatar użytkownika" />
+                <AvatarImage src={resolveMediaUrl(userProfile.avatarUrl)} alt="Awatar użytkownika" />
               ) : avatarImage ? (
                 <AvatarImage src={avatarImage.imageUrl} alt="Awatar użytkownika" />
               ) : null}

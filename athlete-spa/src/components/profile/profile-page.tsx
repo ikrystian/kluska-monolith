@@ -1,6 +1,6 @@
 'use client';
 
-import { apiFetch, getApiBaseUrl, getStoredToken } from '@/lib/api-client';
+import { apiFetch, getApiBaseUrl, getStoredToken, resolveMediaUrl } from '@/lib/api-client';
 import { useState, useMemo, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
@@ -259,7 +259,7 @@ export function ProfilePage() {
           <div className="-mt-12 flex flex-col items-center text-center md:-mt-14 md:flex-row md:items-end md:gap-5 md:text-left">
             <Avatar className="h-24 w-24 border-4 border-background shadow-lifted md:h-28 md:w-28">
               {userProfile?.avatarUrl ? (
-                <AvatarImage src={userProfile.avatarUrl} alt="Awatar użytkownika" />
+                <AvatarImage src={resolveMediaUrl(userProfile.avatarUrl)} alt="Awatar użytkownika" />
               ) : avatarImage ? (
                 <AvatarImage src={avatarImage.imageUrl} alt="Awatar użytkownika" />
               ) : null}
@@ -293,13 +293,13 @@ export function ProfilePage() {
               open={isAvatarDialogOpen}
               onOpenChange={setIsAvatarDialogOpen}
               onUploadComplete={handleAvatarUpload}
-              currentAvatarUrl={userProfile?.avatarUrl}
+              currentAvatarUrl={resolveMediaUrl(userProfile?.avatarUrl)}
             />
           </div>
         </div>
       </section>
 
-      <div className="grid gap-6 px-4 pt-6 md:grid-cols-3 md:gap-8 md:px-8">
+      <div className="grid gap-6 px-1 pt-6 md:grid-cols-3 md:gap-8 md:px-8">
         <div className="md:col-span-1">
           {/* Running Statistics Card */}
           <Card className="overflow-hidden border-sky-500/20 bg-sky-500/[0.03]">

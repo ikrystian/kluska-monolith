@@ -1,7 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useCallback, useState, useEffect, useRef } from 'react';
-import { useUser } from '@/lib/db-hooks';
+import React, { createContext, useContext } from 'react';
+import { useUser, useDoc } from '@/lib/db-hooks';
 import { UserProfile } from '@/lib/types';
 
 interface UserProfileContextType {
@@ -15,51 +15,13 @@ const UserProfileContext = createContext<UserProfileContextType | undefined>(und
 
 export function UserProfileProvider({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const userIdRef = useRef<string | null>(null);
 
-  const fetchUserProfile = useCallback(async (userId: string) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-
-      const response = await fetch(`/api/db/users/${userId}`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch user profile: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      setUserProfile(result.data || null);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
-      setUserProfile(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!isUserLoading) {
-      if (user?.uid) {
-        userIdRef.current = user.uid;
-        fetchUserProfile(user.uid);
-      } else {
-        userIdRef.current = null;
-        setUserProfile(null);
-        setIsLoading(false);
-      }
-    }
-  }, [isUserLoading, user?.uid, fetchUserProfile]);
-
-  const refetch = useCallback(async () => {
-    if (userIdRef.current) {
-      await fetchUserProfile(userIdRef.current);
-    }
-  }, [fetchUserProfile]);
+  // Ten sam klucz SWR co useDoc('users', uid) w widokach — jeden wspólny cache,
+  // automatycznie odświeżany po mutacjach na kolekcji users.
+  const { data: userProfile, isLoading, error, refetch } = useDoc<UserProfile>(
+    user?.uid ? 'users' : null,
+    user?.uid || null
+  );
 
   return (
     <UserProfileContext.Provider

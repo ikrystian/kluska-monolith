@@ -7,6 +7,7 @@ import { QuickChatWidget } from './chat/QuickChatWidget';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useUserProfile } from '@/contexts/UserProfileContext';
 import { placeholderImages } from '@/lib/placeholder-images';
+import { resolveMediaUrl } from '@/lib/api-client';
 
 function getInitials(name: string | null | undefined) {
   if (!name) return 'U';
@@ -29,7 +30,7 @@ export function AppHeader() {
         <span className="relative shrink-0">
           <Avatar className="h-10 w-10 ring-2 ring-primary/40 ring-offset-2 ring-offset-background">
             {userProfile?.avatarUrl ? (
-              <AvatarImage src={userProfile.avatarUrl} alt="Awatar użytkownika" />
+              <AvatarImage src={resolveMediaUrl(userProfile.avatarUrl)} alt="Awatar użytkownika" />
             ) : avatarImage ? (
               <AvatarImage src={avatarImage.imageUrl} alt="Awatar użytkownika" />
             ) : null}

@@ -1,6 +1,6 @@
 'use client';
 
-import { apiFetch } from '@/lib/api-client';
+import { apiFetch, resolveMediaUrl } from '@/lib/api-client';
 import { useState, useRef } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -890,7 +890,7 @@ export default function GoalsAndAchievementsPage() {
                       {achievement.photoURLs?.map((url, index) => (
                         <CarouselItem key={index}>
                           <div className="relative w-full aspect-4/3">
-                            <img src={url} alt={`${achievement.title} ${index + 1}`} className="absolute inset-0 w-full h-full object-cover" />
+                            <img src={resolveMediaUrl(url)} alt={`${achievement.title} ${index + 1}`} className="absolute inset-0 w-full h-full object-cover" />
                           </div>
                         </CarouselItem>
                       ))}

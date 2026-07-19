@@ -64,20 +64,21 @@ export default function AthleteDashboardPage() {
   // User profile
   const { data: userProfile } = useDoc<UserProfile>(user ? 'users' : null, user?.uid || null);
 
-  // Date ranges
+  // Date ranges — derived from day boundaries so query cache keys stay
+  // stable across navigations within the same day
   const { weekStart, weekEnd, thirtyDaysAgo, todayStart, todayEnd } = useMemo(() => {
     const now = new Date();
     const weekStart = startOfWeek(now, { locale: pl });
     const weekEnd = endOfWeek(now, { locale: pl });
-
-    const thirtyDaysAgo = new Date(now);
-    thirtyDaysAgo.setDate(now.getDate() - 30);
 
     const todayStart = new Date(now);
     todayStart.setHours(0, 0, 0, 0);
 
     const todayEnd = new Date(now);
     todayEnd.setHours(23, 59, 59, 999);
+
+    const thirtyDaysAgo = new Date(todayStart);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     return { weekStart, weekEnd, thirtyDaysAgo, todayStart, todayEnd };
   }, []);
@@ -147,12 +148,12 @@ export default function AthleteDashboardPage() {
 
   // Upcoming planned workouts (next 7 days)
   const sevenDaysLater = useMemo(() => {
-    const date = new Date();
+    const date = new Date(todayEnd);
     date.setDate(date.getDate() + 7);
     return date;
-  }, []);
+  }, [todayEnd]);
 
-  const todayIso = useMemo(() => new Date().toISOString(), []);
+  const todayIso = useMemo(() => todayStart.toISOString(), [todayStart]);
 
   const { data: upcomingPlannedWorkouts, isLoading: upcomingPlannedLoading } = useCollection<PlannedWorkout>(
     user ? 'plannedWorkouts' : null,
