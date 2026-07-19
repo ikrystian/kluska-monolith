@@ -1,7 +1,10 @@
 'use client';
 
 import { apiFetch, getApiBaseUrl, getStoredToken } from '@/lib/api-client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
+import { App } from '@capacitor/app';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -100,6 +103,58 @@ export function ProfilePage() {
   const { updateDoc } = useUpdateDoc();
 
   const isStravaConnected = !!userProfile?.stravaAccessToken;
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const handleUrlOpen = async (data: { url: string }) => {
+      if (data.url.includes('strava-callback') || data.url.includes('strava_connected')) {
+        try {
+          await Browser.close();
+        } catch {
+          // Browser sheet might already be closed
+        }
+        refetch();
+        toast({
+          title: 'Sukces!',
+          description: 'Połączono z kontem Strava.',
+        });
+      } else if (data.url.includes('strava_error')) {
+        try {
+          await Browser.close();
+        } catch {
+          // Browser sheet might already be closed
+        }
+        toast({
+          title: 'Błąd!',
+          description: 'Nie udało się połączyć ze Strava.',
+          variant: 'destructive',
+        });
+      }
+    };
+
+    const appListenerPromise = App.addListener('appUrlOpen', handleUrlOpen);
+    const browserListenerPromise = Browser.addListener('browserFinished', () => {
+      refetch();
+    });
+
+    return () => {
+      appListenerPromise.then((l) => l.remove());
+      browserListenerPromise.then((l) => l.remove());
+    };
+  }, [refetch, toast]);
+
+  const handleConnectStrava = async () => {
+    const token = getStoredToken();
+    const apiBase = getApiBaseUrl();
+    if (Capacitor.isNativePlatform()) {
+      await Browser.open({
+        url: `${apiBase}/api/strava/connect?token=${encodeURIComponent(token ?? '')}&platform=capacitor`,
+      });
+    } else {
+      window.location.href = `${apiBase}/api/strava/connect?token=${encodeURIComponent(token ?? '')}`;
+    }
+  };
 
   const handleDisconnectStrava = async () => {
     setIsDisconnecting(true);
@@ -450,10 +505,7 @@ export function ProfilePage() {
                             variant="default"
                             size="sm"
                             className="w-full rounded-lg bg-[#FC4C02] text-white hover:bg-[#E34402] sm:w-auto"
-                            onClick={() => {
-                              const token = getStoredToken();
-                              window.location.href = `${getApiBaseUrl()}/api/strava/connect?token=${encodeURIComponent(token ?? '')}`;
-                            }}
+                            onClick={handleConnectStrava}
                           >
                             <Activity className="mr-2 h-4 w-4" />
                             Połącz ze Strava

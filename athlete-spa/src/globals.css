@@ -448,6 +448,6 @@ a.pressable,
 
 .container {
   @media(width < 560px) {
-    padding-inline: 4px;
+    padding-inline: 8px;
   }
 }

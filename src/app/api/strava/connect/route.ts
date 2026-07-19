@@ -16,13 +16,17 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Strava client ID not configured' }, { status: 500 });
         }
 
+        const { searchParams } = new URL(request.url);
+        const platform = searchParams.get('platform');
+        const state = platform ? `${user.id}:${platform}` : user.id;
+
         // Build authorization URL
         const authUrl = new URL('https://www.strava.com/oauth/authorize');
         authUrl.searchParams.append('client_id', STRAVA_CLIENT_ID);
         authUrl.searchParams.append('redirect_uri', REDIRECT_URI);
         authUrl.searchParams.append('response_type', 'code');
         authUrl.searchParams.append('scope', 'read,activity:read_all');
-        authUrl.searchParams.append('state', user.id); // Use user ID as state for verification
+        authUrl.searchParams.append('state', state);
 
         // Redirect to Strava authorization page
         return NextResponse.redirect(authUrl.toString());
