@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   Carousel,
   CarouselContent,
@@ -11,11 +10,10 @@ import {
 } from '@/components/ui/carousel';
 import { SetInfoSlide } from './SetInfoSlide';
 import { RestTimerSlide } from './RestTimerSlide';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
 import { type Exercise, SetType } from '@/lib/types';
 import { type ExerciseType } from '@/lib/set-type-config';
+import { cn } from '@/lib/utils';
 
 // Type for form values (matching the log page schema)
 interface LogFormValues {
@@ -63,6 +61,7 @@ export function CarouselWorkoutView({
   const [validationError, setValidationError] = useState<string | null>(null);
   const [validationSlideIndex, setValidationSlideIndex] = useState<number | null>(null);
   const isValidatingRef = useRef(false);
+  const dotsContainerRef = useRef<HTMLDivElement>(null);
 
   // Watch the entire exerciseSeries to ensure reactivity
   const exerciseSeries = form.watch('exerciseSeries');
@@ -171,7 +170,6 @@ export function CarouselWorkoutView({
       // Check if there's a next exercise
       const nextExerciseIndex = exerciseIndex + 1;
       if (nextExerciseIndex < exerciseSeries.length) {
-        const nextExercise = exerciseSeries[nextExerciseIndex];
         const nextExerciseDetails = getCurrentExerciseDetails(nextExerciseIndex);
         return {
           exerciseName: nextExerciseDetails?.name || 'Następne ćwiczenie',
@@ -205,6 +203,12 @@ export function CarouselWorkoutView({
       }
     }
   }, [exerciseSeries, validationError, validationSlideIndex, slides, validateSet]);
+
+  // Keep the active dot indicator scrolled into view
+  useEffect(() => {
+    const el = dotsContainerRef.current?.querySelector<HTMLElement>(`[data-idx="${currentSlideIndex}"]`);
+    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }, [currentSlideIndex]);
 
   // Handle slide change
   useEffect(() => {
@@ -281,7 +285,7 @@ export function CarouselWorkoutView({
     }
   }, [api, currentSlideIndex, slides.length]);
 
-  // Handle navigation with validation for forward movement
+  // Handle navigation with validation for forward movement (used by the in-card CTA button)
   const handleNavigateNext = useCallback(() => {
     if (!api || currentSlideIndex >= slides.length - 1) return;
 
@@ -306,17 +310,6 @@ export function CarouselWorkoutView({
 
     api.scrollNext();
   }, [api, currentSlideIndex, slides, validateSet, onSetComplete]);
-
-  // Handle navigation backward - always allowed
-  const handleNavigatePrev = useCallback(() => {
-    if (!api || currentSlideIndex <= 0) return;
-
-    // Clear any validation errors when going back
-    setValidationError(null);
-    setValidationSlideIndex(null);
-
-    api.scrollPrev();
-  }, [api, currentSlideIndex]);
 
   // Handle starting to edit a completed set - unmarks it as completed
   const handleStartEditing = useCallback((exerciseIndex: number, setIndex: number) => {
@@ -345,8 +338,8 @@ export function CarouselWorkoutView({
     );
   }
 
-  // Get current set info for progress bar display
-  const getCurrentSetInfo = useCallback(() => {
+  // Get current set info for the header display
+  const getCurrentSetInfo = () => {
     if (!currentSlide) return null;
 
     const exerciseData = exerciseSeries[currentSlide.exerciseIndex];
@@ -359,82 +352,39 @@ export function CarouselWorkoutView({
       exerciseName: exerciseDetails?.name || 'Ćwiczenie',
       setNumber: currentSlide.setIndex + 1,
       totalSetsInExercise: exerciseData.sets.length,
-      reps: setData.reps,
-      weight: setData.weight,
-      duration: setData.duration,
-      isCompleted: setData.completed,
       isRestSlide: currentSlide.type === 'rest-timer',
-      exerciseType: exerciseDetails?.type || 'weight',
     };
-  }, [currentSlide, exerciseSeries, getCurrentExerciseDetails]);
+  };
 
   const currentSetInfo = getCurrentSetInfo();
 
   return (
     <div className="flex flex-col h-full">
-      {/* Progress Header */}
-      <div className="px-4 py-3 border-b bg-background/95 backdrop-blur" id="progress-series-bar">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            {currentSetInfo && (
-              <>
-                <Badge variant="outline" className="text-xs shrink-0">
-                  {currentSetInfo.exerciseName}
-                </Badge>
-                <span className="text-xs text-muted-foreground shrink-0">
-                  Seria {currentSetInfo.setNumber}/{currentSetInfo.totalSetsInExercise}
-                </span>
-                {currentSetInfo.isCompleted && (
-                  <Badge variant="default" className="text-xs bg-green-500 shrink-0">
-                    ✓
-                  </Badge>
-                )}
-              </>
-            )}
+      {/* Compact progress header - only the essentials */}
+      <div className="px-3 py-2.5 border-b bg-background/95 backdrop-blur" id="progress-series-bar">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold leading-tight">
+              {currentSetInfo?.exerciseName || 'Trening'}
+            </p>
+            <p className="text-xs text-muted-foreground leading-tight">
+              {currentSetInfo?.isRestSlide
+                ? 'Przerwa'
+                : `Seria ${currentSetInfo?.setNumber}/${currentSetInfo?.totalSetsInExercise}`}
+            </p>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {currentSetInfo && !currentSetInfo.isRestSlide && (
-              <span className="text-xs font-medium text-primary">
-                {currentSetInfo.exerciseType === 'duration'
-                  ? `${currentSetInfo.duration || 0}s`
-                  : currentSetInfo.exerciseType === 'reps'
-                    ? `${currentSetInfo.reps || 0} powt.`
-                    : `${currentSetInfo.weight || 0}kg × ${currentSetInfo.reps || 0}`
-                }
-              </span>
-            )}
-            <span className="text-sm text-muted-foreground font-medium">
+          <div className="shrink-0 text-right">
+            <span className="text-sm font-bold text-primary tabular-nums">
               {completedSets}/{totalSets}
             </span>
+            <p className="text-[10px] text-muted-foreground leading-tight">serii</p>
           </div>
         </div>
-        <Progress value={totalSets > 0 ? (completedSets / totalSets) * 100 : 0} className="h-2" />
+        <Progress value={totalSets > 0 ? (completedSets / totalSets) * 100 : 0} className="h-1.5 mt-2" />
       </div>
 
-      {/* Carousel with Navigation Arrows */}
+      {/* Carousel */}
       <div className="flex-1 overflow-hidden relative">
-        {/* <Button
-          variant="outline"
-          size="icon"
-          className="absolute left-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/80 backdrop-blur shadow-lg hover:bg-background"
-          onClick={handleNavigatePrev}
-          disabled={currentSlideIndex <= 0}
-          aria-label="Poprzedni slajd"
-        >
-          <ChevronLeft className="h-6 w-6" />
-        </Button>
-
-        <Button
-          variant="outline"
-          size="icon"
-          className="absolute right-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/80 backdrop-blur shadow-lg hover:bg-background"
-          onClick={handleNavigateNext}
-          disabled={currentSlideIndex >= slides.length - 1}
-          aria-label="Następny slajd"
-        >
-          <ChevronRight className="h-6 w-6" />
-        </Button> */}
-
         <Carousel
           setApi={setApi}
           opts={{
@@ -443,7 +393,7 @@ export function CarouselWorkoutView({
             slidesToScroll: 1,
             containScroll: false,
           }}
-          className="w-full h-full px-8"
+          className="w-full h-full px-3"
         >
           <CarouselContent className="h-full -ml-2">
             {slides.map((slide, index) => {
@@ -461,9 +411,9 @@ export function CarouselWorkoutView({
                 return (
                   <CarouselItem
                     key={`set-${slide.exerciseIndex}-${slide.setIndex}`}
-                    className="h-full basis-[85%] pl-2 transition-all duration-300"
+                    className="h-full basis-[92%] pl-2"
                   >
-                    <div className={`h-full transition-all duration-300 ${isActive ? 'scale-100 opacity-100' : 'scale-95 opacity-50'}`}>
+                    <div className={cn('h-full transition-all duration-300', isActive ? 'scale-100 opacity-100' : 'scale-95 opacity-40')}>
                       <SetInfoSlide
                         exerciseName={exerciseDetails?.name || (isLoadingExercises ? 'Ładowanie...' : 'Nieznane ćwiczenie')}
                         exerciseDetails={exerciseDetails}
@@ -484,6 +434,7 @@ export function CarouselWorkoutView({
                         isCompleted={setData.completed}
                         validationError={showError}
                         onStartEditing={() => handleStartEditing(slide.exerciseIndex, slide.setIndex)}
+                        onConfirm={handleNavigateNext}
                       />
                     </div>
                   </CarouselItem>
@@ -494,9 +445,9 @@ export function CarouselWorkoutView({
               return (
                 <CarouselItem
                   key={`rest-${slide.exerciseIndex}-${slide.setIndex}`}
-                  className="h-full basis-[85%] pl-2 transition-all duration-300"
+                  className="h-full basis-[92%] pl-2"
                 >
-                  <div className={`h-full transition-all duration-300 ${isActive ? 'scale-100 opacity-100' : 'scale-95 opacity-50'}`}>
+                  <div className={cn('h-full transition-all duration-300', isActive ? 'scale-100 opacity-100' : 'scale-95 opacity-40')}>
                     <RestTimerSlide
                       restTimeSeconds={setData.restTimeSeconds || 60}
                       nextSetInfo={getNextSetInfo(slide.exerciseIndex, slide.setIndex)}
@@ -512,9 +463,9 @@ export function CarouselWorkoutView({
         </Carousel>
       </div>
 
-      {/* Slide Indicators */}
-      <div className="px-4 py-3 border-t bg-background/95 backdrop-blur">
-        <div className="flex items-center justify-center gap-1 overflow-x-auto">
+      {/* Compact, tappable progress dots */}
+      <div className="px-3 py-2 border-t bg-background/95 backdrop-blur">
+        <div ref={dotsContainerRef} className="flex items-center justify-start gap-1 overflow-x-auto scrollbar-hide">
           {slides.map((slide, index) => {
             const exerciseData = exerciseSeries[slide.exerciseIndex];
             const setData = exerciseData?.sets[slide.setIndex];
@@ -523,25 +474,24 @@ export function CarouselWorkoutView({
             return (
               <button
                 key={index}
+                data-idx={index}
+                type="button"
                 onClick={() => api?.scrollTo(index)}
-                className={`w-2 h-2 rounded-full transition-all ${index === currentSlideIndex
-                  ? 'bg-primary w-4'
-                  : isSetCompleted
-                    ? 'bg-green-500'
-                    : slide.type === 'set-info'
-                      ? 'bg-primary/30'
-                      : 'bg-muted'
-                  }`}
-                aria-label={`Go to slide ${index + 1}`}
+                className={cn(
+                  'h-1.5 rounded-full shrink-0 transition-all',
+                  index === currentSlideIndex
+                    ? 'bg-primary w-5'
+                    : isSetCompleted
+                      ? 'bg-green-500 w-1.5'
+                      : slide.type === 'set-info'
+                        ? 'bg-primary/30 w-1.5'
+                        : 'bg-muted w-1.5'
+                )}
+                aria-label={`Przejdź do slajdu ${index + 1}`}
               />
             );
           })}
         </div>
-        <p className="text-center text-xs text-muted-foreground mt-2">
-          {currentSlide?.type === 'set-info' ? 'Informacje o serii' : 'Przerwa'}
-          {' • '}
-          Slajd {currentSlideIndex + 1} z {slides.length}
-        </p>
       </div>
     </div>
   );

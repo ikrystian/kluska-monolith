@@ -471,7 +471,7 @@ const SidebarMenuItem = React.forwardRef<
 SidebarMenuItem.displayName = "SidebarMenuItem"
 
 const sidebarMenuButtonVariants = cva(
-  "peer/menu-button flex w-full items-center gap-3 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-ring transition-all hover:bg-accent/20 focus-visible:ring-1 active:bg-accent/20 disabled:pointer-events-none disabled:opacity-50 group-has-[[data-sidebar=menu-action]]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-accent data-[active=true]:font-medium data-[active=true]:text-accent-foreground data-[active=true]:hover:bg-accent/90 data-[state=open]:hover:bg-accent/20 group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:p-2 [&>span]:group-data-[state=collapsed]:hidden [&>svg]:size-5 [&>svg]:shrink-0",
+  "peer/menu-button flex w-full items-center gap-3 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-ring transition-all duration-100 ease-out hover:bg-accent/20 focus-visible:ring-1 active:bg-accent/20 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 group-has-[[data-sidebar=menu-action]]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-accent data-[active=true]:font-medium data-[active=true]:text-accent-foreground data-[active=true]:hover:bg-accent/90 data-[state=open]:hover:bg-accent/20 group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:p-2 [&>span]:group-data-[state=collapsed]:hidden [&>svg]:size-5 [&>svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -681,7 +681,7 @@ const SidebarMenuSubButton = React.forwardRef<
       data-size={size}
       data-active={isActive}
       className={cn(
-        "flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-foreground outline-none ring-ring hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 active:bg-accent active:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-accent-foreground",
+        "flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-foreground outline-none ring-ring transition-all duration-100 ease-out hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 active:bg-accent active:text-accent-foreground active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-accent-foreground",
         "data-[active=true]:bg-accent data-[active=true]:text-accent-foreground",
         size === "sm" && "text-xs",
         size === "md" && "text-sm",

@@ -76,93 +76,543 @@ async function seed() {
     // 3. Exercises (Ćwiczenia)
     console.log('🌱 Seedowanie ćwiczeń...');
     const exercisesData = [
+      // --- KLATKA PIERSIOWA ---
       {
-        name: 'Wyciskanie sztangi na ławce poziomej',
+        name: 'Wyciskanie sztangi na ławce poziomej (Bench Press)',
         mainMuscleGroups: [getMg(MuscleGroupName.Chest)],
         secondaryMuscleGroups: [getMg(MuscleGroupName.Triceps), getMg(MuscleGroupName.Shoulders)],
         setup: [
-          { group: 'Ławka', value: 'Ustawienie poziome' },
-          { group: 'Gryf', value: 'Chwyt nieco szerszy niż rozstaw barków' }
+          { group: 'Ławka', value: 'Pozioma (0°)' },
+          { group: 'Gryf', value: 'Chwyt nachwytem, nieco szerszy niż rozstaw barków' },
+          { group: 'Stopy', value: 'Płasko na ziemi, stabilna pozycja' }
         ],
-        instructions: 'Połóż się na ławce. Zdejmij sztangę ze stojaków. Kontrolowanym ruchem opuść ją do klatki piersiowej, a następnie dynamicznie wyciśnij w górę.',
+        instructions: '1. Połóż się na ławce ze wzrokiem pod sztangą.\n2. Ściągnij i opuść łopatki, utwórz lekki mostek.\n3. Zdejmij sztangę ze stojaków.\n4. Kontrolowanym ruchem opuść sztangę do środkowej części klatki piersiowej.\n5. Dynamicznie wypchnij ciężar w górę do pełnego wyprostu ramion (bez blokowania łokci).',
+        description: 'Podstawowe ćwiczenie wielostawowe budujące masę i siłę klatki piersiowej, przednich aktonów barków oraz tricepsów.',
         type: 'weight' as const,
       },
       {
-        name: 'Przysiad ze sztangą na plecach',
-        mainMuscleGroups: [getMg(MuscleGroupName.Quads), getMg(MuscleGroupName.Glutes)],
-        secondaryMuscleGroups: [getMg(MuscleGroupName.Hamstrings), getMg(MuscleGroupName.Calves), getMg(MuscleGroupName.LowerBack)],
+        name: 'Wyciskanie hantli na ławce skośnej dodatniej (Incline Dumbbell Press)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Chest)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Shoulders), getMg(MuscleGroupName.Triceps)],
         setup: [
-          { group: 'Stojak', value: 'Sztanga na wysokości obojczyków' },
-          { group: 'Stopy', value: 'Rozstaw na szerokość bioder lub barków' }
+          { group: 'Ławka', value: 'Kąt 30-45°' },
+          { group: 'Sprzęt', value: 'Hantle' },
+          { group: 'Pozycja', value: 'Łopatki ściągnięte, stopy mocno na podłożu' }
         ],
-        instructions: 'Zdejmij sztangę na mięśnie czworoboczne pleców. Zrób wdech, zepnij brzuch, cofnij biodra i wykonaj przysiad do kąta poniżej 90 stopni, po czym wstań.',
+        instructions: '1. Usiądź na ławce skośnej, trzymając hantle na udach.\n2. Pchnij hantle kolanami do góry i ułóż na wysokości klatki piersiowej.\n3. Wyciśnij hantle w górę łącząc je lekko nad klatką.\n4. Opuszczaj powoli do odczucia rozciągnięcia klatki piersiowej.',
+        description: 'Świetne ćwiczenie ukierunkowane na górną część klatki piersiowej (część obojczykową).',
         type: 'weight' as const,
       },
       {
-        name: 'Martwy ciąg klasyczny',
-        mainMuscleGroups: [getMg(MuscleGroupName.LowerBack), getMg(MuscleGroupName.Hamstrings), getMg(MuscleGroupName.Glutes)],
-        secondaryMuscleGroups: [getMg(MuscleGroupName.Back), getMg(MuscleGroupName.Forearms), getMg(MuscleGroupName.Traps)],
+        name: 'Pompki na poręczach (Dips - Klatka piersiowa)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Chest)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Triceps), getMg(MuscleGroupName.Shoulders)],
         setup: [
-          { group: 'Pozycja', value: 'Sztanga nad środkiem stóp' },
-          { group: 'Chwyt', value: 'Na szerokość barków' }
+          { group: 'Poręcze', value: 'Chwyt nachwytem / neutralny' },
+          { group: 'Tułów', value: 'Pochylenie do przodu ok. 30°' }
         ],
-        instructions: 'Zegnij się w biodrach i kolanach, złap sztangę. Wyprostuj plecy, zepnij łopatki. Pociągnij sztangę w górę wzdłuż piszczeli prostując biodra i kolana.',
+        instructions: '1. Zwiśnij na poręczach z lekko ugiętymi kolanami.\n2. Pochyl tułów delikatnie do przodu.\n3. Opuść ciało uginając ramiona w łokciach do kąta 90 stopni.\n4. Wypchnij ciało w górę prostując ramiona.',
+        description: 'Ciężkie ćwiczenie wielostawowe stymulujące dolną i środkową część klatki piersiowej oraz tricepsy.',
         type: 'weight' as const,
       },
       {
-        name: 'Podciąganie na drążku nachwytem',
+        name: 'Rozpiętki z hantlami na ławce poziomej (Dumbbell Flyes)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Chest)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Shoulders)],
+        setup: [
+          { group: 'Ławka', value: 'Pozioma' },
+          { group: 'Chwyt', value: 'Neutralny (dłonie skierowane do siebie)' }
+        ],
+        instructions: '1. Leżąc na ławce, trzymaj hantle nad klatką z lekko ugiętymi łokciami.\n2. Rozwiedź ramiona na boki zataczając szeroki łuk, aż poczujesz rozciągnięcie.\n3. Wróć do pozycji początkowej napinając klatkę piersiową.',
+        description: 'Ćwiczenie izolowane doskonale rozciągające mięśnie klatki piersiowej.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Rozpiętki na wyciągu bramy (Cable Crossover)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Chest)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Shoulders)],
+        setup: [
+          { group: 'Wyciąg', value: 'Bloczki górne lub środkowe' },
+          { group: 'Chwyt', value: 'Uchwyty pojedyncze' }
+        ],
+        instructions: '1. Stań na środku bramy, zrób krok do przodu.\n2. Z ugiętymi łokciami przyciągnij dłonie do siebie przed klatką piersiową.\n3. Przytrzymaj napięcie szczytowe na 1 sekundę i powoli wróć.',
+        description: 'Zapewnia stałe napięcie mięśniowe w pełnym zakresie ruchu.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Pompki klasyczne (Push-ups)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Chest)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Triceps), getMg(MuscleGroupName.Shoulders), getMg(MuscleGroupName.Core)],
+        setup: [
+          { group: 'Pozycja', value: 'Podparty przodem, dłonie lekko szersze niż barki' }
+        ],
+        instructions: '1. Utrzymuj ciało w jednej linii od głowy do pięt.\n2. Opuść klatkę do ziemi zginając łokcie pod kątem 45 stopni do tułowia.\n3. Wypchnij ciało w górę.',
+        description: 'Podstawowe ćwiczenie kalisteniczne na klatkę piersiową i mięśnie stabilizujące.',
+        type: 'reps' as const,
+      },
+
+      // --- PLECY & KAPTURY & DOLNE PLECY ---
+      {
+        name: 'Martwy ciąg klasyczny (Conventional Deadlift)',
+        mainMuscleGroups: [getMg(MuscleGroupName.LowerBack), getMg(MuscleGroupName.Back)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Hamstrings), getMg(MuscleGroupName.Glutes), getMg(MuscleGroupName.Forearms), getMg(MuscleGroupName.Traps)],
+        setup: [
+          { group: 'Sztanga', value: 'Nad środkiem stopy' },
+          { group: 'Stopy', value: 'Na szerokość bioder' },
+          { group: 'Chwyt', value: 'Nachwyt na szerokość barków' }
+        ],
+        instructions: '1. Zegnij biodra i kolana, uchwyć sztangę.\n2. Wyprostuj plecy, napnij mięśnie najszersze i zepnij brzuch.\n3. Unieś sztangę prowadząc ją blisko nóg, prostując biodra i kolana jednocześnie.\n4. Zablokuj pozycję w pionie.',
+        description: 'Król ćwiczeń siłowych angażujący całą taśmę tylną ciała.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Podciąganie na drążku nachwytem (Pull-ups)',
         mainMuscleGroups: [getMg(MuscleGroupName.Back)],
-        secondaryMuscleGroups: [getMg(MuscleGroupName.Biceps), getMg(MuscleGroupName.Forearms)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Biceps), getMg(MuscleGroupName.Forearms), getMg(MuscleGroupName.RearDelts)],
         setup: [
-          { group: 'Drążek', value: 'Chwyt nachwytem, szeroko' }
+          { group: 'Drążek', value: 'Chwyt nachwytem szerszy niż szerokość barków' }
         ],
-        instructions: 'Zwiśnij na drążku. Zainicjuj ruch ściągnięciem łopatek, a następnie pociągnij ciało w górę, aż broda znajdzie się nad drążkiem. Opuść się powoli.',
+        instructions: '1. Zwiśnij w pełnym wyproście ramion.\n2. Zainicjuj ruch ściągnięciem łopatek w dół i do siebie.\n3. Pociągnij ciało w górę, aż broda znajdzie się nad drążkiem.\n4. Opuść się z pełną kontrolą.',
+        description: 'Jedno z najlepszych ćwiczeń na szerokość pleców (mięsień najszerszy grzbietu).',
         type: 'reps' as const,
       },
       {
-        name: 'Wyciskanie żołnierskie (Overhead Press)',
-        mainMuscleGroups: [getMg(MuscleGroupName.Shoulders)],
-        secondaryMuscleGroups: [getMg(MuscleGroupName.Triceps), getMg(MuscleGroupName.Traps), getMg(MuscleGroupName.Core)],
+        name: 'Wiosłowanie sztangą w opadzie tułowia (Barbell Row)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Back)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.RearDelts), getMg(MuscleGroupName.Biceps), getMg(MuscleGroupName.LowerBack)],
         setup: [
-          { group: 'Chwyt', value: 'Na szerokość barków, przedramiona pionowo' }
+          { group: 'Pozycja', value: 'Opad tułowia 45-60°, kolana lekko ugięte' },
+          { group: 'Chwyt', value: 'Nachwyt lub podchwyt na szerokość barków' }
         ],
-        instructions: 'Trzymając sztangę na wysokości obojczyków, napnij brzuch i pośladki, a następnie wyciśnij sztangę pionowo nad głowę.',
+        instructions: '1. Pochyl tułów zachowując naturalną krzywiznę kręgosłupa.\n2. Przyciągnij sztangę do dolnej części brzucha/bioder.\n3. Mocno zepnij łopatki w górnej fazie ruchu.\n4. Opuść sztangę kontrolowanym ruchem.',
+        description: 'Buduje grubość i gęstość mięśni grzbietu.',
         type: 'weight' as const,
       },
       {
-        name: 'Plank (Deska)',
+        name: 'Wiosłowanie hantlem jednorącz w oparciu o ławkę (Single-Arm Dumbbell Row)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Back)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Biceps), getMg(MuscleGroupName.RearDelts)],
+        setup: [
+          { group: 'Ławka', value: 'Podparcie kolanem i dłonią tej samej strony' },
+          { group: 'Hantel', value: 'Trzymany wolną dłonią' }
+        ],
+        instructions: '1. Utrzymuj płaskie plecy równolegle do podłoża.\n2. Przyciągnij hantel w kierunku biodra, prowadząc łokieć blisko tułowia.\n3. Powoli opuść hantel do pełnego rozciągnięcia.',
+        description: 'Ćwiczenie jednorącz pozwalające na głęboki skurcz i korekcję asymetrii pleców.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Ściąganie drążka wyciągu górnego do klatki (Lat Pulldown)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Back)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Biceps), getMg(MuscleGroupName.RearDelts)],
+        setup: [
+          { group: 'Siedzisko', value: 'Wałki ułożone stabilnie na udach' },
+          { group: 'Chwyt', value: 'Szeroki nachwyt' }
+        ],
+        instructions: '1. Złap drążek i usiądź stabilnie.\n2. Ściągnij drążek do górnej części klatki piersiowej, odchylając tułów minimalnie do tyłu.\n3. Kontroluj powrót drążka do góry.',
+        description: 'Świetna alternatywa lub uzupełnienie podciągania na drążku.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Wiosłowanie na wyciągu dolnym siedząc (Seated Cable Row)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Back)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Biceps), getMg(MuscleGroupName.RearDelts)],
+        setup: [
+          { group: 'Maszyna', value: 'Stopy na podnóżkach, kolana lekko ugięte' },
+          { group: 'Uchwyt', value: 'Wąski neutralny (V-bar)' }
+        ],
+        instructions: '1. Usiądź prosto z wyprostowanymi plecami.\n2. Przyciągnij uchwyt do brzucha ściągając łopatki.\n3. Wróć powoli bez wyginania pleców w łuk.',
+        description: 'Koncentruje się na środkowej części pleców i mięśniach czworobocznych.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Wznosy tułowia na ławce rzymskiej (Hyperextensions)',
+        mainMuscleGroups: [getMg(MuscleGroupName.LowerBack)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Glutes), getMg(MuscleGroupName.Hamstrings)],
+        setup: [
+          { group: 'Ławka', value: 'Krawędź poduszek tuż poniżej kolców biodrowych' }
+        ],
+        instructions: '1. Zegnij tułów w dół.\n2. Unieś tułów do linii prostej z nogami napinając prostowniki grzbietu i pośladki.\n3. Nie przepływaj kręgosłupa w odcinku lędźwiowym.',
+        description: 'Wzmacnia mięśnie prostowniki grzbietu oraz pośladki.',
+        type: 'reps' as const,
+      },
+      {
+        name: 'Szrugsy ze sztangą lub hantlami (Shrugs)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Traps)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Forearms)],
+        setup: [
+          { group: 'Pozycja', value: 'Stojąca, sztanga lub hantle trzymane przy tułowiu' }
+        ],
+        instructions: '1. Unieś barki pionowo w górę w kierunku uszu.\n2. Przytrzymaj spięcie na 1 sekundę.\n3. Opuść barki w dół.',
+        description: 'Izolowane ćwiczenie na górną część mięśnia czworobocznego (kaptury).',
+        type: 'weight' as const,
+      },
+
+      // --- BARKI & TYLNE AKTONY ---
+      {
+        name: 'Wyciskanie żołnierskie (Overhead Press / OHP)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Shoulders)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Triceps), getMg(MuscleGroupName.Traps), getMg(MuscleGroupName.Core)],
+        setup: [
+          { group: 'Pozycja', value: 'Stojąca, stopy na szerokość bioder' },
+          { group: 'Chwyt', value: 'Sztanga na obojczykach, chwyt ciut szerszy niż barki' }
+        ],
+        instructions: '1. Napnij pośladki i brzuch.\n2. Wyciśnij sztangę pionowo nad głowę.\n3. Przepchnij głowę lekko do przodu po minięciu sztangi.',
+        description: 'Klasyczne ćwiczenie siłowe rozwijające przednie i boczne aktony barków.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Wyciskanie hantli siedząc (Seated Dumbbell Shoulder Press)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Shoulders)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Triceps)],
+        setup: [
+          { group: 'Ławka', value: 'Oparcie pionowe (85-90°)' },
+          { group: 'Hantle', value: 'Na wysokości uszu/barków' }
+        ],
+        instructions: '1. Wyciśnij hantle nad głowę do niemal pełnego wyprostu ramion.\n2. Powoli opuść hantle do poziomu uszu.',
+        description: 'Pozwala na duży zakres ruchu i niezależną pracę obu barków.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Wznosy ramion bokiem z hantlami (Dumbbell Lateral Raises)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Shoulders)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Traps)],
+        setup: [
+          { group: 'Pozycja', value: 'Stojąca lub siedząca, lekki opad tułowia' }
+        ],
+        instructions: '1. Unieś hantle bokiem w górę do poziomu barków, prowadząc łokcie lekko wyżej niż nadgarstki.\n2. Powoli opuść hantle.',
+        description: 'Kluczowe ćwiczenie budujące szerokość barków (akton boczny).',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Face Pulls z linką wyciągu górnego (Face Pulls)',
+        mainMuscleGroups: [getMg(MuscleGroupName.RearDelts)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Traps), getMg(MuscleGroupName.Shoulders)],
+        setup: [
+          { group: 'Wyciąg', value: 'Wysokość twarzy, uchwyt sznurkowy' }
+        ],
+        instructions: '1. Przyciągnij linkę w kierunku twarzy/nosa, rozciągając dłonie na boki i rotując barki na zewnątrz.\n2. Mocno zepnij tylne aktony barków i łopatki.',
+        description: 'Niezastąpione ćwiczenie na tylny akton barku oraz zdrowie stożka rotatorów.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Odwrotne rozpiętki na maszynie (Reverse Pec Deck)',
+        mainMuscleGroups: [getMg(MuscleGroupName.RearDelts)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Traps)],
+        setup: [
+          { group: 'Maszyna', value: 'Siedzisko przodem do oparcia' }
+        ],
+        instructions: '1. Chwyć rączki i rozwiedź ramiona w tył na wysokości barków.\n2. Zepnij tylne części barków.\n3. Wróć powoli.',
+        description: 'Izoluje tylny akton mięśnia naramiennego.',
+        type: 'weight' as const,
+      },
+
+      // --- RAMIONA (BICEPS, TRICEPS, PRZEDRAMIONA) ---
+      {
+        name: 'Uginanie przedramion ze sztangą prostą lub łamaną (Barbell Curl)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Biceps)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Forearms)],
+        setup: [
+          { group: 'Pozycja', value: 'Stojąca, sztanga trzymana podchwytem' }
+        ],
+        instructions: '1. Trzymając łokcie blisko tułowia, ugnij przedramiona unosząc sztangę.\n2. Zepnij biceps na górze i powoli opuść ciężar.',
+        description: 'Podstawowe ćwiczenie budujące masę bicepsów.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Uginanie przedramion z hantlami z supinacją (Dumbbell Supinating Curl)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Biceps)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Forearms)],
+        setup: [
+          { group: 'Pozycja', value: 'Stojąca lub siedząca' }
+        ],
+        instructions: '1. Unieś hantle rotując dłoń z pozycji neutralnej na zewnątrz (supinacja).\n2. Ściśnij biceps w najwyższym punkcie i opuść.',
+        description: 'Wykorzystuje pełną funkcję anatomiczną bicepsa (zginanie + supinacja).',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Uginanie młotkowe z hantlami (Hammer Curls)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Biceps)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Forearms)],
+        setup: [
+          { group: 'Chwyt', value: 'Neutralny (kciuki skierowane do góry)' }
+        ],
+        instructions: '1. Ugnij przedramiona trzymając hantle chwytem neutralnym.\n2. Opuść powoli do pełnego wyprostu.',
+        description: 'Angażuje mięsień ramienny (brachialis) oraz ramienno-promieniowy przedramienia.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Wyciskanie francuskie ze sztangą łamaną leżąc (Skullcrushers)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Triceps)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Forearms)],
+        setup: [
+          { group: 'Ławka', value: 'Pozioma, sztanga łamana w dłoniach' }
+        ],
+        instructions: '1. Leżąc na ławce unieś sztangę nad klatkę.\n2. Ugnij łokcie opuszczając sztangę w okolice czoła lub za głowę.\n3. Wyprostuj ramiona napinając triceps.',
+        description: 'Silnie stymuluje głowę długą i boczną tricepsa.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Prostowanie ramion na wyciągu górnym ze sznurem (Triceps Pushdown)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Triceps)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Forearms)],
+        setup: [
+          { group: 'Wyciąg', value: 'Górny, uchwyt sznurkowy' }
+        ],
+        instructions: '1. Trzymając łokcie nieruchomo przy tułowiu, wyprostuj ramiona w dół rozchylając sznur na boki u dołu.\n2. Wróć do ugięcia pod kątem 90 stopni.',
+        description: 'Izolowane ćwiczenie wykończeniowe na triceps.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Wyciskanie sztangi w wąskim chwycie (Close-Grip Bench Press)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Triceps)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Chest), getMg(MuscleGroupName.Shoulders)],
+        setup: [
+          { group: 'Chwyt', value: 'Nachwyt na szerokość barków (ok. 20-30 cm)' }
+        ],
+        instructions: '1. Opuść sztangę do dolnej części klatki piersiowej prowadząc łokcie blisko tułowia.\n2. Dynamicznie wyciśnij ciężar w górę.',
+        description: 'Wielostawowe ćwiczenie budujące masę i siłę tricepsów.',
+        type: 'weight' as const,
+      },
+
+      // --- NOGI & POŚLADKI ---
+      {
+        name: 'Przysiad ze sztangą na plecach (Back Squat)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Quads), getMg(MuscleGroupName.Glutes)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Hamstrings), getMg(MuscleGroupName.Calves), getMg(MuscleGroupName.LowerBack), getMg(MuscleGroupName.Core)],
+        setup: [
+          { group: 'Sztanga', value: 'Na mięśniach czworobocznych (High bar) lub wyżej łopatek (Low bar)' },
+          { group: 'Stopy', value: 'Szerokość barków, palce lekko zewnątrz' }
+        ],
+        instructions: '1. Zrób wdech, napnij brzuch.\n2. Zegnij biodra i kolana wykonując przysiad poniżej kąta prostego.\n3. Wstań prowadząc kolana stabilnie na zewnątrz.',
+        description: 'Król ćwiczeń dolnej części ciała.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Przysiad przedni ze sztangą (Front Squat)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Quads)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Glutes), getMg(MuscleGroupName.Core)],
+        setup: [
+          { group: 'Sztanga', value: 'Przednie aktony barków i obojczyki' }
+        ],
+        instructions: '1. Trzymaj klatkę uniesioną, a łokcie wysoko.\n2. Wykonaj głęboki przysiad z pionowym tułowiem.\n3. Dynamicznie wyprostuj nogi.',
+        description: 'Kładzie większy nacisk na czworogłowe uda i wyprostowaną postawę.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Wypychanie ciężaru na suwnicy (Leg Press)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Quads), getMg(MuscleGroupName.Glutes)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Hamstrings)],
+        setup: [
+          { group: 'Suwnica', value: 'Kąt 45°' },
+          { group: 'Stopy', value: 'Na platformie na szerokość bioder' }
+        ],
+        instructions: '1. Odbezpiecz suwnicę i opuść platformę uginając kolana.\n2. Wypchnij platformę z pięt nie blokując kolan w stawach.',
+        description: 'Pozwala na bezpieczne przetestowanie dużych ciężarów bez obciążania kręgosłupa.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Przysiad bułgarski z hantlami (Bulgarian Split Squat)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Quads), getMg(MuscleGroupName.Glutes)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Hamstrings)],
+        setup: [
+          { group: 'Ławka', value: 'Tylna stopa oparta na ławce za Tobą' },
+          { group: 'Przednia stopa', value: 'Wykrok do przodu' }
+        ],
+        instructions: '1. Trzymając hantle w dłoniach opuść biodra pionowo w dół.\n2. Wypchnij tułów w górę z przedniej stopy.',
+        description: 'Najlepsze ćwiczenie jednonóż na pośladki i uda.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Wykroki chodzone z hantlami (Walking Lunges)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Quads), getMg(MuscleGroupName.Glutes)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Hamstrings), getMg(MuscleGroupName.Calves)],
+        setup: [
+          { group: 'Pozycja', value: 'Stojąca, hantle w dłoniach' }
+        ],
+        instructions: '1. Zrób krok do przodu i opuść kolano tylnej nogi tuż nad podłogę.\n2. Przejdź do kolejnego kroku.',
+        description: 'Buduje dynamikę, równowagę oraz masę ud i pośladków.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Rumuński Martwy Ciąg (Romanian Deadlift - RDL)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Hamstrings), getMg(MuscleGroupName.Glutes)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.LowerBack), getMg(MuscleGroupName.Forearms)],
+        setup: [
+          { group: 'Sztanga', value: 'Trzymana nachwytem' },
+          { group: 'Kolana', value: 'Lekko ugięte, zablokowane w stałym kącie' }
+        ],
+        instructions: '1. Cofaj biodra w tył opuszczając sztangę wzdłuż ud do poziomu piszczeli.\n2. Poczuj mocne rozciągnięcie tyłu ud.\n3. Wróć napinając pośladki.',
+        description: 'Główne ćwiczenie na rozbudowę mięśni dwugłowych ud i pośladków.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Uginanie nóg na maszynie leżąc (Lying Leg Curl)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Hamstrings)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Calves)],
+        setup: [
+          { group: 'Maszyna', value: 'Wałek ułożony tuż nad piętami' }
+        ],
+        instructions: '1. Leżąc na brzuchu, ugnij kolana przyciągając wałek do pośladków.\n2. Powoli opuść nogi.',
+        description: 'Izoluje mięśnie dwugłowe uda.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Wznosy bioder ze sztangą (Hip Thrust)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Glutes)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Hamstrings), getMg(MuscleGroupName.Quads)],
+        setup: [
+          { group: 'Ławka', value: 'Oparcie pod łopatkami' },
+          { group: 'Sztanga', value: 'Na biodrach (z otuliną piankową)' }
+        ],
+        instructions: '1. Ugnij kolana pod kątem 90 stopni, stopy na ziemi.\n2. Unieś biodra w górę do pełnego wyprostu i zepnij mocno pośladki.\n3. Powoli opuść biodra.',
+        description: 'Najefektywniejsze ćwiczenie na rozbudowę i siłę mięśni pośladkowych.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Odwodzenie nóg na maszynie (Abductor Machine)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Abductors), getMg(MuscleGroupName.Glutes)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Hips)],
+        setup: [
+          { group: 'Maszyna', value: 'Poduszki po zewnętrznej stronie kolan' }
+        ],
+        instructions: '1. Rozepchnij nogi na boki pokonując opór.\n2. Przytrzymaj spięcie i powoli złącz nogi.',
+        description: 'Wzmacnia mięśnie pośladkowe średnie i odwodziciele.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Przywodzenie nóg na maszynie (Adductor Machine)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Adductors)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Hips)],
+        setup: [
+          { group: 'Maszyna', value: 'Poduszki po wewnętrznej stronie kolan' }
+        ],
+        instructions: '1. Złącz nogi do środka ściskając poduszki.\n2. Powoli wróć do rozszerzenia.',
+        description: 'Wzmacnia pachwiny i wewnętrzną stronę ud.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Wspięcia na palce stojąc (Standing Calf Raise)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Calves)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.AnteriorTibialis)],
+        setup: [
+          { group: 'Podest', value: 'Przednia część stóp na krawędzi podestu' }
+        ],
+        instructions: '1. Opuść pięty w dół do pełnego rozciągnięcia łydki.\n2. Unieś się wysoko na palce i zepnij łydkę.',
+        description: 'Buduje mięsień brzuchaty łydki.',
+        type: 'weight' as const,
+      },
+      {
+        name: 'Wspięcia na palce siedząc (Seated Calf Raise)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Calves)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.AnteriorTibialis)],
+        setup: [
+          { group: 'Maszyna', value: 'Wałek ułożony na udach' }
+        ],
+        instructions: '1. Unieś pięty wysoko w górę.\n2. Opuść powoli w dół.',
+        description: 'Targetuje mięsień płaszczkowaty łydki.',
+        type: 'weight' as const,
+      },
+
+      // --- CORE & BRZUCH ---
+      {
+        name: 'Plank (Deska izometryczna)',
         mainMuscleGroups: [getMg(MuscleGroupName.Core)],
         secondaryMuscleGroups: [getMg(MuscleGroupName.Shoulders), getMg(MuscleGroupName.Glutes)],
         setup: [
           { group: 'Pozycja', value: 'Podparcie na przedramionach i palcach stóp' }
         ],
-        instructions: 'Utrzymuj ciało w jednej linii. Napnij brzuch, pośladki i uda. Nie pozwól biodrom opadać. Oddychaj miarowo.',
+        instructions: '1. Napnij brzuch, pośladki i uda.\n2. Utrzymuj ciało w prostej linii od głowy po pięty bez opadania bioder.',
+        description: 'Podstawowe ćwiczenie izometryczne na stabilizację centralną (core).',
         type: 'duration' as const,
       },
       {
-        name: 'Uginanie przedramion z hantlami z supinacją',
-        mainMuscleGroups: [getMg(MuscleGroupName.Biceps)],
+        name: 'Allahy - Skłony tułowia na klęczka na wyciągu (Cable Crunch)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Core)],
         secondaryMuscleGroups: [getMg(MuscleGroupName.Forearms)],
         setup: [
-          { group: 'Pozycja', value: 'Stojąca, hantle w dłoniach wzdłuż tułowia' }
+          { group: 'Wyciąg', value: 'Górny ze sznurem, pozycja klęcząca' }
         ],
-        instructions: 'Zegnij ramię w łokciu, w trakcie ruchu rotując dłoń na zewnątrz (supinacja). Powoli opuść hantle.',
+        instructions: '1. Trzymając sznur przy głowie, wykonaj skłon tułowia przyciągając łokcie do ud pracą brzucha.\n2. Powoli wróć do wyprostu.',
+        description: 'Pozwala na stopniowanie obciążenia w treningu mięśni prostych brzucha.',
         type: 'weight' as const,
       },
       {
-        name: 'Bieg ciągły na bieżni',
-        mainMuscleGroups: [getMg(MuscleGroupName.FullBody)],
-        secondaryMuscleGroups: [getMg(MuscleGroupName.Hamstrings), getMg(MuscleGroupName.Calves), getMg(MuscleGroupName.Quads)],
+        name: 'Wznosy nóg w zwisie na drążku (Hanging Leg Raise)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Core)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Forearms), getMg(MuscleGroupName.Hips)],
         setup: [
-          { group: 'Bieżnia', value: 'Ustawienie nachylenia na 1%' }
+          { group: 'Drążek', value: 'Swobodny zwis' }
         ],
-        instructions: 'Rozpocznij od marszu biegowego jako rozgrzewki, a następnie przejdź do biegu w tempie konwersacyjnym.',
+        instructions: '1. Bez kołysania tułowia unieś proste lub ugięte nogi do poziomu bioder lub klatki.\n2. Powoli opuść nogi.',
+        description: 'Świetne ćwiczenie na dolną część mięśnia prostego brzucha.',
+        type: 'reps' as const,
+      },
+      {
+        name: 'Russian Twists z ciężarem (Skręty tułowia)',
+        mainMuscleGroups: [getMg(MuscleGroupName.Core)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Hips)],
+        setup: [
+          { group: 'Pozycja', value: 'Siedząca na ziemi, nogi uniesione lekko w powietrzu' }
+        ],
+        instructions: '1. Trzymając talerz lub hantel przed klatką, wykonuj dynamiczne skręty tułowia z prawej na lewą stronę.',
+        description: 'Wzmacnia mięśnie skośne brzucha.',
+        type: 'reps' as const,
+      },
+
+      // --- KARDIO & FUNKCJONALNE ---
+      {
+        name: 'Bieg ciągły na bieżni (Treadmill Running)',
+        mainMuscleGroups: [getMg(MuscleGroupName.FullBody)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Quads), getMg(MuscleGroupName.Hamstrings), getMg(MuscleGroupName.Calves)],
+        setup: [
+          { group: 'Bieżnia', value: 'Ustawienie prędkości i kąta nachylenia (1-2%)' }
+        ],
+        instructions: '1. Zacznij od 5-minutowego marszu rozgrzewkowego.\n2. Przejdź do biegu w stałym tempie konwersacyjnym.\n3. Schłodź organizm na koniec.',
+        description: 'Klasyczny trening aerobowy poprawiający wydolność krążeniowo-oddechową.',
         type: 'duration' as const,
+      },
+      {
+        name: 'Wiosłowanie na ergometrze wioślarskim (Rowing Ergometer)',
+        mainMuscleGroups: [getMg(MuscleGroupName.FullBody)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Back), getMg(MuscleGroupName.Quads), getMg(MuscleGroupName.Hamstrings), getMg(MuscleGroupName.Core), getMg(MuscleGroupName.Biceps)],
+        setup: [
+          { group: 'Ergometr', value: 'Stopy przypięte paskami, opór 4-6' }
+        ],
+        instructions: '1. Odepchnij się nogami, po czym pociągnij drążek do brzucha.\n2. Wypuść najpierw ramiona, pochyl tułów i ugnij nogi wracając do pozycji wyjściowej.',
+        description: 'Ogólnorozwojowe ćwiczenie kardio angażujące 85% mięśni ciała.',
+        type: 'duration' as const,
+      },
+      {
+        name: 'Jazda na rowerze stacjonarnym (Stationary Bike)',
+        mainMuscleGroups: [getMg(MuscleGroupName.FullBody)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Quads), getMg(MuscleGroupName.Calves), getMg(MuscleGroupName.Hamstrings)],
+        setup: [
+          { group: 'Rower', value: 'Wysokość siodełka dopasowana do biodra' }
+        ],
+        instructions: '1. Pedałuj ze stałą kadencją (80-90 RPM).\n2. Utrzymuj stabilną postawę.',
+        description: 'Niskooporowy trening kardio bezpieczny dla stawów kolanowych.',
+        type: 'duration' as const,
+      },
+      {
+        name: 'Burpees (Krokodylki)',
+        mainMuscleGroups: [getMg(MuscleGroupName.FullBody)],
+        secondaryMuscleGroups: [getMg(MuscleGroupName.Chest), getMg(MuscleGroupName.Quads), getMg(MuscleGroupName.Shoulders), getMg(MuscleGroupName.Core)],
+        setup: [
+          { group: 'Pozycja', value: 'Stojąca' }
+        ],
+        instructions: '1. Zrób przysiad i połóż dłonie na ziemi.\n2. Wyrzuć nogi do tyłu do pozycji pompki i opuść klatkę do podłogi.\n3. Wskocz nogami z powrotem i wykonaj wyskok w górę z klśnięciem nad głową.',
+        description: 'Intensywne ćwiczenie ogólnorozwojowe i kondycyjne.',
+        type: 'reps' as const,
       }
     ];
 
     const seededExercises = await Exercise.insertMany(
-      exercisesData.map(ex => ({ ...ex, ownerId: 'public' }))
+      exercisesData.map(ex => ({
+        ...ex,
+        ownerId: 'public',
+        muscleGroup: ex.mainMuscleGroups[0]?.name,
+        imageHint: ex.name.toLowerCase()
+      }))
     );
     console.log(`✅ Dodano ${seededExercises.length} ćwiczeń.`);
 

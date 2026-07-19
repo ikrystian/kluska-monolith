@@ -3,8 +3,9 @@
 import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { SkipForward, Pause, Play, Timer } from 'lucide-react';
+import { SkipForward, Pause, Play, Timer, Plus, ArrowRight } from 'lucide-react';
 import { useRestTimer } from '@/hooks/useRestTimer';
+import { cn } from '@/lib/utils';
 
 interface RestTimerSlideProps {
   restTimeSeconds: number;
@@ -36,6 +37,7 @@ export function RestTimerSlide({
     pause,
     resume,
     skip,
+    addTime,
   } = useRestTimer(onComplete);
 
   // Auto-start timer when slide becomes active
@@ -58,10 +60,6 @@ export function RestTimerSlide({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Calculate circle progress
-  const circumference = 2 * Math.PI * 90; // radius = 90
-  const strokeDashoffset = circumference * (1 - progress);
-
   const handleSkip = () => {
     skip();
     onSkip();
@@ -76,78 +74,84 @@ export function RestTimerSlide({
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[400px] p-4">
+    <div className="flex h-full items-center justify-center px-1">
       <Card className="w-full max-w-sm">
-        <CardContent className="pt-6 space-y-6">
+        <CardContent className="p-4 space-y-4">
           {/* Timer Header */}
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Timer className="h-5 w-5 text-primary" />
-              <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                Przerwa
-              </span>
-            </div>
+          <div className="flex items-center justify-center gap-2">
+            <Timer className="h-4 w-4 text-primary" />
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Przerwa
+            </span>
           </div>
 
           {/* Circular Timer */}
           <div className="relative flex items-center justify-center">
-            <svg className="w-48 h-48 transform -rotate-90">
-              {/* Background circle */}
+            <svg className="w-44 h-44 -rotate-90">
               <circle
-                cx="96"
-                cy="96"
-                r="90"
+                cx="88"
+                cy="88"
+                r="80"
                 stroke="currentColor"
                 strokeWidth="8"
                 fill="none"
                 className="text-secondary"
               />
-              {/* Progress circle */}
               <circle
-                cx="96"
-                cy="96"
-                r="90"
+                cx="88"
+                cy="88"
+                r="80"
                 stroke="currentColor"
                 strokeWidth="8"
                 fill="none"
                 strokeLinecap="round"
-                className="text-primary transition-all duration-1000 ease-linear"
+                className={cn(
+                  'transition-all duration-1000 ease-linear',
+                  isComplete ? 'text-green-500' : 'text-primary'
+                )}
                 style={{
-                  strokeDasharray: circumference,
-                  strokeDashoffset: strokeDashoffset,
+                  strokeDasharray: 2 * Math.PI * 80,
+                  strokeDashoffset: (2 * Math.PI * 80) * (1 - progress),
                 }}
               />
             </svg>
-            {/* Time display */}
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-5xl font-bold font-mono">
+              <span className="text-4xl font-bold font-mono tabular-nums">
                 {formatTime(timeRemaining)}
               </span>
-              <span className="text-sm text-muted-foreground mt-1">
-                {isComplete ? 'Gotowe!' : isRunning ? 'Odpoczywaj' : 'Pauza'}
+              <span className="text-xs text-muted-foreground mt-1">
+                {isComplete ? 'Gotowe! ✓' : isRunning ? 'Odpoczywaj' : 'Pauza'}
               </span>
             </div>
           </div>
 
           {/* Control Buttons */}
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-2">
             <Button
+              type="button"
               variant="outline"
               size="icon"
-              className="h-12 w-12 rounded-full"
+              className="h-11 w-11 rounded-full shrink-0"
               onClick={handlePauseResume}
               disabled={isComplete}
+              aria-label={isRunning ? 'Pauza' : 'Wznów'}
             >
-              {isRunning ? (
-                <Pause className="h-5 w-5" />
-              ) : (
-                <Play className="h-5 w-5" />
-              )}
+              {isRunning ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
             </Button>
             <Button
+              type="button"
+              variant="outline"
+              className="h-11 rounded-full shrink-0 gap-1 px-3"
+              onClick={() => addTime(15)}
+              disabled={isComplete}
+            >
+              <Plus className="h-4 w-4" />
+              15s
+            </Button>
+            <Button
+              type="button"
               variant="default"
-              size="lg"
-              className="px-8"
+              className="h-11 flex-1"
               onClick={handleSkip}
               disabled={isComplete}
             >
@@ -157,43 +161,26 @@ export function RestTimerSlide({
           </div>
 
           {/* Next Set Info */}
-          <div className="text-center p-4 bg-secondary/30 rounded-lg">
+          <div className="flex items-center gap-3 rounded-xl bg-secondary/40 p-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <ArrowRight className="h-4 w-4" />
+            </div>
             {nextSetInfo ? (
-              <>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                   {nextSetInfo.isNewExercise ? 'Następne ćwiczenie' : 'Następna seria'}
                 </p>
-                <p className="font-semibold text-lg">
-                  {nextSetInfo.isNewExercise ? (
-                    nextSetInfo.exerciseName
-                  ) : (
-                    <>Seria {nextSetInfo.setNumber}</>
-                  )}
+                <p className="truncate font-semibold text-sm">
+                  {nextSetInfo.isNewExercise ? nextSetInfo.exerciseName : `Seria ${nextSetInfo.setNumber}`}
                 </p>
-                {nextSetInfo.isNewExercise && (
-                  <p className="text-sm text-muted-foreground">
-                    Seria {nextSetInfo.setNumber}
-                  </p>
-                )}
-              </>
+              </div>
             ) : (
-              <>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
-                  Ostatnia seria!
-                </p>
-                <p className="font-semibold text-lg text-green-600">
-                  🎉 Koniec treningu
-                </p>
-              </>
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Ostatnia seria!</p>
+                <p className="font-semibold text-sm text-green-600">🎉 Koniec treningu</p>
+              </div>
             )}
           </div>
-
-          {/* Swipe hint */}
-          {isComplete && (
-            <p className="text-center text-xs text-muted-foreground animate-pulse">
-              Przesuń w prawo, aby kontynuować →
-            </p>
-          )}
         </CardContent>
       </Card>
     </div>

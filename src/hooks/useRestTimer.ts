@@ -12,6 +12,7 @@ interface UseRestTimerReturn {
   resume: () => void;
   reset: () => void;
   skip: () => void;
+  addTime: (seconds: number) => void;
 }
 
 export function useRestTimer(onComplete?: () => void): UseRestTimerReturn {
@@ -109,6 +110,11 @@ export function useRestTimer(onComplete?: () => void): UseRestTimerReturn {
     onCompleteRef.current?.();
   }, [clearTimer, playCompletionSound]);
 
+  const addTime = useCallback((seconds: number) => {
+    setTimeRemaining(prev => prev + seconds);
+    setTotalDuration(prev => prev + seconds);
+  }, []);
+
   // Timer effect
   useEffect(() => {
     if (!isRunning) return;
@@ -154,5 +160,6 @@ export function useRestTimer(onComplete?: () => void): UseRestTimerReturn {
     resume,
     reset,
     skip,
+    addTime,
   };
 }

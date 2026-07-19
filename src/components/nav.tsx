@@ -368,7 +368,7 @@ export function AppNav() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <Link href={profileHref} className="flex items-center gap-3 p-2">
+        <Link href={profileHref} className="flex items-center gap-3 p-2 transition-all duration-100 ease-out active:scale-[0.97] rounded-lg">
           <Avatar className="h-10 w-10">
             {userProfile?.avatarUrl ? (
               <AvatarImage src={userProfile.avatarUrl} alt="Awatar użytkownika" />

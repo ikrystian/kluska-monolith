@@ -205,7 +205,7 @@ export function AppNav() {
           <Link
             to="/athlete/profile"
             onClick={() => setOpenMobile(false)}
-            className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-2 transition-colors hover:bg-accent/60 group-data-[state=collapsed]:flex-none group-data-[state=collapsed]:p-1"
+            className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-2 transition-all duration-100 ease-out active:scale-[0.97] hover:bg-accent/60 group-data-[state=collapsed]:flex-none group-data-[state=collapsed]:p-1"
           >
             <Avatar className="h-9 w-9 ring-2 ring-primary/20">
               {userProfile?.avatarUrl ? (
@@ -223,7 +223,7 @@ export function AppNav() {
           <button
             onClick={handleLogout}
             title="Wyloguj"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-all duration-100 ease-out active:scale-90 hover:bg-destructive/10 hover:text-destructive"
           >
             <LogOut className="h-4 w-4" />
             <span className="sr-only">Wyloguj</span>
