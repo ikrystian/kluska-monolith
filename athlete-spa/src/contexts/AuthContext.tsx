@@ -173,8 +173,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem(TOKEN_STORAGE_KEY);
-    localStorage.removeItem(GUEST_MODE_KEY);
+    const wasGuest = !!localStorage.getItem(GUEST_MODE_KEY);
+
+    if (wasGuest) {
+      // Preserve the device-id so the hardware binding survives the wipe
+      // (Capacitor caches it here; losing it would re-generate a new UUID
+      // which could diverge from the native platform identifier).
+      const deviceId = localStorage.getItem('athlete-spa:device-id');
+      localStorage.clear();
+      if (deviceId) {
+        localStorage.setItem('athlete-spa:device-id', deviceId);
+      }
+    } else {
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      localStorage.removeItem(GUEST_MODE_KEY);
+    }
+
     setUser(null);
   };
 

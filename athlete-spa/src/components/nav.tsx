@@ -20,7 +20,20 @@ import {
   Footprints,
   UtensilsCrossed,
   NotebookPen,
+  TriangleAlert,
 } from 'lucide-react';
+import { useState } from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { buttonVariants } from '@/components/ui/button';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import {
   Sidebar,
@@ -94,12 +107,22 @@ export function AppNav() {
   const avatarImage = placeholderImages.find(img => img.id === 'avatar-male');
   const { setOpenMobile } = useSidebar();
   const { userProfile } = useUserProfile();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
+  const [guestLogoutOpen, setGuestLogoutOpen] = useState(false);
 
   // Conversations/unread counts aren't wired up yet (matches the web app).
   const totalUnreadCount = 0;
 
   const handleLogout = () => {
+    if (user?.isGuest) {
+      setGuestLogoutOpen(true);
+      return;
+    }
+    logout();
+    navigate('/login');
+  };
+
+  const confirmGuestLogout = () => {
     logout();
     navigate('/login');
   };
@@ -206,6 +229,39 @@ export function AppNav() {
           </button>
         </div>
       </SidebarFooter>
+
+      <AlertDialog open={guestLogoutOpen} onOpenChange={setGuestLogoutOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <TriangleAlert className="h-5 w-5 text-destructive" />
+              Utrata danych lokalnych
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2 pt-1">
+              <span className="block">
+                Korzystasz z aplikacji jako <strong>gość</strong> — Twoje dane są przechowywane
+                wyłącznie lokalnie na tym urządzeniu.
+              </span>
+              <span className="block">
+                Po wylogowaniu <strong>wszystkie Twoje dane zostaną trwale usunięte</strong> i nie
+                będzie możliwości ich przywrócenia.
+              </span>
+              <span className="block">
+                Aby zachować swoje postępy, załóż konto przed wylogowaniem.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmGuestLogout}
+              className={buttonVariants({ variant: 'destructive' })}
+            >
+              Rozumiem, wyloguj mnie
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sidebar>
   );
 }
