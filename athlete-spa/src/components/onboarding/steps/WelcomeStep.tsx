@@ -107,7 +107,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
           Rozpocznij
         </Button>
         <p className="text-center text-sm text-muted-foreground mt-4">
-          Zajmie to tylko 2 minuty
+          Najtrudniejszy krok masz już za sobą — reszta zajmie 2 minuty
         </p>
       </motion.div>
     </motion.div>

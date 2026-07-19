@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,14 @@ export default function RegisterPage() {
   const { toast } = useToast();
   const { login, user } = useAuth();
   const isGuestUpgrade = Boolean(user?.isGuest);
+
+  // Smart default: gość podał już imię podczas onboardingu — nie każemy wpisywać go drugi raz
+  useEffect(() => {
+    if (isGuestUpgrade && user?.name && !name) {
+      setName(user.name);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isGuestUpgrade, user?.name]);
 
   const handleRegister = async () => {
     if (password.length < 6) {
@@ -91,13 +99,23 @@ export default function RegisterPage() {
 
         {/* Statement */}
         <h1 className="font-display text-4xl font-extrabold uppercase leading-[1.05] tracking-tight md:text-5xl">
-          Zacznij
-          <br />
-          <span className="text-gradient-ember">swoją grę</span>
+          {isGuestUpgrade ? (
+            <>
+              Zachowaj
+              <br />
+              <span className="text-gradient-ember">swoje postępy</span>
+            </>
+          ) : (
+            <>
+              Zacznij
+              <br />
+              <span className="text-gradient-ember">swoją grę</span>
+            </>
+          )}
         </h1>
         <p className="mt-3 text-sm text-muted-foreground">
           {isGuestUpgrade
-            ? 'Załóż konto, aby zachować dostęp do swoich danych z każdego urządzenia. Wszystko, co zapisałeś jako gość, zostanie zachowane.'
+            ? 'Treningi, pomiary i nawyki, które zbudowałeś jako gość, zostają z Tobą. Konto tylko je zabezpiecza i daje dostęp z każdego urządzenia.'
             : 'Stwórz konto i rozpocznij podróż fitness z Leniwą Kluską.'}
         </p>
 
@@ -151,7 +169,7 @@ export default function RegisterPage() {
             onClick={handleRegister}
             disabled={isLoading}
           >
-            {isLoading ? 'Rejestrowanie...' : 'Zarejestruj się'}
+            {isLoading ? 'Zapisywanie...' : isGuestUpgrade ? 'Kontynuuj' : 'Zarejestruj się'}
           </Button>
         </div>
 

@@ -16,13 +16,16 @@ export interface OnboardingState {
   trainingLevel: TrainingLevelType | null;
 }
 
+// Smart defaults: pola, których typową wartość znamy, są wstępnie wypełnione —
+// użytkownik skanuje i poprawia zamiast decydować od zera. Dane tożsamościowe
+// (imię, płeć, data urodzenia) celowo pozostają puste.
 const initialState: OnboardingState = {
   name: '',
   gender: null,
   dateOfBirth: '',
-  height: null,
-  weight: null,
-  trainingLevel: null,
+  height: 175,
+  weight: 75,
+  trainingLevel: 'beginner',
 };
 
 export const ONBOARDING_STEPS = [
@@ -76,7 +79,9 @@ export function useOnboarding(initialName: string = ''): UseOnboardingReturn {
   // Calculate progress (excluding welcome and summary)
   const dataSteps = totalSteps - 2; // Exclude welcome and summary
   const currentDataStep = Math.max(0, Math.min(currentStep - 1, dataSteps));
-  const progress = isFirstStep ? 0 : isLastStep ? 100 : (currentDataStep / dataSteps) * 100;
+  // Goal gradient: pasek nigdy nie startuje od 0% — ekran powitalny liczy się
+  // jako ukończony pierwszy krok, więc na starcie danych użytkownik widzi postęp.
+  const progress = isFirstStep ? 0 : isLastStep ? 100 : ((currentDataStep + 1) / (dataSteps + 1)) * 100;
 
   const setStepData = useCallback(<K extends keyof OnboardingState>(
     key: K,

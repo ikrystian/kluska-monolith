@@ -675,6 +675,13 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   };
 
   if (isFinished) {
+    const finishedSeries = form.getValues('exerciseSeries');
+    const loggedSetsCount = finishedSeries.reduce(
+      (acc, series) => acc + (series.sets?.filter((set) => set.completed).length ?? 0),
+      0
+    );
+    const elapsedMinutes = Math.round((new Date().getTime() - startTime.getTime()) / (1000 * 60));
+
     return (
       <Card className="overflow-hidden rounded-[2rem]">
         <div className="hero-ember texture-grain relative p-6 text-center text-white">
@@ -694,7 +701,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
               <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">ćwiczenia</p>
             </div>
             <div className="rounded-2xl border border-border/60 bg-secondary/40 p-3">
-              <p className="font-headline text-sm font-bold tabular-nums">{Math.round((new Date().getTime() - startTime.getTime()) / (1000 * 60))} min</p>
+              <p className="font-headline text-sm font-bold tabular-nums">{elapsedMinutes} min</p>
               <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">czas</p>
             </div>
           </div>
@@ -726,15 +733,17 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Odrzuć trening</AlertDialogTitle>
+                <AlertDialogTitle>Odrzucić trening?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Czy na pewno chcesz odrzucić ten trening? Postęp nie zostanie zapisany, a sesja zostanie usunięta.
+                  {loggedSetsCount > 0
+                    ? `Stracisz bezpowrotnie ${loggedSetsCount} ukończonych serii i ${elapsedMinutes} minut pracy. Tego nie da się cofnąć.`
+                    : 'Sesja zostanie usunięta bez zapisu. Tego nie da się cofnąć.'}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                <AlertDialogCancel>Wróć do treningu</AlertDialogCancel>
                 <AlertDialogAction onClick={handleDiscardWorkout} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  Odrzuć
+                  {loggedSetsCount > 0 ? 'Zaryzykuję — odrzuć' : 'Odrzuć'}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

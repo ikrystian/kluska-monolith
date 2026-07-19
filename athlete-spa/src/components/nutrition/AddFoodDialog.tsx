@@ -7,6 +7,8 @@ import {
     MEAL_TYPES,
     MEAL_TYPE_LABELS,
     productId,
+    type DiaryGoal,
+    type DiaryTotals,
     type FoodProduct,
     type MealType,
 } from '@/lib/nutrition';
@@ -26,13 +28,16 @@ interface AddFoodDialogProps {
     date: string;
     defaultMealType: MealType;
     onAdded: () => void;
+    /** Daily goal + current totals; when provided, added calories are shown relative to the goal. */
+    goal?: DiaryGoal | null;
+    totals?: DiaryTotals;
 }
 
 type SelectedProduct = FoodProduct & { entrySource: 'search' | 'barcode' };
 
 const QUICK_AMOUNTS = [50, 100, 150, 200, 250];
 
-export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdded }: AddFoodDialogProps) {
+export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdded, goal, totals }: AddFoodDialogProps) {
     const [tab, setTab] = useState<'search' | 'scan'>('search');
 
     const [query, setQuery] = useState('');
@@ -143,6 +148,15 @@ export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdd
 
     const factor = (Number(amount) || 0) / 100;
 
+    // Contrast effect: kalorie porcji pokazujemy na tle dziennego celu, nie w izolacji
+    const addedCalories = selected ? Math.round(selected.calories * factor) : 0;
+    const goalPercent = goal && goal.dailyCalories > 0
+        ? Math.round((addedCalories / goal.dailyCalories) * 100)
+        : null;
+    const remainingAfter = goal
+        ? Math.round(goal.dailyCalories - (totals?.calories ?? 0) - addedCalories)
+        : null;
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
@@ -218,7 +232,7 @@ export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdd
 
                         <div className="grid grid-cols-4 gap-2 rounded-xl border border-primary/10 bg-primary/5 p-3 text-center">
                             <div>
-                                <p className="text-lg font-bold leading-none text-primary">{Math.round(selected.calories * factor)}</p>
+                                <p className="text-lg font-bold leading-none text-primary">{addedCalories}</p>
                                 <p className="mt-1 text-xs text-muted-foreground">kcal</p>
                             </div>
                             <div>
@@ -234,6 +248,16 @@ export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdd
                                 <p className="mt-1 text-xs text-muted-foreground">Tłuszcze</p>
                             </div>
                         </div>
+
+                        {goalPercent !== null && remainingAfter !== null && (
+                            <p className="rounded-xl bg-secondary/40 px-3 py-2 text-center text-xs text-muted-foreground">
+                                {goalPercent <= 25 ? `To tylko ${goalPercent}%` : `To ${goalPercent}%`} Twojego
+                                dziennego celu ({goal!.dailyCalories} kcal).{' '}
+                                {remainingAfter >= 0
+                                    ? `Po dodaniu zostanie Ci jeszcze ${remainingAfter} kcal.`
+                                    : `Po dodaniu przekroczysz cel o ${-remainingAfter} kcal.`}
+                            </p>
+                        )}
 
                         <Button className="w-full" onClick={handleSave} disabled={isSaving}>
                             {isSaving ? (

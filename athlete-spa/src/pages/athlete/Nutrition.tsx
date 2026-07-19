@@ -265,6 +265,8 @@ export default function NutritionPage() {
                 date={date}
                 defaultMealType={dialogMealType}
                 onAdded={() => void mutate()}
+                goal={goal}
+                totals={totals}
             />
         </div>
     );

@@ -76,7 +76,7 @@ export function WeightStep({ value, height, onChange, onNext, onPrev, canProceed
         transition={{ delay: 0.4 }}
         className="text-muted-foreground text-center mb-8"
       >
-        Twoja aktualna waga pomoże śledzić postępy
+        Ustawiliśmy typową wartość — dostosuj ją do swojej aktualnej wagi
       </motion.p>
 
       {/* Weight Display */}

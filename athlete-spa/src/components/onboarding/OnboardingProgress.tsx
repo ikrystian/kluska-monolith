@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface OnboardingProgressProps {
@@ -21,12 +22,16 @@ export function OnboardingProgress({
   // Data steps are 1-6 (name to trainingLevel)
   const dataStepNumber = currentStep; // currentStep 1 = name (step 1), currentStep 6 = trainingLevel (step 6)
   const totalDataSteps = totalSteps - 2; // Exclude welcome and summary
+  // Goal gradient: ekran powitalny jest liczony jako ukończony krok "Start",
+  // więc użytkownik nigdy nie widzi siebie na samym początku drogi.
+  const displayStep = dataStepNumber + 1;
+  const displayTotal = totalDataSteps + 1;
 
   return (
     <div className="w-full max-w-md mx-auto px-4">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm text-muted-foreground">
-          Krok {dataStepNumber} z {totalDataSteps}
+          Krok {displayStep} z {displayTotal}
         </span>
         <span className="text-sm font-medium text-primary">
           {Math.round(progress)}%
@@ -41,7 +46,16 @@ export function OnboardingProgress({
         />
       </div>
       {/* Step indicators */}
-      <div className="flex justify-between mt-3">
+      <div className="flex items-center justify-between mt-3">
+        {/* Krok "Start" — zawsze ukończony (powitanie masz już za sobą) */}
+        <motion.div
+          className="w-4 h-4 rounded-full bg-primary flex items-center justify-center"
+          initial={{ scale: 0.6 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.3, type: 'spring', stiffness: 300 }}
+        >
+          <Check className="w-2.5 h-2.5 text-primary-foreground" strokeWidth={3.5} />
+        </motion.div>
         {Array.from({ length: totalDataSteps }).map((_, index) => {
           const isActive = index === dataStepNumber - 1;
           const isCompleted = index < dataStepNumber - 1;

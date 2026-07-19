@@ -55,7 +55,7 @@ export function HeightStep({ value, onChange, onNext, onPrev, canProceed }: Heig
         transition={{ delay: 0.4 }}
         className="text-muted-foreground text-center mb-8"
       >
-        Pomoże nam to obliczyć Twoje BMI i dostosować ćwiczenia
+        Ustawiliśmy najczęstszą wartość — przesuń suwak, jeśli Twoja jest inna
       </motion.p>
 
       {/* Height Display */}

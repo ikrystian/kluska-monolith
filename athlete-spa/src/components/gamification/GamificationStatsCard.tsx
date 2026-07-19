@@ -107,6 +107,17 @@ export function GamificationStatsCard({ stats, isLoading }: GamificationStatsCar
           </div>
         </div>
 
+        {/* Streak at stake — utrata pass boli bardziej niż cieszy ich wydłużanie */}
+        {stats.streaks.workout >= 2 && (
+          <div className="flex items-center gap-2 rounded-lg border border-orange-500/20 bg-orange-500/10 p-3 text-sm">
+            <Flame className="h-4 w-4 shrink-0 text-orange-500" />
+            <p>
+              <span className="font-semibold">{stats.streaks.workout} dni passy treningowej.</span>{' '}
+              Jeden pominięty dzień i licznik wraca do zera.
+            </p>
+          </div>
+        )}
+
         {/* Quick Stats */}
         <div className="flex justify-between text-sm text-muted-foreground">
           <span>Osiągnięcia: {stats.achievementCount}</span>

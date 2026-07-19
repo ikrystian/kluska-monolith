@@ -156,7 +156,14 @@ export function TrainingLevelStep({
                 />
               </div>
               <div className="flex-1">
-                <span className="text-lg font-semibold block">{option.label}</span>
+                <span className="text-lg font-semibold block">
+                  {option.label}
+                  {option.value === 'beginner' && (
+                    <span className="ml-2 align-middle rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+                      Najczęstszy wybór
+                    </span>
+                  )}
+                </span>
                 <span className="text-sm text-muted-foreground">{option.description}</span>
               </div>
               {isSelected && (
