@@ -8,7 +8,7 @@ import type { AIFoodResult } from '@/lib/openrouter-food';
 export async function lookupBarcodeInOpenFoodFacts(barcode: string): Promise<AIFoodResult | null> {
     try {
         const response = await fetch(
-            `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json?fields=product_name,product_name_pl,brands,nutriments`,
+            `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json?fields=product_name,product_name_pl,brands,nutriments,image_front_url,image_url`,
             {
                 headers: { 'User-Agent': 'LeniwaKluska/1.0 (kontakt: krystian@bpcoders.pl)' },
                 cache: 'no-store',
@@ -34,8 +34,14 @@ export async function lookupBarcodeInOpenFoodFacts(barcode: string): Promise<AIF
             return Number.isFinite(n) && n >= 0 && n <= 100 ? n : 0;
         };
 
+        const imageUrl: string | undefined =
+            (typeof product.image_front_url === 'string' && product.image_front_url) ||
+            (typeof product.image_url === 'string' && product.image_url) ||
+            undefined;
+
         return {
             name,
+            imageUrl,
             brand: typeof product.brands === 'string' && product.brands.trim()
                 ? product.brands.split(',')[0].trim()
                 : undefined,

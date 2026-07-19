@@ -10,6 +10,8 @@ export interface ICustomProduct extends Document {
     /** EAN/UPC barcode when the product was resolved from a scan. */
     barcode?: string;
     brand?: string;
+    /** Product photo URL (from Open Food Facts) when available. */
+    imageUrl?: string;
     trainerId?: string;
     source: 'manual' | 'ai';
     createdAt: Date;
@@ -26,6 +28,7 @@ const CustomProductSchema: Schema = new Schema(
         unit: { type: String, default: 'g' },
         barcode: { type: String, index: true, sparse: true },
         brand: { type: String },
+        imageUrl: { type: String },
         // AI-sourced products are global (no trainerId) so every trainer can reuse them
         trainerId: { type: String, index: true },
         source: { type: String, enum: ['manual', 'ai'], default: 'manual' },

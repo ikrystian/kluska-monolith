@@ -21,6 +21,8 @@ export interface FoodProduct {
     fat: number;
     unit: string;
     barcode?: string;
+    /** Product photo URL (e.g. from Open Food Facts) when available. */
+    imageUrl?: string;
 }
 
 export interface DiaryEntry {

@@ -6,6 +6,8 @@ export interface AIFoodResult {
     fat: number;
     unit: string;
     brand?: string;
+    /** Product photo (e.g. from Open Food Facts); AI results don't have one. */
+    imageUrl?: string;
 }
 
 const JSON_FORMAT_RULES = `Zwróć WYŁĄCZNIE poprawny JSON (bez markdown, bez komentarzy) w formacie:

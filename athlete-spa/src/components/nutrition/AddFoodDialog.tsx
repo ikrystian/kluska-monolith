@@ -176,8 +176,23 @@ export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdd
                         </button>
 
                         <div className="rounded-xl border bg-secondary/30 p-4">
-                            <p className="font-semibold leading-snug">{selected.name}</p>
-                            {selected.brand && <p className="text-sm text-muted-foreground">{selected.brand}</p>}
+                            <div className="flex items-start gap-3">
+                                {selected.imageUrl && (
+                                    <img
+                                        src={selected.imageUrl}
+                                        alt={selected.name}
+                                        loading="lazy"
+                                        className="h-16 w-16 shrink-0 rounded-lg border bg-white object-contain"
+                                        onError={(event) => {
+                                            event.currentTarget.style.display = 'none';
+                                        }}
+                                    />
+                                )}
+                                <div className="min-w-0">
+                                    <p className="font-semibold leading-snug">{selected.name}</p>
+                                    {selected.brand && <p className="text-sm text-muted-foreground">{selected.brand}</p>}
+                                </div>
+                            </div>
                             <div className="mt-2 flex flex-wrap gap-2">
                                 <Badge variant="outline" className="text-xs">
                                     <Flame className="mr-1 h-3 w-3 text-primary" />

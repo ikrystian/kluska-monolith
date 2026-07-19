@@ -47,6 +47,14 @@ export async function GET(request: NextRequest) {
 
         const cached = await CustomProduct.findOne({ barcode, source: 'ai' });
         if (cached) {
+            // Products cached before images were stored: try a one-off backfill from OFF
+            if (!cached.imageUrl) {
+                const offResult = await lookupBarcodeInOpenFoodFacts(barcode);
+                if (offResult?.imageUrl) {
+                    cached.imageUrl = offResult.imageUrl;
+                    await cached.save();
+                }
+            }
             return NextResponse.json({ product: cached, barcode, origin: 'local' });
         }
 
