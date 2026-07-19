@@ -5,7 +5,8 @@ import { useState, useMemo } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Camera, Instagram, Facebook, Twitter, Loader2, Activity, CheckCircle2, XCircle, Footprints, Globe } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Camera, Instagram, Facebook, Twitter, Loader2, Activity, CheckCircle2, XCircle, Footprints, Globe, UserPlus } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -175,7 +176,27 @@ export function ProfilePage() {
   };
 
   return (
-    <div className="container mx-auto max-w-6xl pb-8">
+    <div className="container mx-auto max-w-6xl pb-8 space-y-4">
+      {user?.isGuest && (
+        <div className="mx-4 mt-4 md:mx-8 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 shadow-sm backdrop-blur-sm dark:border-amber-500/20 dark:bg-amber-500/10">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                <UserPlus className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-semibold text-foreground">Konto gościa</h4>
+                <p className="text-sm text-muted-foreground">
+                  Aby zmiany, które będziesz wprowadzał, zostały zapisane na stałe, musisz założyć konto. Twój dotychczasowy progress zostanie zapisany w nowo utworzonym koncie.
+                </p>
+              </div>
+            </div>
+            <Button asChild size="sm" className="shrink-0 rounded-xl font-semibold shadow-sm">
+              <Link to="/register">Załóż konto</Link>
+            </Button>
+          </div>
+        </div>
+      )}
       {/* Cover + avatar hero */}
       <section className="relative">
         <div className="hero-ember texture-grain relative h-32 w-full overflow-hidden rounded-b-3xl shadow-glow md:h-40 md:rounded-3xl" />
