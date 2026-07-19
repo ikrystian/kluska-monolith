@@ -6,8 +6,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { PlusCircle, Trash2, Save, Loader2, Dumbbell, Upload, Search, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, Clock, History, LayoutList, RotateCcw, CheckCircle2, Circle, Layers, Timer, AlertCircle } from 'lucide-react';
+import { PlusCircle, Trash2, Save, Loader2, Dumbbell, Upload, Search, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, Clock, History, LayoutList, RotateCcw, CheckCircle2, Circle, Layers, Timer, AlertCircle, Sparkles } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
@@ -301,6 +302,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const [showAccountPromptModal, setShowAccountPromptModal] = useState(false);
   const [activeExerciseIndex, setActiveExerciseIndex] = useState(0);
   const [newExerciseId, setNewExerciseId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -330,10 +332,16 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
 
   // Effect to create the workout document on start (only if not resuming)
   useEffect(() => {
-    if (!user || workoutLogId || isCreatingWorkoutRef.current) return;
+    if (workoutLogId || isCreatingWorkoutRef.current) return;
 
     const createInitialWorkoutLog = async () => {
       isCreatingWorkoutRef.current = true;
+
+      if (!user) {
+        // Guest mode: generate local workout ID
+        setWorkoutLogId(`guest-log-${Date.now()}`);
+        return;
+      }
 
       // Validate that all exercises have valid IDs before creating the log
       const invalidExercises = initialWorkout.exerciseSeries.filter(
@@ -512,12 +520,12 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
 
 
   const handleSaveWorkout = async (data: LogFormValues) => {
-    if (!user || !workoutLogId) return;
+    if (!workoutLogId) return;
 
     setIsSaving(true);
 
     let photoURL: string | undefined = undefined;
-    if (photoFile) {
+    if (photoFile && user) {
       try {
         const formData = new FormData();
         formData.append('file', photoFile);
@@ -564,6 +572,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
     });
 
     const finalLogData = {
+      id: workoutLogId,
       workoutName: data.workoutName,
       exercises: exercisesWithNames,
       duration: duration,
@@ -571,6 +580,26 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
       status: 'completed',
       ...(photoURL && { photoURL }),
     };
+
+    if (!user) {
+      // Guest mode: save to localStorage
+      try {
+        const existingLogs = JSON.parse(localStorage.getItem('guest_workout_logs') || '[]');
+        existingLogs.unshift(finalLogData);
+        localStorage.setItem('guest_workout_logs', JSON.stringify(existingLogs));
+      } catch (err) {
+        console.error('Error saving guest workout:', err);
+      }
+
+      toast({
+        title: 'Trening Zapisany!',
+        description: `${data.workoutName} został zapisany w Twoim urządzeniu.`,
+      });
+
+      setIsSaving(false);
+      setShowAccountPromptModal(true);
+      return;
+    }
 
     try {
       const response = await fetch(`/api/db/workoutLogs/${workoutLogId}`, {
@@ -591,7 +620,25 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
       // Notify the ActiveWorkoutContext that the workout has been completed
       refetchActiveWorkout();
 
-      router.push(`/athlete/history/${workoutLogId}`);
+      // Check if this was the user's first completed workout log
+      let isFirstWorkout = true;
+      try {
+        const checkRes = await fetch(`/api/db/workoutLogs?query=${encodeURIComponent(JSON.stringify({ athleteId: user.uid, status: 'completed' }))}`);
+        if (checkRes.ok) {
+          const resData = await checkRes.json();
+          if (resData.data && resData.data.length > 1) {
+            isFirstWorkout = false;
+          }
+        }
+      } catch (e) {
+        console.error('Error checking workout count:', e);
+      }
+
+      if (isFirstWorkout) {
+        setShowAccountPromptModal(true);
+      } else {
+        router.push(`/athlete/history/${workoutLogId}`);
+      }
     } catch (error) {
       console.error('Error saving workout:', error);
       toast({
@@ -822,11 +869,50 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
               </div>
             </>
           )}
-
         </form>
       </FormProvider>
+
+      <Dialog open={showAccountPromptModal} onOpenChange={(open) => {
+        setShowAccountPromptModal(open);
+        if (!open) {
+          router.push(workoutLogId && user ? `/athlete/history/${workoutLogId}` : '/athlete/history');
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="text-center sm:text-left">
+            <div className="mx-auto sm:mx-0 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-3">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <DialogTitle className="font-headline text-xl">
+              Pierwszy trening za Tobą! 🎉
+            </DialogTitle>
+            <DialogDescription className="pt-2 text-base">
+              Załóż konto, aby nie stracić zarejestrowanych treningów, śledzić wykresy postępów i zsynchronizować swoje dane.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="flex-col sm:flex-col gap-2 mt-4">
+            <Button asChild className="w-full font-bold" size="lg">
+              <Link href="/register">Załóż konto teraz</Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/login">Mam już konto - Zaloguj się</Link>
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full text-muted-foreground mt-1"
+              onClick={() => {
+                setShowAccountPromptModal(false);
+                router.push(workoutLogId && user ? `/athlete/history/${workoutLogId}` : '/athlete/history');
+              }}
+            >
+              Później / Zobacz historię
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
-  )
+  );
 }
 
 function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExercises, userId }: { index: number, exerciseDetails: Exercise | undefined, onRemoveExercise: () => void, isLoadingExercises: boolean, userId: string | null }) {

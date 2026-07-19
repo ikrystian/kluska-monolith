@@ -4,7 +4,8 @@ import { useState, useMemo } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Camera, Instagram, Facebook, Twitter, Loader2, Activity, CheckCircle2, XCircle, Footprints, Globe } from 'lucide-react';
+import { Camera, Instagram, Facebook, Twitter, Loader2, Activity, CheckCircle2, XCircle, Footprints, Globe, UserPlus } from 'lucide-react';
+import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -142,7 +143,14 @@ export function ProfilePage() {
   };
 
   const onSubmit = async (data: ProfileFormValues) => {
-    if (!userProfile || !user) return;
+    if (!user || !userProfile) {
+      toast({
+        title: 'Wymagane założenie konta',
+        description: 'Te dane zostaną zapisane po założeniu konta.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     const updatedData: UserProfile = {
       ...userProfile,
@@ -176,6 +184,34 @@ export function ProfilePage() {
   return (
     <div className="container mx-auto p-4 md:p-8">
       <h1 className="mb-6 font-headline text-3xl font-bold">Twój Profil</h1>
+
+      {!user && (
+        <Card className="mb-6 border-amber-500/40 bg-amber-500/10 dark:bg-amber-500/15">
+          <CardContent className="p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
+                <UserPlus className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-headline font-semibold text-lg text-amber-950 dark:text-amber-100">
+                  Wymagane założenie konta
+                </h3>
+                <p className="text-sm text-amber-900/80 dark:text-amber-200/80">
+                  Przeglądasz profil w trybie gościa. Te dane zostaną zapisane po założeniu konta.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+              <Button asChild variant="default" className="flex-1 sm:flex-initial font-bold">
+                <Link href="/register">Załóż konto</Link>
+              </Button>
+              <Button asChild variant="outline" className="flex-1 sm:flex-initial">
+                <Link href="/login">Zaloguj się</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       <div className="grid gap-8 md:grid-cols-3">
         <div className="md:col-span-1">
           <Card>

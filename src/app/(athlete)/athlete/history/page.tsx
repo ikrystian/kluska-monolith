@@ -33,15 +33,30 @@ import type { WorkoutLog, Exercise } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2 } from 'lucide-react';
+import { Loader2, Trash2, UserPlus } from 'lucide-react';
 
 export default function HistoryPage() {
   const { user } = useUser();
   const router = useRouter();
   const { toast } = useToast();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [guestLogs, setGuestLogs] = useState<WorkoutLog[]>([]);
+
+  useEffect(() => {
+    if (!user) {
+      try {
+        const stored = localStorage.getItem('guest_workout_logs');
+        if (stored) {
+          setGuestLogs(JSON.parse(stored));
+        }
+      } catch (err) {
+        console.error('Error loading guest logs:', err);
+      }
+    }
+  }, [user]);
 
   // Fetch workout logs for the current user, sorted by endTime descending
   // Limit to 50 records to prevent loading too much data at once
@@ -50,6 +65,8 @@ export default function HistoryPage() {
     user?.uid ? { athleteId: user.uid } : undefined,
     { sort: { endTime: -1 }, limit: 50 }
   );
+
+  const logsToDisplay = user ? workoutLogs : guestLogs;
 
   const handleDelete = async (sessionId: string) => {
     if (!user) return;
@@ -88,6 +105,35 @@ export default function HistoryPage() {
     <AlertDialog>
       <div className="container mx-auto p-4 md:p-8">
         <h1 className="mb-6 font-headline text-3xl font-bold">Historia Treningów</h1>
+
+        {!user && (
+          <Card className="mb-6 border-amber-500/40 bg-amber-500/10 dark:bg-amber-500/15">
+            <CardContent className="p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
+                  <UserPlus className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="font-headline font-semibold text-lg text-amber-950 dark:text-amber-100">
+                    Konto gościa
+                  </h3>
+                  <p className="text-sm text-amber-900/80 dark:text-amber-200/80">
+                    Treningi w trybie gościa są przechowywane na tym urządzeniu. Załóż konto, aby trwale je zapisać.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                <Button asChild variant="default" className="flex-1 sm:flex-initial font-bold">
+                  <Link href="/register">Załóż konto</Link>
+                </Button>
+                <Button asChild variant="outline" className="flex-1 sm:flex-initial">
+                  <Link href="/login">Zaloguj się</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle className="font-headline">Twój Dziennik</CardTitle>
@@ -95,7 +141,7 @@ export default function HistoryPage() {
           </CardHeader>
           <CardContent>
             <Accordion type="single" collapsible className="w-full">
-              {isLoading ? (
+              {user && isLoading ? (
                 Array.from({ length: 3 }).map((_, i) => (
                   <AccordionItem value={`skeleton-${i}`} key={i} className="border-b">
                     <AccordionTrigger className="hover:no-underline">
@@ -103,8 +149,9 @@ export default function HistoryPage() {
                     </AccordionTrigger>
                   </AccordionItem>
                 ))
-              ) : workoutLogs?.map((log) => {
-                if (log.status === 'in-progress') return null;
+              ) : logsToDisplay && logsToDisplay.length > 0 ? (
+                logsToDisplay.map((log) => {
+                  if (log.status === 'in-progress') return null;
 
                 const totalVolume = log.exercises.reduce((acc, ex) => {
                   if (ex.exercise?.type !== 'weight') return acc;
@@ -166,7 +213,12 @@ export default function HistoryPage() {
                     </div>
                   </AccordionItem>
                 );
-              })}
+              })
+              ) : (
+                <div className="py-12 text-center text-muted-foreground">
+                  Brak ukończonych treningów w historii.
+                </div>
+              )}
             </Accordion>
           </CardContent>
         </Card>

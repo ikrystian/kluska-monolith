@@ -34,15 +34,17 @@ export default function LandingPage() {
   const isLoading = isUserLoading || (user && isProfileLoading);
 
   useEffect(() => {
-    if (!isLoading && user && userProfile) {
-      if (userProfile.role === 'admin') {
-        router.push('/admin/dashboard');
-      } else if (userProfile.role === 'trainer') {
-        router.push('/trainer/dashboard');
-      } else if (userProfile.role === 'athlete') {
-        router.push('/athlete/dashboard');
+    if (!isLoading) {
+      if (user && userProfile) {
+        if (userProfile.role === 'admin') {
+          router.push('/admin/dashboard');
+        } else if (userProfile.role === 'trainer') {
+          router.push('/trainer/dashboard');
+        } else {
+          router.push('/athlete/dashboard');
+        }
       } else {
-        alert('Unknown role');
+        router.push('/athlete/dashboard');
       }
     }
   }, [user, userProfile, isLoading, router]);

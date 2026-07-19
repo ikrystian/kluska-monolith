@@ -26,29 +26,17 @@ function AthleteLayoutContent({
   const isOnboardingPage = pathname?.startsWith('/athlete/onboarding');
 
   useEffect(() => {
-    // This effect handles redirection after loading is complete
+    // Redirect only if user is logged in as trainer or admin
     if (!isLoading) {
-      if (!user) {
-        // If not logged in at all, go to login
-        router.push('/login');
-      } else if (userProfile?.role === 'trainer') {
+      if (userProfile?.role === 'trainer') {
         router.push('/trainer/dashboard');
       } else if (userProfile?.role === 'admin') {
         router.push('/admin/dashboard');
-      } else if (userProfile?.role === 'athlete') {
-        // Check if onboarding is needed (only if not already on onboarding page)
-        if (!userProfile.onboardingCompleted && !isOnboardingPage) {
-          router.push('/athlete/onboarding');
-        }
-      } else if (userProfile?.role !== 'athlete') {
-        // If logged in but not an athlete/trainer/admin, go to login
-        router.push('/athlete/dashboard');
       }
     }
-  }, [user, userProfile, isLoading, router, isOnboardingPage]);
+  }, [userProfile, isLoading, router]);
 
   // Render loading state until we are certain about the user's auth state and role.
-  // This prevents child components from rendering and attempting to fetch data prematurely.
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -60,9 +48,8 @@ function AthleteLayoutContent({
     );
   }
 
-  // If after loading, the user is still not an athlete, render nothing.
-  // The useEffect will handle the redirect.
-  if (userProfile?.role !== 'athlete') {
+  // If user is trainer or admin, useEffect will redirect them
+  if (userProfile?.role === 'trainer' || userProfile?.role === 'admin') {
     return null;
   }
 
