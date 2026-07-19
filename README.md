@@ -61,7 +61,7 @@ Ensure you have the following installed:
     ```env
     DATABASE_URL="mongodb://localhost:27017/kluska-monolith"
     NEXTAUTH_SECRET="your-super-secret-key"
-    NEXTAUTH_URL="http://localhost:3000"
+    NEXTAUTH_URL="http://localhost:3001"
     # Add other necessary keys
     ```
 
@@ -70,7 +70,7 @@ Ensure you have the following installed:
     npm run dev
     ```
 
-    Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+    Open [http://localhost:3001](http://localhost:3001) with your browser to see the result.
 
 ## Scripts
 

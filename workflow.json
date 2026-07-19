@@ -30,7 +30,7 @@
                         },
                         {
                             "name": "HTTP-Referer",
-                            "value": "http://localhost:3000"
+                            "value": "http://localhost:3001"
                         }
                     ]
                 },
@@ -80,7 +80,7 @@
         {
             "parameters": {
                 "method": "POST",
-                "url": "http://localhost:3000/api/upload",
+                "url": "http://localhost:3001/api/upload",
                 "sendBody": true,
                 "contentType": "multipart-form-data",
                 "bodyParameters": {

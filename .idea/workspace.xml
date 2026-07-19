@@ -234,7 +234,7 @@
   }
 }</component>
   <component name="RunManager" selected="npm.Next.js: server-side">
-    <configuration name="Next.js: debug client-side" type="JavascriptDebugType" uri="http://localhost:3000/">
+    <configuration name="Next.js: debug client-side" type="JavascriptDebugType" uri="http://localhost:3001/">
       <method v="2" />
     </configuration>
     <configuration name="Next.js: server-side" type="js.build_tools.npm">

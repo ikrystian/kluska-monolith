@@ -209,7 +209,7 @@ def main():
         headers = {
             "Authorization": f"Bearer {API_KEY}",
             "Content-Type": "application/json",
-            "HTTP-Referer": "http://localhost:3000", # Optional, for OpenRouter rankings
+            "HTTP-Referer": "http://localhost:3001", # Optional, for OpenRouter rankings
             "X-Title": "Exercise Analysis Script" # Optional
         }
 
