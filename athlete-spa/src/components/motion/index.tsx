@@ -51,44 +51,30 @@ export function useNavigationDirection(): 'forward' | 'back' {
 /* ------------------------------------------------------------------ */
 
 const pageTransition: Transition = {
-  duration: 0.3,
-  ease: [0.32, 0.72, 0, 1] as const,
+  duration: 0.18,
+  ease: 'easeOut',
 };
 
 const pageExitTransition: Transition = {
-  duration: 0.2,
-  ease: [0.4, 0, 0.2, 1] as const,
+  duration: 0.12,
+  ease: 'easeIn',
 };
 
-/** Native mobile push: new screen enters from the right. */
+/** Lightweight crossfade — opacity only, fully GPU-composited. */
 export const pageVariantsPush: Variants = {
-  initial: { opacity: 0, x: '100%' },
+  initial: { opacity: 0 },
   animate: {
     opacity: 1,
-    x: 0,
     transition: pageTransition,
   },
   exit: {
-    opacity: 0.2,
-    x: '-30%',
+    opacity: 0,
     transition: pageExitTransition,
   },
 };
 
-/** Native mobile pop: previous screen re-enters from the left. */
-export const pageVariantsPop: Variants = {
-  initial: { opacity: 0, x: '-100%' },
-  animate: {
-    opacity: 1,
-    x: 0,
-    transition: pageTransition,
-  },
-  exit: {
-    opacity: 0.2,
-    x: '30%',
-    transition: pageExitTransition,
-  },
-};
+/** Same symmetric effect for back navigation. */
+export const pageVariantsPop: Variants = pageVariantsPush;
 
 /**
  * Drop-in replacement for react-router's <Outlet /> that animates
@@ -115,7 +101,7 @@ export function AnimatedOutlet({ className }: { className?: string }) {
   }, [location.pathname]);
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
+    <AnimatePresence mode="sync" initial={false}>
       <motion.div
         key={location.pathname}
         variants={variants}
@@ -125,6 +111,7 @@ export function AnimatedOutlet({ className }: { className?: string }) {
         onAnimationComplete={(definition) => {
           if (definition === 'animate') endPageTransition();
         }}
+        style={{ willChange: 'opacity' }}
         className={cn('min-h-full w-full', className)}
       >
         {outlet}
