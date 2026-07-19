@@ -1,4 +1,5 @@
-import { SidebarTrigger, useSidebar } from './ui/sidebar';
+import { Link } from 'react-router-dom';
+import { SidebarTrigger } from './ui/sidebar';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { NotificationBell } from './notifications/NotificationBell';
@@ -14,16 +15,15 @@ function getInitials(name: string | null | undefined) {
 
 export function AppHeader() {
   const { userProfile } = useUserProfile();
-  const { toggleSidebar } = useSidebar();
   const avatarImage = placeholderImages.find(img => img.id === 'avatar-male');
   const firstName = userProfile?.name?.split(' ')[0];
 
   return (
     <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-border/50 bg-background/70 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-2xl md:h-14 md:px-6">
-      {/* Mobile: avatar opens the menu, greeting anchors the screen */}
-      <button
-        onClick={toggleSidebar}
-        aria-label="Otwórz menu"
+      {/* Mobile: avatar goes to the profile, greeting anchors the screen */}
+      <Link
+        to="/athlete/profile"
+        aria-label="Przejdź do profilu"
         className="pressable flex min-w-0 items-center gap-3 text-left transition-opacity active:opacity-70 md:hidden"
       >
         <span className="relative shrink-0">
@@ -40,7 +40,7 @@ export function AppHeader() {
         <span className="flex min-w-0 flex-col">
           #leniwakluska
         </span>
-      </button>
+      </Link>
 
       {/* Desktop: classic sidebar trigger */}
       <SidebarTrigger className="hidden text-muted-foreground hover:text-foreground md:flex" />

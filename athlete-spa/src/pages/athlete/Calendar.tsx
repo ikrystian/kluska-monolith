@@ -14,7 +14,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useCollection, useUser } from '@/lib/db-hooks';
 import type { Exercise, PlannedWorkout, WorkoutLog } from '@/lib/types';
 import { SessionDetailsDialog, type TrainingSessionData } from '@/components/schedule/SessionDetailsDialog';
-import { FullCalendarWrapper, type CalendarEvent } from '@/components/schedule/FullCalendarWrapper';
+import type { CalendarEvent } from '@/components/schedule/FullCalendarWrapper';
+import { DayStrip } from '@/components/schedule/DayStrip';
 
 const statusColors = {
     scheduled: { bg: '#f97316', border: '#ea580c', text: '#ffffff' },
@@ -117,17 +118,6 @@ export default function CalendarPage() {
         };
     }, [trainingSessions, workoutHistory, plannedWorkouts, selectedDate]);
 
-    const handleEventClick = (eventId: string, event: CalendarEvent) => {
-        if (event.extendedProps?.type === 'trainerSession') {
-            setSelectedSession(event.extendedProps.data);
-            setIsDetailsDialogOpen(true);
-        }
-    };
-
-    const handleDateClick = (date: Date) => {
-        setSelectedDate(date);
-    };
-
     const handleSessionClick = (session: TrainingSessionData) => {
         setSelectedSession(session);
         setIsDetailsDialogOpen(true);
@@ -170,20 +160,17 @@ export default function CalendarPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                {/* Calendar */}
-                <Card className="lg:col-span-2 overflow-hidden">
-                    <CardContent className="p-2 md:p-4">
+            <div className="space-y-6">
+                {/* Day strip */}
+                <Card className="overflow-hidden">
+                    <CardContent className="p-3 md:p-4">
                         {isLoading ? (
-                            <Skeleton className="h-[350px] md:h-[500px] w-full" />
+                            <Skeleton className="h-28 w-full" />
                         ) : (
-                            <FullCalendarWrapper
+                            <DayStrip
                                 events={calendarEvents}
-                                onEventClick={handleEventClick}
-                                onDateClick={handleDateClick}
-                                initialView="dayGridMonth"
-                                height="auto"
-                                className="calendar-mobile-fix"
+                                selectedDate={selectedDate}
+                                onDateSelect={setSelectedDate}
                             />
                         )}
                     </CardContent>

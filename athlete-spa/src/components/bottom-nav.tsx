@@ -1,10 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Play, CalendarDays, MessageSquare, User } from 'lucide-react';
+import { LayoutDashboard, Play, CalendarDays, MessageSquare, Menu } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useSidebar } from '@/components/ui/sidebar';
 
 export function BottomNav() {
     const { pathname, search } = useLocation();
+    const { toggleSidebar } = useSidebar();
 
     // During an active workout session (/athlete/log?logId=...) the nav is
     // hidden so it doesn't cover the workout controls.
@@ -18,7 +20,6 @@ export function BottomNav() {
         { href: '/athlete/calendar', icon: CalendarDays, label: 'Kalendarz' },
         { href: '/athlete/log', icon: Play, label: 'Trenuj', primary: true },
         { href: '/athlete/chat', icon: MessageSquare, label: 'Czat' },
-        { href: '/athlete/profile', icon: User, label: 'Profil' },
     ];
 
     return (
@@ -93,6 +94,20 @@ export function BottomNav() {
                         </Link>
                     );
                 })}
+
+                <button
+                    type="button"
+                    onClick={toggleSidebar}
+                    aria-label="Otwórz menu"
+                    className="pressable relative flex h-full min-w-[3.5rem] flex-col items-center justify-center gap-1"
+                >
+                    <span className="relative flex h-8 w-[3.25rem] items-center justify-center rounded-full text-muted-foreground transition-colors duration-300 active:scale-90">
+                        <Menu className="relative z-10 h-5 w-5" strokeWidth={2} />
+                    </span>
+                    <span className="text-[9px] font-semibold uppercase tracking-[0.14em] leading-none text-muted-foreground/80">
+                        Menu
+                    </span>
+                </button>
             </div>
         </nav>
     );

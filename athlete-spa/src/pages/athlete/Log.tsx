@@ -661,10 +661,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
       });
 
       refetchActiveWorkout();
-      // Use window.location to force a full refresh and clear state completely, 
-      // or just redirect if client-side navigation is enough. 
-      // Given the complex state interaction, a router push is usually fine if we clear builderData upstream.
-      onFinishWorkout();
+      navigate('/athlete/dashboard');
     } catch (error) {
       console.error('Error discarding workout:', error);
       toast({

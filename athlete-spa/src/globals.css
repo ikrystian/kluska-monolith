@@ -108,11 +108,18 @@
     min-height: 100svh;
   }
 
-  button, a, [role="button"] {
+  button,
+  a,
+  [role="button"] {
     touch-action: manipulation;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-headline tracking-tight;
     text-wrap: balance;
   }
@@ -205,21 +212,44 @@
   }
 }
 
-.stagger-rise > * {
+.stagger-rise>* {
   animation: rise-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.stagger-rise > *:nth-child(1) { animation-delay: 0ms; }
-.stagger-rise > *:nth-child(2) { animation-delay: 60ms; }
-.stagger-rise > *:nth-child(3) { animation-delay: 120ms; }
-.stagger-rise > *:nth-child(4) { animation-delay: 180ms; }
-.stagger-rise > *:nth-child(5) { animation-delay: 240ms; }
-.stagger-rise > *:nth-child(6) { animation-delay: 300ms; }
-.stagger-rise > *:nth-child(7) { animation-delay: 360ms; }
-.stagger-rise > *:nth-child(8) { animation-delay: 420ms; }
+.stagger-rise>*:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.stagger-rise>*:nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.stagger-rise>*:nth-child(3) {
+  animation-delay: 120ms;
+}
+
+.stagger-rise>*:nth-child(4) {
+  animation-delay: 180ms;
+}
+
+.stagger-rise>*:nth-child(5) {
+  animation-delay: 240ms;
+}
+
+.stagger-rise>*:nth-child(6) {
+  animation-delay: 300ms;
+}
+
+.stagger-rise>*:nth-child(7) {
+  animation-delay: 360ms;
+}
+
+.stagger-rise>*:nth-child(8) {
+  animation-delay: 420ms;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .stagger-rise > * {
+  .stagger-rise>* {
     animation: none;
   }
 }
@@ -388,6 +418,7 @@ a.pressable,
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .pressable,
   .pressable-md,
   .pressable-sm,
@@ -402,6 +433,7 @@ a.pressable,
    .pressable. Opacity only — no transform, so it stays safe on table rows
    and elements with their own transforms. */
 @media (hover: none) and (pointer: coarse) {
+
   .cursor-pointer,
   [role="button"] {
     transition: opacity 0.12s ease;
@@ -410,5 +442,12 @@ a.pressable,
   .cursor-pointer:active:not(:disabled, [aria-disabled="true"]),
   [role="button"]:active:not(:disabled, [aria-disabled="true"]) {
     opacity: 0.7;
+  }
+}
+
+
+.container {
+  @media(width < 560px) {
+    padding-inline: 4px;
   }
 }
