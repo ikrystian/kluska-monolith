@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { Trash2 } from 'lucide-react';
 import { SetType } from '@/lib/types';
 import { SET_TYPE_CONFIG, getSetTypeConfig, getAllSetTypes } from '@/lib/set-type-config';
 import { cn } from '@/lib/utils';
@@ -19,9 +20,13 @@ interface SetTypeModalProps {
   onChange: (value: SetType) => void;
   disabled?: boolean;
   compact?: boolean;
+  /** Custom trigger element (rendered via DialogTrigger asChild). */
+  renderTrigger?: React.ReactNode;
+  /** When provided, the modal also offers a "delete set" action. */
+  onDeleteSet?: () => void;
 }
 
-export function SetTypeModal({ value, onChange, disabled, compact = false }: SetTypeModalProps) {
+export function SetTypeModal({ value, onChange, disabled, compact = false, renderTrigger, onDeleteSet }: SetTypeModalProps) {
   const [open, setOpen] = useState(false);
   const currentConfig = getSetTypeConfig(value);
   const Icon = currentConfig.icon;
@@ -31,25 +36,32 @@ export function SetTypeModal({ value, onChange, disabled, compact = false }: Set
     setOpen(false);
   };
 
+  const handleDelete = () => {
+    setOpen(false);
+    onDeleteSet?.();
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          size={compact ? "icon" : "sm"}
-          disabled={disabled}
-          className={cn(
-            "h-8 transition-colors",
-            compact ? "w-8 p-0" : "px-2 gap-1",
-            currentConfig.bgColorClass,
-            currentConfig.borderColorClass,
-            currentConfig.colorClass
-          )}
-        >
-          <Icon className={cn("h-4 w-4", compact ? "" : "mr-1")} />
-          {!compact && <span className="text-xs truncate max-w-[60px]">{currentConfig.shortName}</span>}
-        </Button>
+        {renderTrigger ?? (
+          <Button
+            type="button"
+            variant="outline"
+            size={compact ? "icon" : "sm"}
+            disabled={disabled}
+            className={cn(
+              "h-8 transition-colors",
+              compact ? "w-8 p-0" : "px-2 gap-1",
+              currentConfig.bgColorClass,
+              currentConfig.borderColorClass,
+              currentConfig.colorClass
+            )}
+          >
+            <Icon className={cn("h-4 w-4", compact ? "" : "mr-1")} />
+            {!compact && <span className="text-xs truncate max-w-[60px]">{currentConfig.shortName}</span>}
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -100,6 +112,17 @@ export function SetTypeModal({ value, onChange, disabled, compact = false }: Set
             );
           })}
         </div>
+        {onDeleteSet && (
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleDelete}
+            className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Usuń serię
+          </Button>
+        )}
       </DialogContent>
     </Dialog>
   );
