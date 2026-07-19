@@ -30,18 +30,19 @@ export function CreateWorkoutPageLayout({
     backButtonText = 'Powrót do listy',
 }: CreateWorkoutPageLayoutProps) {
     return (
-        <div className="container mx-auto p-4 md:p-8">
-            <div className="mb-6">
-                <Link to={backHref}>
-                    <Button variant="ghost" className="mb-4 pl-0 hover:pl-0 hover:bg-transparent">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        {backButtonText}
-                    </Button>
-                </Link>
-                <h1 className="text-3xl font-bold font-headline">{title}</h1>
-                {description && (
-                    <p className="text-muted-foreground">{description}</p>
-                )}
+        <div className="container mx-auto px-4 py-4 md:p-8">
+            <div className="mx-auto mb-4 flex max-w-2xl items-center gap-2 md:mb-6">
+                <Button asChild variant="ghost" size="icon" className="-ml-2 h-10 w-10 shrink-0 rounded-full">
+                    <Link to={backHref} aria-label={backButtonText}>
+                        <ArrowLeft className="h-5 w-5" />
+                    </Link>
+                </Button>
+                <div className="min-w-0">
+                    <h1 className="truncate text-xl font-bold font-headline md:text-3xl">{title}</h1>
+                    {description && (
+                        <p className="hidden text-sm text-muted-foreground md:block">{description}</p>
+                    )}
+                </div>
             </div>
 
             <CreateWorkout redirectPath={redirectPath} />

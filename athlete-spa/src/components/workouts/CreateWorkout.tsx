@@ -1,40 +1,66 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useEffect, useState } from 'react';
+import { useForm, useFieldArray, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { TrainingLevel, SetType, Exercise, Workout } from '@/lib/types';
 import { useCollection, useCreateDoc, useUser } from '@/lib/db-hooks';
-import { Loader2, Plus, Trash2, Dumbbell, Repeat, Timer, ChevronUp, ChevronDown, Copy, ChevronRight } from 'lucide-react';
+import {
+    Loader2,
+    Plus,
+    Trash2,
+    Dumbbell,
+    Timer,
+    ChevronDown,
+    Copy,
+    MoreVertical,
+    ArrowUp,
+    ArrowDown,
+    Flame,
+    Search,
+    Save,
+    NotebookPen,
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { SetTypeButton } from '@/components/workout/SetTypeModal';
-import { type ExerciseType, getExerciseTypeConfig } from '@/lib/set-type-config';
-import { Combobox } from '@/components/ui/combobox';
+import { SetTypeModal } from '@/components/workout/SetTypeModal';
+import { type ExerciseType, getSetTypeConfig } from '@/lib/set-type-config';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion, listItemMotion } from '@/components/motion';
 import { FormFieldWithValidation } from '@/components/workout/FormFieldWithValidation';
 import { useWorkoutDraft } from '@/hooks/useWorkoutDraft';
-import { DraftIndicator } from '@/components/workout/DraftIndicator';
-import { useEffect } from 'react';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/workout/UnsavedChangesDialog';
-import { FormProgressIndicator } from '@/components/workout/FormProgressIndicator';
-import { SetTemplateSelector } from '@/components/workout/SetTemplateSelector';
-import { QuickSetActions } from '@/components/workout/QuickSetActions';
-import { SetTemplate } from '@/lib/set-templates';
+import { SET_TEMPLATES, SetTemplate } from '@/lib/set-templates';
 import { ExerciseSelector } from '@/components/workout/ExerciseSelector';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Search } from 'lucide-react';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { formatDistanceToNow } from 'date-fns';
+import { pl } from 'date-fns/locale';
 
 // --- SCHEMA ---
 const workoutSetSchema = z.object({
@@ -108,6 +134,26 @@ interface CreateWorkoutProps {
     redirectPath?: string;
 }
 
+interface ConfirmState {
+    title: string;
+    description: string;
+    onConfirm: () => void;
+}
+
+const LEVEL_OPTIONS: { value: TrainingLevel; label: string }[] = [
+    { value: TrainingLevel.Beginner, label: 'Początkujący' },
+    { value: TrainingLevel.Intermediate, label: 'Średni' },
+    { value: TrainingLevel.Advanced, label: 'Zaawansowany' },
+];
+
+function formatSeriesCount(n: number) {
+    if (n === 1) return '1 seria';
+    const mod10 = n % 10;
+    const mod100 = n % 100;
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${n} serie`;
+    return `${n} serii`;
+}
+
 export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
     const { user } = useUser();
     const { toast } = useToast();
@@ -115,8 +161,11 @@ export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
     const { createDoc, isLoading: isCreating } = useCreateDoc();
     const { data: exercises, isLoading: exercisesLoading } = useCollection<Exercise>('exercises');
     const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
-    const [pendingAction, setPendingAction] = useState<'discard' | null>(null);
     const [openExerciseIndex, setOpenExerciseIndex] = useState<number | null>(0);
+    const [confirm, setConfirm] = useState<ConfirmState | null>(null);
+    // Index of a freshly added exercise whose picker dialog should open automatically.
+    const [autoPickIndex, setAutoPickIndex] = useState<number | null>(null);
+    const [extrasOpen, setExtrasOpen] = useState(false);
 
     const { draft, lastAutoSave, saveToLocal, clearDraft } = useWorkoutDraft<WorkoutFormValues>('create-workout-draft');
 
@@ -135,10 +184,6 @@ export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
     // Load draft if exists
     useEffect(() => {
         if (draft) {
-            // We need to be careful not to overwrite if user already started typing?
-            // For now, let's just load it if the form is pristine or maybe ask user?
-            // The user request implies simple restoration.
-            // Let's check if form is dirty.
             if (!form.formState.isDirty) {
                 form.reset(draft.data);
                 toast({ title: 'Przywrócono szkic', description: 'Twoja ostatnia praca została przywrócona.' });
@@ -146,20 +191,22 @@ export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
         }
     }, [draft, form, toast]);
 
-    // Auto-save
+    // Auto-save — only once the user actually changed something, so a pristine
+    // mount never overwrites a stored draft before it gets restored.
     useEffect(() => {
         const subscription = form.watch((value) => {
-            if (value) {
+            if (value && form.formState.isDirty) {
                 saveToLocal(value as WorkoutFormValues);
             }
         });
         return () => subscription.unsubscribe();
-    }, [form.watch, saveToLocal]);
+    }, [form, saveToLocal]);
 
-    // Auto-calculate duration
+    // Auto-calculate duration. Skipped for an empty form — recalculating 60 → 5
+    // on mount would dirty the form and break draft restoration.
     const exerciseSeries = form.watch('exerciseSeries');
     useEffect(() => {
-        if (!exerciseSeries) return;
+        if (!exerciseSeries || exerciseSeries.length === 0) return;
 
         let totalSeconds = 0;
         const EXERCISE_TRANSITION_SECONDS = 120; // 2 minutes setup/transition per exercise
@@ -190,7 +237,6 @@ export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
         // Round up to nearest 5 minutes, minimum 5 minutes
         const minutes = Math.max(5, Math.ceil(totalSeconds / 60 / 5) * 5);
 
-        // Only update if different to avoid loops (though setValue should handle it)
         const currentDuration = form.getValues('durationMinutes');
         if (currentDuration !== minutes) {
             form.setValue('durationMinutes', minutes, { shouldValidate: true, shouldDirty: true });
@@ -199,17 +245,13 @@ export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
 
     const handleSaveDraft = async () => {
         const data = form.getValues();
-        // Set status to draft
         data.status = 'draft';
-
-        // We reuse the submission logic but with draft status
         await handleSubmission(data, 'draft');
         setShowUnsavedDialog(false);
     };
 
     const handleDiscardDraft = () => {
         setShowUnsavedDialog(true);
-        setPendingAction('discard');
     };
 
     const confirmDiscard = () => {
@@ -224,30 +266,9 @@ export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
         });
         toast({ title: 'Szkic odrzucony', description: 'Formularz został wyczyszczony.' });
         setShowUnsavedDialog(false);
-        setPendingAction(null);
     };
 
     useUnsavedChanges(form.formState.isDirty);
-
-    // Calculate progress
-    const values = form.watch();
-    const steps = [
-        {
-            label: 'Szczegóły',
-            isComplete: !!(values.name && values.level && values.durationMinutes),
-            isActive: true
-        },
-        {
-            label: 'Ćwiczenia',
-            isComplete: values.exerciseSeries?.length > 0,
-            isActive: !!(values.name && values.level)
-        },
-        {
-            label: 'Serie',
-            isComplete: values.exerciseSeries?.length > 0 && values.exerciseSeries.every(s => s.sets?.length > 0),
-            isActive: values.exerciseSeries?.length > 0
-        }
-    ];
 
     const handleSubmission = async (data: WorkoutFormValues, status: 'draft' | 'published') => {
         if (!user) return;
@@ -285,7 +306,6 @@ export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
                 if (redirectPath) navigate(redirectPath);
             } else {
                 toast({ title: 'Zapisano szkic', description: 'Trening został zapisany jako szkic.' });
-                // We don't redirect on draft save, just notify
             }
 
         } catch (error) {
@@ -307,155 +327,267 @@ export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
         await handleSubmission(data, 'published');
     };
 
-    const handleAddExercise = async () => {
-        // Validate header fields first
-        const isHeaderValid = await form.trigger(['name', 'level', 'durationMinutes']);
-        if (!isHeaderValid) {
+    // Open the first invalid exercise card so the error is visible on a small screen.
+    const onInvalid = (errors: FieldErrors<WorkoutFormValues>) => {
+        const seriesErrors = errors.exerciseSeries;
+        if (Array.isArray(seriesErrors)) {
+            const firstIdx = seriesErrors.findIndex(Boolean);
+            if (firstIdx >= 0) setOpenExerciseIndex(firstIdx);
+        }
+        const rootMessage = (errors.exerciseSeries as { message?: string } | undefined)?.message
+            ?? (errors.exerciseSeries as { root?: { message?: string } } | undefined)?.root?.message;
+        toast({
+            title: 'Uzupełnij formularz',
+            description: rootMessage ?? 'Popraw zaznaczone pola przed utworzeniem treningu.',
+            variant: 'destructive',
+        });
+    };
+
+    const handleAddExercise = () => {
+        const series = form.getValues('exerciseSeries');
+        const lastIndex = series.length - 1;
+        if (lastIndex >= 0 && !series[lastIndex].exerciseId) {
             toast({
-                title: "Błąd walidacji",
-                description: "Uzupełnij szczegóły treningu (nazwa, poziom, czas) przed dodaniem ćwiczeń.",
-                variant: "destructive"
+                title: 'Najpierw wybierz ćwiczenie',
+                description: 'Uzupełnij poprzednią pozycję przed dodaniem kolejnej.',
+                variant: 'destructive',
             });
+            setOpenExerciseIndex(lastIndex);
+            setAutoPickIndex(lastIndex);
             return;
         }
 
-        // If we already have exercises, validate them to ensure the previous one is finished
-        if (exerciseFields.length > 0) {
-            const isExercisesValid = await form.trigger('exerciseSeries');
-            if (!isExercisesValid) {
-                toast({
-                    title: "Błąd walidacji",
-                    description: "Uzupełnij poprzednie ćwiczenie przed dodaniem kolejnego.",
-                    variant: "destructive"
-                });
-                return;
-            }
-        }
-
         appendExercise({ exerciseId: '', sets: [{ type: SetType.WorkingSet, reps: 10, weight: 0, restTimeSeconds: 60 }] });
-        // Open the new exercise (which will be at the end)
+        // Open the new exercise and jump straight into the picker — one tap less.
         setOpenExerciseIndex(exerciseFields.length);
+        setAutoPickIndex(exerciseFields.length);
     };
 
     const handleRemoveExercise = (index: number) => {
-        if (window.confirm("Czy na pewno chcesz usunąć to ćwiczenie?")) {
-            removeExercise(index);
-            if (openExerciseIndex === index) {
-                setOpenExerciseIndex(null);
-            }
-        }
+        setConfirm({
+            title: 'Usunąć ćwiczenie?',
+            description: 'Stracisz wszystkie serie dodane do tego ćwiczenia.',
+            onConfirm: () => {
+                removeExercise(index);
+                if (openExerciseIndex === index) {
+                    setOpenExerciseIndex(null);
+                }
+            },
+        });
     };
 
     if (exercisesLoading) {
         return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>;
     }
 
+    const totalSets = exerciseSeries?.reduce((acc, s) => acc + (s.sets?.length ?? 0), 0) ?? 0;
+    const durationMinutes = form.watch('durationMinutes');
+    const level = form.watch('level');
+
     return (
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-4xl mx-auto pb-20">
+        <form
+            onSubmit={form.handleSubmit(onSubmit, onInvalid)}
+            onKeyDown={(e) => {
+                // The mobile keyboard "Enter/Go" must not publish a half-finished workout.
+                if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') e.preventDefault();
+            }}
+            className="mx-auto max-w-2xl space-y-4"
+        >
+            {(!!draft || !!lastAutoSave) && (
+                <div className="flex items-center justify-between gap-2 rounded-xl border border-dashed bg-muted/40 px-3 py-1.5">
+                    <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+                        {isCreating ? (
+                            <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+                        ) : (
+                            <Save className="h-3.5 w-3.5 shrink-0" />
+                        )}
+                        <span className="truncate">
+                            {isCreating
+                                ? 'Zapisywanie…'
+                                : lastAutoSave
+                                    ? `Autozapis ${formatDistanceToNow(lastAutoSave, { addSuffix: true, locale: pl })}`
+                                    : 'Przywrócono szkic'}
+                        </span>
+                    </div>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 shrink-0 px-2 text-xs text-destructive hover:text-destructive"
+                        onClick={handleDiscardDraft}
+                    >
+                        Odrzuć szkic
+                    </Button>
+                </div>
+            )}
+
             <Card>
-                <CardHeader>
-                    <CardTitle>Szczegóły Treningu</CardTitle>
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Szczegóły treningu</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <FormProgressIndicator steps={steps} />
-                    <DraftIndicator
-                        lastSaved={lastAutoSave}
-                        isSaving={isCreating} // We reuse isCreating for now as it reflects DB save status
-                        onSaveDraft={handleSaveDraft}
-                        onDiscardDraft={handleDiscardDraft}
-                        hasDraft={!!draft || !!lastAutoSave}
-                    />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormFieldWithValidation
-                            label="Nazwa Treningu"
-                            error={form.formState.errors.name?.message}
-                            touched={form.formState.touchedFields.name}
-                            required
-                        >
-                            <Input {...form.register('name')} placeholder="np. Full Body Workout A" />
-                        </FormFieldWithValidation>
+                    <FormFieldWithValidation
+                        label="Nazwa treningu"
+                        error={form.formState.errors.name?.message}
+                        touched={form.formState.touchedFields.name}
+                        required
+                    >
+                        <Input
+                            {...form.register('name')}
+                            placeholder="np. Full Body A"
+                            className="h-11 text-base"
+                        />
+                    </FormFieldWithValidation>
 
-                        <FormFieldWithValidation
-                            label="Opis"
-                            error={form.formState.errors.description?.message}
-                            touched={form.formState.touchedFields.description}
-                        >
-                            <Textarea {...form.register('description')} placeholder="Krótki opis treningu..." />
-                        </FormFieldWithValidation>
+                    <FormFieldWithValidation
+                        label="Poziom"
+                        error={form.formState.errors.level?.message}
+                        touched={form.formState.touchedFields.level}
+                        required
+                    >
+                        <div className="grid grid-cols-3 gap-1 rounded-xl bg-secondary/60 p-1">
+                            {LEVEL_OPTIONS.map((opt) => (
+                                <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => form.setValue('level', opt.value, { shouldValidate: true, shouldDirty: true })}
+                                    className={cn(
+                                        'h-10 rounded-lg px-1 text-xs font-semibold transition-colors sm:text-sm',
+                                        level === opt.value
+                                            ? 'bg-background text-foreground shadow-soft'
+                                            : 'text-muted-foreground active:scale-95'
+                                    )}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                    </FormFieldWithValidation>
 
-                        <FormFieldWithValidation
-                            label="Poziom"
-                            error={form.formState.errors.level?.message}
-                            touched={form.formState.touchedFields.level}
-                            required
-                        >
-                            <Select
-                                onValueChange={(val) => form.setValue('level', val as TrainingLevel)}
-                                defaultValue={form.getValues('level')}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Wybierz poziom" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {Object.values(TrainingLevel).map(level => (
-                                        <SelectItem key={level} value={level}>{level}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </FormFieldWithValidation>
-
-                        <FormFieldWithValidation
-                            label="Szacowany czas (min)"
-                            error={form.formState.errors.durationMinutes?.message}
-                            touched={form.formState.touchedFields.durationMinutes}
-                            required
-                        >
-                            <Input type="number" {...form.register('durationMinutes')} readOnly className="bg-muted" />
-                        </FormFieldWithValidation>
-
-                        <FormFieldWithValidation
-                            label="URL Obrazka (opcjonalnie)"
-                            error={form.formState.errors.imageUrl?.message}
-                            touched={form.formState.touchedFields.imageUrl}
-                        >
-                            <Input {...form.register('imageUrl')} placeholder="https://..." />
-                        </FormFieldWithValidation>
+                    <div className="flex items-center gap-3 rounded-xl bg-secondary/40 px-3 py-2.5">
+                        <Timer className="h-5 w-5 shrink-0 text-muted-foreground" />
+                        <div className="min-w-0">
+                            <p className="text-sm font-semibold tabular-nums">≈ {durationMinutes} min</p>
+                            <p className="text-xs text-muted-foreground">Szacowany czas — liczony automatycznie z serii i przerw</p>
+                        </div>
                     </div>
+
+                    <Collapsible open={extrasOpen} onOpenChange={setExtrasOpen}>
+                        <CollapsibleTrigger asChild>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                className="h-10 w-full justify-between px-2 text-sm font-normal text-muted-foreground"
+                            >
+                                Opis i zdjęcie (opcjonalne)
+                                <ChevronDown className={cn('h-4 w-4 transition-transform', extrasOpen && 'rotate-180')} />
+                            </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="space-y-4 pt-2">
+                            <FormFieldWithValidation
+                                label="Opis"
+                                error={form.formState.errors.description?.message}
+                                touched={form.formState.touchedFields.description}
+                            >
+                                <Textarea {...form.register('description')} placeholder="Krótki opis treningu..." className="text-base" />
+                            </FormFieldWithValidation>
+                            <FormFieldWithValidation
+                                label="URL obrazka"
+                                error={form.formState.errors.imageUrl?.message}
+                                touched={form.formState.touchedFields.imageUrl}
+                            >
+                                <Input {...form.register('imageUrl')} placeholder="https://..." inputMode="url" className="h-11 text-base" />
+                            </FormFieldWithValidation>
+                        </CollapsibleContent>
+                    </Collapsible>
                 </CardContent>
             </Card>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
+                <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Ćwiczenia{exerciseFields.length > 0 && ` (${exerciseFields.length})`}
+                </h2>
 
-                <AnimatePresence initial={false}>
-                {exerciseFields.map((field, index) => (
-                    <motion.div key={field.id} {...listItemMotion}>
-                    <ExerciseSeriesItem
-                        index={index}
-                        form={form}
-                        remove={handleRemoveExercise}
-                        move={moveExercise}
-                        isFirst={index === 0}
-                        isLast={index === exerciseFields.length - 1}
-                        exercises={exercises || []}
-                        isOpen={openExerciseIndex === index}
-                        onToggle={() => setOpenExerciseIndex(openExerciseIndex === index ? null : index)}
-                    />
-                    </motion.div>
-                ))}
-                </AnimatePresence>
-                <div className="flex justify-end">
-                    <Button type="button" onClick={handleAddExercise}>
-                        <Plus className="mr-2 h-4 w-4" /> Dodaj Ćwiczenie
+                {exerciseFields.length === 0 ? (
+                    <Card className="border-dashed">
+                        <CardContent className="flex flex-col items-center gap-3 px-4 py-8 text-center">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                                <Dumbbell className="h-6 w-6 text-primary" />
+                            </div>
+                            <div>
+                                <p className="font-semibold">Brak ćwiczeń</p>
+                                <p className="text-sm text-muted-foreground">Dodaj pierwsze ćwiczenie, aby ułożyć trening.</p>
+                            </div>
+                            <Button type="button" onClick={handleAddExercise} className="h-12 w-full max-w-xs text-base">
+                                <Plus className="mr-2 h-5 w-5" /> Dodaj ćwiczenie
+                            </Button>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <>
+                        <AnimatePresence initial={false}>
+                            {exerciseFields.map((field, index) => (
+                                <motion.div key={field.id} {...listItemMotion}>
+                                    <ExerciseSeriesItem
+                                        index={index}
+                                        form={form}
+                                        remove={handleRemoveExercise}
+                                        move={moveExercise}
+                                        isFirst={index === 0}
+                                        isLast={index === exerciseFields.length - 1}
+                                        exercises={exercises || []}
+                                        isOpen={openExerciseIndex === index}
+                                        onToggle={() => setOpenExerciseIndex(openExerciseIndex === index ? null : index)}
+                                        onConfirmRequest={setConfirm}
+                                        autoOpenPicker={autoPickIndex === index}
+                                        onPickerAutoOpened={() => setAutoPickIndex(null)}
+                                    />
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleAddExercise}
+                            className="h-12 w-full border-dashed text-base"
+                        >
+                            <Plus className="mr-2 h-5 w-5" /> Dodaj ćwiczenie
+                        </Button>
+                    </>
+                )}
+            </div>
+
+            <Card>
+                <CardContent className="space-y-3 p-4">
+                    <div className="grid grid-cols-3 divide-x divide-border/60 rounded-xl bg-secondary/40 py-2.5 text-center">
+                        <div>
+                            <p className="text-lg font-bold tabular-nums">{exerciseFields.length}</p>
+                            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Ćwiczenia</p>
+                        </div>
+                        <div>
+                            <p className="text-lg font-bold tabular-nums">{totalSets}</p>
+                            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Serie</p>
+                        </div>
+                        <div>
+                            <p className="text-lg font-bold tabular-nums">≈{durationMinutes}</p>
+                            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Minut</p>
+                        </div>
+                    </div>
+                    <Button type="submit" size="lg" disabled={isCreating} className="h-12 w-full text-base font-semibold">
+                        {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Utwórz trening
                     </Button>
-                </div>
-            </div>
-
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t flex justify-end container mx-auto z-10">
-                <Button type="submit" size="lg" disabled={isCreating}>
-                    {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Utwórz Trening
-                </Button>
-            </div>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        disabled={isCreating}
+                        onClick={handleSaveDraft}
+                        className="h-11 w-full"
+                    >
+                        <Save className="mr-2 h-4 w-4" /> Zapisz jako szkic
+                    </Button>
+                </CardContent>
+            </Card>
 
             <UnsavedChangesDialog
                 open={showUnsavedDialog}
@@ -463,6 +595,27 @@ export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
                 onCancel={() => setShowUnsavedDialog(false)}
                 onSaveDraft={handleSaveDraft}
             />
+
+            <AlertDialog open={!!confirm} onOpenChange={(open) => !open && setConfirm(null)}>
+                <AlertDialogContent className="max-w-[calc(100vw-2rem)] rounded-2xl sm:max-w-md">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{confirm?.title}</AlertDialogTitle>
+                        <AlertDialogDescription>{confirm?.description}</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => {
+                                confirm?.onConfirm();
+                                setConfirm(null);
+                            }}
+                        >
+                            Usuń
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </form>
     );
 }
@@ -476,7 +629,10 @@ function ExerciseSeriesItem({
     isLast,
     exercises,
     isOpen,
-    onToggle
+    onToggle,
+    onConfirmRequest,
+    autoOpenPicker,
+    onPickerAutoOpened,
 }: {
     index: number,
     form: any,
@@ -486,20 +642,47 @@ function ExerciseSeriesItem({
     isLast: boolean,
     exercises: Exercise[],
     isOpen: boolean,
-    onToggle: () => void
+    onToggle: () => void,
+    onConfirmRequest: (confirm: ConfirmState) => void,
+    autoOpenPicker: boolean,
+    onPickerAutoOpened: () => void,
 }) {
     const [exerciseDialogOpen, setExerciseDialogOpen] = useState(false);
-    const [weightUnit, setWeightUnit] = useState<'kg' | 'rpe'>('kg');
     const { toast } = useToast();
     const { fields: setFields, append: appendSet, remove: removeSet } = useFieldArray({
         control: form.control,
         name: `exerciseSeries.${index}.sets`,
     });
 
-    // Get the selected exercise ID and find the exercise type
     const selectedExerciseId = form.watch(`exerciseSeries.${index}.exerciseId`);
     const selectedExercise = exercises.find(e => e.id === selectedExerciseId);
     const exerciseType: ExerciseType = selectedExercise?.type || 'weight';
+    const [weightUnit, setWeightUnit] = useState<'kg' | 'rpe'>(() =>
+        form.getValues(`exerciseSeries.${index}.sets.0.weightUnit`) === 'rpe' ? 'rpe' : 'kg'
+    );
+    const [notesOpen, setNotesOpen] = useState<boolean>(() =>
+        !!(form.getValues(`exerciseSeries.${index}.tempo`) || form.getValues(`exerciseSeries.${index}.tip`))
+    );
+
+    const exerciseError = form.formState.errors.exerciseSeries?.[index]?.exerciseId?.message;
+    const setsErrors = form.formState.errors.exerciseSeries?.[index]?.sets;
+    const setsErrorMessage: string | undefined = setsErrors?.message ?? setsErrors?.root?.message
+        ?? (setsErrors ? 'Sprawdź wartości serii.' : undefined);
+
+    useEffect(() => {
+        if (autoOpenPicker) {
+            setExerciseDialogOpen(true);
+            onPickerAutoOpened();
+        }
+    }, [autoOpenPicker, onPickerAutoOpened]);
+
+    const handleChangeWeightUnit = (unit: 'kg' | 'rpe') => {
+        setWeightUnit(unit);
+        const sets = form.getValues(`exerciseSeries.${index}.sets`);
+        sets.forEach((_: any, setIndex: number) => {
+            form.setValue(`exerciseSeries.${index}.sets.${setIndex}.weightUnit`, unit);
+        });
+    };
 
     const handleAddSet = (type: SetType = SetType.WorkingSet) => {
         const sets = form.getValues(`exerciseSeries.${index}.sets`);
@@ -536,22 +719,17 @@ function ExerciseSeriesItem({
     };
 
     const handleClearSets = () => {
-        if (window.confirm("Czy na pewno chcesz usunąć wszystkie serie?")) {
-            removeSet();
-        }
-    };
-
-    const handleRemoveSet = (index: number) => {
-        if (window.confirm("Czy na pewno chcesz usunąć tę serię?")) {
-            removeSet(index);
-        }
+        onConfirmRequest({
+            title: 'Usunąć wszystkie serie?',
+            description: 'Wszystkie serie tego ćwiczenia zostaną usunięte.',
+            onConfirm: () => removeSet(),
+        });
     };
 
     const handleApplyTemplate = (template: SetTemplate) => {
         // Clear existing sets
         removeSet();
-        // Add sets from template
-        // We need to map template sets to match schema (add defaults if missing)
+        // Add sets from template with defaults for missing fields
         const newSets = template.sets.map(s => ({
             ...s,
             reps: s.reps ?? 0,
@@ -563,315 +741,330 @@ function ExerciseSeriesItem({
         toast({ title: 'Szablon zastosowany', description: `Zastosowano szablon: ${template.name}` });
     };
 
-    const handleDuplicateSet = (setIndex: number) => {
-        const set = form.getValues(`exerciseSeries.${index}.sets.${setIndex}`);
-        appendSet({ ...set });
-    };
+    // Column layout shared by the header labels row and every set row.
+    const gridColsClass = exerciseType === 'weight'
+        ? 'grid-cols-[1.5rem_2.75rem_1fr_1fr_1fr]'
+        : 'grid-cols-[1.5rem_2.75rem_1fr_1fr]';
 
     return (
         <Collapsible open={isOpen} onOpenChange={onToggle}>
-            <Card className="relative">
-                <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 flex-1">
-                            <CollapsibleTrigger asChild>
-                                <Button variant="ghost" size="sm" className="p-0 h-6 w-6 hover:bg-transparent">
-                                    <ChevronRight className={cn("h-4 w-4 transition-transform", isOpen && "rotate-90")} />
-                                </Button>
-                            </CollapsibleTrigger>
-                            <span className="bg-muted w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">{index + 1}</span>
-                            <CardTitle className="text-lg truncate">
-                                {selectedExercise ? selectedExercise.name : "Nowe ćwiczenie"}
-                            </CardTitle>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                disabled={isFirst}
-                                onClick={() => move(index, index - 1)}
-                                title="Przesuń w górę"
-                            >
-                                <ChevronUp className="h-4 w-4" />
+            <Card className={cn('overflow-hidden', exerciseError && 'border-destructive/50')}>
+                <div className="flex items-center gap-1 p-2 pl-3">
+                    <CollapsibleTrigger asChild>
+                        <button type="button" className="flex min-h-12 min-w-0 flex-1 items-center gap-3 text-left">
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                                {index + 1}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                                <span className={cn('block truncate text-base font-semibold', !selectedExercise && 'text-muted-foreground')}>
+                                    {selectedExercise ? selectedExercise.name : 'Wybierz ćwiczenie'}
+                                </span>
+                                <span className="block text-xs text-muted-foreground">
+                                    {formatSeriesCount(setFields.length)}
+                                </span>
+                            </span>
+                            <ChevronDown className={cn('h-5 w-5 shrink-0 text-muted-foreground transition-transform', isOpen && 'rotate-180')} />
+                        </button>
+                    </CollapsibleTrigger>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button type="button" variant="ghost" size="icon" className="h-10 w-10 shrink-0" aria-label="Opcje ćwiczenia">
+                                <MoreVertical className="h-5 w-5" />
                             </Button>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                disabled={isLast}
-                                onClick={() => move(index, index + 1)}
-                                title="Przesuń w dół"
-                            >
-                                <ChevronDown className="h-4 w-4" />
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="text-destructive hover:text-destructive"
-                                onClick={() => remove(index)}
-                                title="Usuń ćwiczenie"
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    </div>
-                </CardHeader>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem disabled={isFirst} onClick={() => move(index, index - 1)}>
+                                <ArrowUp className="mr-2 h-4 w-4" /> Przesuń w górę
+                            </DropdownMenuItem>
+                            <DropdownMenuItem disabled={isLast} onClick={() => move(index, index + 1)}>
+                                <ArrowDown className="mr-2 h-4 w-4" /> Przesuń w dół
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => remove(index)}>
+                                <Trash2 className="mr-2 h-4 w-4" /> Usuń ćwiczenie
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
                 <CollapsibleContent>
-                    <CardContent className="space-y-4 pt-2">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="md:col-span-2 space-y-2">
-                                <FormFieldWithValidation
-                                    label="Ćwiczenie"
-                                    error={form.formState.errors.exerciseSeries?.[index]?.exerciseId?.message}
-                                    touched={form.formState.touchedFields.exerciseSeries?.[index]?.exerciseId}
-                                    required
-                                >
-                                    <Dialog open={exerciseDialogOpen} onOpenChange={setExerciseDialogOpen}>
-                                        <DialogTrigger asChild>
-                                            <Button variant="outline" role="combobox" className={cn("w-full justify-between", !selectedExerciseId && "text-muted-foreground")}>
-                                                {selectedExercise ? selectedExercise.name : "Wybierz ćwiczenie..."}
-                                                <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-                                            <DialogHeader>
-                                                <DialogTitle>Wybierz ćwiczenie</DialogTitle>
-                                            </DialogHeader>
-                                            <ExerciseSelector
-                                                exercises={exercises}
-                                                selectedId={selectedExerciseId}
-                                                onSelect={(val) => {
-                                                    form.setValue(`exerciseSeries.${index}.exerciseId`, val, { shouldValidate: true, shouldDirty: true });
-                                                    setExerciseDialogOpen(false);
-                                                }}
-                                            />
-                                        </DialogContent>
-                                    </Dialog>
-                                </FormFieldWithValidation>
-                            </div>
-                            <div className="space-y-2">
-                                <FormFieldWithValidation
-                                    label="Tempo (np. 3-0-1-0)"
-                                    error={form.formState.errors.exerciseSeries?.[index]?.tempo?.message}
-                                    touched={form.formState.touchedFields.exerciseSeries?.[index]?.tempo}
-                                >
-                                    <Input {...form.register(`exerciseSeries.${index}.tempo`)} placeholder="3-0-1-0" />
-                                </FormFieldWithValidation>
-                            </div>
-                            <div className="md:col-span-3 space-y-2">
-                                <FormFieldWithValidation
-                                    label="Wskazówka (Tip)"
-                                    error={form.formState.errors.exerciseSeries?.[index]?.tip?.message}
-                                    touched={form.formState.touchedFields.exerciseSeries?.[index]?.tip}
-                                >
-                                    <Input {...form.register(`exerciseSeries.${index}.tip`)} placeholder="Wskazówki dla ćwiczącego..." />
-                                </FormFieldWithValidation>
-                            </div>
+                    <CardContent className="space-y-4 p-3 pt-0">
+                        <div>
+                            <Dialog open={exerciseDialogOpen} onOpenChange={setExerciseDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className={cn(
+                                            'h-12 w-full justify-between text-base font-normal',
+                                            !selectedExercise && 'text-muted-foreground',
+                                            exerciseError && 'border-destructive'
+                                        )}
+                                    >
+                                        <span className="truncate">
+                                            {selectedExercise ? selectedExercise.name : 'Wybierz ćwiczenie…'}
+                                        </span>
+                                        <Search className="ml-2 h-5 w-5 shrink-0 opacity-60" />
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="flex flex-col gap-3 p-4 max-sm:h-dvh max-sm:max-w-none max-sm:rounded-none max-sm:border-0 max-sm:pt-[max(1rem,env(safe-area-inset-top))] max-sm:pb-[max(1rem,env(safe-area-inset-bottom))] sm:max-h-[85vh] sm:max-w-3xl">
+                                    <DialogHeader className="text-left">
+                                        <DialogTitle>Wybierz ćwiczenie</DialogTitle>
+                                    </DialogHeader>
+                                    <ExerciseSelector
+                                        exercises={exercises}
+                                        selectedId={selectedExerciseId}
+                                        onSelect={(val) => {
+                                            form.setValue(`exerciseSeries.${index}.exerciseId`, val, { shouldValidate: true, shouldDirty: true });
+                                            setExerciseDialogOpen(false);
+                                        }}
+                                    />
+                                </DialogContent>
+                            </Dialog>
+                            {exerciseError && <p className="mt-1 text-xs text-destructive">{exerciseError}</p>}
                         </div>
 
                         {selectedExerciseId && exerciseType === 'weight' && (
-                            <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-md">
-                                <Label className="text-xs text-muted-foreground">Jednostka:</Label>
-                                <div className="flex gap-1">
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant={weightUnit === 'kg' ? 'default' : 'outline'}
-                                        onClick={() => {
-                                            setWeightUnit('kg');
-                                            // Update all existing sets to use kg
-                                            const sets = form.getValues(`exerciseSeries.${index}.sets`);
-                                            sets.forEach((_: any, setIndex: number) => {
-                                                form.setValue(`exerciseSeries.${index}.sets.${setIndex}.weightUnit`, 'kg');
-                                            });
-                                        }}
-                                        className="h-7 px-3"
-                                    >
-                                        kg
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant={weightUnit === 'rpe' ? 'default' : 'outline'}
-                                        onClick={() => {
-                                            setWeightUnit('rpe');
-                                            // Update all existing sets to use RPE
-                                            const sets = form.getValues(`exerciseSeries.${index}.sets`);
-                                            sets.forEach((_: any, setIndex: number) => {
-                                                form.setValue(`exerciseSeries.${index}.sets.${setIndex}.weightUnit`, 'rpe');
-                                            });
-                                        }}
-                                        className="h-7 px-3"
-                                    >
-                                        RPE
-                                    </Button>
+                            <div className="flex items-center justify-between">
+                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Obciążenie</Label>
+                                <div className="grid grid-cols-2 gap-1 rounded-lg bg-secondary/60 p-0.5">
+                                    {(['kg', 'rpe'] as const).map((unit) => (
+                                        <button
+                                            key={unit}
+                                            type="button"
+                                            onClick={() => handleChangeWeightUnit(unit)}
+                                            className={cn(
+                                                'h-8 min-w-14 rounded-md px-3 text-xs font-semibold uppercase transition-colors',
+                                                weightUnit === unit
+                                                    ? 'bg-background text-foreground shadow-soft'
+                                                    : 'text-muted-foreground'
+                                            )}
+                                        >
+                                            {unit}
+                                        </button>
+                                    ))}
                                 </div>
-                                <span className="text-xs text-muted-foreground ml-2">
-                                    {weightUnit === 'kg' ? 'Kilogramy' : 'Rate of Perceived Exertion (1-10)'}
-                                </span>
                             </div>
                         )}
 
                         {selectedExerciseId && (
-                            <div className="space-y-2">
-                                <div className="flex justify-between items-center flex-wrap gap-2">
-                                    <Label className="text-xs uppercase text-muted-foreground">Serie</Label>
-                                    <div className="flex items-center gap-2">
-                                        <SetTemplateSelector onSelect={handleApplyTemplate} />
-                                        <QuickSetActions
-                                            onAddSet={handleAddSet}
-                                            onDuplicateLast={handleDuplicateLastSet}
-                                            onClearAll={handleClearSets}
-                                            setsCount={setFields.length}
-                                        />
-                                    </div>
+                            <div className="space-y-1.5">
+                                <div className={cn('grid items-center gap-1.5 px-0.5', gridColsClass)}>
+                                    <span className="text-center text-[10px] font-semibold uppercase text-muted-foreground">#</span>
+                                    <span className="text-center text-[10px] font-semibold uppercase text-muted-foreground">Typ</span>
+                                    {exerciseType === 'weight' ? (
+                                        <>
+                                            <span className="text-center text-[10px] font-semibold uppercase text-muted-foreground">
+                                                {weightUnit === 'kg' ? 'Kg' : 'RPE'}
+                                            </span>
+                                            <span className="text-center text-[10px] font-semibold uppercase text-muted-foreground">Powt.</span>
+                                        </>
+                                    ) : exerciseType === 'reps' ? (
+                                        <span className="text-center text-[10px] font-semibold uppercase text-muted-foreground">Powt.</span>
+                                    ) : (
+                                        <span className="text-center text-[10px] font-semibold uppercase text-muted-foreground">Czas (s)</span>
+                                    )}
+                                    <span className="text-center text-[10px] font-semibold uppercase text-muted-foreground">Przerwa (s)</span>
                                 </div>
 
-                                <div className="space-y-2">
-                                    {/* Header row - Hidden on mobile, visible on md+ */}
-                                    <div className="hidden md:grid grid-cols-12 gap-2 items-center text-center">
-                                        <Label className="col-span-1 text-[10px] text-muted-foreground">#</Label>
-                                        <Label className="col-span-2 text-[10px] text-muted-foreground">Typ</Label>
-                                        {exerciseType === 'weight' ? (
-                                            <>
-                                                <Label className="col-span-2 text-[10px] text-muted-foreground">
-                                                    {weightUnit === 'kg' ? 'kg' : 'RPE'}
-                                                </Label>
-                                                <Label className="col-span-2 text-[10px] text-muted-foreground">Powt.</Label>
-                                            </>
-                                        ) : exerciseType === 'reps' ? (
-                                            <Label className="col-span-4 text-[10px] text-muted-foreground">Powtórzenia</Label>
-                                        ) : (
-                                            <Label className="col-span-4 text-[10px] text-muted-foreground">Czas (sek.)</Label>
-                                        )}
-                                        <Label className="col-span-3 text-[10px] text-muted-foreground">Przerwa</Label>
-                                        <Label className="col-span-2 text-[10px] text-muted-foreground">Akcje</Label>
-                                    </div>
+                                <AnimatePresence initial={false}>
+                                    {setFields.map((setField: any, setIndex: number) => {
+                                        const typeValue: SetType = form.watch(`exerciseSeries.${index}.sets.${setIndex}.type`) || SetType.WorkingSet;
+                                        const typeConfig = getSetTypeConfig(typeValue);
+                                        const TypeIcon = typeConfig.icon;
 
-                                    <AnimatePresence initial={false}>
-                                    {setFields.map((setField: any, setIndex: number) => (
-                                        <motion.div key={setField.id} {...listItemMotion}>
-                                        <div className="grid grid-cols-2 md:grid-cols-12 gap-2 items-center border rounded-md p-2 md:border-0 md:p-0 bg-muted/20 md:bg-transparent">
-                                            {/* Set number - Mobile: Full width header */}
-                                            <div className="col-span-2 md:col-span-1 flex justify-between md:justify-center items-center text-sm font-mono text-muted-foreground md:mb-0 mb-2">
-                                                <span className="md:hidden text-xs font-bold">Seria {setIndex + 1}</span>
-                                                <span className="hidden md:inline">{setIndex + 1}</span>
-                                                <div className="flex md:hidden gap-1">
-                                                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDuplicateSet(setIndex)}>
-                                                        <Copy className="h-3 w-3" />
-                                                    </Button>
-                                                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleRemoveSet(setIndex)}>
-                                                        <Trash2 className="h-3 w-3" />
-                                                    </Button>
-                                                </div>
-                                            </div>
+                                        return (
+                                            <motion.div key={setField.id} {...listItemMotion}>
+                                                <div className={cn('grid items-center gap-1.5', gridColsClass)}>
+                                                    <span className="text-center text-sm font-semibold tabular-nums text-muted-foreground">
+                                                        {setIndex + 1}
+                                                    </span>
+                                                    <SetTypeModal
+                                                        value={typeValue}
+                                                        onChange={(val) => form.setValue(`exerciseSeries.${index}.sets.${setIndex}.type`, val)}
+                                                        onDeleteSet={() => removeSet(setIndex)}
+                                                        renderTrigger={
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="icon"
+                                                                aria-label={`Typ serii: ${typeConfig.name}. Dotknij, aby zmienić lub usunąć serię.`}
+                                                                className={cn(
+                                                                    'h-11 w-11 rounded-lg',
+                                                                    typeConfig.bgColorClass,
+                                                                    typeConfig.borderColorClass,
+                                                                    typeConfig.colorClass
+                                                                )}
+                                                            >
+                                                                <TypeIcon className="h-4 w-4" />
+                                                            </Button>
+                                                        }
+                                                    />
 
-                                            {/* Set type button with modal */}
-                                            <div className="col-span-2 md:col-span-2">
-                                                <SetTypeButton
-                                                    value={form.watch(`exerciseSeries.${index}.sets.${setIndex}.type`) || SetType.WorkingSet}
-                                                    onChange={(val) => form.setValue(`exerciseSeries.${index}.sets.${setIndex}.type`, val)}
-                                                />
-                                            </div>
-
-                                            {/* Conditional fields based on exercise type */}
-                                            {exerciseType === 'weight' ? (
-                                                <>
-                                                    <div className="col-span-1 md:col-span-2">
-                                                        <div className="relative md:static">
+                                                    {exerciseType === 'weight' ? (
+                                                        <>
                                                             {weightUnit === 'kg' ? (
-                                                                <>
-                                                                    <Input
-                                                                        type="number"
-                                                                        step="0.5"
-                                                                        className="h-8 text-xs text-center"
-                                                                        placeholder="0"
-                                                                        {...form.register(`exerciseSeries.${index}.sets.${setIndex}.weight`)}
-                                                                    />
-                                                                    <span className="md:hidden absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">kg</span>
-                                                                </>
+                                                                <Input
+                                                                    type="number"
+                                                                    inputMode="decimal"
+                                                                    step="0.5"
+                                                                    placeholder="0"
+                                                                    className="h-11 rounded-lg bg-secondary/30 text-center text-base font-medium tabular-nums"
+                                                                    onFocus={(e) => e.currentTarget.select()}
+                                                                    {...form.register(`exerciseSeries.${index}.sets.${setIndex}.weight`)}
+                                                                />
                                                             ) : (
-                                                                <>
-                                                                    <Input
-                                                                        type="number"
-                                                                        step="0.5"
-                                                                        min="1"
-                                                                        max="10"
-                                                                        className="h-8 text-xs text-center"
-                                                                        placeholder="7"
-                                                                        {...form.register(`exerciseSeries.${index}.sets.${setIndex}.rpe`)}
-                                                                    />
-                                                                    <span className="md:hidden absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">RPE</span>
-                                                                </>
+                                                                <Input
+                                                                    type="number"
+                                                                    inputMode="decimal"
+                                                                    step="0.5"
+                                                                    min="1"
+                                                                    max="10"
+                                                                    placeholder="7"
+                                                                    className="h-11 rounded-lg bg-secondary/30 text-center text-base font-medium tabular-nums"
+                                                                    onFocus={(e) => e.currentTarget.select()}
+                                                                    {...form.register(`exerciseSeries.${index}.sets.${setIndex}.rpe`)}
+                                                                />
                                                             )}
-                                                        </div>
-                                                    </div>
-                                                    <div className="col-span-1 md:col-span-2">
-                                                        <div className="relative md:static">
                                                             <Input
                                                                 type="number"
-                                                                className="h-8 text-xs text-center"
+                                                                inputMode="numeric"
                                                                 placeholder="0"
+                                                                className="h-11 rounded-lg bg-secondary/30 text-center text-base font-medium tabular-nums"
+                                                                onFocus={(e) => e.currentTarget.select()}
                                                                 {...form.register(`exerciseSeries.${index}.sets.${setIndex}.reps`)}
                                                             />
-                                                            <span className="md:hidden absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">powt.</span>
-                                                        </div>
-                                                    </div>
-                                                </>
-                                            ) : exerciseType === 'reps' ? (
-                                                <div className="col-span-2 md:col-span-4">
-                                                    <Input
-                                                        type="number"
-                                                        className="h-8 text-xs text-center"
-                                                        placeholder="0"
-                                                        {...form.register(`exerciseSeries.${index}.sets.${setIndex}.reps`)}
-                                                    />
-                                                </div>
-                                            ) : (
-                                                <div className="col-span-2 md:col-span-4">
-                                                    <div className="relative">
+                                                        </>
+                                                    ) : exerciseType === 'reps' ? (
                                                         <Input
                                                             type="number"
-                                                            className="h-8 text-xs text-center pr-6"
+                                                            inputMode="numeric"
                                                             placeholder="0"
+                                                            className="h-11 rounded-lg bg-secondary/30 text-center text-base font-medium tabular-nums"
+                                                            onFocus={(e) => e.currentTarget.select()}
+                                                            {...form.register(`exerciseSeries.${index}.sets.${setIndex}.reps`)}
+                                                        />
+                                                    ) : (
+                                                        <Input
+                                                            type="number"
+                                                            inputMode="numeric"
+                                                            placeholder="0"
+                                                            className="h-11 rounded-lg bg-secondary/30 text-center text-base font-medium tabular-nums"
+                                                            onFocus={(e) => e.currentTarget.select()}
                                                             {...form.register(`exerciseSeries.${index}.sets.${setIndex}.duration`)}
                                                         />
-                                                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
-                                                    </div>
-                                                </div>
-                                            )}
+                                                    )}
 
-                                            {/* Rest time */}
-                                            <div className="col-span-2 md:col-span-3">
-                                                <div className="relative">
                                                     <Input
                                                         type="number"
-                                                        className="h-8 text-xs text-center pr-6"
+                                                        inputMode="numeric"
                                                         placeholder="60"
+                                                        className="h-11 rounded-lg bg-secondary/30 text-center text-base font-medium tabular-nums"
+                                                        onFocus={(e) => e.currentTarget.select()}
                                                         {...form.register(`exerciseSeries.${index}.sets.${setIndex}.restTimeSeconds`)}
                                                     />
-                                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
-                                                    <span className="md:hidden absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">Przerwa</span>
                                                 </div>
-                                            </div>
+                                            </motion.div>
+                                        );
+                                    })}
+                                </AnimatePresence>
 
-                                            {/* Actions - Desktop only */}
-                                            <div className="hidden md:flex col-span-2 gap-1 justify-center">
-                                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleDuplicateSet(setIndex)} title="Duplikuj serię">
-                                                    <Copy className="h-3 w-3" />
-                                                </Button>
-                                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleRemoveSet(setIndex)} title="Usuń serię">
-                                                    <Trash2 className="h-3 w-3" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                        </motion.div>
-                                    ))}
-                                    </AnimatePresence>
+                                {setsErrorMessage && (
+                                    <p className="text-xs text-destructive">{setsErrorMessage}</p>
+                                )}
+
+                                <div className="flex gap-1.5 pt-1">
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        className="h-11 flex-1 rounded-lg"
+                                        onClick={() => handleAddSet(SetType.WorkingSet)}
+                                    >
+                                        <Plus className="mr-1.5 h-4 w-4" /> Dodaj serię
+                                    </Button>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                size="icon"
+                                                className="h-11 w-11 rounded-lg"
+                                                aria-label="Więcej opcji serii"
+                                            >
+                                                <MoreVertical className="h-5 w-5" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-64">
+                                            <DropdownMenuItem onClick={() => handleAddSet(SetType.WarmUpSet)}>
+                                                <Flame className="mr-2 h-4 w-4" /> Dodaj rozgrzewkę
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem disabled={setFields.length === 0} onClick={handleDuplicateLastSet}>
+                                                <Copy className="mr-2 h-4 w-4" /> Duplikuj ostatnią serię
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuLabel className="text-xs text-muted-foreground">Szablony serii</DropdownMenuLabel>
+                                            {SET_TEMPLATES.map((template) => (
+                                                <DropdownMenuItem
+                                                    key={template.id}
+                                                    onClick={() => handleApplyTemplate(template)}
+                                                    className="flex-col items-start py-2"
+                                                >
+                                                    <span className="font-medium">{template.name}</span>
+                                                    <span className="text-xs text-muted-foreground">{template.description}</span>
+                                                </DropdownMenuItem>
+                                            ))}
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem
+                                                disabled={setFields.length === 0}
+                                                className="text-destructive focus:text-destructive"
+                                                onClick={handleClearSets}
+                                            >
+                                                <Trash2 className="mr-2 h-4 w-4" /> Usuń wszystkie serie
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
                             </div>
+                        )}
+
+                        {selectedExerciseId && (
+                            <Collapsible open={notesOpen} onOpenChange={setNotesOpen}>
+                                <CollapsibleTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        className="h-9 w-full justify-between px-2 text-sm font-normal text-muted-foreground"
+                                    >
+                                        <span className="flex items-center gap-2">
+                                            <NotebookPen className="h-4 w-4" /> Tempo i wskazówka
+                                        </span>
+                                        <ChevronDown className={cn('h-4 w-4 transition-transform', notesOpen && 'rotate-180')} />
+                                    </Button>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className="space-y-3 pt-2">
+                                    <FormFieldWithValidation
+                                        label="Tempo (np. 3-0-1-0)"
+                                        error={form.formState.errors.exerciseSeries?.[index]?.tempo?.message}
+                                        touched={form.formState.touchedFields.exerciseSeries?.[index]?.tempo}
+                                    >
+                                        <Input
+                                            {...form.register(`exerciseSeries.${index}.tempo`)}
+                                            placeholder="3-0-1-0"
+                                            className="h-11 text-base"
+                                        />
+                                    </FormFieldWithValidation>
+                                    <FormFieldWithValidation
+                                        label="Wskazówka (Tip)"
+                                        error={form.formState.errors.exerciseSeries?.[index]?.tip?.message}
+                                        touched={form.formState.touchedFields.exerciseSeries?.[index]?.tip}
+                                    >
+                                        <Input
+                                            {...form.register(`exerciseSeries.${index}.tip`)}
+                                            placeholder="Wskazówki dla ćwiczącego..."
+                                            className="h-11 text-base"
+                                        />
+                                    </FormFieldWithValidation>
+                                </CollapsibleContent>
+                            </Collapsible>
                         )}
                     </CardContent>
                 </CollapsibleContent>

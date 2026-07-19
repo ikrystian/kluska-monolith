@@ -579,7 +579,7 @@ function ExerciseSeriesItem({
                                                 <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                             </Button>
                                         </DialogTrigger>
-                                        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                                        <DialogContent className="flex flex-col gap-3 p-4 max-sm:h-dvh max-sm:max-w-none max-sm:rounded-none max-sm:border-0 max-sm:pt-[max(1rem,env(safe-area-inset-top))] max-sm:pb-[max(1rem,env(safe-area-inset-bottom))] sm:max-h-[85vh] sm:max-w-3xl">
                                             <DialogHeader>
                                                 <DialogTitle>Wybierz ćwiczenie</DialogTitle>
                                             </DialogHeader>

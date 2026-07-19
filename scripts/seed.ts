@@ -14,7 +14,8 @@ import { Challenge } from '../src/models/Challenge';
 import { Reward } from '../src/models/Reward';
 import { AchievementBadge } from '../src/models/AchievementBadge';
 import { GamificationProfile } from '../src/models/GamificationProfile';
-import { MuscleGroupName, TrainingLevel } from '../src/models/types/enums';
+import { Workout } from '../src/models/Workout';
+import { MuscleGroupName, TrainingLevel, SetType } from '../src/models/types/enums';
 
 // Load environment variables
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
@@ -45,6 +46,7 @@ async function seed() {
       User.deleteMany({}),
       MuscleGroup.deleteMany({}),
       Exercise.deleteMany({}),
+      Workout.deleteMany({}),
       Gym.deleteMany({}),
       Habit.deleteMany({}),
       ArticleCategory.deleteMany({}),
@@ -615,6 +617,294 @@ async function seed() {
       }))
     );
     console.log(`✅ Dodano ${seededExercises.length} ćwiczeń.`);
+
+    // 3.5. Workouts (Szablony treningów)
+    console.log('🌱 Seedowanie szablonów treningowych...');
+    const getEx = (name: string) => {
+      const found = seededExercises.find(ex => ex.name === name);
+      if (!found) {
+        throw new Error(`Nie znaleziono ćwiczenia: ${name}`);
+      }
+      return found;
+    };
+
+    const workoutsData = [
+      {
+        name: 'Full Body Workout (FBW) - Wariant A',
+        level: TrainingLevel.Beginner,
+        durationMinutes: 60,
+        imageUrl: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48',
+        description: 'Podstawowy trening ogólnorozwojowy dla osób początkujących, skupiający się na budowaniu siły i prawidłowych wzorcach ruchowych.',
+        ownerId: 'public',
+        status: 'published' as const,
+        exerciseSeries: [
+          {
+            exercise: getEx('Przysiad ze sztangą na plecach (Back Squat)'),
+            tempo: '3-0-1-0',
+            tip: 'Skup się na głębokości przysiadu i stabilizacji bioder.',
+            sets: [
+              { number: 1, type: SetType.WorkingSet, reps: 8, weight: 60, restTimeSeconds: 120 },
+              { number: 2, type: SetType.WorkingSet, reps: 8, weight: 60, restTimeSeconds: 120 },
+              { number: 3, type: SetType.WorkingSet, reps: 8, weight: 60, restTimeSeconds: 120 },
+            ],
+          },
+          {
+            exercise: getEx('Wyciskanie sztangi na ławce poziomej (Bench Press)'),
+            tempo: '2-0-1-0',
+            tip: 'Kontroluj opuszczanie sztangi do klatki piersiowej.',
+            sets: [
+              { number: 1, type: SetType.WorkingSet, reps: 8, weight: 40, restTimeSeconds: 120 },
+              { number: 2, type: SetType.WorkingSet, reps: 8, weight: 40, restTimeSeconds: 120 },
+              { number: 3, type: SetType.WorkingSet, reps: 8, weight: 40, restTimeSeconds: 120 },
+            ],
+          },
+          {
+            exercise: getEx('Wiosłowanie sztangą w opadzie tułowia (Barbell Row)'),
+            tempo: '2-0-1-0',
+            tip: 'Prowadź łokcie blisko tułowia, napinając plecy.',
+            sets: [
+              { number: 1, type: SetType.WorkingSet, reps: 8, weight: 30, restTimeSeconds: 90 },
+              { number: 2, type: SetType.WorkingSet, reps: 8, weight: 30, restTimeSeconds: 90 },
+              { number: 3, type: SetType.WorkingSet, reps: 8, weight: 30, restTimeSeconds: 90 },
+            ],
+          },
+          {
+            exercise: getEx('Plank (Deska izometryczna)'),
+            tempo: 'brak',
+            tip: 'Trzymaj brzuch i pośladki mocno spięte.',
+            sets: [
+              { number: 1, type: SetType.WorkingSet, reps: 1, weight: 0, duration: 30, restTimeSeconds: 60 },
+              { number: 2, type: SetType.WorkingSet, reps: 1, weight: 0, duration: 30, restTimeSeconds: 60 },
+              { number: 3, type: SetType.WorkingSet, reps: 1, weight: 0, duration: 30, restTimeSeconds: 60 },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'Full Body Workout (FBW) - Wariant B',
+        level: TrainingLevel.Beginner,
+        durationMinutes: 60,
+        imageUrl: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5',
+        description: 'Drugi wariant treningu ogólnorozwojowego FBW, stanowiący uzupełnienie wariantu A.',
+        ownerId: 'public',
+        status: 'published' as const,
+        exerciseSeries: [
+          {
+            exercise: getEx('Martwy ciąg klasyczny (Conventional Deadlift)'),
+            tempo: '2-1-1-0',
+            tip: 'Trzymaj sztangę blisko nóg, plecy proste.',
+            sets: [
+              { number: 1, type: SetType.WorkingSet, reps: 5, weight: 70, restTimeSeconds: 150 },
+              { number: 2, type: SetType.WorkingSet, reps: 5, weight: 70, restTimeSeconds: 150 },
+              { number: 3, type: SetType.WorkingSet, reps: 5, weight: 70, restTimeSeconds: 150 },
+            ],
+          },
+          {
+            exercise: getEx('Wyciskanie żołnierskie (Overhead Press / OHP)'),
+            tempo: '2-0-1-0',
+            tip: 'Napnij brzuch i pośladki, nie wyginaj lędźwi.',
+            sets: [
+              { number: 1, type: SetType.WorkingSet, reps: 8, weight: 20, restTimeSeconds: 120 },
+              { number: 2, type: SetType.WorkingSet, reps: 8, weight: 20, restTimeSeconds: 120 },
+              { number: 3, type: SetType.WorkingSet, reps: 8, weight: 20, restTimeSeconds: 120 },
+            ],
+          },
+          {
+            exercise: getEx('Ściąganie drążka wyciągu górnego do klatki (Lat Pulldown)'),
+            tempo: '3-0-1-1',
+            tip: 'Kontroluj ruch w górę, nie szarp ciężaru.',
+            sets: [
+              { number: 1, type: SetType.WorkingSet, reps: 10, weight: 40, restTimeSeconds: 90 },
+              { number: 2, type: SetType.WorkingSet, reps: 10, weight: 40, restTimeSeconds: 90 },
+              { number: 3, type: SetType.WorkingSet, reps: 10, weight: 40, restTimeSeconds: 90 },
+            ],
+          },
+          {
+            exercise: getEx('Wznosy nóg w zwisie na drążku (Hanging Leg Raise)'),
+            tempo: '2-0-1-1',
+            tip: 'Unikaj bujania tułowiem.',
+            sets: [
+              { number: 1, type: SetType.WorkingSet, reps: 10, weight: 0, restTimeSeconds: 60 },
+              { number: 2, type: SetType.WorkingSet, reps: 10, weight: 0, restTimeSeconds: 60 },
+              { number: 3, type: SetType.WorkingSet, reps: 10, weight: 0, restTimeSeconds: 60 },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'Trening PUSH',
+        level: TrainingLevel.Intermediate,
+        durationMinutes: 75,
+        imageUrl: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b',
+        description: 'Trening z podziału Push/Pull/Legs skupiający się na mięśniach klatki piersiowej, barków (przedni i boczny akton) oraz tricepsów.',
+        ownerId: 'public',
+        status: 'published' as const,
+        exerciseSeries: [
+          {
+            exercise: getEx('Wyciskanie hantli na ławce skośnej dodatniej (Incline Dumbbell Press)'),
+            tempo: '3-1-1-0',
+            tip: 'Opuszczaj hantle powoli, kontrolując ruch.',
+            sets: [
+              { number: 1, type: SetType.WorkingSet, reps: 10, weight: 20, restTimeSeconds: 90 },
+              { number: 2, type: SetType.WorkingSet, reps: 10, weight: 20, restTimeSeconds: 90 },
+              { number: 3, type: SetType.WorkingSet, reps: 10, weight: 20, restTimeSeconds: 90 },
+              { number: 4, type: SetType.WorkingSet, reps: 10, weight: 20, restTimeSeconds: 90 },
+            ],
+          },
+          {
+            exercise: getEx('Pompki na poręczach (Dips - Klatka piersiowa)'),
+            tempo: '3-0-1-0',
+            tip: 'Pochyl tułów lekko do przodu, aby mocniej zaangażować klatkę.',
+            sets: [
+              { number: 1, type: SetType.WorkingSet, reps: 8, weight: 0, restTimeSeconds: 90 },
+              { number: 2, type: SetType.WorkingSet, reps: 8, weight: 0, restTimeSeconds: 90 },
+              { number: 3, type: SetType.WorkingSet, reps: 8, weight: 0, restTimeSeconds: 90 },
+            ],
+          },
+          {
+            exercise: getEx('Wznosy ramion bokiem z hantlami (Dumbbell Lateral Raises)'),
+            tempo: '2-0-1-1',
+            tip: 'Prowadź ruch łokciami, nie unoś barków za wysoko.',
+            sets: [
+              { number: 1, type: SetType.WorkingSet, reps: 12, weight: 8, restTimeSeconds: 60 },
+              { number: 2, type: SetType.WorkingSet, reps: 12, weight: 8, restTimeSeconds: 60 },
+              { number: 3, type: SetType.WorkingSet, reps: 12, weight: 8, restTimeSeconds: 60 },
+              { number: 4, type: SetType.WorkingSet, reps: 12, weight: 8, restTimeSeconds: 60 },
+            ],
+          },
+          {
+            exercise: getEx('Wyciskanie francuskie ze sztangą łamaną leżąc (Skullcrushers)'),
+            tempo: '3-0-1-0',
+            tip: 'Trzymaj łokcie stabilnie, nie rozszerzaj ich na boki.',
+            sets: [
+              { number: 1, type: SetType.WorkingSet, reps: 10, weight: 25, restTimeSeconds: 75 },
+              { number: 2, type: SetType.WorkingSet, reps: 10, weight: 25, restTimeSeconds: 75 },
+              { number: 3, type: SetType.WorkingSet, reps: 10, weight: 25, restTimeSeconds: 75 },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'Trening PULL',
+        level: TrainingLevel.Intermediate,
+        durationMinutes: 75,
+        imageUrl: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e',
+        description: 'Trening z podziału Push/Pull/Legs skupiający się na mięśniach grzbietu, tylnego aktonu barku oraz bicepsach.',
+        ownerId: 'public',
+        status: 'published' as const,
+        exerciseSeries: [
+          {
+            exercise: getEx('Podciąganie na drążku nachwytem (Pull-ups)'),
+            tempo: '3-0-1-0',
+            tip: 'Zainicjuj ruch poprzez ściągnięcie łopatek.',
+            sets: [
+              { number: 1, type: SetType.WorkingSet, reps: 6, weight: 0, restTimeSeconds: 120 },
+              { number: 2, type: SetType.WorkingSet, reps: 6, weight: 0, restTimeSeconds: 120 },
+              { number: 3, type: SetType.WorkingSet, reps: 6, weight: 0, restTimeSeconds: 120 },
+              { number: 4, type: SetType.WorkingSet, reps: 6, weight: 0, restTimeSeconds: 120 },
+            ],
+          },
+          {
+            exercise: getEx('Wiosłowanie hantlem jednorącz w oparciu o ławkę (Single-Arm Dumbbell Row)'),
+            tempo: '2-0-1-1',
+            tip: 'Przyciągaj hantel do biodra, nie do klatki.',
+            sets: [
+              { number: 1, type: SetType.WorkingSet, reps: 10, weight: 22, restTimeSeconds: 90 },
+              { number: 2, type: SetType.WorkingSet, reps: 10, weight: 22, restTimeSeconds: 90 },
+              { number: 3, type: SetType.WorkingSet, reps: 10, weight: 22, restTimeSeconds: 90 },
+            ],
+          },
+          {
+            exercise: getEx('Face Pulls z linką wyciągu górnego (Face Pulls)'),
+            tempo: '2-0-1-2',
+            tip: 'Pauza na końcu ruchu przyciągając sznur do twarzy.',
+            sets: [
+              { number: 1, type: SetType.WorkingSet, reps: 15, weight: 15, restTimeSeconds: 60 },
+              { number: 2, type: SetType.WorkingSet, reps: 15, weight: 15, restTimeSeconds: 60 },
+              { number: 3, type: SetType.WorkingSet, reps: 15, weight: 15, restTimeSeconds: 60 },
+              { number: 4, type: SetType.WorkingSet, reps: 15, weight: 15, restTimeSeconds: 60 },
+            ],
+          },
+          {
+            exercise: getEx('Uginanie przedramion z hantlami z supinacją (Dumbbell Supinating Curl)'),
+            tempo: '3-0-1-1',
+            tip: 'Rotuj nadgarstek na zewnątrz podczas unoszenia.',
+            sets: [
+              { number: 1, type: SetType.WorkingSet, reps: 12, weight: 10, restTimeSeconds: 60 },
+              { number: 2, type: SetType.WorkingSet, reps: 12, weight: 10, restTimeSeconds: 60 },
+              { number: 3, type: SetType.WorkingSet, reps: 12, weight: 10, restTimeSeconds: 60 },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'Trening LEGS (Nogi)',
+        level: TrainingLevel.Advanced,
+        durationMinutes: 90,
+        imageUrl: 'https://images.unsplash.com/photo-1434608519344-49d77a699e1d',
+        description: 'Intensywny trening nóg ukierunkowany na rozwój mięśni czworogłowych, dwugłowych oraz pośladków.',
+        ownerId: 'public',
+        status: 'published' as const,
+        exerciseSeries: [
+          {
+            exercise: getEx('Przysiad ze sztangą na plecach (Back Squat)'),
+            tempo: '3-1-1-0',
+            tip: 'Trzymaj stopy płasko, kolana stabilnie na zewnątrz.',
+            sets: [
+              { number: 1, type: SetType.WorkingSet, reps: 6, weight: 100, restTimeSeconds: 180 },
+              { number: 2, type: SetType.WorkingSet, reps: 6, weight: 100, restTimeSeconds: 180 },
+              { number: 3, type: SetType.WorkingSet, reps: 6, weight: 100, restTimeSeconds: 180 },
+              { number: 4, type: SetType.WorkingSet, reps: 6, weight: 100, restTimeSeconds: 180 },
+            ],
+          },
+          {
+            exercise: getEx('Rumuński Martwy Ciąg (Romanian Deadlift - RDL)'),
+            tempo: '3-0-1-0',
+            tip: 'Cofaj biodra do tyłu, czując rozciąganie z tyłu ud.',
+            sets: [
+              { number: 1, type: SetType.WorkingSet, reps: 8, weight: 80, restTimeSeconds: 120 },
+              { number: 2, type: SetType.WorkingSet, reps: 8, weight: 80, restTimeSeconds: 120 },
+              { number: 3, type: SetType.WorkingSet, reps: 8, weight: 80, restTimeSeconds: 120 },
+              { number: 4, type: SetType.WorkingSet, reps: 8, weight: 80, restTimeSeconds: 120 },
+            ],
+          },
+          {
+            exercise: getEx('Przysiad bułgarski z hantlami (Bulgarian Split Squat)'),
+            tempo: '2-0-1-0',
+            tip: 'Schodź biodrami pionowo w dół.',
+            sets: [
+              { number: 1, type: SetType.WorkingSet, reps: 10, weight: 16, restTimeSeconds: 90 },
+              { number: 2, type: SetType.WorkingSet, reps: 10, weight: 16, restTimeSeconds: 90 },
+              { number: 3, type: SetType.WorkingSet, reps: 10, weight: 16, restTimeSeconds: 90 },
+            ],
+          },
+          {
+            exercise: getEx('Uginanie nóg na maszynie leżąc (Lying Leg Curl)'),
+            tempo: '3-0-1-1',
+            tip: 'Mocne spięcie dwugłowych u szczytu ruchu.',
+            sets: [
+              { number: 1, type: SetType.WorkingSet, reps: 12, weight: 35, restTimeSeconds: 60 },
+              { number: 2, type: SetType.WorkingSet, reps: 12, weight: 35, restTimeSeconds: 60 },
+              { number: 3, type: SetType.WorkingSet, reps: 12, weight: 35, restTimeSeconds: 60 },
+            ],
+          },
+          {
+            exercise: getEx('Wspięcia na palce stojąc (Standing Calf Raise)'),
+            tempo: '2-1-1-2',
+            tip: 'Wykonaj pełny ruch od maksymalnego rozciągnięcia do spięcia.',
+            sets: [
+              { number: 1, type: SetType.WorkingSet, reps: 15, weight: 50, restTimeSeconds: 60 },
+              { number: 2, type: SetType.WorkingSet, reps: 15, weight: 50, restTimeSeconds: 60 },
+              { number: 3, type: SetType.WorkingSet, reps: 15, weight: 50, restTimeSeconds: 60 },
+              { number: 4, type: SetType.WorkingSet, reps: 15, weight: 50, restTimeSeconds: 60 },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const seededWorkouts = await Workout.insertMany(workoutsData);
+    console.log(`✅ Dodano ${seededWorkouts.length} szablonów treningowych.`);
 
     // 4. Users (Użytkownicy)
     console.log('🌱 Seedowanie użytkowników...');
