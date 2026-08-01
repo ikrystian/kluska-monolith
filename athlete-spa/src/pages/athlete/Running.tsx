@@ -33,10 +33,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Loader2, Footprints, TrendingUp, Route, Timer, Activity, RefreshCw, Heart, Mountain } from 'lucide-react';
+import { PlusCircle, Loader2, Footprints, TrendingUp, Route, Timer, Activity, RefreshCw, Heart, Mountain, Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useCreateDoc, useUser, useDoc } from '@/lib/db-hooks';
 import { ActivityDetailModal } from '@/components/running/ActivityDetailModal';
+import { RunTracker, type RecordedRun } from '@/components/running/RunTracker';
 import type { RunningSession, StravaActivity, UserProfile } from '@/lib/types';
 
 const runSchema = z.object({
@@ -83,6 +84,11 @@ export default function RunningPage() {
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
+  const [isTrackerOpen, setTrackerOpen] = useState(false);
+  const [isSavingTrackedRun, setIsSavingTrackedRun] = useState(false);
+
+  // Recording needs the device's GPS; browsers without it keep the manual form.
+  const supportsGeolocation = typeof navigator !== 'undefined' && 'geolocation' in navigator;
 
   const { data: userProfile } = useDoc<UserProfile>('users', user?.uid || null);
   const isStravaConnected = !!userProfile?.stravaAccessToken;
@@ -205,6 +211,35 @@ export default function RunningPage() {
     }
   };
 
+  const handleSaveTrackedRun = async (run: RecordedRun) => {
+    if (!user) return;
+
+    setIsSavingTrackedRun(true);
+    try {
+      await createDoc('runningSessions', {
+        date: new Date().toISOString(),
+        distance: run.distance,
+        duration: run.duration,
+        avgPace: run.avgPace,
+        // Stored alongside Strava's routes so both render on the same map.
+        polyline: run.polyline,
+        notes: run.notes,
+        ownerId: user.uid,
+      });
+      toast({
+        title: 'Bieg zapisany!',
+        description: `${run.distance.toFixed(2)} km w ${Math.round(run.duration)} min.`,
+      });
+      refetchManual();
+    } catch (error) {
+      console.error('Error saving tracked run:', error);
+      toast({ title: 'Błąd', description: 'Nie udało się zapisać biegu.', variant: 'destructive' });
+      throw error;
+    } finally {
+      setIsSavingTrackedRun(false);
+    }
+  };
+
   const handleSyncStrava = async () => {
     setIsSyncing(true);
     try {
@@ -249,11 +284,17 @@ export default function RunningPage() {
               Synchronizuj Strava
             </Button>
           )}
+          {supportsGeolocation && (
+            <Button onClick={() => setTrackerOpen(true)}>
+              <Play className="mr-2 h-4 w-4 fill-current" />
+              Nagraj bieg
+            </Button>
+          )}
           <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button variant={supportsGeolocation ? 'outline' : 'default'}>
                 <PlusCircle className="mr-2 h-4 w-4" />
-                Dodaj Bieg
+                Dodaj ręcznie
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -425,6 +466,13 @@ export default function RunningPage() {
       <ActivityDetailModal
         activityId={selectedActivityId}
         onClose={() => setSelectedActivityId(null)}
+      />
+
+      <RunTracker
+        open={isTrackerOpen}
+        onOpenChange={setTrackerOpen}
+        onSave={handleSaveTrackedRun}
+        isSaving={isSavingTrackedRun}
       />
     </div>
   );

@@ -46,6 +46,8 @@ export interface RunningSession {
   avgPace: number;
   notes?: string;
   ownerId: string;
+  /** Encoded route from the in-app GPS tracker; absent for manually entered runs. */
+  polyline?: string;
 }
 
 export interface TrainerRequest {
