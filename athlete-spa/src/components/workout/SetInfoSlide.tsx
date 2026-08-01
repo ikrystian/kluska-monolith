@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { haptic } from '@/lib/haptics';
 import { PlateCalculator } from '@/components/workout/PlateCalculator';
+import { RpeSelector } from '@/components/workout/RpeSelector';
 
 interface SetInfoSlideProps {
   exerciseName: string;
@@ -23,11 +24,13 @@ interface SetInfoSlideProps {
   actualReps?: number;
   actualWeight?: number;
   actualDuration?: number;
+  rpe?: number;
   tempo?: string;
   tip?: string;
   onRepsChange: (value: number) => void;
   onWeightChange: (value: number) => void;
   onDurationChange?: (value: number) => void;
+  onRpeChange?: (value: number | undefined) => void;
   isCompleted?: boolean;
   validationError?: string | null;
   onStartEditing?: () => void;
@@ -149,11 +152,13 @@ export function SetInfoSlide({
   actualReps,
   actualWeight,
   actualDuration,
+  rpe,
   tempo,
   tip,
   onRepsChange,
   onWeightChange,
   onDurationChange,
+  onRpeChange,
   isCompleted,
   validationError,
   onStartEditing,
@@ -274,6 +279,8 @@ export function SetInfoSlide({
               />
             )}
           </div>
+
+          {onRpeChange && <RpeSelector value={rpe} onChange={onRpeChange} />}
 
           {/* Primary action - no need to rely on swipe alone */}
           <Button

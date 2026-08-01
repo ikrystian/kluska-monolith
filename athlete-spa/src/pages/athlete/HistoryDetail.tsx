@@ -20,6 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigate, useParams } from 'react-router-dom';
 import { type ExerciseType } from '@/lib/set-type-config';
 import { SetTypeBadge } from '@/components/workout/SetTypeModal';
+import { rpeToRir } from '@/components/workout/RpeSelector';
 
 export default function SessionSummaryPage() {
   const { user } = useUser();
@@ -184,6 +185,14 @@ export default function SessionSummaryPage() {
                                 {setIndex + 1}
                               </span>
                               <SetTypeBadge type={set.type} />
+                              {set.rpe !== undefined && (
+                                <span
+                                  title={rpeToRir(set.rpe)}
+                                  className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold tabular-nums text-muted-foreground"
+                                >
+                                  RPE {set.rpe}
+                                </span>
+                              )}
                             </div>
                             <span className="font-mono text-sm font-medium">
                               {exerciseType === 'duration'

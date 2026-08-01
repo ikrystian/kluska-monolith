@@ -37,6 +37,8 @@ import { useExerciseHistory } from '@/hooks/useExerciseHistory';
 import { useRestTimer } from '@/hooks/useRestTimer';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { haptic } from '@/lib/haptics';
+import { PlateCalculator } from '@/components/workout/PlateCalculator';
+import { RpeSelector } from '@/components/workout/RpeSelector';
 import { ExerciseHistoryBadge } from '@/components/workout/ExerciseProgressIndicator';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
@@ -122,6 +124,7 @@ const setSchema = z.object({
   weight: z.coerce.number().min(0, 'Ciężar musi być dodatni.').optional(),
   restTimeSeconds: z.coerce.number().min(0).default(60),
   duration: z.coerce.number().min(0, 'Czas musi być dodatni.').optional(),
+  rpe: z.coerce.number().min(1).max(10).optional(),
   completed: z.boolean().optional(),
 });
 
@@ -1099,6 +1102,14 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
   // Get exercise type from exercise details
   const exerciseType: ExerciseType = exerciseDetails?.type || 'weight';
 
+  // The plate calculator opens on the exercise's top set — the load people
+  // actually need help building.
+  const watchedSets = watch(`exerciseSeries.${index}.sets`);
+  const heaviestPlannedWeight = useMemo(
+    () => (watchedSets ?? []).reduce((max, set) => Math.max(max, Number(set?.weight) || 0), 0),
+    [watchedSets]
+  );
+
   // Fetch exercise history for progress comparison
   const exerciseId = watch(`exerciseSeries.${index}.exerciseId`);
   const { data: exerciseHistory, isLoading: isHistoryLoading } = useExerciseHistory(
@@ -1262,6 +1273,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
           )}
           {tip && <p className="text-xs text-muted-foreground mt-1 italic">Wskazówka: {tip}</p>}
         </div>
+        {exerciseType === 'weight' && <PlateCalculator targetWeight={heaviestPlannedWeight} />}
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
@@ -1502,6 +1514,22 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                   />
                 </div>
               </div>
+
+              {/* RPE is asked only once the set is done — before that there is
+                  nothing to rate, and it would crowd the row. */}
+              {isCompleted && (
+                <FormField
+                  control={control}
+                  name={`exerciseSeries.${index}.sets.${setIndex}.rpe`}
+                  render={({ field }) => (
+                    <FormItem className="space-y-0 px-1 pb-2">
+                      <FormControl>
+                        <RpeSelector value={field.value} onChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              )}
               </motion.div>
             )
           })}
