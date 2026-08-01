@@ -16,6 +16,7 @@ import { AnimatedOutlet } from '@/components/motion';
 import { useAndroidBackButton } from '@/hooks/useAndroidBackButton';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '@/components/pull-to-refresh-indicator';
+import { OfflineBanner } from '@/components/offline-banner';
 import { cn } from '@/lib/utils';
 
 function WrongRoleScreen() {
@@ -125,6 +126,7 @@ function AthleteLayoutContent() {
               <div className="texture-grain absolute inset-0" />
             </div>
             <AppHeader />
+            <OfflineBanner />
             <PullToRefreshIndicator ref={indicatorRef} />
             <div
               ref={scrollRef}
