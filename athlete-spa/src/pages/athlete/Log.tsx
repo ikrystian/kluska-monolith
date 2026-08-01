@@ -35,6 +35,7 @@ import { useCollection, useUser, useDoc } from '@/lib/db-hooks';
 import { useActiveWorkout } from '@/hooks/useActiveWorkout';
 import { useExerciseHistory } from '@/hooks/useExerciseHistory';
 import { useRestTimer } from '@/hooks/useRestTimer';
+import { useWakeLock } from '@/hooks/useWakeLock';
 import { ExerciseHistoryBadge } from '@/components/workout/ExerciseProgressIndicator';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
@@ -442,6 +443,10 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   // Transient rest countdown shown after checking off a set in list mode
   const [isResting, setIsResting] = useState(false);
   const restTimer = useRestTimer(() => setIsResting(false));
+
+  // A set takes minutes of not touching the phone — keep the screen on until
+  // the athlete reaches the summary screen.
+  useWakeLock(!isFinished);
 
   const handleViewModeChange = (mode: ViewMode) => {
     setViewMode(mode);
