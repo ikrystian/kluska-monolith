@@ -15,26 +15,42 @@ interface UseRestTimerReturn {
   addTime: (seconds: number) => void;
 }
 
+interface TimerState {
+  /** Epoch ms when the countdown ends; null while paused or idle. */
+  deadline: number | null;
+  /** Seconds left at the moment of pausing; null while running. */
+  pausedRemaining: number | null;
+  totalDuration: number;
+  isComplete: boolean;
+}
+
+const IDLE: TimerState = { deadline: null, pausedRemaining: null, totalDuration: 0, isComplete: false };
+
+/** Remaining whole seconds until `deadline`, never negative. */
+function secondsUntil(deadline: number): number {
+  return Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+}
+
+/**
+ * Countdown for the rest period between sets.
+ *
+ * The countdown is anchored to a wall-clock deadline rather than accumulated
+ * from ticks: Android throttles (and eventually stops) timers in a backgrounded
+ * WebView, so a tick-counting timer drifts badly the moment the athlete locks
+ * the phone during a rest — exactly when the timer matters most. Ticks here
+ * only drive re-renders; the value always comes from `Date.now()`, and the
+ * timer is re-evaluated as soon as the page becomes visible again.
+ */
 export function useRestTimer(onComplete?: () => void): UseRestTimerReturn {
+  const [state, setState] = useState<TimerState>(IDLE);
   const [timeRemaining, setTimeRemaining] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
-  const [totalDuration, setTotalDuration] = useState(0);
 
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const onCompleteRef = useRef(onComplete);
+  const completedRef = useRef(false);
 
-  // Keep onComplete ref updated
   useEffect(() => {
     onCompleteRef.current = onComplete;
   }, [onComplete]);
-
-  const clearTimer = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  }, []);
 
   const playCompletionSound = useCallback(() => {
     try {
@@ -42,118 +58,120 @@ export function useRestTimer(onComplete?: () => void): UseRestTimerReturn {
       if (!AudioContext) return;
 
       const audioContext = new AudioContext();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
+      const beep = (frequency: number, at: number) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
 
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
 
-      oscillator.frequency.value = 800;
-      oscillator.type = 'sine';
-      gainNode.gain.value = 0.3;
+        oscillator.frequency.value = frequency;
+        oscillator.type = 'sine';
+        gainNode.gain.value = 0.3;
 
-      oscillator.start();
-      oscillator.stop(audioContext.currentTime + 0.15);
+        oscillator.start(audioContext.currentTime + at);
+        oscillator.stop(audioContext.currentTime + at + 0.15);
+      };
 
-      // Play second beep after short delay
-      setTimeout(() => {
-        const oscillator2 = audioContext.createOscillator();
-        const gainNode2 = audioContext.createGain();
-
-        oscillator2.connect(gainNode2);
-        gainNode2.connect(audioContext.destination);
-
-        oscillator2.frequency.value = 1000;
-        oscillator2.type = 'sine';
-        gainNode2.gain.value = 0.3;
-
-        oscillator2.start();
-        oscillator2.stop(audioContext.currentTime + 0.2);
-      }, 150);
+      beep(800, 0);
+      beep(1000, 0.2);
     } catch (error) {
       console.warn('Could not play completion sound:', error);
     }
   }, []);
 
-  const start = useCallback((duration: number) => {
-    clearTimer();
-    setTotalDuration(duration);
-    setTimeRemaining(duration);
-    setIsComplete(false);
-    setIsRunning(true);
-  }, [clearTimer]);
-
-  const pause = useCallback(() => {
-    clearTimer();
-    setIsRunning(false);
-  }, [clearTimer]);
-
-  const resume = useCallback(() => {
-    if (timeRemaining > 0 && !isComplete) {
-      setIsRunning(true);
-    }
-  }, [timeRemaining, isComplete]);
-
-  const reset = useCallback(() => {
-    clearTimer();
-    setTimeRemaining(totalDuration);
-    setIsComplete(false);
-    setIsRunning(false);
-  }, [clearTimer, totalDuration]);
-
-  const skip = useCallback(() => {
-    clearTimer();
+  /** Fires the completion side effects exactly once per countdown. */
+  const complete = useCallback(() => {
+    if (completedRef.current) return;
+    completedRef.current = true;
+    setState(prev => ({ ...prev, deadline: null, pausedRemaining: null, isComplete: true }));
     setTimeRemaining(0);
-    setIsComplete(true);
-    setIsRunning(false);
     playCompletionSound();
     onCompleteRef.current?.();
-  }, [clearTimer, playCompletionSound]);
+  }, [playCompletionSound]);
 
-  const addTime = useCallback((seconds: number) => {
-    setTimeRemaining(prev => prev + seconds);
-    setTotalDuration(prev => prev + seconds);
+  const start = useCallback((duration: number) => {
+    completedRef.current = false;
+    setState({
+      deadline: Date.now() + duration * 1000,
+      pausedRemaining: null,
+      totalDuration: duration,
+      isComplete: false,
+    });
+    setTimeRemaining(duration);
   }, []);
 
-  // Timer effect
-  useEffect(() => {
-    if (!isRunning) return;
+  const pause = useCallback(() => {
+    setState(prev =>
+      prev.deadline === null
+        ? prev
+        : { ...prev, deadline: null, pausedRemaining: secondsUntil(prev.deadline) }
+    );
+  }, []);
 
-    intervalRef.current = setInterval(() => {
-      setTimeRemaining((prev) => {
-        if (prev <= 1) {
-          clearTimer();
-          setIsRunning(false);
-          setIsComplete(true);
-          playCompletionSound();
-          // Use setTimeout to avoid state update during render
-          setTimeout(() => {
-            onCompleteRef.current?.();
-          }, 0);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+  const resume = useCallback(() => {
+    setState(prev => {
+      if (prev.pausedRemaining === null || prev.pausedRemaining <= 0 || prev.isComplete) return prev;
+      return { ...prev, deadline: Date.now() + prev.pausedRemaining * 1000, pausedRemaining: null };
+    });
+  }, []);
+
+  const reset = useCallback(() => {
+    completedRef.current = false;
+    setState(prev => ({ ...prev, deadline: null, pausedRemaining: null, isComplete: false }));
+    setTimeRemaining(state.totalDuration);
+  }, [state.totalDuration]);
+
+  const skip = useCallback(() => {
+    complete();
+  }, [complete]);
+
+  const addTime = useCallback((seconds: number) => {
+    setState(prev => ({
+      ...prev,
+      totalDuration: prev.totalDuration + seconds,
+      deadline: prev.deadline === null ? null : prev.deadline + seconds * 1000,
+      pausedRemaining: prev.pausedRemaining === null ? null : prev.pausedRemaining + seconds,
+    }));
+    setTimeRemaining(prev => prev + seconds);
+  }, []);
+
+  // Drive re-renders while running. Sub-second polling keeps the displayed
+  // value from lagging when a tick lands just after a second boundary.
+  const { deadline } = state;
+  useEffect(() => {
+    if (deadline === null) return;
+
+    const sync = () => {
+      const remaining = secondsUntil(deadline);
+      setTimeRemaining(remaining);
+      if (remaining === 0) complete();
+    };
+
+    sync();
+    const interval = setInterval(sync, 250);
+
+    // Coming back from the background can mean the deadline passed long ago;
+    // sync immediately instead of waiting for the next tick.
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') sync();
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      clearTimer();
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [isRunning, clearTimer, playCompletionSound]);
+  }, [deadline, complete]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      clearTimer();
-    };
-  }, [clearTimer]);
-
-  const progress = totalDuration > 0 ? (totalDuration - timeRemaining) / totalDuration : 0;
+  const isRunning = deadline !== null;
+  const progress =
+    state.totalDuration > 0 ? (state.totalDuration - timeRemaining) / state.totalDuration : 0;
 
   return {
     timeRemaining,
     isRunning,
-    isComplete,
+    isComplete: state.isComplete,
     progress,
     start,
     pause,
