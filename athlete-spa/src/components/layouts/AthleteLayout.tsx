@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { mutate } from 'swr';
 import { Loader2 } from 'lucide-react';
 import { AppNav } from '@/components/nav';
 import { AppHeader } from '@/components/header';
@@ -13,6 +14,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { AnimatedOutlet } from '@/components/motion';
 import { useAndroidBackButton } from '@/hooks/useAndroidBackButton';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from '@/components/pull-to-refresh-indicator';
 import { cn } from '@/lib/utils';
 
 function WrongRoleScreen() {
@@ -49,6 +52,11 @@ function AthleteLayoutContent() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useAndroidBackButton();
+
+  // Every screen reads through SWR, so one global revalidation refreshes
+  // whatever the current page happens to be showing.
+  const refreshAll = useCallback(() => mutate(() => true, undefined, { revalidate: true }), []);
+  const { indicatorRef } = usePullToRefresh(scrollRef, refreshAll, !isActiveWorkoutSession);
 
   // Scroll the content container back to top on route change so the
   // page transition starts from a clean position.
@@ -117,6 +125,7 @@ function AthleteLayoutContent() {
               <div className="texture-grain absolute inset-0" />
             </div>
             <AppHeader />
+            <PullToRefreshIndicator ref={indicatorRef} />
             <div
               ref={scrollRef}
               id="outlet"
