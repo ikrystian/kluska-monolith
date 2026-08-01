@@ -1,110 +1,127 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useActiveWorkout } from '@/hooks/useActiveWorkout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Dumbbell, Clock, ArrowRight } from 'lucide-react';
+import { Dumbbell, ChevronUp } from 'lucide-react';
+import { haptic } from '@/lib/haptics';
+import { cn } from '@/lib/utils';
+
+function formatElapsed(startTime: Date): string {
+  const diffMs = Math.max(0, Date.now() - startTime.getTime());
+  const hours = Math.floor(diffMs / 3_600_000);
+  const minutes = Math.floor((diffMs % 3_600_000) / 60_000);
+  const seconds = Math.floor((diffMs % 60_000) / 1000);
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return hours > 0 ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}` : `${pad(minutes)}:${pad(seconds)}`;
+}
 
 /**
- * Floating widget that appears when there's an active workout in progress.
- * Shows workout name, elapsed time, and a button to return to the workout.
- * Hidden when on the /athlete/log page.
+ * Persistent bar for a workout that is still running while the athlete browses
+ * elsewhere in the app.
+ *
+ * Sits directly above the bottom bar as a full-width strip — the mini-player
+ * pattern — rather than as a floating card in the corner, which overlapped the
+ * bottom navigation and any per-page action button underneath it.
  */
 export function ActiveWorkoutWidget() {
   const { activeWorkout, hasActiveWorkout, isLoading } = useActiveWorkout();
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const [elapsedTime, setElapsedTime] = useState<string>('00:00');
+  const [elapsedTime, setElapsedTime] = useState('00:00');
 
-  // Calculate and update elapsed time every second
+  const startTime = activeWorkout?.startTime;
+
   useEffect(() => {
-    if (!activeWorkout?.startTime) return;
+    if (!startTime) return;
 
-    const calculateElapsed = () => {
-      const startTime = new Date(activeWorkout.startTime as unknown as string | number | Date);
-      const now = new Date();
-      const diffMs = now.getTime() - startTime.getTime();
+    const start = new Date(startTime as unknown as string | number | Date);
+    const update = () => setElapsedTime(formatElapsed(start));
 
-      const hours = Math.floor(diffMs / (1000 * 60 * 60));
-      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
-
-      if (hours > 0) {
-        setElapsedTime(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-      } else {
-        setElapsedTime(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-      }
-    };
-
-    // Calculate immediately
-    calculateElapsed();
-
-    // Update every second
-    const interval = setInterval(calculateElapsed, 1000);
-
+    update();
+    const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
-  }, [activeWorkout?.startTime]);
+  }, [startTime]);
 
-  // Don't show widget on the log page or while loading
+  // Share of sets already checked off, so the bar communicates progress and not
+  // just that something is running.
+  const progress = useMemo(() => {
+    const exercises = activeWorkout?.exercises ?? [];
+    let total = 0;
+    let done = 0;
+    for (const exercise of exercises) {
+      for (const set of exercise.sets ?? []) {
+        total += 1;
+        if (set.completed) done += 1;
+      }
+    }
+    return { total, done, ratio: total > 0 ? done / total : 0 };
+  }, [activeWorkout]);
+
   if (isLoading || !hasActiveWorkout || pathname === '/athlete/log') {
     return null;
   }
 
-  const handleReturnToWorkout = () => {
+  const returnToWorkout = () => {
+    haptic('tap');
     navigate(`/athlete/log?logId=${activeWorkout?.id}`);
   };
 
-  const handleFinishWorkout = () => {
-    navigate(`/athlete/log?logId=${activeWorkout?.id}&finish=true`);
-  };
-
   return (
-    <div className="fixed bottom-20 right-4 z-40 animate-in slide-in-from-right-5 fade-in duration-300 md:bottom-4">
-      <Card className="w-72 shadow-lg border-primary/20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            {/* Icon */}
-            <div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Dumbbell className="h-5 w-5 text-primary" />
-            </div>
+    <div
+      className={cn(
+        'fixed inset-x-4 z-40 mx-auto max-w-md animate-in slide-in-from-bottom-4 fade-in duration-300',
+        // Clears the bottom bar on phones; on desktop there is no bottom bar.
+        'bottom-[calc(5.5rem+env(safe-area-inset-bottom))] md:inset-x-auto md:bottom-4 md:right-4 md:mx-0 md:w-80'
+      )}
+    >
+      <div className="overflow-hidden rounded-[1.5rem] border border-primary/25 bg-background/90 shadow-lifted backdrop-blur-2xl">
+        <div className="flex items-center gap-3 p-2.5">
+          <button
+            type="button"
+            onClick={returnToWorkout}
+            className="flex min-w-0 flex-1 items-center gap-3 text-left"
+            aria-label={`Wróć do treningu ${activeWorkout?.workoutName ?? ''}`}
+          >
+            <span className="hero-ember grid h-11 w-11 shrink-0 place-items-center rounded-xl text-white shadow-glow">
+              <Dumbbell className="h-5 w-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-2">
+                <span className="truncate font-semibold leading-tight">
+                  {activeWorkout?.workoutName || 'Trening'}
+                </span>
+                <span className="shrink-0 font-mono text-sm tabular-nums text-primary">{elapsedTime}</span>
+              </span>
+              <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                {progress.total > 0 ? `${progress.done}/${progress.total} serii` : 'W trakcie'}
+              </span>
+            </span>
+            <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
+          </button>
 
-            {/* Content */}
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Aktywny Trening
-              </p>
-              <p className="font-semibold truncate" title={activeWorkout?.workoutName}>
-                {activeWorkout?.workoutName || 'Trening'}
-              </p>
-              <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-                <Clock className="h-3 w-3" />
-                <span className="font-mono">{elapsedTime}</span>
-              </div>
-            </div>
-          </div>
+          <Button
+            onClick={() => {
+              haptic('impact');
+              navigate(`/athlete/log?logId=${activeWorkout?.id}&finish=true`);
+            }}
+            variant="secondary"
+            size="sm"
+            className="shrink-0 rounded-xl"
+          >
+            Zakończ
+          </Button>
+        </div>
 
-          <div className="flex gap-2 mt-3">
-            <Button
-              onClick={handleReturnToWorkout}
-              className="flex-1"
-              size="sm"
-            >
-              Wróć
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-            <Button
-              onClick={handleFinishWorkout}
-              variant="secondary"
-              className="flex-1"
-              size="sm"
-            >
-              Zakończ
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Progress rail — flush to the bottom edge, like a player's scrubber */}
+        <div className="h-1 w-full bg-secondary">
+          <div
+            className="hero-ember h-full transition-[width] duration-500 ease-out"
+            style={{ width: `${progress.ratio * 100}%` }}
+          />
+        </div>
+      </div>
     </div>
   );
 }
