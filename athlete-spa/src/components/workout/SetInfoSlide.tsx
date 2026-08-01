@@ -8,6 +8,7 @@ import { type ExerciseType, getSetTypeConfig } from '@/lib/set-type-config';
 import { SetTypeBadge } from '@/components/workout/SetTypeModal';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { haptic } from '@/lib/haptics';
 
 interface SetInfoSlideProps {
   exerciseName: string;
@@ -90,7 +91,7 @@ function Stepper({
           variant="outline"
           size="icon"
           className="h-12 w-12 shrink-0 rounded-xl text-lg active:scale-95 transition-transform"
-          onClick={() => { onFocus?.(); onChange(clamp(current - step)); }}
+          onClick={() => { onFocus?.(); haptic('tap'); onChange(clamp(current - step)); }}
           aria-label={`Zmniejsz ${label.toLowerCase()}`}
         >
           <Minus className="h-5 w-5" />
@@ -119,7 +120,7 @@ function Stepper({
           variant="outline"
           size="icon"
           className="h-12 w-12 shrink-0 rounded-xl text-lg active:scale-95 transition-transform"
-          onClick={() => { onFocus?.(); onChange(clamp(current + step)); }}
+          onClick={() => { onFocus?.(); haptic('tap'); onChange(clamp(current + step)); }}
           aria-label={`Zwiększ ${label.toLowerCase()}`}
         >
           <Plus className="h-5 w-5" />

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Trophy, X, Sparkles } from 'lucide-react';
+import { haptic } from '@/lib/haptics';
 
 export interface AchievementUnlock {
   achievementId: string;
@@ -40,6 +41,7 @@ export function AchievementNotification({ achievement, onClose }: AchievementNot
   useEffect(() => {
     if (achievement) {
       setIsVisible(true);
+      haptic('celebrate');
       // Auto-close after 5 seconds
       const timer = setTimeout(() => {
         setIsVisible(false);

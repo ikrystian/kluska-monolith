@@ -29,6 +29,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Switch } from '@/components/ui/switch';
+import { haptic, isHapticsEnabled, isHapticsSupported, setHapticsEnabled } from '@/lib/haptics';
 import { AvatarUploadDialog } from './AvatarUploadDialog';
 import { useUserProfile } from '@/contexts/UserProfileContext';
 import type { RunningSession, StravaActivity } from '@/lib/types';
@@ -52,6 +53,8 @@ export function ProfilePage() {
   const avatarImage = placeholderImages.find((img) => img.id === 'avatar-male');
   const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const hapticsSupported = useMemo(() => isHapticsSupported(), []);
+  const [hapticsOn, setHapticsOn] = useState(() => isHapticsEnabled());
 
   const { data: userProfile, isLoading: profileLoading, refetch } = useDoc<UserProfile>('users', user?.uid || null);
   const { refetch: refetchProfileContext } = useUserProfile();
@@ -569,6 +572,27 @@ export function ProfilePage() {
                     <FormLabel>Motyw</FormLabel>
                     <ThemeToggle />
                   </div>
+
+                  {hapticsSupported && (
+                    <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
+                      <div className="min-w-0">
+                        <FormLabel htmlFor="haptics">Wibracje</FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          Krótka wibracja przy zatwierdzaniu serii i końcu przerwy.
+                        </p>
+                      </div>
+                      <Switch
+                        id="haptics"
+                        checked={hapticsOn}
+                        onCheckedChange={(checked) => {
+                          setHapticsEnabled(checked);
+                          setHapticsOn(checked);
+                          if (checked) haptic('impact');
+                        }}
+                        className="shrink-0"
+                      />
+                    </div>
+                  )}
 
                   <div className="space-y-3 pt-4">
                     <h3 className="font-medium">Ustawienia Powiadomień</h3>

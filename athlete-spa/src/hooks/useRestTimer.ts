@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { haptic } from '@/lib/haptics';
 
 interface UseRestTimerReturn {
   timeRemaining: number;
@@ -87,6 +88,9 @@ export function useRestTimer(onComplete?: () => void): UseRestTimerReturn {
     setState(prev => ({ ...prev, deadline: null, pausedRemaining: null, isComplete: true }));
     setTimeRemaining(0);
     playCompletionSound();
+    // The beep is inaudible in a gym and won't play at all on a locked screen,
+    // so vibration is the signal that actually reaches the athlete.
+    haptic('success');
     onCompleteRef.current?.();
   }, [playCompletionSound]);
 

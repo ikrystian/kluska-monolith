@@ -36,6 +36,7 @@ import { useActiveWorkout } from '@/hooks/useActiveWorkout';
 import { useExerciseHistory } from '@/hooks/useExerciseHistory';
 import { useRestTimer } from '@/hooks/useRestTimer';
 import { useWakeLock } from '@/hooks/useWakeLock';
+import { haptic } from '@/lib/haptics';
 import { ExerciseHistoryBadge } from '@/components/workout/ExerciseProgressIndicator';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
@@ -673,6 +674,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   // Handle set completion from carousel view
   const handleSetComplete = useCallback((exerciseIndex: number, setIndex: number) => {
     form.setValue(`exerciseSeries.${exerciseIndex}.sets.${setIndex}.completed`, true);
+    haptic('tap');
   }, [form]);
 
 
@@ -1139,6 +1141,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
     if (!currentValue) {
       const validation = validateSet(setIndex);
       if (!validation.valid) {
+        haptic('warning');
         setValidationErrors(prev => ({ ...prev, [setIndex]: validation.error || 'Uzupełnij wymagane pola' }));
         toast({
           title: "Uzupełnij dane",
@@ -1158,6 +1161,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
 
     // Toggle the completion status
     setValue(`exerciseSeries.${index}.sets.${setIndex}.completed`, !currentValue);
+    haptic('tap');
 
     // Kick off the rest countdown when a set gets checked off
     if (!currentValue) {
