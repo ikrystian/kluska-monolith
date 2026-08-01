@@ -141,6 +141,12 @@ export function useCreateDoc() {
       const result = await response.json();
       return result.data;
     } catch (err) {
+      // Offline: hand back a document carrying a temp id so the caller can
+      // keep working. The queue swaps in the server's id when it replays.
+      if (isNetworkError(err)) {
+        const tempId = enqueueMutation({ method: 'POST', collection, body: data });
+        return { ...data, id: tempId, _id: tempId, __offline: true };
+      }
       const error = err instanceof Error ? err : new Error('Unknown error');
       setError(error);
       throw error;
@@ -177,6 +183,10 @@ export function useUpdateDoc() {
       const result = await response.json();
       return result.data;
     } catch (err) {
+      if (isNetworkError(err)) {
+        enqueueMutation({ method: 'PATCH', collection, docId: id, body: data });
+        return { ...data, id, __offline: true };
+      }
       const error = err instanceof Error ? err : new Error('Unknown error');
       setError(error);
       throw error;
@@ -210,6 +220,10 @@ export function useDeleteDoc() {
 
       return true;
     } catch (err) {
+      if (isNetworkError(err)) {
+        enqueueMutation({ method: 'DELETE', collection, docId: id });
+        return true;
+      }
       const error = err instanceof Error ? err : new Error('Unknown error');
       setError(error);
       throw error;
