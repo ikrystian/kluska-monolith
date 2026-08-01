@@ -1,0 +1,54 @@
+{
+  "name": "Leniwa Kluska — Panel Sportowca",
+  "short_name": "Leniwa Kluska",
+  "description": "Treningi, dieta, pomiary i postępy w jednym miejscu.",
+  "lang": "pl",
+  "dir": "ltr",
+  "start_url": "/athlete/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d0a07",
+  "theme_color": "#0d0a07",
+  "categories": ["health", "fitness", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Rozpocznij trening",
+      "short_name": "Trenuj",
+      "url": "/athlete/log",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Dzienniczek kalorii",
+      "short_name": "Kalorie",
+      "url": "/athlete/nutrition",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Dodaj pomiary",
+      "short_name": "Pomiary",
+      "url": "/athlete/measurements",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
