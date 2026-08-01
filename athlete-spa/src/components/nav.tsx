@@ -1,27 +1,4 @@
-import {
-  CalendarDays,
-  Dumbbell,
-  History,
-  LayoutDashboard,
-  LogOut,
-  Play,
-  BookOpen,
-  Ruler,
-  MessageSquare,
-  Map,
-  ClipboardList,
-  ChevronRight,
-  Users2,
-  Layers,
-  TrendingUp,
-  CheckSquare,
-  ClipboardCheck,
-  Trophy,
-  Footprints,
-  UtensilsCrossed,
-  NotebookPen,
-  TriangleAlert,
-} from 'lucide-react';
+import { ChevronRight, Dumbbell, LogOut, TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 import {
   AlertDialog,
@@ -55,52 +32,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { resolveMediaUrl } from '@/lib/api-client';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-
-export const athleteNavItems = [
-  { href: '/athlete/dashboard', icon: LayoutDashboard, label: 'Panel' },
-  {
-    label: 'Trening',
-    icon: Dumbbell,
-    items: [
-      { href: '/athlete/log', label: 'Trenuj Teraz', icon: Play },
-      { href: '/athlete/workouts', label: 'Szablony', icon: ClipboardList },
-      { href: '/athlete/workout-plans', label: 'Mój Program', icon: Layers },
-      { href: '/athlete/exercises', label: 'Ćwiczenia', icon: Dumbbell },
-      { href: '/athlete/running', label: 'Bieganie', icon: Footprints },
-      { href: '/athlete/history', label: 'Historia', icon: History },
-    ]
-  },
-  {
-    label: 'Postępy',
-    icon: TrendingUp,
-    items: [
-      { href: '/athlete/progress', label: 'Dashboard Postępów', icon: TrendingUp },
-      { href: '/athlete/measurements', label: 'Pomiary', icon: Ruler },
-      { href: '/athlete/goals', label: 'Cele i Trofea', icon: Trophy },
-      { href: '/athlete/habits', label: 'Nawyki', icon: CheckSquare },
-      { href: '/athlete/calendar', label: 'Kalendarz', icon: CalendarDays },
-    ]
-  },
-  {
-    label: 'Dieta',
-    icon: UtensilsCrossed,
-    items: [
-      { href: '/athlete/diet', label: 'Plan Diety', icon: UtensilsCrossed },
-      { href: '/athlete/nutrition', label: 'Dzienniczek Kalorii', icon: NotebookPen },
-    ]
-  },
-  {
-    label: 'Społeczność',
-    icon: Users2,
-    items: [
-      { href: '/athlete/chat', label: 'Czat', icon: MessageSquare },
-      { href: '/athlete/social', label: 'Social', icon: Users2 },
-    ]
-  },
-  { href: '/athlete/check-in', icon: ClipboardCheck, label: 'Tygodniowy Check-in' },
-  { href: '/athlete/knowledge-zone', icon: BookOpen, label: 'Strefa Wiedzy' },
-  { href: '/athlete/map', icon: Map, label: 'Mapa Siłowni' },
-];
+import { athleteNavItems, isNavGroup } from '@/lib/athlete-nav';
 
 export function AppNav() {
   const { pathname } = useLocation();
@@ -150,9 +82,9 @@ export function AppNav() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {athleteNavItems.map((item: any) => (
-            item.items ? (
-              <Collapsible key={item.label} asChild defaultOpen={item.items.some((subItem: any) => pathname.startsWith(subItem.href))} className="group/collapsible">
+          {athleteNavItems.map((item) => (
+            isNavGroup(item) ? (
+              <Collapsible key={item.label} asChild defaultOpen={item.items.some((subItem) => pathname.startsWith(subItem.href))} className="group/collapsible">
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton tooltip={item.label}>
@@ -163,7 +95,7 @@ export function AppNav() {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenuSub>
-                      {item.items.map((subItem: any) => (
+                      {item.items.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.href}>
                           <SidebarMenuSubButton asChild isActive={pathname === subItem.href}>
                             <Link to={subItem.href} onClick={() => setOpenMobile(false)}>

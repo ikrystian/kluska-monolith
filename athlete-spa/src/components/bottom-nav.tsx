@@ -1,12 +1,14 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Play, CalendarDays, MessageSquare, Menu } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { useSidebar } from '@/components/ui/sidebar';
+import { MobileMoreSheet } from '@/components/mobile-more-sheet';
+import { haptic } from '@/lib/haptics';
 
 export function BottomNav() {
     const { pathname, search } = useLocation();
-    const { toggleSidebar } = useSidebar();
+    const [moreOpen, setMoreOpen] = useState(false);
 
     // During an active workout session (/athlete/log?logId=...) the nav is
     // hidden so it doesn't cover the workout controls.
@@ -23,6 +25,7 @@ export function BottomNav() {
     ];
 
     return (
+        <>
         <nav
             id="bottom-nav"
             className="fixed inset-x-4 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 mx-auto block max-w-md rounded-[2rem] border border-foreground/10 bg-background/75 shadow-lifted backdrop-blur-2xl md:hidden"
@@ -97,18 +100,39 @@ export function BottomNav() {
 
                 <button
                     type="button"
-                    onClick={toggleSidebar}
+                    onClick={() => { haptic('tap'); setMoreOpen(true); }}
                     aria-label="Otwórz menu"
+                    aria-expanded={moreOpen}
                     className="pressable relative flex h-full min-w-[3.5rem] flex-col items-center justify-center gap-1"
                 >
-                    <span className="relative flex h-8 w-[3.25rem] items-center justify-center rounded-full text-muted-foreground transition-colors duration-300 active:scale-90">
+                    <span
+                        className={cn(
+                            "relative flex h-8 w-[3.25rem] items-center justify-center rounded-full transition-colors duration-300 active:scale-90",
+                            moreOpen ? "text-primary" : "text-muted-foreground"
+                        )}
+                    >
+                        {moreOpen && (
+                            <motion.span
+                                layoutId="bottom-nav-pill"
+                                transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                                className="absolute inset-0 rounded-full bg-secondary shadow-soft"
+                            />
+                        )}
                         <Menu className="relative z-10 h-5 w-5" strokeWidth={2} />
                     </span>
-                    <span className="text-[9px] font-semibold uppercase tracking-[0.14em] leading-none text-muted-foreground/80">
-                        Menu
+                    <span
+                        className={cn(
+                            "text-[9px] uppercase tracking-[0.14em] leading-none transition-colors duration-300",
+                            moreOpen ? "font-bold text-foreground" : "font-semibold text-muted-foreground/80"
+                        )}
+                    >
+                        Więcej
                     </span>
                 </button>
             </div>
         </nav>
+
+        <MobileMoreSheet open={moreOpen} onOpenChange={setMoreOpen} />
+        </>
     );
 }
