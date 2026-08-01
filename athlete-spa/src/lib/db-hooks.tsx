@@ -1,7 +1,16 @@
 import { useState, useCallback, useMemo } from 'react';
 import useSWR from 'swr';
 import { apiFetch } from '@/lib/api-client';
+import { enqueueMutation } from '@/lib/offline-queue';
 import { useFrozenDuringTransition } from '@/lib/page-transition';
+
+/**
+ * A rejected fetch means the request never reached the server, which is the
+ * only failure worth queueing — an HTTP error is a decision the server made.
+ */
+function isNetworkError(error: unknown): boolean {
+  return error instanceof TypeError;
+}
 
 export { useUser } from '@/contexts/AuthContext';
 
