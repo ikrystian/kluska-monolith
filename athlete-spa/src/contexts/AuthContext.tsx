@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { apiFetch, setUnauthorizedHandler, TOKEN_STORAGE_KEY } from '@/lib/api-client';
 import { getDeviceId } from '@/lib/device-id';
+import { clearPersistedCache } from '@/lib/swr-cache';
 
 /**
  * Set while the app is used in guest mode, so an expired guest token can be
@@ -188,6 +189,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem(TOKEN_STORAGE_KEY);
       localStorage.removeItem(GUEST_MODE_KEY);
     }
+
+    // The persisted SWR snapshot holds the previous account's data; without
+    // this the next sign-in on the same device would render it before the
+    // first fetch lands.
+    clearPersistedCache();
 
     setUser(null);
   };

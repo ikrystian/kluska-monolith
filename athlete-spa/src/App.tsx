@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { SWRConfig } from 'swr';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { createPersistentCacheProvider } from '@/lib/swr-cache';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from '@/components/ui/sonner';
@@ -42,8 +44,22 @@ import WorkoutCreatePage from '@/pages/athlete/WorkoutCreate';
 import WorkoutDetailPage from '@/pages/athlete/WorkoutDetail';
 import WorkoutEditPage from '@/pages/athlete/WorkoutEdit';
 
+// Created once: SWR calls the provider on mount, and a fresh Map per render
+// would throw away the cache on every re-render.
+const cacheProvider = createPersistentCacheProvider();
+
 export default function App() {
   return (
+    <SWRConfig
+      value={{
+        provider: cacheProvider,
+        // The restored snapshot can be hours old, so a screen the athlete
+        // returns to should re-check rather than trust it indefinitely.
+        revalidateOnFocus: true,
+        revalidateOnReconnect: true,
+        keepPreviousData: true,
+      }}
+    >
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
     <AuthProvider>
       <Routes>
@@ -103,5 +119,6 @@ export default function App() {
       <SonnerToaster />
     </AuthProvider>
     </ThemeProvider>
+    </SWRConfig>
   );
 }
