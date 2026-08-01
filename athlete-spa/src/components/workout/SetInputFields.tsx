@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { type ExerciseType, getExerciseTypeConfig } from '@/lib/set-type-config';
+import { PlateCalculator } from '@/components/workout/PlateCalculator';
 
 interface SetInputFieldsProps {
   exerciseType: ExerciseType;
@@ -69,6 +70,11 @@ export function SetInputFields({
             className={inputClassName}
           />
         </div>
+        {!compact && (
+          <div className="flex flex-col justify-end">
+            <PlateCalculator targetWeight={weight} />
+          </div>
+        )}
       </div>
     );
   }
