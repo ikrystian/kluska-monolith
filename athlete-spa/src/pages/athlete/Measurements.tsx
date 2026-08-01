@@ -51,6 +51,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Link } from 'react-router-dom';
+import { PhotoComparison } from '@/components/measurements/PhotoComparison';
 
 
 const measurementSchema = z.object({
@@ -406,6 +407,8 @@ export default function MeasurementsPage() {
         <StatCard title="Talia" value={latestMeasurement?.circumferences?.waist?.toFixed(1) || ' - '} unit="cm" icon={Ruler} isLoading={combinedLoading} />
         <StatCard title="Postęp" value="+1.2" unit="kg" icon={BarChart} isLoading={combinedLoading} />
       </div>
+
+      <PhotoComparison measurements={displayMeasurements} />
 
       <Card className="mb-6">
         <CardHeader>
