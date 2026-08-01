@@ -12,6 +12,7 @@ import { UserProfileProvider, useUserProfile } from '@/contexts/UserProfileConte
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { AnimatedOutlet } from '@/components/motion';
+import { useAndroidBackButton } from '@/hooks/useAndroidBackButton';
 import { cn } from '@/lib/utils';
 
 function WrongRoleScreen() {
@@ -46,6 +47,8 @@ function AthleteLayoutContent() {
   // full height (no bottom clearance) and pages can stretch with h-full.
   const isActiveWorkoutSession = location.pathname === '/athlete/log' && new URLSearchParams(location.search).has('logId');
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useAndroidBackButton();
 
   // Scroll the content container back to top on route change so the
   // page transition starts from a clean position.
