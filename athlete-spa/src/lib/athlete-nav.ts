@@ -97,3 +97,31 @@ export const athleteNavLeaves: NavLeaf[] = athleteNavItems.flatMap(entry =>
 export function findNavLeaf(pathname: string): NavLeaf | undefined {
   return athleteNavLeaves.find(leaf => leaf.href === pathname);
 }
+
+/**
+ * Screens the bottom bar reaches directly. They anchor the app, so the header
+ * greets rather than offering a way back — there is nothing above them.
+ */
+export const ROOT_PATHS = ['/athlete/dashboard', '/athlete/calendar', '/athlete/log', '/athlete/chat'];
+
+export function isRootPath(pathname: string): boolean {
+  return ROOT_PATHS.includes(pathname);
+}
+
+/** Titles for screens that aren't nav destinations (details, editors, profile). */
+const EXTRA_TITLES: { match: RegExp; title: string }[] = [
+  { match: /^\/athlete\/profile$/, title: 'Profil' },
+  { match: /^\/athlete\/templates$/, title: 'Szablony' },
+  { match: /^\/athlete\/gamification$/, title: 'Osiągnięcia' },
+  { match: /^\/athlete\/history\/[^/]+$/, title: 'Szczegóły treningu' },
+  { match: /^\/athlete\/workouts\/create$/, title: 'Nowy trening' },
+  { match: /^\/athlete\/workouts\/[^/]+\/edit$/, title: 'Edycja treningu' },
+  { match: /^\/athlete\/workouts\/[^/]+$/, title: 'Trening' },
+  { match: /^\/athlete\/knowledge-zone\/manage$/, title: 'Zarządzaj artykułami' },
+  { match: /^\/athlete\/knowledge-zone\/[^/]+$/, title: 'Artykuł' },
+];
+
+/** Label for the current screen, or undefined when there is nothing sensible to show. */
+export function getScreenTitle(pathname: string): string | undefined {
+  return findNavLeaf(pathname)?.label ?? EXTRA_TITLES.find(e => e.match.test(pathname))?.title;
+}
