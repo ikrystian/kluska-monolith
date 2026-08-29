@@ -702,15 +702,10 @@ export default function GoalsAndAchievementsPage() {
               Cele i <span className="text-gradient-ember">trofea</span>
             </h1>
           </div>
-          <Button className="shadow-glow" onClick={() => { setEditingGoal(null); setGoalDialogOpen(true); }}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Ustaw nowy cel
-          </Button>
         </div>
 
         {/* --- Active Goals Section --- */}
         <section className="mb-12">
-          <h2 className="mb-4 font-headline text-lg font-bold tracking-tight md:text-xl">Aktywne cele</h2>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {isLoading ? (
               Array.from({ length: 3 }).map((_, i) => (

@@ -143,7 +143,7 @@ export function MobileMoreSheet({ open, onOpenChange }: { open: boolean; onOpenC
               <h3 className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
                 <Clock className="h-3 w-3" /> Ostatnio używane
               </h3>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {recentLeaves.map(leaf => (
                   <NavTile key={leaf.href} leaf={leaf} onNavigate={close} />
                 ))}
@@ -156,7 +156,7 @@ export function MobileMoreSheet({ open, onOpenChange }: { open: boolean; onOpenC
               <h3 className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
                 {section.label}
               </h3>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {section.items.map(leaf => (
                   <NavTile key={leaf.href} leaf={leaf} onNavigate={close} />
                 ))}
