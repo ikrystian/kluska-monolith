@@ -13,7 +13,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useUploadThing } from '@/lib/uploadthing';
+import { uploadClientFiles } from '@/lib/upload';
 import { useToast } from '@/hooks/use-toast';
 
 interface AvatarUploadDialogProps {
@@ -56,27 +56,7 @@ export function AvatarUploadDialog({
     const imgRef = useRef<HTMLImageElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isProcessing, setIsProcessing] = useState(false);
-
-    const { startUpload, isUploading } = useUploadThing('imageUploader', {
-        onClientUploadComplete: (res) => {
-            if (res && res[0]) {
-                onUploadComplete(res[0].url);
-                handleClose();
-                toast({
-                    title: 'Sukces!',
-                    description: 'Twój avatar został zaktualizowany.',
-                });
-            }
-        },
-        onUploadError: (error: Error) => {
-            setIsProcessing(false);
-            toast({
-                title: 'Błąd przesyłania',
-                description: error.message,
-                variant: 'destructive',
-            });
-        },
-    });
+    const [isUploading, setIsUploading] = useState(false);
 
     const handleClose = () => {
         setImgSrc('');
@@ -157,15 +137,34 @@ export function AvatarUploadDialog({
     const handleUpload = async () => {
         setIsProcessing(true);
         const croppedFile = await getCroppedImg();
-        if (croppedFile) {
-            await startUpload([croppedFile]);
-        } else {
+        if (!croppedFile) {
             setIsProcessing(false);
             toast({
                 title: 'Błąd',
                 description: 'Nie udało się przetworzyć obrazu.',
                 variant: 'destructive',
             });
+            return;
+        }
+
+        setIsUploading(true);
+        try {
+            const [uploaded] = await uploadClientFiles([croppedFile]);
+            onUploadComplete(uploaded.url);
+            handleClose();
+            toast({
+                title: 'Sukces!',
+                description: 'Twój avatar został zaktualizowany.',
+            });
+        } catch (error) {
+            toast({
+                title: 'Błąd przesyłania',
+                description: error instanceof Error ? error.message : 'Nie udało się przesłać zdjęcia.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsUploading(false);
+            setIsProcessing(false);
         }
     };
 

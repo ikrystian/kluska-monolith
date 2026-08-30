@@ -16,6 +16,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { PublicProfileData, SocialPost } from '@/lib/types';
 import { placeholderImages } from '@/lib/placeholder-images';
+import { resolveStoredImageUrl } from '@/lib/upload';
 
 interface PublicProfileDialogProps {
   open: boolean;
@@ -178,7 +179,7 @@ export function PublicProfileDialog({ open, onOpenChange, userId }: PublicProfil
                   {profileData.recentPosts.slice(0, 6).map((post) => (
                     <div key={post.id} className="aspect-square relative rounded-lg overflow-hidden bg-muted">
                       <img
-                        src={`https://utfs.io/f/${post.imageUrl}`}
+                        src={resolveStoredImageUrl(post.imageUrl)}
                         alt="Post"
                         className="w-full h-full object-cover"
                       />

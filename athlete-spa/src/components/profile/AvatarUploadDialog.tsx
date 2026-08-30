@@ -153,7 +153,7 @@ export function AvatarUploadDialog({
             const formData = new FormData();
             formData.append('file', croppedFile);
 
-            const response = await apiFetch('/api/upload-media', {
+            const response = await apiFetch('/api/upload', {
                 method: 'POST',
                 body: formData,
             });
@@ -164,7 +164,7 @@ export function AvatarUploadDialog({
             }
 
             const data = await response.json();
-            const avatarUrl = data.url || (data.fileId ? `/api/images/${data.fileId}` : '');
+            const avatarUrl: string = data.url ?? '';
 
             onUploadComplete(avatarUrl);
             handleClose();

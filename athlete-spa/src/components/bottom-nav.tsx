@@ -126,7 +126,7 @@ export function BottomNav() {
                             moreOpen ? "font-bold text-foreground" : "font-semibold text-muted-foreground/80"
                         )}
                     >
-                        Więcej
+                       MENU
                     </span>
                 </button>
             </div>

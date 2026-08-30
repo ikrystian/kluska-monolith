@@ -60,7 +60,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useUploadThing } from '@/lib/uploadthing';
+import { uploadClientFiles } from '@/lib/upload';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -123,20 +123,8 @@ function CheckInForm({
     const [thigh, setThigh] = useState<number | undefined>(undefined);
     const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
     const [photosToUpload, setPhotosToUpload] = useState<File[]>([]);
+    const [isUploading, setIsUploading] = useState(false);
     const photoInputRef = useRef<HTMLInputElement>(null);
-
-    const { startUpload, isUploading } = useUploadThing("imageUploader", {
-        onClientUploadComplete: (res) => {
-            console.log("Files: ", res);
-        },
-        onUploadError: (error: Error) => {
-            toast({
-                title: "Błąd przesyłania",
-                description: error.message,
-                variant: "destructive",
-            });
-        },
-    });
 
     // Load initial data when editing
     useEffect(() => {
@@ -174,11 +162,10 @@ function CheckInForm({
         try {
             let photoURLs: string[] = [];
             if (photosToUpload.length > 0) {
+                setIsUploading(true);
                 try {
-                    const uploadResult = await startUpload(photosToUpload);
-                    if (uploadResult) {
-                        photoURLs = uploadResult.map(res => res.url);
-                    }
+                    const uploadResult = await uploadClientFiles(photosToUpload);
+                    photoURLs = uploadResult.map(res => res.url);
                 } catch (error) {
                     console.error("Error uploading photos: ", error);
                     toast({
@@ -188,6 +175,8 @@ function CheckInForm({
                     });
                     setIsSubmitting(false);
                     return;
+                } finally {
+                    setIsUploading(false);
                 }
             }
 

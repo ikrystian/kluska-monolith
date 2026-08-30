@@ -1,6 +1,7 @@
 'use client';
 
-import { apiFetch } from '@/lib/api-client';
+import { apiFetch, resolveMediaUrl } from '@/lib/api-client';
+import { LocalUploadButton } from '@/components/shared/LocalUploadButton';
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -29,7 +30,6 @@ import {
 } from '@/components/ui/form';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UploadButton } from '@/lib/uploadthing';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import {
@@ -50,7 +50,13 @@ const exerciseSchema = z.object({
   mainMuscleGroups: z.array(z.string()).min(1, 'Przynajmniej jedna główna grupa mięśniowa jest wymagana.'),
   secondaryMuscleGroups: z.array(z.string()).optional(),
   instructions: z.string().optional(),
-  mediaUrl: z.string().url('Nieprawidłowy URL multimediów.').optional().or(z.literal('')),
+  mediaUrl: z
+    .string()
+    .refine(
+      (value) => value === '' || /^(https?:\/\/|\/)/.test(value),
+      'Nieprawidłowy URL multimediów.',
+    )
+    .optional(),
   type: z.enum(['weight', 'duration', 'reps'], { required_error: "Typ ćwiczenia jest wymagany." }).optional(),
   description: z.string().optional(),
 });
@@ -377,7 +383,7 @@ export function ExerciseFormDialog({
                 {uploadedImageUrl && (
                   <div className="relative w-full h-40 mb-3 rounded-lg overflow-hidden bg-muted">
                     <img
-                      src={uploadedImageUrl}
+                      src={resolveMediaUrl(uploadedImageUrl)}
                       alt="Podgląd obrazka"
                       className="absolute inset-0 w-full h-full object-cover"
                     />
@@ -410,16 +416,18 @@ export function ExerciseFormDialog({
                   </TabsList>
 
                   <TabsContent value="upload" className="mt-3">
-                    <UploadButton
-                      endpoint="imageUploader"
-                      onClientUploadComplete={(files) => {
-                        if (files && files.length > 0) {
+                    <LocalUploadButton
+                      accept="image/*,image/gif"
+                      label="Prześlij obrazek lub GIF"
+                      disabled={isSubmitting}
+                      onComplete={(files) => {
+                        if (files.length > 0) {
                           setUploadedImageUrl(files[0].url);
                           form.setValue('mediaUrl', files[0].url);
                           toast({ title: "Sukces!", description: "Obrazek został przesłany." });
                         }
                       }}
-                      onUploadError={(error) => {
+                      onError={(error) => {
                         toast({
                           title: "Błąd",
                           description: `Nie udało się przesłać obrazka: ${error.message}`,
@@ -427,6 +435,9 @@ export function ExerciseFormDialog({
                         });
                       }}
                     />
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Obrazek lub GIF, maks. 128 MB.
+                    </p>
                   </TabsContent>
 
                   <TabsContent value="ai" className="mt-3">

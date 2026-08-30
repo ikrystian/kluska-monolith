@@ -18,6 +18,8 @@ import { useUser } from '@/lib/db-hooks';
 import { useToast } from '@/hooks/use-toast';
 import { SocialPost } from '@/lib/types';
 import { placeholderImages } from '@/lib/placeholder-images';
+import { resolveMediaUrl } from '@/lib/api-client';
+import { resolveStoredImageUrl } from '@/lib/upload';
 
 interface PostCardProps {
   post: SocialPost;
@@ -140,7 +142,7 @@ export function PostCard({ post, onLike, onEdit, onDelete, onProfileClick }: Pos
         {/* Image */}
         <div className="relative">
           <img
-            src={`https://utfs.io/f/${post.imageUrl}`}
+            src={resolveMediaUrl(resolveStoredImageUrl(post.imageUrl))}
             alt="Post image"
             className="w-full h-auto object-cover"
             loading="lazy"
