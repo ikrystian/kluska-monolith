@@ -55,10 +55,10 @@ function NavTile({ leaf, onNavigate }: { leaf: NavLeaf; onNavigate: () => void }
       onClick={onNavigate}
       className="pressable flex flex-col items-center gap-2 rounded-2xl border border-border/60 bg-card p-3 text-center shadow-soft transition-all active:scale-[0.96]"
     >
-      <span className="grid h-11 w-11 place-items-center rounded-xl bg-secondary text-primary">
+      <span className="grid h-14 w-14 place-items-center rounded-xl bg-secondary text-primary">
         <Icon className="h-5 w-5" />
       </span>
-      <span className="text-[11px] font-semibold leading-tight">{leaf.label}</span>
+      <span className="text-[12px] font-semibold leading-tight">{leaf.label}</span>
     </Link>
   );
 }

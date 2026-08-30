@@ -51,8 +51,8 @@ export function OfflineBanner() {
             <p
               className={
                 isOnline
-                  ? 'text-[11px] font-semibold leading-tight text-primary'
-                  : 'text-[11px] font-semibold leading-tight text-amber-600 dark:text-amber-400'
+                  ? 'text-[12px] font-semibold leading-tight text-primary'
+                  : 'text-[12px] font-semibold leading-tight text-amber-600 dark:text-amber-400'
               }
             >
               {isOnline

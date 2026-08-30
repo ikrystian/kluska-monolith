@@ -889,7 +889,7 @@ export default function AthleteDashboardPage() {
             to="/athlete/measurements"
             className="group flex flex-col items-center justify-center gap-2.5 rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lifted active:scale-[0.96]"
           >
-            <span className="grid h-11 w-11 place-items-center rounded-xl bg-secondary text-primary">
+            <span className="grid h-14 w-14 place-items-center rounded-xl bg-secondary text-primary">
               <Weight className="h-5 w-5" />
             </span>
             <span className="text-center text-[11px] font-bold uppercase tracking-wider leading-tight">Dodaj pomiary</span>
@@ -898,7 +898,7 @@ export default function AthleteDashboardPage() {
             to="/athlete/running"
             className="group flex flex-col items-center justify-center gap-2.5 rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lifted active:scale-[0.96]"
           >
-            <span className="grid h-11 w-11 place-items-center rounded-xl bg-secondary text-primary">
+            <span className="grid h-14 w-14 place-items-center rounded-xl bg-secondary text-primary">
               <Footprints className="h-5 w-5" />
             </span>
             <span className="text-center text-[11px] font-bold uppercase tracking-wider leading-tight">Zapisz bieg</span>
@@ -907,7 +907,7 @@ export default function AthleteDashboardPage() {
             to="/athlete/progress"
             className="group flex flex-col items-center justify-center gap-2.5 rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lifted active:scale-[0.96]"
           >
-            <span className="grid h-11 w-11 place-items-center rounded-xl bg-secondary text-primary">
+            <span className="grid h-14 w-14 place-items-center rounded-xl bg-secondary text-primary">
               <TrendingUp className="h-5 w-5" />
             </span>
             <span className="text-center text-[11px] font-bold uppercase tracking-wider leading-tight">Zobacz postępy</span>
