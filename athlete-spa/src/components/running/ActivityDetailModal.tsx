@@ -1,7 +1,7 @@
 'use client';
 
 import { apiFetch } from '@/lib/api-client';
-import { useState, useEffect } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,7 +9,11 @@ import { Separator } from '@/components/ui/separator';
 import { Activity, Calendar, Clock, Route, TrendingUp, Heart, Mountain, Zap, Trophy, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { RouteMap } from '@/components/running/RouteMap';
+
+// Leaflet + its CSS only load when an activity that actually has a route is opened.
+const RouteMap = lazy(() =>
+    import('@/components/running/RouteMap').then((m) => ({ default: m.RouteMap }))
+);
 
 interface StravaDetailedActivity {
     id: number;
@@ -159,7 +163,9 @@ export function ActivityDetailModal({ activityId, onClose }: ActivityDetailModal
                         {/* Route Map */}
                         {activity.map?.summary_polyline && (
                             <div className="rounded-lg border overflow-hidden">
-                                <RouteMap polyline={activity.map.summary_polyline} />
+                                <Suspense fallback={<Skeleton className="h-[400px] w-full" />}>
+                                    <RouteMap polyline={activity.map.summary_polyline} />
+                                </Suspense>
                             </div>
                         )}
 

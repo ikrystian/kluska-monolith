@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, type ReactNode } from 'react';
+import { Suspense, useLayoutEffect, useRef, type ReactNode } from 'react';
 import {
   AnimatePresence,
   motion,
@@ -8,6 +8,7 @@ import {
 } from 'framer-motion';
 import { useLocation, useOutlet, useNavigationType } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { RouteFallback } from '@/components/route-fallback';
 import { beginPageTransition, endPageTransition } from '@/lib/page-transition';
 
 /* ------------------------------------------------------------------ */
@@ -114,7 +115,9 @@ export function AnimatedOutlet({ className }: { className?: string }) {
         style={{ willChange: 'opacity' }}
         className={cn('min-h-full w-full', className)}
       >
-        {outlet}
+        {/* Lazily-loaded page chunks suspend here, so the nav/header/bottom-nav
+            shell stays mounted and only the content area shows the spinner. */}
+        <Suspense fallback={<RouteFallback />}>{outlet}</Suspense>
       </motion.div>
     </AnimatePresence>
   );

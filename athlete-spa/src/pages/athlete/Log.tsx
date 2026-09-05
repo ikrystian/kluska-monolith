@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { PlusCircle, Trash2, Save, Loader2, Dumbbell, Upload, Search, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, Clock, LayoutList, RotateCcw, CheckCircle2, Check, Circle, Timer, AlertCircle, Minus, Plus, X } from 'lucide-react';
+import { PlusCircle, Trash2, Save, Loader2, Dumbbell, Upload, Search, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, ChevronDown, ChevronUp, Clock, LayoutList, RotateCcw, CheckCircle2, Check, Circle, Timer, AlertCircle, Minus, Plus, X } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
@@ -195,6 +195,8 @@ function AddExerciseSheet({ allExercises, onAddExercise }: { allExercises: Exerc
       <SheetTrigger asChild>
         <Button size="icon" className="hero-ember h-12 w-12 rounded-full text-white shadow-glow transition-transform hover:opacity-95 active:scale-90">
           <PlusCircle className="h-6 w-6" />
+          <span className="absolute bottom-0 text-xs">Dodaj kolejne ćwiczenie</span>
+
         </Button>
       </SheetTrigger>
       <SheetContent side="bottom" className="h-[85vh] rounded-t-[2rem]">
@@ -213,7 +215,7 @@ function AddExerciseSheet({ allExercises, onAddExercise }: { allExercises: Exerc
             />
           </div>
           <ScrollArea className="h-[60vh]">
-            <div className="space-y-4 pr-4">
+            <div className="space-y-2">
               {groupedExercises.map(group => (
                 <div key={group.name}>
                   <p className="sticky top-0 z-10 -mx-1 bg-background/95 px-1 py-2 text-xs font-bold uppercase tracking-[0.14em] text-primary backdrop-blur-sm">
@@ -228,10 +230,8 @@ function AddExerciseSheet({ allExercises, onAddExercise }: { allExercises: Exerc
                         className="flex cursor-pointer items-center justify-between rounded-2xl border border-border/60 bg-card p-3.5 transition-all hover:border-primary/30 active:scale-[0.99]"
                       >
                         <div className="min-w-0">
-                          <p className="truncate font-semibold">{ex.name}</p>
-                          <p className="truncate text-sm text-muted-foreground">
-                            {ex.mainMuscleGroups?.map(mg => mg.name).join(', ') || 'Ogólnorozwojowe'}
-                          </p>
+                          <p className=" font-semibold">{ex.name}</p>
+
                         </div>
                         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary text-primary">
                           <PlusCircle className="h-5 w-5" />
@@ -322,29 +322,29 @@ function WorkoutBuilderView({ initialData, onStart, onCancel, allExercises, isLo
             ) : (
               <div className="space-y-2.5">
                 <AnimatePresence initial={false}>
-                {fields.map((field, index) => {
-                  const exerciseDetails = allExercises?.find(ex => ex.id === field.exerciseId);
-                  return (
-                    <motion.div key={field.id} {...listItemMotion}>
-                    <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-card p-3.5 shadow-soft">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary font-headline text-sm font-bold text-primary">
-                          {index + 1}
+                  {fields.map((field, index) => {
+                    const exerciseDetails = allExercises?.find(ex => ex.id === field.exerciseId);
+                    return (
+                      <motion.div key={field.id} {...listItemMotion}>
+                        <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-card p-3.5 shadow-soft">
+                          <div className="flex min-w-0 items-center gap-3">
+                            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary font-headline text-sm font-bold text-primary">
+                              {index + 1}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate font-semibold">{exerciseDetails?.name || (isLoadingExercises ? 'Ładowanie...' : 'Nieznane ćwiczenie')}</p>
+                              <p className="truncate text-xs text-muted-foreground">
+                                {exerciseDetails?.mainMuscleGroups?.map(mg => mg.name).join(', ') || 'Ogólnorozwojowe'}
+                              </p>
+                            </div>
+                          </div>
+                          <Button type="button" variant="ghost" size="icon" className="shrink-0" onClick={() => remove(index)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
                         </div>
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold">{exerciseDetails?.name || (isLoadingExercises ? 'Ładowanie...' : 'Nieznane ćwiczenie')}</p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {exerciseDetails?.mainMuscleGroups?.map(mg => mg.name).join(', ') || 'Ogólnorozwojowe'}
-                          </p>
-                        </div>
-                      </div>
-                      <Button type="button" variant="ghost" size="icon" className="shrink-0" onClick={() => remove(index)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                    </motion.div>
-                  );
-                })}
+                      </motion.div>
+                    );
+                  })}
                 </AnimatePresence>
               </div>
             )}
@@ -380,7 +380,7 @@ function ExerciseRail({ statuses, activeIndex, onSelect }: {
   if (statuses.length === 0) return null;
 
   return (
-    <div className="scrollbar-hide -mx-1 mb-3 flex shrink-0 gap-1.5 overflow-x-auto px-1 pb-1">
+    <div className="scrollbar-hide -mx-1 mb-1 flex shrink-0 gap-1.5 overflow-x-auto px-1">
       {statuses.map((status, i) => {
         const isActive = i === activeIndex;
         return (
@@ -443,6 +443,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   const [viewMode, setViewMode] = useState<ViewMode>(() =>
     localStorage.getItem('athlete-log-view-mode') === 'carousel' ? 'carousel' : 'list'
   );
+  const [isHeaderExpanded, setIsHeaderExpanded] = useState(false);
 
   // Transient rest countdown shown after checking off a set in list mode
   const [isResting, setIsResting] = useState(false);
@@ -890,6 +891,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   const exerciseDetails = allExercises?.find(ex => ex.id === selectedExerciseId);
 
   // Live overview data for the header bar and the exercise rail
+  const watchedWorkoutName = form.watch('workoutName');
   const watchedSeries = form.watch('exerciseSeries');
   const totalSets = watchedSeries.reduce((acc, s) => acc + (s.sets?.length ?? 0), 0);
   const completedSets = watchedSeries.reduce(
@@ -918,24 +920,61 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
         })} className="flex flex-col h-full">
 
           {/* Header Section */}
-          <div className="mb-3 px-1">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <FormField
-                  control={form.control}
-                  name="workoutName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input {...field} className="h-auto rounded-none border-0 bg-transparent p-0 font-headline text-xl font-bold shadow-none focus-visible:ring-0" />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+          <div className="mb-2 px-1 md:mb-3">
+            <div className={cn("flex justify-between gap-2", isHeaderExpanded ? "items-start" : "items-center md:items-start")}>
+              {/* Mobile collapsed trigger */}
+              <button
+                type="button"
+                onClick={() => {
+                  haptic('tap');
+                  setIsHeaderExpanded(true);
+                }}
+                className={cn(
+                  "flex min-w-0 flex-1 items-center gap-1.5 py-1 text-left active:opacity-70 md:hidden",
+                  isHeaderExpanded && "hidden"
+                )}
+                aria-label="Rozwiń nagłówek treningu"
+              >
+                <span className="truncate font-headline text-base font-bold text-foreground">
+                  {watchedWorkoutName || 'Trening'}
+                </span>
+                <span className="shrink-0 text-xs font-semibold text-muted-foreground tabular-nums">
+                  ({completedSets}/{totalSets})
+                </span>
+                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </button>
+
+              {/* Full editable header on desktop or when expanded on mobile */}
+              <div className={cn("min-w-0 flex-1", !isHeaderExpanded && "hidden md:block")}>
+                <div className="flex items-center gap-2">
+                  <FormField
+                    control={form.control}
+                    name="workoutName"
+                    render={({ field }) => (
+                      <FormItem className="min-w-0 flex-1">
+                        <FormControl>
+                          <Input {...field} className="h-auto rounded-none border-0 bg-transparent p-0 font-headline text-xl font-bold shadow-none focus-visible:ring-0" />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      haptic('tap');
+                      setIsHeaderExpanded(false);
+                    }}
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:hidden"
+                    aria-label="Zwiń nagłówek"
+                  >
+                    <ChevronUp className="h-4 w-4" />
+                  </button>
+                </div>
                 <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
                   {format(startTime, 'HH:mm')} · {fields.length} ćw. · <span className="tabular-nums">{completedSets}/{totalSets}</span> serii
                 </p>
               </div>
+
               <div className="flex shrink-0 items-center gap-2">
                 <ElapsedBadge startTime={startTime} />
                 <Button type="submit" size="sm" disabled={fields.length === 0}>
@@ -944,7 +983,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
               </div>
             </div>
 
-            <div className="mt-3 flex items-center gap-3">
+            <div className={cn("mt-3 flex items-center gap-3", !isHeaderExpanded && "hidden md:flex")}>
               {viewMode === 'list' ? (
                 <Progress
                   value={totalSets > 0 ? (completedSets / totalSets) * 100 : 0}
@@ -1027,7 +1066,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
               </div>
 
               {/* Bottom Navigation Bar - Only for list view */}
-              <div className="glass fixed inset-x-4 bottom-[calc(1.25rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-lg items-center justify-between rounded-[2rem] px-4 py-3 md:relative md:inset-x-auto md:bottom-auto md:rounded-2xl">
+              <div className="glass fixed inset-x-4 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-lg items-center justify-between rounded-[2rem] px-4 py-3 md:relative md:inset-x-auto md:bottom-auto md:rounded-2xl">
                 <Button
                   type="button"
                   variant="ghost"
@@ -1261,7 +1300,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
     <Card className="rounded-[1.75rem]">
       <CardHeader className="flex-row items-start justify-between gap-2 pb-4">
         <div className="min-w-0">
-          <CardTitle className="font-headline text-lg font-bold">{exerciseDetails?.name || (isLoadingExercises ? "Ładowanie..." : "Wybierz ćwiczenie")}</CardTitle>
+          <CardTitle className="font-headline text-lg font-bold text-ellipsis whitespace-nowrap overflow-hidden">{exerciseDetails?.name || (isLoadingExercises ? "Ładowanie..." : "Wybierz ćwiczenie")}</CardTitle>
           {(tempo || exerciseHistory) && (
             <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
               {tempo && <span>Tempo {tempo}</span>}
@@ -1313,229 +1352,229 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
             <Label className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">✓</Label>
           </div>
           <AnimatePresence initial={false}>
-          {fields.map((setField, setIndex) => {
-            const isCompleted = watch(`exerciseSeries.${index}.sets.${setIndex}.completed`);
-            const sets = watch(`exerciseSeries.${index}.sets`);
-            // Find the first uncompleted set to mark as active
-            const firstUncompletedIndex = sets?.findIndex((s: any) => !s.completed);
-            const isActive = firstUncompletedIndex === setIndex;
+            {fields.map((setField, setIndex) => {
+              const isCompleted = watch(`exerciseSeries.${index}.sets.${setIndex}.completed`);
+              const sets = watch(`exerciseSeries.${index}.sets`);
+              // Find the first uncompleted set to mark as active
+              const firstUncompletedIndex = sets?.findIndex((s: any) => !s.completed);
+              const isActive = firstUncompletedIndex === setIndex;
 
-            const previousLabel = formatPreviousSet(setIndex);
+              const previousLabel = formatPreviousSet(setIndex);
 
-            return (
-              <motion.div key={setField.id} {...listItemMotion}>
-              <div
-                className={`grid grid-cols-12 items-center gap-1.5 rounded-xl px-1 py-1.5 transition-all ${isCompleted
-                    ? 'opacity-55 bg-volt/[0.06]'
-                    : isActive
-                      ? 'ring-1 ring-primary/60 bg-primary/10 shadow-soft'
-                      : 'bg-transparent'
-                  }`}
-              >
-                {/* Set number doubles as the type picker: number = working set,
+              return (
+                <motion.div key={setField.id} {...listItemMotion}>
+                  <div
+                    className={`grid grid-cols-12 items-center gap-1.5 rounded-xl px-1 py-1.5 transition-all ${isCompleted
+                      ? 'opacity-55 bg-volt/[0.06]'
+                      : isActive
+                        ? 'ring-1 ring-primary/60 bg-primary/10 shadow-soft'
+                        : 'bg-transparent'
+                      }`}
+                  >
+                    {/* Set number doubles as the type picker: number = working set,
                     colored icon = special set. The modal also allows deleting. */}
-                <FormField
-                  control={control}
-                  name={`exerciseSeries.${index}.sets.${setIndex}.type`}
-                  render={({ field }) => {
-                    const typeConfig = getSetTypeConfig(field.value || SetType.WorkingSet);
-                    const isWorkingSet = (field.value || SetType.WorkingSet) === SetType.WorkingSet;
-                    const TypeIcon = typeConfig.icon;
-                    return (
-                      <FormItem className="col-span-2 space-y-0">
-                        <FormControl>
-                          <SetTypeModal
-                            value={field.value || SetType.WorkingSet}
-                            onChange={field.onChange}
-                            onDeleteSet={() => remove(setIndex)}
-                            renderTrigger={
+                    <FormField
+                      control={control}
+                      name={`exerciseSeries.${index}.sets.${setIndex}.type`}
+                      render={({ field }) => {
+                        const typeConfig = getSetTypeConfig(field.value || SetType.WorkingSet);
+                        const isWorkingSet = (field.value || SetType.WorkingSet) === SetType.WorkingSet;
+                        const TypeIcon = typeConfig.icon;
+                        return (
+                          <FormItem className="col-span-2 space-y-0">
+                            <FormControl>
+                              <SetTypeModal
+                                value={field.value || SetType.WorkingSet}
+                                onChange={field.onChange}
+                                onDeleteSet={() => remove(setIndex)}
+                                renderTrigger={
+                                  <button
+                                    type="button"
+                                    aria-label={`Seria ${setIndex + 1}: ${typeConfig.name}`}
+                                    className={cn(
+                                      'flex h-10 w-full items-center justify-center rounded-lg border font-headline text-sm font-bold tabular-nums transition-colors',
+                                      isWorkingSet
+                                        ? 'border-transparent bg-secondary/50 text-muted-foreground'
+                                        : cn(typeConfig.bgColorClass, typeConfig.borderColorClass, typeConfig.colorClass)
+                                    )}
+                                  >
+                                    {isWorkingSet ? setIndex + 1 : <TypeIcon className="h-4 w-4" />}
+                                  </button>
+                                }
+                              />
+                            </FormControl>
+                          </FormItem>
+                        );
+                      }}
+                    />
+
+                    {/* Previous workout's result for this slot - tap to fill */}
+                    <div className="col-span-3">
+                      {previousLabel ? (
+                        <button
+                          type="button"
+                          disabled={isCompleted}
+                          onClick={() => fillFromPrevious(setIndex)}
+                          aria-label="Wypełnij wynikiem z poprzedniego treningu"
+                          className="h-10 w-full truncate rounded-lg text-[11px] font-semibold tabular-nums text-muted-foreground transition-colors active:bg-secondary/60 disabled:opacity-40"
+                        >
+                          {previousLabel}
+                        </button>
+                      ) : (
+                        <span aria-hidden className="block text-center text-[11px] text-muted-foreground/40">—</span>
+                      )}
+                    </div>
+
+                    {/* Conditional fields based on exercise type */}
+                    {exerciseType === 'weight' ? (
+                      <>
+                        <FormField
+                          control={control}
+                          name={`exerciseSeries.${index}.sets.${setIndex}.weight`}
+                          render={({ field }) => (
+                            <FormItem className="col-span-3 space-y-0">
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  inputMode="decimal"
+                                  step="0.5"
+                                  placeholder="0"
+                                  {...field}
+                                  onFocus={selectAllOnFocus}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    clearValidationError(setIndex);
+                                  }}
+                                  className={`h-10 rounded-lg text-center tabular-nums ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (field.value === undefined || field.value === null || field.value === '') ? "border-destructive ring-destructive/20 ring-1" : ""}`}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={control}
+                          name={`exerciseSeries.${index}.sets.${setIndex}.reps`}
+                          render={({ field }) => (
+                            <FormItem className="col-span-2 space-y-0">
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  inputMode="numeric"
+                                  placeholder="0"
+                                  {...field}
+                                  onFocus={selectAllOnFocus}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    clearValidationError(setIndex);
+                                  }}
+                                  className={`h-10 rounded-lg text-center tabular-nums ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    ) : exerciseType === 'reps' ? (
+                      <FormField
+                        control={control}
+                        name={`exerciseSeries.${index}.sets.${setIndex}.reps`}
+                        render={({ field }) => (
+                          <FormItem className="col-span-5 space-y-0">
+                            <FormControl>
+                              <Input
+                                type="number"
+                                inputMode="numeric"
+                                placeholder="0"
+                                {...field}
+                                onFocus={selectAllOnFocus}
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  clearValidationError(setIndex);
+                                }}
+                                className={`h-10 rounded-lg text-center tabular-nums ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    ) : (
+                      <FormField
+                        control={control}
+                        name={`exerciseSeries.${index}.sets.${setIndex}.duration`}
+                        render={({ field }) => (
+                          <FormItem className="col-span-5 space-y-0">
+                            <FormControl>
+                              <div className="relative">
+                                <Input
+                                  type="number"
+                                  inputMode="numeric"
+                                  placeholder="0"
+                                  {...field}
+                                  onFocus={selectAllOnFocus}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    clearValidationError(setIndex);
+                                  }}
+                                  className={`h-10 rounded-lg text-center tabular-nums pr-6 ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
+                                />
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
+                              </div>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    <div className="col-span-2 flex justify-center">
+                      <FormField
+                        control={control}
+                        name={`exerciseSeries.${index}.sets.${setIndex}.completed`}
+                        render={({ field }) => (
+                          <FormItem className="space-y-0">
+                            <FormControl>
                               <button
                                 type="button"
-                                aria-label={`Seria ${setIndex + 1}: ${typeConfig.name}`}
-                                className={cn(
-                                  'flex h-10 w-full items-center justify-center rounded-lg border font-headline text-sm font-bold tabular-nums transition-colors',
-                                  isWorkingSet
-                                    ? 'border-transparent bg-secondary/50 text-muted-foreground'
-                                    : cn(typeConfig.bgColorClass, typeConfig.borderColorClass, typeConfig.colorClass)
-                                )}
+                                aria-label={field.value ? 'Cofnij ukończenie serii' : 'Oznacz serię jako ukończoną'}
+                                onClick={() => handleSetCompletion(setIndex, field.value)}
+                                className={`grid h-10 w-10 place-items-center rounded-full focus:outline-none transition-transform ${isActive ? 'scale-110' : ''} ${validationErrors[setIndex] ? 'animate-shake' : ''}`}
                               >
-                                {isWorkingSet ? setIndex + 1 : <TypeIcon className="h-4 w-4" />}
+                                {field.value ? (
+                                  <CheckCircle2 className="h-6 w-6 text-volt" />
+                                ) : validationErrors[setIndex] ? (
+                                  <AlertCircle className="h-6 w-6 text-destructive" />
+                                ) : (
+                                  <Circle className={`h-6 w-6 ${isActive ? 'text-primary fill-primary/20' : 'text-muted-foreground'}`} />
+                                )}
                               </button>
-                            }
-                          />
-                        </FormControl>
-                      </FormItem>
-                    );
-                  }}
-                />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
 
-                {/* Previous workout's result for this slot - tap to fill */}
-                <div className="col-span-3">
-                  {previousLabel ? (
-                    <button
-                      type="button"
-                      disabled={isCompleted}
-                      onClick={() => fillFromPrevious(setIndex)}
-                      aria-label="Wypełnij wynikiem z poprzedniego treningu"
-                      className="h-10 w-full truncate rounded-lg text-[11px] font-semibold tabular-nums text-muted-foreground transition-colors active:bg-secondary/60 disabled:opacity-40"
-                    >
-                      {previousLabel}
-                    </button>
-                  ) : (
-                    <span aria-hidden className="block text-center text-[11px] text-muted-foreground/40">—</span>
-                  )}
-                </div>
-
-                {/* Conditional fields based on exercise type */}
-                {exerciseType === 'weight' ? (
-                  <>
-                    <FormField
-                      control={control}
-                      name={`exerciseSeries.${index}.sets.${setIndex}.weight`}
-                      render={({ field }) => (
-                        <FormItem className="col-span-3 space-y-0">
-                          <FormControl>
-                            <Input
-                              type="number"
-                              inputMode="decimal"
-                              step="0.5"
-                              placeholder="0"
-                              {...field}
-                              onFocus={selectAllOnFocus}
-                              onChange={(e) => {
-                                field.onChange(e);
-                                clearValidationError(setIndex);
-                              }}
-                              className={`h-10 rounded-lg text-center tabular-nums ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (field.value === undefined || field.value === null || field.value === '') ? "border-destructive ring-destructive/20 ring-1" : ""}`}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={control}
-                      name={`exerciseSeries.${index}.sets.${setIndex}.reps`}
-                      render={({ field }) => (
-                        <FormItem className="col-span-2 space-y-0">
-                          <FormControl>
-                            <Input
-                              type="number"
-                              inputMode="numeric"
-                              placeholder="0"
-                              {...field}
-                              onFocus={selectAllOnFocus}
-                              onChange={(e) => {
-                                field.onChange(e);
-                                clearValidationError(setIndex);
-                              }}
-                              className={`h-10 rounded-lg text-center tabular-nums ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </>
-                ) : exerciseType === 'reps' ? (
-                  <FormField
-                    control={control}
-                    name={`exerciseSeries.${index}.sets.${setIndex}.reps`}
-                    render={({ field }) => (
-                      <FormItem className="col-span-5 space-y-0">
-                        <FormControl>
-                          <Input
-                            type="number"
-                            inputMode="numeric"
-                            placeholder="0"
-                            {...field}
-                            onFocus={selectAllOnFocus}
-                            onChange={(e) => {
-                              field.onChange(e);
-                              clearValidationError(setIndex);
-                            }}
-                            className={`h-10 rounded-lg text-center tabular-nums ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                ) : (
-                  <FormField
-                    control={control}
-                    name={`exerciseSeries.${index}.sets.${setIndex}.duration`}
-                    render={({ field }) => (
-                      <FormItem className="col-span-5 space-y-0">
-                        <FormControl>
-                          <div className="relative">
-                            <Input
-                              type="number"
-                              inputMode="numeric"
-                              placeholder="0"
-                              {...field}
-                              onFocus={selectAllOnFocus}
-                              onChange={(e) => {
-                                field.onChange(e);
-                                clearValidationError(setIndex);
-                              }}
-                              className={`h-10 rounded-lg text-center tabular-nums pr-6 ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
-                            />
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
-                          </div>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                )}
-
-                <div className="col-span-2 flex justify-center">
-                  <FormField
-                    control={control}
-                    name={`exerciseSeries.${index}.sets.${setIndex}.completed`}
-                    render={({ field }) => (
-                      <FormItem className="space-y-0">
-                        <FormControl>
-                          <button
-                            type="button"
-                            aria-label={field.value ? 'Cofnij ukończenie serii' : 'Oznacz serię jako ukończoną'}
-                            onClick={() => handleSetCompletion(setIndex, field.value)}
-                            className={`grid h-10 w-10 place-items-center rounded-full focus:outline-none transition-transform ${isActive ? 'scale-110' : ''} ${validationErrors[setIndex] ? 'animate-shake' : ''}`}
-                          >
-                            {field.value ? (
-                              <CheckCircle2 className="h-6 w-6 text-volt" />
-                            ) : validationErrors[setIndex] ? (
-                              <AlertCircle className="h-6 w-6 text-destructive" />
-                            ) : (
-                              <Circle className={`h-6 w-6 ${isActive ? 'text-primary fill-primary/20' : 'text-muted-foreground'}`} />
-                            )}
-                          </button>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-
-              {/* RPE is asked only once the set is done — before that there is
+                  {/* RPE is asked only once the set is done — before that there is
                   nothing to rate, and it would crowd the row. */}
-              {isCompleted && (
-                <FormField
-                  control={control}
-                  name={`exerciseSeries.${index}.sets.${setIndex}.rpe`}
-                  render={({ field }) => (
-                    <FormItem className="space-y-0 px-1 pb-2">
-                      <FormControl>
-                        <RpeSelector value={field.value} onChange={field.onChange} />
-                      </FormControl>
-                    </FormItem>
+                  {isCompleted && (
+                    <FormField
+                      control={control}
+                      name={`exerciseSeries.${index}.sets.${setIndex}.rpe`}
+                      render={({ field }) => (
+                        <FormItem className="space-y-0 px-1 pb-2">
+                          <FormControl>
+                            <RpeSelector value={field.value} onChange={field.onChange} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
                   )}
-                />
-              )}
-              </motion.div>
-            )
-          })}
+                </motion.div>
+              )
+            })}
           </AnimatePresence>
           <div className="flex items-center gap-2 pt-1">
-            <Button type="button" variant="outline" size="sm" className="h-10 flex-1 border-dashed" onClick={handleAddSet}>
+            <Button type="button" variant="outline" size="sm" id="add-series-button" className="h-10 flex-1 border-dashed" onClick={handleAddSet}>
               <PlusCircle className="mr-2 h-4 w-4" /> Dodaj serię
             </Button>
             {fields.length > 0 && (

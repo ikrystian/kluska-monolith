@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { ArrowLeft, Flame, Loader2, Plus, ScanBarcode, Search, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -19,7 +19,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BarcodeScanner } from '@/components/nutrition/BarcodeScanner';
+
+// html5-qrcode is ~300 kB — only pulled in when the athlete opens the scan tab.
+const BarcodeScanner = lazy(() =>
+    import('@/components/nutrition/BarcodeScanner').then((m) => ({ default: m.BarcodeScanner }))
+);
 
 interface AddFoodDialogProps {
     open: boolean;
@@ -351,7 +355,15 @@ export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdd
                         <TabsContent value="scan" className="space-y-3">
                             {/* Mount the camera only while this tab is visible */}
                             {tab === 'scan' && (
-                                <BarcodeScanner onDetected={handleCodeDetected} paused={isResolvingCode} />
+                                <Suspense
+                                    fallback={
+                                        <div className="flex items-center justify-center rounded-xl bg-black py-16">
+                                            <Loader2 className="h-6 w-6 animate-spin text-white/70" />
+                                        </div>
+                                    }
+                                >
+                                    <BarcodeScanner onDetected={handleCodeDetected} paused={isResolvingCode} />
+                                </Suspense>
                             )}
 
                             {isResolvingCode ? (

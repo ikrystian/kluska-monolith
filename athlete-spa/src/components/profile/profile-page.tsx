@@ -1,7 +1,7 @@
 'use client';
 
 import { apiFetch, getApiBaseUrl, getStoredToken, resolveMediaUrl } from '@/lib/api-client';
-import { useState, useMemo, useEffect } from 'react';
+import { lazy, Suspense, useState, useMemo, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { App } from '@capacitor/app';
@@ -30,9 +30,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Switch } from '@/components/ui/switch';
 import { haptic, isHapticsEnabled, isHapticsSupported, setHapticsEnabled } from '@/lib/haptics';
-import { AvatarUploadDialog } from './AvatarUploadDialog';
 import { useUserProfile } from '@/contexts/UserProfileContext';
 import type { RunningSession, StravaActivity } from '@/lib/types';
+
+// react-image-crop + its CSS only load when the athlete opens the avatar editor.
+const AvatarUploadDialog = lazy(() =>
+  import('./AvatarUploadDialog').then((m) => ({ default: m.AvatarUploadDialog }))
+);
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Imię jest wymagane.'),
@@ -292,12 +296,16 @@ export function ProfilePage() {
               <Camera className="mr-2 h-4 w-4" />
               Zmień zdjęcie
             </Button>
-            <AvatarUploadDialog
-              open={isAvatarDialogOpen}
-              onOpenChange={setIsAvatarDialogOpen}
-              onUploadComplete={handleAvatarUpload}
-              currentAvatarUrl={resolveMediaUrl(userProfile?.avatarUrl)}
-            />
+            {isAvatarDialogOpen && (
+              <Suspense fallback={null}>
+                <AvatarUploadDialog
+                  open={isAvatarDialogOpen}
+                  onOpenChange={setIsAvatarDialogOpen}
+                  onUploadComplete={handleAvatarUpload}
+                  currentAvatarUrl={resolveMediaUrl(userProfile?.avatarUrl)}
+                />
+              </Suspense>
+            )}
           </div>
         </div>
       </section>
