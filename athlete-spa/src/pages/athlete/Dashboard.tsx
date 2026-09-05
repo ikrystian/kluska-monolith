@@ -923,9 +923,7 @@ export default function AthleteDashboardPage() {
         {/* Hero — typographic statement */}
         <section className="mb-6 md:mb-10">
           <div className="flex items-start justify-between gap-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-muted-foreground">
-              {format(new Date(), 'EEEE · d MMMM yyyy', { locale: pl })}
-            </p>
+
             {!isEditing && (
               <Button
                 variant="outline"

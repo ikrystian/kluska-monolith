@@ -135,13 +135,13 @@ function AthleteLayoutContent() {
                 'relative z-10 flex-1 overflow-x-hidden overflow-y-auto min-h-0',
                 isActiveWorkoutSession
                   ? 'pb-[env(safe-area-inset-bottom)]'
-                  : 'pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-0'
+                  : 'pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-0'
               )}
             >
               {/* h-full so pages that build their own internal scroll region
                   (ExercisesListView's virtualized list, Log's builder) resolve
                   a real height off #outlet instead of collapsing to content. */}
-              <AnimatedOutlet className="h-full" />
+              <AnimatedOutlet className="lg:h-full" />
             </div>
             <BottomNav />
           </main>

@@ -723,57 +723,57 @@ export default function GoalsAndAchievementsPage() {
                   return (
                     <motion.div key={goal.id} {...cardItemMotion}>
                       <Card className={`flex h-full flex-col ${isCompleted ? 'border-volt/40 bg-volt/[0.04]' : ''}`}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="font-headline">{goal.title}</CardTitle>
-                        <CardDescription className="text-xs uppercase tracking-wider">
-                          Termin: {format(new Date(goal.deadline), 'd MMM yyyy', { locale: pl })}
-                        </CardDescription>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => { setEditingGoal(goal); setGoalDialogOpen(true); }}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            <span>Edytuj</span>
-                          </DropdownMenuItem>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} onClick={() => setGoalToDelete(goal)}>
-                              <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-                              <span className="text-destructive">Usuń</span>
-                            </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex-grow">
-                    <div className="mb-3 flex items-baseline justify-center gap-2">
-                      <span className="font-headline text-4xl font-extrabold tabular-nums tracking-tight">{goal.current.toLocaleString()}</span>
-                      <span className="text-sm text-muted-foreground">/ {goal.target.toLocaleString()} {goal.unit}</span>
-                    </div>
-                    <Progress value={progress} aria-label={`${goal.title} postęp`} />
-                    <p className={`mt-2 text-center text-[11px] font-bold uppercase tracking-wider ${isCompleted ? 'text-volt' : 'text-muted-foreground'}`}>
-                      {progress.toFixed(0)}% ukończono
-                    </p>
-                  </CardContent>
-                  <CardFooter className="flex-col gap-2">
-                    {isCompleted ? (
-                      <Button onClick={() => setGoalToConvert(goal)} className="w-full bg-volt font-bold text-volt-foreground shadow-glow-volt hover:bg-volt/90">
-                        <Trophy className="mr-2 h-4 w-4" /> Zamień w trofeum
-                      </Button>
-                    ) : (
-                      <p className="text-xs text-muted-foreground w-full text-center">
-                        Pozostało {formatDistanceToNow(new Date(goal.deadline), { locale: pl, addSuffix: true })}
-                      </p>
-                    )}
-                  </CardFooter>
-                </Card>
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <CardTitle className="font-headline">{goal.title}</CardTitle>
+                              <CardDescription className="text-xs uppercase tracking-wider">
+                                Termin: {format(new Date(goal.deadline), 'd MMM yyyy', { locale: pl })}
+                              </CardDescription>
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => { setEditingGoal(goal); setGoalDialogOpen(true); }}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  <span>Edytuj</span>
+                                </DropdownMenuItem>
+                                <AlertDialogTrigger asChild>
+                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} onClick={() => setGoalToDelete(goal)}>
+                                    <Trash2 className="mr-2 h-4 w-4 text-destructive" />
+                                    <span className="text-destructive">Usuń</span>
+                                  </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="flex-grow">
+                          <div className="mb-3 flex items-baseline justify-center gap-2">
+                            <span className="font-headline text-4xl font-extrabold tabular-nums tracking-tight">{goal.current.toLocaleString()}</span>
+                            <span className="text-sm text-muted-foreground">/ {goal.target.toLocaleString()} {goal.unit}</span>
+                          </div>
+                          <Progress value={progress} aria-label={`${goal.title} postęp`} />
+                          <p className={`mt-2 text-center text-[11px] font-bold uppercase tracking-wider ${isCompleted ? 'text-volt' : 'text-muted-foreground'}`}>
+                            {progress.toFixed(0)}% ukończono
+                          </p>
+                        </CardContent>
+                        <CardFooter className="flex-col gap-2">
+                          {isCompleted ? (
+                            <Button onClick={() => setGoalToConvert(goal)} className="w-full bg-volt font-bold text-volt-foreground shadow-glow-volt hover:bg-volt/90">
+                              <Trophy className="mr-2 h-4 w-4" /> Zamień w trofeum
+                            </Button>
+                          ) : (
+                            <p className="text-xs text-muted-foreground w-full text-center">
+                              Pozostało {formatDistanceToNow(new Date(goal.deadline), { locale: pl, addSuffix: true })}
+                            </p>
+                          )}
+                        </CardFooter>
+                      </Card>
                     </motion.div>
                   );
                 })}

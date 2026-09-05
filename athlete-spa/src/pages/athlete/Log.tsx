@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { PlusCircle, Trash2, Save, Loader2, Dumbbell, Upload, Search, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, ChevronDown, ChevronUp, Clock, LayoutList, RotateCcw, CheckCircle2, Check, Circle, Timer, AlertCircle, Minus, Plus, X } from 'lucide-react';
+import { PlusCircle, Trash2, Save, Loader2, Dumbbell, Search, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, ChevronDown, ChevronUp, Clock, LayoutList, RotateCcw, CheckCircle2, Check, Circle, Timer, AlertCircle, Minus, Plus, X, Camera, Image as ImageIcon } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
@@ -431,6 +431,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useUser();
   const { refetch: refetchActiveWorkout } = useActiveWorkout();
@@ -644,8 +645,13 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setPhotoFile(file);
-      setPhotoPreview(URL.createObjectURL(file));
+      setPhotoPreview((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return URL.createObjectURL(file);
+      });
     }
+    // Reset so picking / shooting the same file again still fires onChange.
+    e.target.value = '';
   };
 
   const handleAddExercise = (exerciseId: string) => {
@@ -839,16 +845,25 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
             </div>
           </div>
 
-          <div className="space-y-4 pt-2">
+          <div className="space-y-3 pt-2">
             {photoPreview && (
-              <div className="relative w-full aspect-video rounded-md overflow-hidden mb-2">
+              <div className="relative w-full aspect-video rounded-md overflow-hidden mb-1">
                 <img src={photoPreview} alt="Podgląd zdjęcia" className="absolute inset-0 w-full h-full object-cover" />
               </div>
             )}
-            <Button variant="outline" className="w-full" onClick={() => photoInputRef.current?.click()}>
-              <Upload className="mr-2 h-4 w-4" />
-              {photoFile ? 'Zmień zdjęcie' : 'Dodaj zdjęcie'}
-            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" className="w-full" onClick={() => cameraInputRef.current?.click()}>
+                <Camera className="mr-2 h-4 w-4" />
+                {photoFile ? 'Zrób nowe' : 'Zrób zdjęcie'}
+              </Button>
+              <Button variant="outline" className="w-full" onClick={() => photoInputRef.current?.click()}>
+                <ImageIcon className="mr-2 h-4 w-4" />
+                {photoFile ? 'Wybierz inne' : 'Z galerii'}
+              </Button>
+            </div>
+            {/* `capture` opens the phone camera straight away; the plain input lets
+                the athlete pick an existing shot from the gallery. */}
+            <input type="file" ref={cameraInputRef} accept="image/*" capture="environment" onChange={handlePhotoChange} className="hidden" />
             <input type="file" ref={photoInputRef} accept="image/*" onChange={handlePhotoChange} className="hidden" />
           </div>
 
@@ -2085,9 +2100,7 @@ export default function LogWorkoutPage() {
   return (
     <div className="container mx-auto p-4 md:p-8">
       <div className="mb-6">
-        <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-muted-foreground">
-          {format(new Date(), 'EEEE · d MMMM', { locale: pl })}
-        </p>
+
         <h1 className="mt-2 font-display text-3xl font-extrabold uppercase tracking-tight md:text-4xl">
           Trenuj <span className="text-gradient-ember">teraz</span>
         </h1>

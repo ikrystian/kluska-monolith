@@ -129,7 +129,7 @@ export default function CalendarPage() {
         selectedDayEvents.planned.length > 0;
 
     return (
-        <div className="container mx-auto max-w-7xl p-4 pb-8 md:p-8">
+        <div className="container mx-auto max-w-7xl p-4 pb-0 md:p-8">
             <div className="mb-6 flex items-center gap-3">
                 <span className="hero-ember flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-glow">
                     <CalendarDays className="h-5 w-5" />
