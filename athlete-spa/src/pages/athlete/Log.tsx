@@ -61,6 +61,29 @@ import { SetTypeModal } from '@/components/workout/SetTypeModal';
 import { getSetTypeConfig, type ExerciseType } from '@/lib/set-type-config';
 import { AnimatePresence, motion, listItemMotion } from '@/components/motion';
 import { cn } from '@/lib/utils';
+import { useSWRConfig } from 'swr';
+import { purgePersistedEntries } from '@/lib/swr-cache';
+
+/**
+ * Every locally-held `workoutLogs` list read (the active-workout lookup, the
+ * history list). The `/api/db/workoutLogs/:id` detail read is deliberately not
+ * matched — the history screen we navigate to right after saving needs it.
+ */
+const isWorkoutLogsListKey = (key: unknown): key is string =>
+  typeof key === 'string' && key.includes('/api/db/workoutLogs?');
+
+/**
+ * Wipes those reads from local storage — both the in-memory SWR entry and the
+ * localStorage snapshot it gets serialised into — so an app that is killed
+ * before it next backgrounds can't restore a saved/discarded session as a
+ * phantom "in-progress" workout. Pass SWR's scoped `mutate` (from
+ * `useSWRConfig`); the module-level `mutate` import is bound to a different
+ * cache than the app's provider and would be a no-op here.
+ */
+const clearWorkoutLogsCache = (mutate: ReturnType<typeof useSWRConfig>['mutate']) => {
+  purgePersistedEntries(isWorkoutLogsListKey);
+  void mutate(isWorkoutLogsListKey, undefined, { revalidate: true });
+};
 
 
 // --- HELPER FUNCTIONS ---
@@ -435,6 +458,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   const { toast } = useToast();
   const { user } = useUser();
   const { refetch: refetchActiveWorkout } = useActiveWorkout();
+  const { mutate: swrMutate } = useSWRConfig();
 
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -766,6 +790,8 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
       });
 
       // Notify the ActiveWorkoutContext that the workout has been completed
+      // and drop the now-finished session from local storage right away.
+      clearWorkoutLogsCache(swrMutate);
       refetchActiveWorkout();
 
       navigate(`/athlete/history/${workoutLogId}`);
@@ -799,6 +825,8 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
         description: 'Twój trening został usunięty.',
       });
 
+      // Wipe the discarded session from local storage before leaving the page.
+      clearWorkoutLogsCache(swrMutate);
       refetchActiveWorkout();
       navigate('/athlete/dashboard');
     } catch (error) {
@@ -1621,6 +1649,59 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
   )
 }
 
+// --- WORKOUT EXERCISES PREVIEW ---
+// Short "what's inside" list shown before the athlete commits to a training,
+// so they can peek at the exercises without entering the builder first.
+const summarizeSets = (sets: WorkoutSet[] | undefined): string | null => {
+  if (!sets || sets.length === 0) return null;
+  const count = sets.length;
+  const reps = sets.map(s => Number(s.reps)).filter(r => Number.isFinite(r) && r > 0);
+  const durations = sets.map(s => Number(s.duration)).filter(d => Number.isFinite(d) && d > 0);
+
+  let detail = '';
+  if (reps.length) {
+    const min = Math.min(...reps);
+    const max = Math.max(...reps);
+    detail = ` × ${min === max ? min : `${min}-${max}`}`;
+  } else if (durations.length) {
+    const min = Math.min(...durations);
+    const max = Math.max(...durations);
+    detail = ` × ${min === max ? `${min}s` : `${min}-${max}s`}`;
+  }
+  return `${count} ${count === 1 ? 'seria' : 'serii'}${detail}`;
+};
+
+function WorkoutExercisesPreview({ exerciseSeries }: { exerciseSeries: ExerciseSeries[] | undefined }) {
+  if (!exerciseSeries || exerciseSeries.length === 0) {
+    return (
+      <p className="rounded-2xl border border-dashed border-border bg-card/50 p-4 text-center text-sm text-muted-foreground">
+        Ten trening nie ma jeszcze żadnych ćwiczeń.
+      </p>
+    );
+  }
+
+  return (
+    <ol className="max-h-[50vh] space-y-2 overflow-y-auto scrollbar-hide">
+      {exerciseSeries.map((series, i) => {
+        const muscles = series.exercise?.mainMuscleGroups?.map(mg => mg.name).filter(Boolean).join(', ');
+        const summary = summarizeSets(series.sets);
+        const meta = [muscles, summary].filter(Boolean).join(' · ');
+        return (
+          <li key={i} className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-3">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-secondary font-headline text-sm font-bold text-primary">
+              {i + 1}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold">{series.exercise?.name || 'Nieznane ćwiczenie'}</p>
+              <p className="truncate text-xs text-muted-foreground">{meta || 'Ogólnorozwojowe'}</p>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 // --- SELECTION VIEW COMPONENT ---
 function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder: (data: LogFormValues) => void; allExercises: Exercise[] | null }) {
   const { user } = useUser();
@@ -1781,11 +1862,12 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Rozpocząć trening?</AlertDialogTitle>
+                        <AlertDialogTitle>{template.name}</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Czy chcesz rozpocząć trening "{template.name}"? Zostaną załadowane wszystkie ćwiczenia z tego szablonu.
+                          {template.exerciseSeries?.length || 0} ćwiczeń · {template.durationMinutes} min. Sprawdź, co Cię czeka, zanim zaczniesz.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
+                      <WorkoutExercisesPreview exerciseSeries={template.exerciseSeries} />
                       <AlertDialogFooter>
                         <AlertDialogCancel>Anuluj</AlertDialogCancel>
                         <AlertDialogAction onClick={() => handleStartWorkout(template)}>
@@ -1853,15 +1935,34 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
                                         }
                                         // It's a Workout object
                                         return (
-                                          <Card key={dayIndex} className="cursor-pointer hover:bg-secondary/50" onClick={() => handleStartWorkout(day)}>
-                                            <CardContent className="p-3 flex justify-between items-center">
-                                              <div>
-                                                <p className="font-medium text-sm">Dzień {dayIndex + 1}: {day.name}</p>
-                                                <p className="text-xs text-muted-foreground">{day.exerciseSeries?.length || 0} ćwiczeń</p>
-                                              </div>
-                                              <Play className="h-4 w-4 text-primary" />
-                                            </CardContent>
-                                          </Card>
+                                          <AlertDialog key={dayIndex}>
+                                            <AlertDialogTrigger asChild>
+                                              <Card className="cursor-pointer hover:bg-secondary/50">
+                                                <CardContent className="p-3 flex justify-between items-center">
+                                                  <div>
+                                                    <p className="font-medium text-sm">Dzień {dayIndex + 1}: {day.name}</p>
+                                                    <p className="text-xs text-muted-foreground">{day.exerciseSeries?.length || 0} ćwiczeń</p>
+                                                  </div>
+                                                  <Play className="h-4 w-4 text-primary" />
+                                                </CardContent>
+                                              </Card>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                              <AlertDialogHeader>
+                                                <AlertDialogTitle>{day.name}</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                  Dzień {dayIndex + 1} · {day.exerciseSeries?.length || 0} ćwiczeń. Podejrzyj ćwiczenia przed startem.
+                                                </AlertDialogDescription>
+                                              </AlertDialogHeader>
+                                              <WorkoutExercisesPreview exerciseSeries={day.exerciseSeries} />
+                                              <AlertDialogFooter>
+                                                <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleStartWorkout(day)}>
+                                                  Rozpocznij
+                                                </AlertDialogAction>
+                                              </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                          </AlertDialog>
                                         )
                                       })}
                                     </div>
@@ -1892,20 +1993,35 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
           ) : (
             <div className="space-y-2.5">
               {historyLogs.map(log => (
-                <div
-                  key={log.id}
-                  onClick={() => handleRepeatWorkout(log)}
-                  className="flex cursor-pointer items-center gap-3.5 rounded-2xl border border-border/60 bg-card p-3.5 shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted active:scale-[0.99]"
-                >
-                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-volt/15 text-volt">
-                    <RotateCcw className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate font-semibold">{log.workoutName}</h3>
-                    <p className="text-xs text-muted-foreground">{format(new Date(log.endTime as unknown as string | number | Date), 'd MMMM yyyy', { locale: pl })}</p>
-                  </div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-primary">Powtórz</span>
-                </div>
+                <AlertDialog key={log.id}>
+                  <AlertDialogTrigger asChild>
+                    <div className="flex cursor-pointer items-center gap-3.5 rounded-2xl border border-border/60 bg-card p-3.5 shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted active:scale-[0.99]">
+                      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-volt/15 text-volt">
+                        <RotateCcw className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="truncate font-semibold">{log.workoutName}</h3>
+                        <p className="text-xs text-muted-foreground">{format(new Date(log.endTime as unknown as string | number | Date), 'd MMMM yyyy', { locale: pl })}</p>
+                      </div>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-primary">Powtórz</span>
+                    </div>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>{log.workoutName}</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {log.exercises?.length || 0} ćwiczeń · {format(new Date(log.endTime as unknown as string | number | Date), 'd MMMM yyyy', { locale: pl })}. Podejrzyj ćwiczenia przed powtórzeniem.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <WorkoutExercisesPreview exerciseSeries={log.exercises} />
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleRepeatWorkout(log)}>
+                        Powtórz trening
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               ))}
             </div>
           )}

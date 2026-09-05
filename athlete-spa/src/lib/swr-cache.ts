@@ -26,6 +26,28 @@ export function clearPersistedCache(): void {
   }
 }
 
+/**
+ * Drops entries whose key matches `match` from the on-disk snapshot right now,
+ * rather than waiting for the next background write. Used when a workout is
+ * saved or discarded so an app killed before it backgrounds can't restore the
+ * finished session as a phantom "in-progress" workout.
+ */
+export function purgePersistedEntries(match: (key: string) => boolean): void {
+  try {
+    const snapshot = readSnapshot();
+    if (snapshot.length === 0) return;
+    const kept = snapshot.filter(([key]) => !match(key));
+    if (kept.length === snapshot.length) return;
+    if (kept.length === 0) {
+      localStorage.removeItem(STORAGE_KEY);
+    } else {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(kept));
+    }
+  } catch {
+    // Storage unavailable — nothing to purge.
+  }
+}
+
 function readSnapshot(): CacheEntry[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);

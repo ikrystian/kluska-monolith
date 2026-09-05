@@ -254,7 +254,7 @@ function ExerciseSeriesItem({ index, form, removeSeries, exercises, openCombobox
                                     </PopoverTrigger>
                                     <PopoverContent className="w-[300px] p-0">
                                         <Command>
-                                            <CommandInput placeholder="Szukaj ćwiczenia..." />
+                                            <CommandInput autoFocus={false} placeholder="Szukaj ćwiczenia..." />
                                             <CommandList>
                                                 <CommandEmpty>Nie znaleziono ćwiczenia.</CommandEmpty>
                                                 <CommandGroup>
