@@ -4,8 +4,7 @@ import { SWRConfig } from 'swr';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { createPersistentCacheProvider } from '@/lib/swr-cache';
 import { ThemeProvider } from '@/components/theme-provider';
-import { Toaster } from '@/components/ui/toaster';
-import { Toaster as SonnerToaster } from '@/components/ui/sonner';
+import { Toaster } from 'react-hot-toast';
 import { FullScreenFallback } from '@/components/route-fallback';
 
 import LoginPage from '@/pages/Login';
@@ -126,8 +125,34 @@ export default function App() {
         <Route path="*" element={<Navigate to="/athlete/dashboard" replace />} />
       </Routes>
       </Suspense>
-      <Toaster />
-      <SonnerToaster />
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: 'hsl(var(--background))',
+            color: 'hsl(var(--foreground))',
+            border: '1px solid hsl(var(--border))',
+            borderRadius: '0.9rem',
+            boxShadow: '0 10px 30px rgb(0 0 0 / 0.12)',
+            fontSize: '0.875rem',
+            maxWidth: '92vw',
+          },
+          error: {
+            duration: 5000,
+            iconTheme: {
+              primary: 'hsl(var(--destructive))',
+              secondary: 'hsl(var(--destructive-foreground))',
+            },
+          },
+          success: {
+            iconTheme: {
+              primary: 'hsl(var(--primary))',
+              secondary: 'hsl(var(--primary-foreground))',
+            },
+          },
+        }}
+      />
     </AuthProvider>
     </ThemeProvider>
     </SWRConfig>

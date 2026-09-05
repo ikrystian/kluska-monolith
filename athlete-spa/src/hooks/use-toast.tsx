@@ -1,194 +1,69 @@
-"use client"
+'use client';
 
-// Inspired by react-hot-toast library
-import * as React from "react"
+import type { ReactNode } from 'react';
+import hotToast, { type ToastOptions } from 'react-hot-toast';
 
-import type {
-  ToastActionElement,
-  ToastProps,
-} from "@/components/ui/toast"
+/**
+ * Compatibility shim.
+ *
+ * Notifications used to run through a shadcn/radix `useToast()` called as
+ * `toast({ title, description, variant })`. They now go through
+ * `react-hot-toast`, so every message in the app — errors included — shares one
+ * renderer. New code can import `toast` from 'react-hot-toast' directly; this
+ * hook stays so the existing call sites keep working unchanged.
+ */
 
-const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+type LegacyVariant = 'default' | 'destructive' | (string & {});
 
-type ToasterToast = ToastProps & {
-  id: string
-  title?: React.ReactNode
-  description?: React.ReactNode
-  action?: ToastActionElement
+export interface LegacyToastInput {
+  title?: ReactNode;
+  description?: ReactNode;
+  variant?: LegacyVariant;
+  duration?: number;
+  /** Accepted for source compatibility; no longer rendered. */
+  action?: ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-const actionTypes = {
-  ADD_TOAST: "ADD_TOAST",
-  UPDATE_TOAST: "UPDATE_TOAST",
-  DISMISS_TOAST: "DISMISS_TOAST",
-  REMOVE_TOAST: "REMOVE_TOAST",
-} as const
+const asText = (node: ReactNode): string =>
+  typeof node === 'string' || typeof node === 'number' ? String(node) : '';
 
-let count = 0
-
-function genId() {
-  count = (count + 1) % Number.MAX_SAFE_INTEGER
-  return count.toString()
-}
-
-type ActionType = typeof actionTypes
-
-type Action =
-  | {
-      type: ActionType["ADD_TOAST"]
-      toast: ToasterToast
-    }
-  | {
-      type: ActionType["UPDATE_TOAST"]
-      toast: Partial<ToasterToast>
-    }
-  | {
-      type: ActionType["DISMISS_TOAST"]
-      toastId?: ToasterToast["id"]
-    }
-  | {
-      type: ActionType["REMOVE_TOAST"]
-      toastId?: ToasterToast["id"]
-    }
-
-interface State {
-  toasts: ToasterToast[]
-}
-
-const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
-
-const addToRemoveQueue = (toastId: string) => {
-  if (toastTimeouts.has(toastId)) {
-    return
+function body(title: ReactNode, description: ReactNode) {
+  const head = asText(title);
+  const sub = asText(description);
+  if (head && sub) {
+    return (
+      <span className="flex flex-col gap-0.5">
+        <span className="font-semibold leading-snug">{head}</span>
+        <span className="text-sm leading-snug opacity-90">{sub}</span>
+      </span>
+    );
   }
-
-  const timeout = setTimeout(() => {
-    toastTimeouts.delete(toastId)
-    dispatch({
-      type: "REMOVE_TOAST",
-      toastId: toastId,
-    })
-  }, TOAST_REMOVE_DELAY)
-
-  toastTimeouts.set(toastId, timeout)
+  return head || sub;
 }
 
-export const reducer = (state: State, action: Action): State => {
-  switch (action.type) {
-    case "ADD_TOAST":
-      return {
-        ...state,
-        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
-      }
-
-    case "UPDATE_TOAST":
-      return {
-        ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === action.toast.id ? { ...t, ...action.toast } : t
-        ),
-      }
-
-    case "DISMISS_TOAST": {
-      const { toastId } = action
-
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
-      if (toastId) {
-        addToRemoveQueue(toastId)
-      } else {
-        state.toasts.forEach((toast) => {
-          addToRemoveQueue(toast.id)
-        })
-      }
-
-      return {
-        ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === toastId || toastId === undefined
-            ? {
-                ...t,
-                open: false,
-              }
-            : t
-        ),
-      }
-    }
-    case "REMOVE_TOAST":
-      if (action.toastId === undefined) {
-        return {
-          ...state,
-          toasts: [],
-        }
-      }
-      return {
-        ...state,
-        toasts: state.toasts.filter((t) => t.id !== action.toastId),
-      }
-  }
-}
-
-const listeners: Array<(state: State) => void> = []
-
-let memoryState: State = { toasts: [] }
-
-function dispatch(action: Action) {
-  memoryState = reducer(memoryState, action)
-  listeners.forEach((listener) => {
-    listener(memoryState)
-  })
-}
-
-type Toast = Omit<ToasterToast, "id">
-
-function toast({ ...props }: Toast) {
-  const id = genId()
-
-  const update = (props: ToasterToast) =>
-    dispatch({
-      type: "UPDATE_TOAST",
-      toast: { ...props, id },
-    })
-  const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
-
-  dispatch({
-    type: "ADD_TOAST",
-    toast: {
-      ...props,
-      id,
-      open: true,
-      onOpenChange: (open) => {
-        if (!open) dismiss()
-      },
-    },
-  })
+export function toast({ title, description, variant, duration }: LegacyToastInput) {
+  const message = body(title, description);
+  const options: ToastOptions = duration != null ? { duration } : {};
+  const id =
+    variant === 'destructive'
+      ? hotToast.error(message, options)
+      : hotToast(message, options);
 
   return {
-    id: id,
-    dismiss,
-    update,
-  }
+    id,
+    dismiss: () => hotToast.dismiss(id),
+    update: ({ title: nextTitle, description: nextDescription }: LegacyToastInput) =>
+      hotToast(body(nextTitle ?? title, nextDescription ?? description), { ...options, id }),
+  };
 }
 
-function useToast() {
-  const [state, setState] = React.useState<State>(memoryState)
-
-  React.useEffect(() => {
-    listeners.push(setState)
-    return () => {
-      const index = listeners.indexOf(setState)
-      if (index > -1) {
-        listeners.splice(index, 1)
-      }
-    }
-  }, [state])
-
+export function useToast() {
   return {
-    ...state,
     toast,
-    dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
-  }
+    dismiss: (toastId?: string) => hotToast.dismiss(toastId),
+    /** Legacy shape the old radix `<Toaster/>` consumed. */
+    toasts: [] as never[],
+  };
 }
-
-export { useToast, toast }

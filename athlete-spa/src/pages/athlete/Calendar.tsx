@@ -1,21 +1,39 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { format, addMinutes, isSameDay } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { CalendarDays, Clock, MapPin, User, CheckCircle, Play } from 'lucide-react';
+import {
+    CalendarDays,
+    CalendarClock,
+    Clock,
+    MapPin,
+    User,
+    CheckCircle,
+    CheckCircle2,
+    Dumbbell,
+    Play,
+    ArrowRight,
+} from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 import { useCollection, useUser } from '@/lib/db-hooks';
-import type { Exercise, PlannedWorkout, WorkoutLog } from '@/lib/types';
+import type { PlannedWorkout, WorkoutLog } from '@/lib/types';
 import { SessionDetailsDialog, type TrainingSessionData } from '@/components/schedule/SessionDetailsDialog';
 import type { CalendarEvent } from '@/components/schedule/FullCalendarWrapper';
 import { DayStrip } from '@/components/schedule/DayStrip';
+import {
+    LoggedExerciseList,
+    PlannedExerciseList,
+    getLoggedWorkoutStats,
+    seriesLabel,
+    exercisesLabel,
+} from '@/components/schedule/WorkoutExerciseList';
 
 const statusColors = {
     scheduled: { bg: '#f97316', border: '#ea580c', text: '#ffffff' },
@@ -25,6 +43,62 @@ const statusColors = {
     workout: { bg: '#8b5cf6', border: '#7c3aed', text: '#ffffff' },
     planned: { bg: '#3b82f6', border: '#2563eb', text: '#ffffff' },
 };
+
+type EventTone = 'orange' | 'violet' | 'blue';
+
+const toneClasses: Record<EventTone, string> = {
+    orange: 'bg-orange-500/15 text-orange-600 dark:text-orange-400',
+    violet: 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
+    blue: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+};
+
+function EventGroup({ label, children }: { label: string; children: ReactNode }) {
+    return (
+        <div className="space-y-2">
+            <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+            {children}
+        </div>
+    );
+}
+
+function EventTriggerHeader({
+    icon,
+    tone,
+    title,
+    subtitle,
+    badge,
+}: {
+    icon: ReactNode;
+    tone: EventTone;
+    title: string;
+    subtitle: string;
+    badge: ReactNode;
+}) {
+    return (
+        <div className="flex min-w-0 flex-1 items-center gap-3 pr-2">
+            <span className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-xl', toneClasses[tone])}>
+                {icon}
+            </span>
+            <div className="min-w-0 flex-1 text-left">
+                <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-semibold sm:text-base">{title}</p>
+                    <span className="shrink-0">{badge}</span>
+                </div>
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">{subtitle}</p>
+            </div>
+        </div>
+    );
+}
+
+function InfoRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+    return (
+        <div className="flex items-center gap-2 text-sm">
+            <span className="shrink-0 text-muted-foreground">{icon}</span>
+            <span className="text-muted-foreground">{label}:</span>
+            <span className="font-medium">{value}</span>
+        </div>
+    );
+}
 
 export default function CalendarPage() {
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -40,7 +114,6 @@ export default function CalendarPage() {
         user ? 'plannedWorkouts' : null,
         { ownerId: user?.uid }
     );
-    const { data: exercises, isLoading: exercisesLoading } = useCollection<Exercise>('exercises');
 
     // Pobierz sesje treningowe z trenerem
     const { data: trainingSessions, isLoading: trainingSessionsLoading, refetch: refetchSessions } = useCollection<TrainingSessionData>(
@@ -123,7 +196,7 @@ export default function CalendarPage() {
         setIsDetailsDialogOpen(true);
     };
 
-    const isLoading = sessionsLoading || plannedLoading || exercisesLoading || trainingSessionsLoading;
+    const isLoading = sessionsLoading || plannedLoading || trainingSessionsLoading;
     const hasEvents = selectedDayEvents.trainerSessions.length > 0 ||
         selectedDayEvents.workouts.length > 0 ||
         selectedDayEvents.planned.length > 0;
@@ -179,11 +252,11 @@ export default function CalendarPage() {
                 {/* Selected Day Details */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className="font-headline">
+                        <CardTitle className="font-headline first-letter:uppercase">
                             {format(selectedDate, 'EEEE, d MMMM', { locale: pl })}
                         </CardTitle>
                         <CardDescription>
-                            {hasEvents ? 'Treningi na ten dzień' : 'Brak treningów na ten dzień'}
+                            {hasEvents ? 'Treningi zaplanowane na ten dzień' : 'Brak treningów na ten dzień'}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -194,149 +267,171 @@ export default function CalendarPage() {
                                 Brak treningów. Czas na odpoczynek lub zaplanowanie czegoś!
                             </p>
                         ) : (
-                            <Accordion type="multiple" defaultValue={['trainer-0', 'completed-0', 'planned-0']} className="w-full space-y-2">
+                            <Accordion
+                                type="multiple"
+                                defaultValue={['trainer-0', 'completed-0', 'planned-0']}
+                                className="w-full space-y-5"
+                            >
                                 {/* Sesje z trenerem */}
-                                {selectedDayEvents.trainerSessions.map((session, index) => {
-                                    const sessionDate = new Date(session.date);
-                                    return (
-                                        <AccordionItem value={`trainer-${index}`} key={session.id} className="border rounded-lg px-2 md:px-3">
-                                            <AccordionTrigger className="py-3">
-                                                <div className="flex flex-col sm:flex-row sm:justify-between w-full pr-2 gap-1 sm:gap-2">
-                                                    <div className="text-left min-w-0 flex-1">
-                                                        <p className="font-semibold text-sm truncate">{session.title}</p>
-                                                        <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                                            <User className="h-3 w-3 shrink-0" />
-                                                            <span className="truncate">{session.trainerName}</span>
-                                                        </p>
-                                                    </div>
-                                                    <Badge className="bg-orange-500 hover:bg-orange-600 text-xs shrink-0 self-start sm:self-center">
-                                                        {session.status === 'confirmed' ? 'Potwierdzona' : 'Z trenerem'}
-                                                    </Badge>
-                                                </div>
-                                            </AccordionTrigger>
-                                            <AccordionContent>
-                                                <div className="space-y-2 pb-2">
-                                                    <div className="flex items-center gap-2 text-sm">
-                                                        <Clock className="h-4 w-4 text-muted-foreground" />
-                                                        <span>{format(sessionDate, 'HH:mm')} ({session.duration} min)</span>
-                                                    </div>
-                                                    {session.location && (
-                                                        <div className="flex items-center gap-2 text-sm">
-                                                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                                                            <span>{session.location}</span>
+                                {selectedDayEvents.trainerSessions.length > 0 && (
+                                    <EventGroup label="Z trenerem">
+                                        {selectedDayEvents.trainerSessions.map((session, index) => {
+                                            const sessionDate = new Date(session.date);
+                                            const endDate = addMinutes(sessionDate, session.duration);
+                                            return (
+                                                <AccordionItem
+                                                    value={`trainer-${index}`}
+                                                    key={session.id}
+                                                    className="overflow-hidden rounded-xl border bg-card"
+                                                >
+                                                    <AccordionTrigger className="px-3 py-3 hover:no-underline sm:px-4">
+                                                        <EventTriggerHeader
+                                                            icon={<Dumbbell className="h-4 w-4" />}
+                                                            tone="orange"
+                                                            title={session.title}
+                                                            subtitle={`${format(sessionDate, 'HH:mm')} · ${session.duration} min · ${session.trainerName}`}
+                                                            badge={
+                                                                <Badge className="bg-orange-500 text-white hover:bg-orange-500">
+                                                                    {session.status === 'confirmed' ? 'Potwierdzona' : 'Z trenerem'}
+                                                                </Badge>
+                                                            }
+                                                        />
+                                                    </AccordionTrigger>
+                                                    <AccordionContent className="px-3 sm:px-4">
+                                                        <div className="space-y-3 border-t border-border/60 pt-3">
+                                                            <div className="grid gap-2">
+                                                                <InfoRow
+                                                                    icon={<Clock className="h-4 w-4" />}
+                                                                    label="Godzina"
+                                                                    value={`${format(sessionDate, 'HH:mm')} – ${format(endDate, 'HH:mm')} (${session.duration} min)`}
+                                                                />
+                                                                <InfoRow
+                                                                    icon={<User className="h-4 w-4" />}
+                                                                    label="Trener"
+                                                                    value={session.trainerName}
+                                                                />
+                                                                {session.location && (
+                                                                    <InfoRow
+                                                                        icon={<MapPin className="h-4 w-4" />}
+                                                                        label="Miejsce"
+                                                                        value={session.location}
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                            {session.description && (
+                                                                <p className="rounded-lg bg-secondary/50 p-3 text-sm text-muted-foreground">
+                                                                    {session.description}
+                                                                </p>
+                                                            )}
+                                                            <div className="flex flex-wrap gap-2 pt-1">
+                                                                {session.status === 'scheduled' && (
+                                                                    <Button size="sm" onClick={() => handleSessionClick(session)}>
+                                                                        <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
+                                                                        Potwierdź udział
+                                                                    </Button>
+                                                                )}
+                                                                <Button variant="outline" size="sm" onClick={() => handleSessionClick(session)}>
+                                                                    Szczegóły
+                                                                </Button>
+                                                            </div>
                                                         </div>
-                                                    )}
-                                                    <div className="flex gap-2 pt-2">
-                                                        {session.status === 'scheduled' && (
-                                                            <Button size="sm" onClick={() => handleSessionClick(session)}>
-                                                                <CheckCircle className="mr-1 h-3 w-3" />
-                                                                Potwierdź
-                                                            </Button>
-                                                        )}
-                                                        <Button variant="outline" size="sm" onClick={() => handleSessionClick(session)}>
-                                                            Szczegóły
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </AccordionContent>
-                                        </AccordionItem>
-                                    );
-                                })}
+                                                    </AccordionContent>
+                                                </AccordionItem>
+                                            );
+                                        })}
+                                    </EventGroup>
+                                )}
 
                                 {/* Ukończone treningi */}
-                                {selectedDayEvents.workouts.map((log, index) => {
-                                    const totalVolume = log.exercises.reduce((acc, ex) => {
-                                        const exVolume = ex.sets.reduce((setAcc, set) => setAcc + set.reps * set.weight, 0);
-                                        return acc + exVolume;
-                                    }, 0);
-                                    return (
-                                        <AccordionItem value={`completed-${index}`} key={log.id} className="border rounded-lg px-2 md:px-3">
-                                            <AccordionTrigger className="py-3">
-                                                <div className="flex flex-col sm:flex-row sm:justify-between w-full pr-2 gap-1 sm:gap-2">
-                                                    <div className="text-left min-w-0 flex-1">
-                                                        <p className="font-semibold text-sm truncate">{log.workoutName}</p>
-                                                        <p className="text-xs text-muted-foreground">{totalVolume.toLocaleString()} kg</p>
-                                                    </div>
-                                                    <Badge variant="default" className="text-xs shrink-0 self-start sm:self-center">Ukończono</Badge>
-                                                </div>
-                                            </AccordionTrigger>
-                                            <AccordionContent>
-                                                <Table>
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            <TableHead className="text-xs">Ćwiczenie</TableHead>
-                                                            <TableHead className="text-xs">Seria</TableHead>
-                                                            <TableHead className="text-xs text-right">Ciężar</TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {log.exercises.slice(0, 3).map((ex, exIndex) => {
-                                                            const exerciseDetails = exercises?.find(e => e.id === ex.exerciseId);
-                                                            return (
-                                                                <TableRow key={exIndex}>
-                                                                    <TableCell className="text-xs">{exerciseDetails?.name || 'Nieznane'}</TableCell>
-                                                                    <TableCell className="text-xs">{ex.sets.length}</TableCell>
-                                                                    <TableCell className="text-xs text-right">{ex.sets[0]?.weight || 0}kg</TableCell>
-                                                                </TableRow>
-                                                            );
-                                                        })}
-                                                    </TableBody>
-                                                </Table>
-                                            </AccordionContent>
-                                        </AccordionItem>
-                                    );
-                                })}
+                                {selectedDayEvents.workouts.length > 0 && (
+                                    <EventGroup label="Ukończone">
+                                        {selectedDayEvents.workouts.map((log, index) => {
+                                            const stats = getLoggedWorkoutStats(log.exercises);
+                                            const subtitle = [
+                                                `${stats.exerciseCount} ${exercisesLabel(stats.exerciseCount)}`,
+                                                `${stats.setCount} ${seriesLabel(stats.setCount)}`,
+                                                stats.volume > 0 ? `${stats.volume.toLocaleString('pl-PL')} kg` : null,
+                                                log.duration ? `${log.duration} min` : null,
+                                            ].filter(Boolean).join(' · ');
 
-                                {/* Zaplanowane */}
-                                {selectedDayEvents.planned.map((plan, index) => {
-                                    const planDate = new Date(plan.date);
-                                    return (
-                                        <AccordionItem value={`planned-${index}`} key={plan.id} className="border rounded-lg px-2 md:px-3">
-                                            <AccordionTrigger className="py-3">
-                                                <div className="flex flex-col sm:flex-row sm:justify-between w-full pr-2 gap-1 sm:gap-2">
-                                                    <div className="text-left min-w-0 flex-1">
-                                                        <p className="font-semibold text-sm truncate">{plan.workoutName}</p>
-                                                        <p className="text-xs text-muted-foreground">
-                                                            {format(planDate, 'HH:mm')} • {plan.exercises.length} ćwiczeń
-                                                        </p>
-                                                    </div>
-                                                    <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 text-xs shrink-0 self-start sm:self-center">Zaplanowano</Badge>
-                                                </div>
-                                            </AccordionTrigger>
-                                            <AccordionContent>
-                                                <div className="space-y-3 pb-2">
-                                                    <ul className="space-y-1">
-                                                        {plan.exercises.slice(0, 4).map((ex, exIndex) => (
-                                                            <li key={exIndex} className="text-xs flex justify-between p-1.5 rounded bg-secondary/50">
-                                                                <span>{ex.name}</span>
-                                                                <span className="text-muted-foreground">{ex.sets} x {ex.reps}</span>
-                                                            </li>
-                                                        ))}
-                                                        {plan.exercises.length > 4 && (
-                                                            <li className="text-xs text-muted-foreground text-center p-1.5">
-                                                                +{plan.exercises.length - 4} więcej...
-                                                            </li>
-                                                        )}
-                                                    </ul>
-                                                    {(plan as any).workoutId && (
-                                                        <div className="flex gap-2 pt-2">
-                                                            <Button size="sm" asChild>
-                                                                <Link to={`/athlete/log?workoutId=${(plan as any).workoutId}`}>
-                                                                    <Play className="mr-1 h-3 w-3" /> Rozpocznij
-                                                                </Link>
-                                                            </Button>
-                                                            <Button variant="outline" size="sm" asChild>
-                                                                <Link to={`/athlete/workouts/${(plan as any).workoutId}`}>
-                                                                    Szczegóły
+                                            return (
+                                                <AccordionItem
+                                                    value={`completed-${index}`}
+                                                    key={log.id}
+                                                    className="overflow-hidden rounded-xl border bg-card"
+                                                >
+                                                    <AccordionTrigger className="px-3 py-3 hover:no-underline sm:px-4">
+                                                        <EventTriggerHeader
+                                                            icon={<CheckCircle2 className="h-4 w-4" />}
+                                                            tone="violet"
+                                                            title={log.workoutName}
+                                                            subtitle={subtitle}
+                                                            badge={<Badge variant="secondary">Ukończono</Badge>}
+                                                        />
+                                                    </AccordionTrigger>
+                                                    <AccordionContent className="px-3 sm:px-4">
+                                                        <div className="space-y-3 border-t border-border/60 pt-3">
+                                                            <LoggedExerciseList exercises={log.exercises} />
+                                                            <Button variant="outline" size="sm" asChild className="w-full sm:w-auto">
+                                                                <Link to={`/athlete/history/${log.id}`}>
+                                                                    Pełne podsumowanie
+                                                                    <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                                                                 </Link>
                                                             </Button>
                                                         </div>
-                                                    )}
-                                                </div>
-                                            </AccordionContent>
-                                        </AccordionItem>
-                                    );
-                                })}
+                                                    </AccordionContent>
+                                                </AccordionItem>
+                                            );
+                                        })}
+                                    </EventGroup>
+                                )}
+
+                                {/* Zaplanowane */}
+                                {selectedDayEvents.planned.length > 0 && (
+                                    <EventGroup label="Zaplanowane">
+                                        {selectedDayEvents.planned.map((plan, index) => {
+                                            const planDate = new Date(plan.date);
+                                            const exerciseCount = plan.exercises?.length ?? 0;
+                                            const workoutId = (plan as { workoutId?: string }).workoutId;
+                                            return (
+                                                <AccordionItem
+                                                    value={`planned-${index}`}
+                                                    key={plan.id}
+                                                    className="overflow-hidden rounded-xl border bg-card"
+                                                >
+                                                    <AccordionTrigger className="px-3 py-3 hover:no-underline sm:px-4">
+                                                        <EventTriggerHeader
+                                                            icon={<CalendarClock className="h-4 w-4" />}
+                                                            tone="blue"
+                                                            title={plan.workoutName}
+                                                            subtitle={`${format(planDate, 'HH:mm')} · ${exerciseCount} ${exercisesLabel(exerciseCount)}`}
+                                                            badge={<Badge variant="secondary">Zaplanowano</Badge>}
+                                                        />
+                                                    </AccordionTrigger>
+                                                    <AccordionContent className="px-3 sm:px-4">
+                                                        <div className="space-y-3 border-t border-border/60 pt-3">
+                                                            <PlannedExerciseList exercises={plan.exercises} />
+                                                            {workoutId && (
+                                                                <div className="flex flex-wrap gap-2 pt-1">
+                                                                    <Button size="sm" asChild>
+                                                                        <Link to={`/athlete/log?workoutId=${workoutId}`}>
+                                                                            <Play className="mr-1.5 h-3.5 w-3.5" /> Rozpocznij
+                                                                        </Link>
+                                                                    </Button>
+                                                                    <Button variant="outline" size="sm" asChild>
+                                                                        <Link to={`/athlete/workouts/${workoutId}`}>
+                                                                            Szczegóły
+                                                                        </Link>
+                                                                    </Button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </AccordionContent>
+                                                </AccordionItem>
+                                            );
+                                        })}
+                                    </EventGroup>
+                                )}
                             </Accordion>
                         )}
                     </CardContent>
