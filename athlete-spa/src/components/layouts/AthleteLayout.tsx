@@ -47,8 +47,8 @@ function AthleteLayoutContent() {
 
   const isLoading = isUserLoading || isProfileLoading;
   const isOnboardingPage = location.pathname.startsWith('/athlete/onboarding');
-  // Active workout session hides the bottom nav, so the content area gets the
-  // full height (no bottom clearance) and pages can stretch with h-full.
+  // Active workout session hides the bottom nav, so the scroll area drops the
+  // bottom clearance padding it otherwise needs to sit above it.
   const isActiveWorkoutSession = location.pathname === '/athlete/log' && new URLSearchParams(location.search).has('logId');
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -138,7 +138,10 @@ function AthleteLayoutContent() {
                   : 'pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-0'
               )}
             >
-              <AnimatedOutlet className={isActiveWorkoutSession ? 'h-full' : undefined} />
+              {/* h-full so pages that build their own internal scroll region
+                  (ExercisesListView's virtualized list, Log's builder) resolve
+                  a real height off #outlet instead of collapsing to content. */}
+              <AnimatedOutlet className="h-full" />
             </div>
             <BottomNav />
           </main>
