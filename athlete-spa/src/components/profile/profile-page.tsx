@@ -44,6 +44,7 @@ import {
   setWeeklySummaryEnabled,
   setWorkoutRemindersEnabled,
 } from '@/lib/app-permissions';
+import { isPushSupported, subscribeToPush, unsubscribeFromPush } from '@/lib/push';
 import { useUserProfile } from '@/contexts/UserProfileContext';
 import type { RunningSession, StravaActivity } from '@/lib/types';
 
@@ -99,6 +100,20 @@ export function ProfilePage() {
 
   useEffect(() => {
     refetchSpotifyStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Keeps the server-side subscription in sync with a previously-granted
+  // preference — covers a fresh app restart or the push subscription having
+  // expired, both of which should resubscribe silently without re-prompting.
+  useEffect(() => {
+    if (!pushOn || !isPushSupported()) return;
+    subscribeToPush().then((subscribed) => {
+      if (!subscribed) {
+        setPushOn(false);
+        setPushNotificationsEnabled(false);
+      }
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -371,6 +386,7 @@ export function ProfilePage() {
     if (!checked) {
       setPushOn(false);
       setPushNotificationsEnabled(false);
+      void unsubscribeFromPush();
       return;
     }
     if (!pushSupported) {
@@ -383,13 +399,24 @@ export function ProfilePage() {
     }
     try {
       const permission = await Notification.requestPermission();
-      const granted = permission === 'granted';
-      setPushOn(granted);
-      setPushNotificationsEnabled(granted);
-      if (!granted) {
+      if (permission !== 'granted') {
+        setPushOn(false);
+        setPushNotificationsEnabled(false);
         toast({
           title: 'Brak zgody na powiadomienia',
           description: 'Włącz powiadomienia dla aplikacji w ustawieniach systemowych.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const subscribed = isPushSupported() ? await subscribeToPush() : false;
+      setPushOn(subscribed);
+      setPushNotificationsEnabled(subscribed);
+      if (!subscribed) {
+        toast({
+          title: 'Nie udało się aktywować powiadomień',
+          description: 'To urządzenie nie obsługuje subskrypcji push (typowe w aplikacji mobilnej).',
           variant: 'destructive',
         });
       }

@@ -13,6 +13,7 @@ import {
     CheckCircle,
     CheckCircle2,
     Dumbbell,
+    Footprints,
     Play,
     ArrowRight,
 } from 'lucide-react';
@@ -23,7 +24,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { cn } from '@/lib/utils';
 import { useCollection, useUser } from '@/lib/db-hooks';
-import type { PlannedWorkout, WorkoutLog } from '@/lib/types';
+import type { PlannedWorkout, WorkoutLog, RunningSession, StravaActivity } from '@/lib/types';
 import { SessionDetailsDialog, type TrainingSessionData } from '@/components/schedule/SessionDetailsDialog';
 import type { CalendarEvent } from '@/components/schedule/FullCalendarWrapper';
 import { DayStrip } from '@/components/schedule/DayStrip';
@@ -42,14 +43,34 @@ const statusColors = {
     cancelled: { bg: '#ef4444', border: '#dc2626', text: '#ffffff' },
     workout: { bg: '#8b5cf6', border: '#7c3aed', text: '#ffffff' },
     planned: { bg: '#3b82f6', border: '#2563eb', text: '#ffffff' },
+    run: { bg: '#0ea5e9', border: '#0284c7', text: '#ffffff' },
 };
 
-type EventTone = 'orange' | 'violet' | 'blue';
+type EventTone = 'orange' | 'violet' | 'blue' | 'sky';
 
 const toneClasses: Record<EventTone, string> = {
     orange: 'bg-orange-500/15 text-orange-600 dark:text-orange-400',
     violet: 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
     blue: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+    sky: 'bg-sky-500/15 text-sky-600 dark:text-sky-400',
+};
+
+interface RunCalendarItem {
+    id: string;
+    date: Date;
+    title: string;
+    distanceKm: number;
+    durationMin: number;
+    avgPace: number;
+    isClickable: boolean;
+    href: string;
+}
+
+const formatRunPace = (pace: number) => {
+    if (!pace || !Number.isFinite(pace)) return `0'00"/km`;
+    const paceMinutes = Math.floor(pace);
+    const paceSeconds = Math.round((pace - paceMinutes) * 60);
+    return `${paceMinutes}'${paceSeconds.toString().padStart(2, '0')}"/km`;
 };
 
 function EventGroup({ label, children }: { label: string; children: ReactNode }) {
@@ -121,6 +142,50 @@ export default function CalendarPage() {
         { athleteId: user?.uid }
     );
 
+    // Biegi zapisane ręcznie/GPS oraz zaimportowane ze Strava
+    const { data: runningSessions, isLoading: runningLoading } = useCollection<RunningSession>(
+        user ? 'runningSessions' : null,
+        { ownerId: user?.uid }
+    );
+    const { data: stravaActivities, isLoading: stravaLoading } = useCollection<StravaActivity>(
+        user ? 'stravaActivities' : null,
+        { ownerId: user?.uid }
+    );
+
+    const runs: RunCalendarItem[] = useMemo(() => {
+        const items: RunCalendarItem[] = [];
+
+        runningSessions?.forEach((session) => {
+            items.push({
+                id: session.id,
+                date: new Date(session.date),
+                title: session.programName || session.notes || 'Bieg',
+                distanceKm: session.distance,
+                durationMin: session.duration,
+                avgPace: session.avgPace,
+                isClickable: !!session.polyline,
+                href: `/athlete/running/${session.id}`,
+            });
+        });
+
+        stravaActivities?.forEach((activity) => {
+            const distanceKm = activity.distance / 1000;
+            const durationMin = activity.movingTime / 60;
+            items.push({
+                id: activity.id,
+                date: new Date(activity.date),
+                title: activity.name || 'Bieg (Strava)',
+                distanceKm,
+                durationMin,
+                avgPace: durationMin / distanceKm,
+                isClickable: true,
+                href: `/athlete/running/strava/${activity.stravaActivityId}`,
+            });
+        });
+
+        return items;
+    }, [runningSessions, stravaActivities]);
+
     // Konwertuj wszystkie wydarzenia na format FullCalendar
     const calendarEvents: CalendarEvent[] = useMemo(() => {
         const events: CalendarEvent[] = [];
@@ -173,8 +238,22 @@ export default function CalendarPage() {
             });
         });
 
+        // Biegi
+        runs.forEach(run => {
+            events.push({
+                id: `run-${run.id}`,
+                title: `🏃 ${run.title}`,
+                start: run.date,
+                allDay: true,
+                backgroundColor: statusColors.run.bg,
+                borderColor: statusColors.run.border,
+                textColor: statusColors.run.text,
+                extendedProps: { type: 'run', data: run },
+            });
+        });
+
         return events;
-    }, [trainingSessions, workoutHistory, plannedWorkouts]);
+    }, [trainingSessions, workoutHistory, plannedWorkouts, runs]);
 
     // Wydarzenia na wybrany dzień
     const selectedDayEvents = useMemo(() => {
@@ -188,18 +267,20 @@ export default function CalendarPage() {
             planned: plannedWorkouts?.filter(p =>
                 isSameDay(new Date(p.date), selectedDate)
             ) || [],
+            runs: runs.filter(r => isSameDay(r.date, selectedDate)),
         };
-    }, [trainingSessions, workoutHistory, plannedWorkouts, selectedDate]);
+    }, [trainingSessions, workoutHistory, plannedWorkouts, runs, selectedDate]);
 
     const handleSessionClick = (session: TrainingSessionData) => {
         setSelectedSession(session);
         setIsDetailsDialogOpen(true);
     };
 
-    const isLoading = sessionsLoading || plannedLoading || trainingSessionsLoading;
+    const isLoading = sessionsLoading || plannedLoading || trainingSessionsLoading || runningLoading || stravaLoading;
     const hasEvents = selectedDayEvents.trainerSessions.length > 0 ||
         selectedDayEvents.workouts.length > 0 ||
-        selectedDayEvents.planned.length > 0;
+        selectedDayEvents.planned.length > 0 ||
+        selectedDayEvents.runs.length > 0;
 
     return (
         <div className="container mx-auto max-w-7xl p-4 pb-0 md:p-8">
@@ -230,6 +311,10 @@ export default function CalendarPage() {
                 <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1.5">
                     <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: statusColors.planned.bg }} />
                     <span className="font-medium">Zaplanowane</span>
+                </div>
+                <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1.5">
+                    <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: statusColors.run.bg }} />
+                    <span className="font-medium">Biegi</span>
                 </div>
             </div>
 
@@ -269,7 +354,7 @@ export default function CalendarPage() {
                         ) : (
                             <Accordion
                                 type="multiple"
-                                defaultValue={['trainer-0', 'completed-0', 'planned-0']}
+                                defaultValue={['trainer-0', 'completed-0', 'planned-0', 'run-0']}
                                 className="w-full space-y-5"
                             >
                                 {/* Sesje z trenerem */}
@@ -424,6 +509,63 @@ export default function CalendarPage() {
                                                                         </Link>
                                                                     </Button>
                                                                 </div>
+                                                            )}
+                                                        </div>
+                                                    </AccordionContent>
+                                                </AccordionItem>
+                                            );
+                                        })}
+                                    </EventGroup>
+                                )}
+
+                                {/* Biegi */}
+                                {selectedDayEvents.runs.length > 0 && (
+                                    <EventGroup label="Biegi">
+                                        {selectedDayEvents.runs.map((run, index) => {
+                                            const subtitle = [
+                                                `${run.distanceKm.toFixed(2)} km`,
+                                                `${run.durationMin.toFixed(0)} min`,
+                                                formatRunPace(run.avgPace),
+                                            ].join(' · ');
+
+                                            return (
+                                                <AccordionItem
+                                                    value={`run-${index}`}
+                                                    key={run.id}
+                                                    className="overflow-hidden rounded-xl border bg-card"
+                                                >
+                                                    <AccordionTrigger className="px-3 py-3 hover:no-underline sm:px-4">
+                                                        <EventTriggerHeader
+                                                            icon={<Footprints className="h-4 w-4" />}
+                                                            tone="sky"
+                                                            title={run.title}
+                                                            subtitle={subtitle}
+                                                            badge={<Badge variant="secondary">Bieg</Badge>}
+                                                        />
+                                                    </AccordionTrigger>
+                                                    <AccordionContent className="px-3 sm:px-4">
+                                                        <div className="space-y-3 border-t border-border/60 pt-3">
+                                                            <div className="grid grid-cols-3 gap-2 text-sm">
+                                                                <div>
+                                                                    <p className="text-xs text-muted-foreground">Dystans</p>
+                                                                    <p className="font-medium">{run.distanceKm.toFixed(2)} km</p>
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-xs text-muted-foreground">Czas</p>
+                                                                    <p className="font-medium">{run.durationMin.toFixed(0)} min</p>
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-xs text-muted-foreground">Tempo</p>
+                                                                    <p className="font-medium">{formatRunPace(run.avgPace)}</p>
+                                                                </div>
+                                                            </div>
+                                                            {run.isClickable && (
+                                                                <Button variant="outline" size="sm" asChild className="w-full sm:w-auto">
+                                                                    <Link to={run.href}>
+                                                                        Pełne podsumowanie
+                                                                        <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                                                                    </Link>
+                                                                </Button>
                                                             )}
                                                         </div>
                                                     </AccordionContent>

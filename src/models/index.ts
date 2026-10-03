@@ -44,6 +44,8 @@ export * from './WeeklyCheckIn';
 export * from './StravaActivity';
 // Spotify models
 export * from './SpotifyAccount';
+// Push notification models
+export * from './PushSubscription';
 // Challenge models
 export * from './Challenge';
 
