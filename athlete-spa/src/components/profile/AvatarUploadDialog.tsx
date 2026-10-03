@@ -260,7 +260,7 @@ export function AvatarUploadDialog({
                     )}
                 </div>
 
-                <DialogFooter>
+                <DialogFooter className="gap-2">
                     <Button variant="secondary" onClick={handleClose} disabled={isLoading}>
                         Anuluj
                     </Button>

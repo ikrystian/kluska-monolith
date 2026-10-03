@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useSWRConfig } from 'swr';
 import * as polyline from 'polyline-encoded';
@@ -7,6 +7,7 @@ import {
   Footprints,
   Megaphone,
   Pause,
+  PartyPopper,
   Play,
   Satellite,
   Square,
@@ -86,6 +87,17 @@ export default function RunRecordPage() {
   const { data: programs } = useCollection<RunningProgram>('runningPrograms', { isActive: true });
   const selectedProgram = programs?.find(p => p.id === programId) ?? null;
 
+  // Ad-hoc goal for a quick run (no program): either a target distance (km)
+  // or a target duration (minutes), set before starting from StartRunDialog.
+  const goal = useMemo(() => {
+    const goalType = searchParams.get('goalType');
+    const goalValue = Number(searchParams.get('goalValue'));
+    if (selectedProgram || !goalValue || !Number.isFinite(goalValue) || goalValue <= 0) return null;
+    if (goalType === 'distance') return { type: 'distance' as const, value: goalValue };
+    if (goalType === 'time') return { type: 'time' as const, value: goalValue };
+    return null;
+  }, [searchParams, selectedProgram]);
+
   const tracker = useRunTracker();
   const [notes, setNotes] = useState('');
   const [discardOpen, setDiscardOpen] = useState(false);
@@ -114,6 +126,34 @@ export default function RunRecordPage() {
   }, [tracker.status]);
 
   const km = tracker.distance / 1000;
+
+  const goalProgress = useMemo(() => {
+    if (!goal) return null;
+    if (goal.type === 'distance') {
+      const fraction = km / goal.value;
+      return { fraction, remainingLabel: `${Math.max(goal.value - km, 0).toFixed(2)} km do celu` };
+    }
+    const targetSeconds = goal.value * 60;
+    const fraction = tracker.duration / targetSeconds;
+    return { fraction, remainingLabel: `${formatDuration(Math.max(targetSeconds - tracker.duration, 0))} do celu` };
+  }, [goal, km, tracker.duration]);
+
+  const goalReachedRef = useRef(false);
+  useEffect(() => {
+    if (!goalProgress) return;
+    if (goalProgress.fraction >= 1 && !goalReachedRef.current && tracker.status === 'running') {
+      goalReachedRef.current = true;
+      haptic('celebrate');
+      toast({ title: 'Cel osiągnięty! 🎉', description: 'Możesz kontynuować bieg albo go zakończyć.' });
+    }
+  }, [goalProgress, tracker.status, toast]);
+
+  useEffect(() => {
+    if (tracker.status === 'running' && tracker.duration === 0) {
+      goalReachedRef.current = false;
+    }
+  }, [tracker.status, tracker.duration]);
+
   const encodedRoute = useMemo(
     () => polyline.encode(tracker.points.map(p => [p.lat, p.lng])),
     [tracker.points]
@@ -249,7 +289,11 @@ export default function RunRecordPage() {
               ) : (
                 <>
                   <p className="font-display text-2xl font-extrabold text-white">Szybki bieg</p>
-                  <p className="text-sm text-white/60">Bez zaplanowanego treningu</p>
+                  <p className="text-sm text-white/60">
+                    {goal
+                      ? `Cel: ${goal.type === 'distance' ? `${goal.value} km` : `${goal.value} min`}`
+                      : 'Bez zaplanowanego treningu'}
+                  </p>
                 </>
               )}
             </div>
@@ -280,6 +324,30 @@ export default function RunRecordPage() {
               <Metric label="Czas" value={formatDuration(tracker.duration)} />
               <Metric label="Tempo" value={formatPace(tracker.pace)} unit="/km" />
             </div>
+
+            {goalProgress && (
+              <div className="space-y-1.5">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-white/15">
+                  <div
+                    className={cn(
+                      'h-full rounded-full transition-all',
+                      goalProgress.fraction >= 1 ? 'bg-emerald-400' : 'bg-primary'
+                    )}
+                    style={{ width: `${Math.min(goalProgress.fraction * 100, 100)}%` }}
+                  />
+                </div>
+                <p className="flex items-center justify-center gap-1.5 text-center text-xs font-semibold text-white/60">
+                  {goalProgress.fraction >= 1 ? (
+                    <>
+                      <PartyPopper className="h-3.5 w-3.5 text-emerald-400" />
+                      Cel osiągnięty!
+                    </>
+                  ) : (
+                    goalProgress.remainingLabel
+                  )}
+                </p>
+              </div>
+            )}
 
             {tracker.status === 'running' && (
               <div className="flex justify-center">

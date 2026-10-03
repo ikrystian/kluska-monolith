@@ -29,8 +29,10 @@ import {
   TrainingLevel,
   type ExerciseSeries,
   type WorkoutSet,
-  type DayPlan
+  type DayPlan,
+  type RunningProgram
 } from '@/lib/types';
+import { StartRunDialog } from '@/components/running/StartRunDialog';
 import { useCollection, useUser, useDoc } from '@/lib/db-hooks';
 import { useActiveWorkout } from '@/hooks/useActiveWorkout';
 import { useExerciseHistory } from '@/hooks/useExerciseHistory';
@@ -1684,8 +1686,14 @@ function WorkoutExercisesPreview({ exerciseSeries }: { exerciseSeries: ExerciseS
 // --- SELECTION VIEW COMPONENT ---
 function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder: (data: LogFormValues) => void; allExercises: Exercise[] | null }) {
   const { user } = useUser();
-  const navigate = useNavigate();
   const supportsGeolocation = typeof navigator !== 'undefined' && 'geolocation' in navigator;
+  const [startRunDialogOpen, setStartRunDialogOpen] = useState(false);
+
+  // Trainer-prepared running programs, offered from the "Rozpocznij bieg" quick-start tile
+  const { data: runningPrograms } = useCollection<RunningProgram>(
+    supportsGeolocation ? 'runningPrograms' : null,
+    { isActive: true }
+  );
 
   // Fetch plans assigned to the athlete
   const { data: assignedPlans, isLoading: assignedPlansLoading } = useCollection<TrainingPlan>(
@@ -1803,7 +1811,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
           {supportsGeolocation && (
             <button
               type="button"
-              onClick={() => navigate('/athlete/running/record')}
+              onClick={() => setStartRunDialogOpen(true)}
               className="group relative flex w-full items-center gap-4 overflow-hidden rounded-[1.75rem] border border-border/60 bg-card p-5 text-left shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted active:scale-[0.98]"
             >
               <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full bg-sky-500/15 text-sky-600 dark:text-sky-400">
@@ -1817,6 +1825,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
               <ChevronRight className="relative ml-auto h-5 w-5 shrink-0 text-muted-foreground" />
             </button>
           )}
+          <StartRunDialog open={startRunDialogOpen} onOpenChange={setStartRunDialogOpen} programs={runningPrograms} />
 
           {/* Workout Templates Section */}
           {workoutTemplates && workoutTemplates.length > 0 && (

@@ -38,6 +38,7 @@ import { PlusCircle, Loader2, Footprints, TrendingUp, Route, Timer, Activity, Re
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useCreateDoc, useUser, useDoc } from '@/lib/db-hooks';
 import type { RunningProgram, RunningSession, StravaActivity, UserProfile } from '@/lib/types';
+import { StartRunDialog } from '@/components/running/StartRunDialog';
 
 const runSchema = z.object({
   distance: z.coerce.number().positive('Dystans musi być liczbą dodatnią.'),
@@ -86,6 +87,7 @@ export default function RunningPage() {
   const { createDoc, isLoading: isCreating } = useCreateDoc();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [quickRunDialogOpen, setQuickRunDialogOpen] = useState(false);
 
   // Recording needs the device's GPS; browsers without it keep the manual form.
   const supportsGeolocation = typeof navigator !== 'undefined' && 'geolocation' in navigator;
@@ -267,7 +269,7 @@ export default function RunningPage() {
             </Button>
           )}
           {supportsGeolocation && (
-            <Button onClick={() => startRecording()}>
+            <Button onClick={() => setQuickRunDialogOpen(true)}>
               <Play className="mr-2 h-4 w-4 fill-current" />
               Szybki bieg
             </Button>
@@ -340,6 +342,7 @@ export default function RunningPage() {
               </Form>
             </DialogContent>
           </Dialog>
+          <StartRunDialog open={quickRunDialogOpen} onOpenChange={setQuickRunDialogOpen} />
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { isValidObjectId } from 'mongoose';
 import { jsonWithEtag } from '@/lib/http-cache';
+import { cascadeDeleteUserData } from '@/lib/user-cascade-delete';
 
 // Import all models
 import { User } from '@/models/User';
@@ -206,8 +207,20 @@ export async function DELETE(
       return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
     }
 
+    if (collection === 'users' && user.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     if (!isValidObjectId(id)) {
       return NextResponse.json({ error: 'Invalid ID format' }, { status: 400 });
+    }
+
+    // Deleting a user also removes everything the app stores about them —
+    // their own records plus anything tying them to another user (chats,
+    // challenges, client plans). Runs before the User doc itself is removed
+    // so a failure here leaves the account intact rather than orphaning data.
+    if (collection === 'users') {
+      await cascadeDeleteUserData(id);
     }
 
     const doc = await Model.findByIdAndDelete(id).exec();

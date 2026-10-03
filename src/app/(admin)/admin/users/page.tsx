@@ -360,6 +360,7 @@ export default function AdminUsersPage() {
             <DialogTitle>Usuń Użytkownika</DialogTitle>
             <DialogDescription>
               Czy na pewno chcesz usunąć użytkownika <strong>{selectedUser?.name}</strong>?
+              Wszystkie powiązane z nim dane (treningi, posiłki, wiadomości, biegi i pozostałe) zostaną trwale usunięte.
               Ta operacja jest nieodwracalna.
             </DialogDescription>
           </DialogHeader>
