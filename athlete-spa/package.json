@@ -11,13 +11,15 @@
     "lint": "eslint .",
     "cap:sync": "npx cap sync",
     "cap:open:android": "npx cap open android",
-    "cap:run:android": "npx cap run android"
+    "cap:run:android": "npx cap run android",
+    "cap:distribute:android": "cd android && ./gradlew assembleRelease appDistributionUploadRelease"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.1",
     "@capacitor/browser": "^8.0.4",
     "@capacitor/core": "^8.4.1",
     "@capacitor/device": "^8.0.2",
+    "@capacitor/geolocation": "^8.2.3",
     "@fullcalendar/core": "^6.1.20",
     "@fullcalendar/daygrid": "^6.1.20",
     "@fullcalendar/interaction": "^6.1.20",

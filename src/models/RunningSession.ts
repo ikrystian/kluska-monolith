@@ -1,5 +1,12 @@
 import mongoose, { Schema, Model, Document } from 'mongoose';
 
+export interface IRunningTrackPoint {
+  lat: number;
+  lng: number;
+  /** Epoch ms when the fix was taken. */
+  at: number;
+}
+
 export interface IRunningSession extends Document {
   _id: string;
   ownerId: string;
@@ -8,9 +15,26 @@ export interface IRunningSession extends Document {
   duration: number; // in minutes
   avgPace: number; // in min/km
   notes?: string;
+  /** Encoded route from the in-app GPS tracker; absent for manually entered runs. */
+  polyline?: string;
+  /** Raw per-second GPS samples backing `polyline`. */
+  points?: IRunningTrackPoint[];
+  /** Training selected for this run, if any. */
+  programId?: string;
+  /** Snapshot of the program's name at run time, so history survives edits/deletion. */
+  programName?: string;
   createdAt: Date;
   updatedAt: Date;
 }
+
+const RunningTrackPointSchema = new Schema<IRunningTrackPoint>(
+  {
+    lat: { type: Number, required: true },
+    lng: { type: Number, required: true },
+    at: { type: Number, required: true },
+  },
+  { _id: false }
+);
 
 const RunningSessionSchema = new Schema<IRunningSession>(
   {
@@ -20,6 +44,10 @@ const RunningSessionSchema = new Schema<IRunningSession>(
     duration: { type: Number, required: true },
     avgPace: { type: Number, required: true },
     notes: { type: String },
+    polyline: { type: String },
+    points: { type: [RunningTrackPointSchema], default: undefined },
+    programId: { type: String },
+    programName: { type: String },
   },
   {
     timestamps: true,

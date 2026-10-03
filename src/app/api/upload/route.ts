@@ -12,8 +12,8 @@ const UPLOAD_DIR = path.join(process.cwd(), 'upload-data');
 /** Hard cap per file — comfortably covers 100 MB exercise media. */
 const MAX_FILE_SIZE = 128 * 1024 * 1024;
 
-/** Only images (including animated GIF) are accepted. */
-const ALLOWED_TYPE_PREFIX = 'image/';
+/** Images (including animated GIF) and audio (running-cue sound files) are accepted. */
+const ALLOWED_TYPE_PREFIXES = ['image/', 'audio/'];
 
 const EXTENSION_BY_TYPE: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -23,6 +23,14 @@ const EXTENSION_BY_TYPE: Record<string, string> = {
   'image/avif': 'avif',
   'image/svg+xml': 'svg',
   'image/bmp': 'bmp',
+  'audio/mpeg': 'mp3',
+  'audio/mp3': 'mp3',
+  'audio/mp4': 'm4a',
+  'audio/x-m4a': 'm4a',
+  'audio/wav': 'wav',
+  'audio/x-wav': 'wav',
+  'audio/ogg': 'ogg',
+  'audio/aac': 'aac',
 };
 
 function extensionFor(file: File): string {
@@ -35,7 +43,7 @@ function extensionFor(file: File): string {
 }
 
 /**
- * Stores uploaded images on the local filesystem under `upload-data/` and
+ * Stores uploaded images/audio on the local filesystem under `upload-data/` and
  * returns the public path(s) they are served from (`/upload-data/<file>`).
  *
  * Accepts a single `file` field or repeated `files` fields (multipart).
@@ -64,7 +72,7 @@ export async function POST(request: Request) {
   }
 
   for (const file of inputs) {
-    if (!file.type.startsWith(ALLOWED_TYPE_PREFIX)) {
+    if (!ALLOWED_TYPE_PREFIXES.some(prefix => file.type.startsWith(prefix))) {
       return NextResponse.json(
         { error: `Nieobsługiwany typ pliku: ${file.type || 'nieznany'}.` },
         { status: 415 },

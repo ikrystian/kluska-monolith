@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dumbbell } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, ONBOARDING_PENDING_KEY } from '@/contexts/AuthContext';
 import { apiFetch } from '@/lib/api-client';
 import { getDeviceId } from '@/lib/device-id';
 import { PageTransition } from '@/components/motion';
@@ -55,6 +55,12 @@ export default function RegisterPage() {
         throw new Error(data.error || 'Registration failed');
       }
 
+      // A brand-new account's first login goes through the intro wizard. A
+      // guest upgrading keeps whatever onboarding state it already has.
+      if (!isGuestUpgrade) {
+        localStorage.setItem(ONBOARDING_PENDING_KEY, '1');
+      }
+
       toast({
         title: 'Rejestracja udana!',
         description: 'Witaj w #leniwakluska! Logowanie...',
@@ -62,7 +68,7 @@ export default function RegisterPage() {
 
       // Auto-login after registration
       await login(email, password);
-      navigate('/athlete/dashboard');
+      navigate(isGuestUpgrade ? '/athlete/dashboard' : '/athlete/onboarding');
     } catch (error: any) {
       const errorMessage = error.message || 'Wystąpił nieznany błąd. Spróbuj ponownie.';
 

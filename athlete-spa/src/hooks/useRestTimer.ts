@@ -55,27 +55,10 @@ export function useRestTimer(onComplete?: () => void): UseRestTimerReturn {
 
   const playCompletionSound = useCallback(() => {
     try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContext) return;
-
-      const audioContext = new AudioContext();
-      const beep = (frequency: number, at: number) => {
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-
-        oscillator.frequency.value = frequency;
-        oscillator.type = 'sine';
-        gainNode.gain.value = 0.3;
-
-        oscillator.start(audioContext.currentTime + at);
-        oscillator.stop(audioContext.currentTime + at + 0.15);
-      };
-
-      beep(800, 0);
-      beep(1000, 0.2);
+      const audio = new Audio('/ronnie_lightweight-baby.mp3');
+      void audio.play().catch((error) => {
+        console.warn('Could not play completion sound:', error);
+      });
     } catch (error) {
       console.warn('Could not play completion sound:', error);
     }

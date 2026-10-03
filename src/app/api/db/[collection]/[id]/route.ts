@@ -14,6 +14,7 @@ import { Conversation } from '@/models/Conversation';
 import { Message } from '@/models/Message';
 import { BodyMeasurement } from '@/models/BodyMeasurement';
 import { RunningSession } from '@/models/RunningSession';
+import { RunningProgram } from '@/models/RunningProgram';
 import { Goal } from '@/models/Goal';
 import { MuscleGroup } from '@/models/MuscleGroup';
 import { Gym } from '@/models/Gym';
@@ -48,6 +49,7 @@ const modelMap: Record<string, any> = {
   trainerRequests: TrainerRequest,
   meals: Meal,
   runningSessions: RunningSession,
+  runningPrograms: RunningProgram,
   achievements: Achievement,
   gyms: Gym,
   workouts: Workout,

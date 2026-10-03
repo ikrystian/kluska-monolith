@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Gender, TrainingLevelType, OnboardingData } from '@/models/types/user';
 import { useUserProfile } from '@/contexts/UserProfileContext';
+import { ONBOARDING_PENDING_KEY } from '@/contexts/AuthContext';
 import { apiFetch } from '@/lib/api-client';
 
 export interface OnboardingState {
@@ -183,6 +184,9 @@ export function useOnboarding(initialName: string = ''): UseOnboardingReturn {
         title: 'Sukces!',
         description: 'Twój profil został skonfigurowany. Witaj w #leniwakluska!',
       });
+
+      // Wizard is done — clear the marker so relaunches skip it.
+      localStorage.removeItem(ONBOARDING_PENDING_KEY);
 
       // Refetch user profile to update the cached data
       if (refetchUserProfile) {

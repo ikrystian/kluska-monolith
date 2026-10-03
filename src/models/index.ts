@@ -9,6 +9,7 @@ export * from './Conversation';
 export * from './Message';
 export * from './BodyMeasurement';
 export * from './RunningSession';
+export * from './RunningProgram';
 export * from './Goal';
 export * from './MuscleGroup';
 export * from './Gym';

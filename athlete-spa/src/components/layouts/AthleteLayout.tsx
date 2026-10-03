@@ -10,7 +10,7 @@ import { BottomNav } from '@/components/bottom-nav';
 import { ActiveWorkoutProvider } from '@/contexts/ActiveWorkoutContext';
 import { ActiveWorkoutWidget } from '@/components/workout/ActiveWorkoutWidget';
 import { UserProfileProvider, useUserProfile } from '@/contexts/UserProfileContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, ONBOARDING_PENDING_KEY } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { AnimatedOutlet } from '@/components/motion';
 import { useAndroidBackButton } from '@/hooks/useAndroidBackButton';
@@ -72,8 +72,16 @@ function AthleteLayoutContent() {
         // If not logged in at all, go to login
         navigate('/login');
       } else if (userProfile?.role === 'athlete') {
-        // Check if onboarding is needed (only if not already on onboarding page)
-        if (!userProfile.onboardingCompleted && !isOnboardingPage) {
+        if (userProfile.onboardingCompleted) {
+          // Profile is set up — drop any leftover "pending" marker.
+          localStorage.removeItem(ONBOARDING_PENDING_KEY);
+        } else if (
+          localStorage.getItem(ONBOARDING_PENDING_KEY) === '1' &&
+          !isOnboardingPage
+        ) {
+          // Only a guest sign-in or a new account's first login sets this
+          // marker, so existing accounts without `onboardingCompleted` are
+          // not forced through the wizard.
           navigate('/athlete/onboarding');
         }
       }

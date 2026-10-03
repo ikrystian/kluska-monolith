@@ -38,6 +38,13 @@ export interface Achievement {
   ownerId: string;
 }
 
+export interface RunningTrackPoint {
+  lat: number;
+  lng: number;
+  /** Epoch ms when the fix was taken. */
+  at: number;
+}
+
 export interface RunningSession {
   id: string;
   date: string;
@@ -48,6 +55,28 @@ export interface RunningSession {
   ownerId: string;
   /** Encoded route from the in-app GPS tracker; absent for manually entered runs. */
   polyline?: string;
+  /** Raw per-second GPS samples backing `polyline`. */
+  points?: RunningTrackPoint[];
+  /** Training selected for this run, if any. */
+  programId?: string;
+  /** Snapshot of the program's name at run time. */
+  programName?: string;
+}
+
+export interface RunningCue {
+  /** Seconds of moving time into the run when this cue should fire. */
+  atSeconds: number;
+  audioUrl: string;
+  label?: string;
+}
+
+export interface RunningProgram {
+  id: string;
+  name: string;
+  targetDistanceKm: number;
+  description?: string;
+  isActive: boolean;
+  cues: RunningCue[];
 }
 
 export interface TrainerRequest {

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Geolocation, type Position } from '@capacitor/geolocation';
+import { Capacitor } from '@capacitor/core';
 
 export interface TrackPoint {
   lat: number;
@@ -88,7 +90,7 @@ export function useRunTracker() {
     };
   });
 
-  const watchIdRef = useRef<number | null>(null);
+  const watchIdRef = useRef<string | null>(null);
   const lastTickRef = useRef<number | null>(null);
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -112,7 +114,7 @@ export function useRunTracker() {
     }
   }, []);
 
-  const handlePosition = useCallback((position: GeolocationPosition) => {
+  const handlePosition = useCallback((position: Position) => {
     const { latitude, longitude, accuracy } = position.coords;
     const point: TrackPoint = { lat: latitude, lng: longitude, at: position.timestamp };
 
@@ -146,36 +148,51 @@ export function useRunTracker() {
     });
   }, []);
 
-  const handleError = useCallback((error: GeolocationPositionError) => {
+  const handleError = useCallback((err: unknown) => {
+    const message = err instanceof Error ? err.message : typeof err === 'string' ? err : '';
     setState(prev => ({
       ...prev,
-      error:
-        error.code === error.PERMISSION_DENIED
-          ? 'Brak zgody na dostęp do lokalizacji.'
-          : 'Nie udało się ustalić pozycji. Sprawdź GPS.',
+      error: /denied|permission/i.test(message)
+        ? 'Brak zgody na dostęp do lokalizacji.'
+        : 'Nie udało się ustalić pozycji. Sprawdź GPS.',
     }));
   }, []);
 
-  const startWatching = useCallback(() => {
-    if (watchIdRef.current !== null || !navigator.geolocation) return;
-    watchIdRef.current = navigator.geolocation.watchPosition(handlePosition, handleError, {
-      enableHighAccuracy: true,
-      maximumAge: 0,
-      timeout: 20_000,
-    });
+  const startWatching = useCallback(async () => {
+    if (watchIdRef.current !== null) return;
+    try {
+      // requestPermissions() is unimplemented on web — there, watchPosition
+      // itself triggers the browser's native permission prompt.
+      if (Capacitor.isNativePlatform()) {
+        const permission = await Geolocation.requestPermissions();
+        if (permission.location === 'denied') {
+          setState(prev => ({ ...prev, error: 'Brak zgody na dostęp do lokalizacji.' }));
+          return;
+        }
+      }
+      watchIdRef.current = await Geolocation.watchPosition(
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 20_000, interval: 1_000 },
+        (position, err) => {
+          if (err || !position) {
+            handleError(err);
+            return;
+          }
+          handlePosition(position);
+        }
+      );
+    } catch (err) {
+      handleError(err);
+    }
   }, [handlePosition, handleError]);
 
   const stopWatching = useCallback(() => {
-    if (watchIdRef.current === null) return;
-    navigator.geolocation.clearWatch(watchIdRef.current);
+    const id = watchIdRef.current;
+    if (id === null) return;
     watchIdRef.current = null;
+    void Geolocation.clearWatch({ id });
   }, []);
 
   const start = useCallback(() => {
-    if (!navigator.geolocation) {
-      setState(prev => ({ ...prev, error: 'To urządzenie nie udostępnia lokalizacji.' }));
-      return;
-    }
     lastTickRef.current = Date.now();
     setState({
       status: 'running',
@@ -186,7 +203,7 @@ export function useRunTracker() {
       accuracy: null,
       error: null,
     });
-    startWatching();
+    void startWatching();
   }, [startWatching]);
 
   const pause = useCallback(() => {
@@ -198,7 +215,7 @@ export function useRunTracker() {
   const resume = useCallback(() => {
     lastTickRef.current = Date.now();
     setState(prev => (prev.status === 'paused' ? { ...prev, status: 'running' } : prev));
-    startWatching();
+    void startWatching();
   }, [startWatching]);
 
   const finish = useCallback(() => {

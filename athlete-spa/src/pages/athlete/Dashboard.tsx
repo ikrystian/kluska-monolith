@@ -581,7 +581,7 @@ export default function AthleteDashboardPage() {
                     <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-secondary text-primary">
                       <Dumbbell className="h-5 w-5" />
                     </span>
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0 max-w-[50%] flex-1">
                       <p className="truncate font-semibold">{workout.workoutName}</p>
                       <p className="text-xs text-muted-foreground">
                         {format(new Date(workout.endTime), 'd MMM yyyy', { locale: pl })} · {workout.duration} min

@@ -1316,29 +1316,6 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
     fields.forEach((_, i) => setValue(`exerciseSeries.${index}.sets.${i}.restTimeSeconds`, next));
   };
 
-  // Fill a set's inputs from the previous workout's result for the same slot
-  const fillFromPrevious = (setIndex: number) => {
-    const prev = exerciseHistory?.sets[setIndex];
-    if (!prev) return;
-    if (exerciseType === 'weight') {
-      setValue(`exerciseSeries.${index}.sets.${setIndex}.weight`, prev.weight);
-      setValue(`exerciseSeries.${index}.sets.${setIndex}.reps`, prev.reps);
-    } else if (exerciseType === 'reps') {
-      setValue(`exerciseSeries.${index}.sets.${setIndex}.reps`, prev.reps);
-    } else {
-      setValue(`exerciseSeries.${index}.sets.${setIndex}.duration`, prev.duration ?? 0);
-    }
-    clearValidationError(setIndex);
-  };
-
-  const formatPreviousSet = (setIndex: number): string | null => {
-    const prev = exerciseHistory?.sets[setIndex];
-    if (!prev) return null;
-    if (exerciseType === 'weight') return `${prev.weight}×${prev.reps}`;
-    if (exerciseType === 'reps') return `${prev.reps}`;
-    return `${prev.duration ?? 0}s`;
-  };
-
   return (
     <Card className="rounded-[1.75rem]">
       <CardHeader className="flex-row items-start justify-between gap-2 pb-4">
@@ -1380,17 +1357,16 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
         <div className="space-y-2">
           {/* Column labels - spans mirror the set rows below */}
           <div className="grid grid-cols-12 items-center gap-1.5 px-1 text-center">
-            <Label className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Seria</Label>
-            <Label className="col-span-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Poprz.</Label>
+            <Label className="col-span-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Seria</Label>
             {exerciseType === 'weight' ? (
               <>
-                <Label className="col-span-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">kg</Label>
-                <Label className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Powt.</Label>
+                <Label className="col-span-4 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">kg</Label>
+                <Label className="col-span-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Powt.</Label>
               </>
             ) : exerciseType === 'reps' ? (
-              <Label className="col-span-5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Powtórzenia</Label>
+              <Label className="col-span-7 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Powtórzenia</Label>
             ) : (
-              <Label className="col-span-5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Czas (s)</Label>
+              <Label className="col-span-7 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Czas (s)</Label>
             )}
             <Label className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">✓</Label>
           </div>
@@ -1401,8 +1377,6 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
               // Find the first uncompleted set to mark as active
               const firstUncompletedIndex = sets?.findIndex((s: any) => !s.completed);
               const isActive = firstUncompletedIndex === setIndex;
-
-              const previousLabel = formatPreviousSet(setIndex);
 
               return (
                 <motion.div key={setField.id} {...listItemMotion}>
@@ -1424,7 +1398,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                         const isWorkingSet = (field.value || SetType.WorkingSet) === SetType.WorkingSet;
                         const TypeIcon = typeConfig.icon;
                         return (
-                          <FormItem className="col-span-2 space-y-0">
+                          <FormItem className="col-span-3 space-y-0">
                             <FormControl>
                               <SetTypeModal
                                 value={field.value || SetType.WorkingSet}
@@ -1451,23 +1425,6 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                       }}
                     />
 
-                    {/* Previous workout's result for this slot - tap to fill */}
-                    <div className="col-span-3">
-                      {previousLabel ? (
-                        <button
-                          type="button"
-                          disabled={isCompleted}
-                          onClick={() => fillFromPrevious(setIndex)}
-                          aria-label="Wypełnij wynikiem z poprzedniego treningu"
-                          className="h-10 w-full truncate rounded-lg text-[11px] font-semibold tabular-nums text-muted-foreground transition-colors active:bg-secondary/60 disabled:opacity-40"
-                        >
-                          {previousLabel}
-                        </button>
-                      ) : (
-                        <span aria-hidden className="block text-center text-[11px] text-muted-foreground/40">—</span>
-                      )}
-                    </div>
-
                     {/* Conditional fields based on exercise type */}
                     {exerciseType === 'weight' ? (
                       <>
@@ -1475,7 +1432,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                           control={control}
                           name={`exerciseSeries.${index}.sets.${setIndex}.weight`}
                           render={({ field }) => (
-                            <FormItem className="col-span-3 space-y-0">
+                            <FormItem className="col-span-4 space-y-0">
                               <FormControl>
                                 <Input
                                   type="number"
@@ -1499,7 +1456,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                           control={control}
                           name={`exerciseSeries.${index}.sets.${setIndex}.reps`}
                           render={({ field }) => (
-                            <FormItem className="col-span-2 space-y-0">
+                            <FormItem className="col-span-3 space-y-0">
                               <FormControl>
                                 <Input
                                   type="number"
@@ -1523,7 +1480,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                         control={control}
                         name={`exerciseSeries.${index}.sets.${setIndex}.reps`}
                         render={({ field }) => (
-                          <FormItem className="col-span-5 space-y-0">
+                          <FormItem className="col-span-7 space-y-0">
                             <FormControl>
                               <Input
                                 type="number"
@@ -1546,7 +1503,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                         control={control}
                         name={`exerciseSeries.${index}.sets.${setIndex}.duration`}
                         render={({ field }) => (
-                          <FormItem className="col-span-5 space-y-0">
+                          <FormItem className="col-span-7 space-y-0">
                             <FormControl>
                               <div className="relative">
                                 <Input

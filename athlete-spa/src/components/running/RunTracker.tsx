@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import * as polyline from 'polyline-encoded';
-import { Footprints, Pause, Play, Satellite, Square, TriangleAlert, X } from 'lucide-react';
+import { Footprints, Megaphone, Pause, Play, Satellite, Square, TriangleAlert, X } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,10 +14,20 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { useRunTracker } from '@/hooks/useRunTracker';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useRunTracker, type TrackPoint } from '@/hooks/useRunTracker';
+import { useRunCues } from '@/hooks/useRunCues';
 import { haptic } from '@/lib/haptics';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { cn } from '@/lib/utils';
+import { LiveRouteMap } from './LiveRouteMap';
+import type { RunningProgram } from '@/lib/types';
 
 function formatDuration(totalSeconds: number): string {
   const seconds = Math.floor(totalSeconds);
@@ -55,7 +65,11 @@ export interface RecordedRun {
   /** Minutes per kilometre. */
   avgPace: number;
   polyline: string;
+  /** Raw per-second GPS samples backing `polyline`. */
+  points: TrackPoint[];
   notes?: string;
+  programId?: string;
+  programName?: string;
 }
 
 /**
@@ -71,15 +85,22 @@ export function RunTracker({
   onOpenChange,
   onSave,
   isSaving,
+  programs = [],
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (run: RecordedRun) => Promise<void> | void;
   isSaving?: boolean;
+  /** Active trainings an athlete can pick before starting; empty hides the picker. */
+  programs?: RunningProgram[];
 }) {
   const tracker = useRunTracker();
   const [notes, setNotes] = useState('');
   const [discardOpen, setDiscardOpen] = useState(false);
+  const [selectedProgramId, setSelectedProgramId] = useState('none');
+
+  const selectedProgram = programs.find(p => p.id === selectedProgramId) ?? null;
+  const { activeCue } = useRunCues(selectedProgram, tracker.duration, tracker.status);
 
   const isActive = tracker.status === 'running' || tracker.status === 'paused';
   useWakeLock(open && isActive);
@@ -99,9 +120,13 @@ export function RunTracker({
       duration: Math.round((tracker.duration / 60) * 100) / 100,
       avgPace: Math.round(tracker.pace * 100) / 100,
       polyline: encodedRoute,
+      points: tracker.points,
       notes: notes.trim() || undefined,
+      programId: selectedProgram?.id,
+      programName: selectedProgram?.name,
     });
     setNotes('');
+    setSelectedProgramId('none');
     tracker.reset();
     onOpenChange(false);
   };
@@ -112,6 +137,7 @@ export function RunTracker({
       return;
     }
     tracker.reset();
+    setSelectedProgramId('none');
     onOpenChange(false);
   };
 
@@ -186,8 +212,42 @@ export function RunTracker({
         </div>
       )}
 
+      {activeCue && (
+        <div className="flex items-center gap-2 border-b border-primary/30 bg-primary/10 px-4 py-2">
+          <Megaphone className="h-3.5 w-3.5 shrink-0 text-primary" />
+          <p className="text-[11px] font-semibold text-primary">{activeCue.label}</p>
+        </div>
+      )}
+
       {/* Live metrics */}
-      <div className="flex flex-1 flex-col items-center justify-center gap-8 px-6">
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 overflow-y-auto px-6 py-4">
+        {tracker.status === 'idle' ? (
+          programs.length > 0 && (
+            <div className="w-full max-w-xs space-y-2">
+              <p className="text-center text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
+                Trening
+              </p>
+              <Select value={selectedProgramId} onValueChange={setSelectedProgramId}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Bieg bez treningu</SelectItem>
+                  {programs.map(p => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name} ({p.targetDistanceKm} km)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )
+        ) : (
+          <div className="h-48 w-full shrink-0 overflow-hidden rounded-2xl border border-border/50">
+            <LiveRouteMap points={tracker.points} />
+          </div>
+        )}
+
         <div className="text-center">
           <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">Dystans</p>
           <p className="mt-2 font-display text-[4.5rem] font-extrabold leading-none tabular-nums">
@@ -316,6 +376,7 @@ export function RunTracker({
               onClick={() => {
                 tracker.reset();
                 setNotes('');
+                setSelectedProgramId('none');
                 onOpenChange(false);
               }}
             >
