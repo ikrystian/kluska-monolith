@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useCollection, useDoc, useUser } from '@/lib/db-hooks';
-import type { WorkoutLog, Goal, BodyMeasurement, RunningSession, LoggedMeal, PlannedWorkout, UserProfile, TrainingPlan, Habit, HabitLog } from '@/lib/types';
+import type { WorkoutLog, Goal, BodyMeasurement, RunningSession, StravaActivity, LoggedMeal, PlannedWorkout, UserProfile, TrainingPlan, Habit, HabitLog } from '@/lib/types';
 import { Activity, Target, Weight, Footprints, ChefHat, Calendar as CalendarIcon, TrendingUp, Dumbbell, Clock, Award, Layers, User, MapPin, CheckSquare, Play, ArrowRight, Check, GripVertical, Eye, EyeOff, RotateCcw, LayoutGrid, Trophy, Zap, SlidersHorizontal, type LucideIcon } from 'lucide-react';
 import type { TrainingSessionData } from '@/components/schedule/SessionDetailsDialog';
 import { ActiveChallenges } from '@/components/challenges/ActiveChallenges';
@@ -214,6 +214,13 @@ export default function AthleteDashboardPage() {
     { sort: { date: -1 } }
   );
 
+  // Recent Strava activities (last 30 days)
+  const { data: stravaActivities, isLoading: stravaLoading } = useCollection<StravaActivity>(
+    user ? 'stravaActivities' : null,
+    { ownerId: user?.uid, date: { $gte: thirtyDaysAgo.toISOString() } },
+    { sort: { date: -1 } }
+  );
+
   // Recent meals (today)
   const { data: todayMeals, isLoading: mealsLoading } = useCollection<LoggedMeal>(
     user ? 'meals' : null,
@@ -296,9 +303,13 @@ export default function AthleteDashboardPage() {
     // Weight progress
     const currentWeight = latestMeasurements?.[0]?.weight || 0;
 
-    // Running stats
-    const totalRunningDistance = runningSessions?.reduce((acc, session) => acc + session.distance, 0) || 0;
-    const totalRunningTime = runningSessions?.reduce((acc, session) => acc + session.duration, 0) || 0;
+    // Running stats (manual sessions + Strava imports)
+    const manualRunningDistance = runningSessions?.reduce((acc, session) => acc + session.distance, 0) || 0;
+    const manualRunningTime = runningSessions?.reduce((acc, session) => acc + session.duration, 0) || 0;
+    const stravaRunningDistance = stravaActivities?.reduce((acc, activity) => acc + activity.distance / 1000, 0) || 0;
+    const stravaRunningTime = stravaActivities?.reduce((acc, activity) => acc + activity.movingTime / 60, 0) || 0;
+    const totalRunningDistance = manualRunningDistance + stravaRunningDistance;
+    const totalRunningTime = manualRunningTime + stravaRunningTime;
 
     // Today's calories
     const todayCalories = todayMeals?.reduce((acc, meal) =>
@@ -326,7 +337,7 @@ export default function AthleteDashboardPage() {
       todayCalories,
       thisWeekVolume,
     };
-  }, [recentWorkouts, goals, latestMeasurements, runningSessions, todayMeals, weekStart, weekEnd]);
+  }, [recentWorkouts, goals, latestMeasurements, runningSessions, stravaActivities, todayMeals, weekStart, weekEnd]);
 
   // Calculate habits stats for the week
   const habitsStats = useMemo(() => {
@@ -385,7 +396,7 @@ export default function AthleteDashboardPage() {
     };
   }, [habits, habitLogs, weekStart, weekEnd]);
 
-  const isLoading = workoutsLoading || goalsLoading || measurementsLoading || runningLoading || mealsLoading || assignedPlansLoading || habitsLoading;
+  const isLoading = workoutsLoading || goalsLoading || measurementsLoading || runningLoading || stravaLoading || mealsLoading || assignedPlansLoading || habitsLoading;
 
   const plannedTodayCount = plannedWorkouts?.filter(p =>
     format(new Date(p.date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')

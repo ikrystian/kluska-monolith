@@ -42,6 +42,8 @@ export * from './SurveyResponse';
 export * from './WeeklyCheckIn';
 // Strava models
 export * from './StravaActivity';
+// Spotify models
+export * from './SpotifyAccount';
 // Challenge models
 export * from './Challenge';
 

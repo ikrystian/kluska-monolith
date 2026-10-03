@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { PlusCircle, Trash2, Save, Loader2, Dumbbell, Search, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, ChevronDown, ChevronUp, Clock, LayoutList, RotateCcw, CheckCircle2, Check, Circle, Timer, AlertCircle, Minus, Plus, X, Camera, Image as ImageIcon } from 'lucide-react';
+import { PlusCircle, Trash2, Save, Loader2, Dumbbell, Search, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, ChevronDown, ChevronUp, Clock, LayoutList, RotateCcw, CheckCircle2, Check, Circle, Timer, AlertCircle, Minus, Plus, X, Camera, Image as ImageIcon, Footprints } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
@@ -37,9 +37,11 @@ import { useExerciseHistory } from '@/hooks/useExerciseHistory';
 import { useRestTimer } from '@/hooks/useRestTimer';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { haptic } from '@/lib/haptics';
+import { isSpotifyWidgetEnabled } from '@/lib/app-permissions';
 import { PlateCalculator } from '@/components/workout/PlateCalculator';
 import { RpeSelector } from '@/components/workout/RpeSelector';
 import { ExerciseHistoryBadge } from '@/components/workout/ExerciseProgressIndicator';
+import { SpotifyWidget } from '@/components/workout/SpotifyWidget';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -469,6 +471,24 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
     localStorage.getItem('athlete-log-view-mode') === 'carousel' ? 'carousel' : 'list'
   );
   const [isHeaderExpanded, setIsHeaderExpanded] = useState(false);
+
+  const [spotifyWidgetVisible, setSpotifyWidgetVisible] = useState(false);
+  useEffect(() => {
+    if (!isSpotifyWidgetEnabled()) return;
+    let cancelled = false;
+    apiFetch('/api/spotify/status')
+      .then(async (response) => {
+        if (cancelled || !response.ok) return;
+        const data = await response.json();
+        setSpotifyWidgetVisible(!!data.connected);
+      })
+      .catch(() => {
+        // Stay hidden — the athlete can still control music from their phone directly.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Transient rest countdown shown after checking off a set in list mode
   const [isResting, setIsResting] = useState(false);
@@ -1060,6 +1080,8 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
                 </button>
               </div>
             </div>
+
+            {spotifyWidgetVisible && <SpotifyWidget className="mt-3" />}
           </div>
 
           {/* Main Content - Conditional based on view mode */}
@@ -1662,6 +1684,8 @@ function WorkoutExercisesPreview({ exerciseSeries }: { exerciseSeries: ExerciseS
 // --- SELECTION VIEW COMPONENT ---
 function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder: (data: LogFormValues) => void; allExercises: Exercise[] | null }) {
   const { user } = useUser();
+  const navigate = useNavigate();
+  const supportsGeolocation = typeof navigator !== 'undefined' && 'geolocation' in navigator;
 
   // Fetch plans assigned to the athlete
   const { data: assignedPlans, isLoading: assignedPlansLoading } = useCollection<TrainingPlan>(
@@ -1775,6 +1799,24 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
             </span>
             <ChevronRight className="relative ml-auto h-5 w-5 shrink-0 text-white/70" />
           </button>
+
+          {supportsGeolocation && (
+            <button
+              type="button"
+              onClick={() => navigate('/athlete/running/record')}
+              className="group relative flex w-full items-center gap-4 overflow-hidden rounded-[1.75rem] border border-border/60 bg-card p-5 text-left shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted active:scale-[0.98]"
+            >
+              <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full bg-sky-500/15 text-sky-600 dark:text-sky-400">
+                <Footprints className="h-6 w-6" />
+              </span>
+              <span className="relative min-w-0">
+                <span className="block text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">Szybki start</span>
+                <span className="mt-0.5 block font-display text-lg font-extrabold uppercase leading-tight">Rozpocznij bieg</span>
+                <span className="block text-xs text-muted-foreground">Nagraj trasę GPS na żywo</span>
+              </span>
+              <ChevronRight className="relative ml-auto h-5 w-5 shrink-0 text-muted-foreground" />
+            </button>
+          )}
 
           {/* Workout Templates Section */}
           {workoutTemplates && workoutTemplates.length > 0 && (

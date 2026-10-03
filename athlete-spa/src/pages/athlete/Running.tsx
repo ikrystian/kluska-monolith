@@ -387,67 +387,62 @@ export default function RunningPage() {
           <CardDescription>Zapis wszystkich Twoich sesji biegowych.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>Nazwa/Notatki</TableHead>
-                <TableHead>Dystans</TableHead>
-                <TableHead>Czas</TableHead>
-                <TableHead>Średnie Tempo</TableHead>
-                <TableHead>Szczegóły</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                  </TableRow>
-                ))
-              ) : combinedActivities && combinedActivities.length > 0 ? (
-                combinedActivities.map((activity) => {
-                  const isClickable = activity.source === 'strava' || !!activity.polyline;
-                  return (
-                    <TableRow
-                      key={activity.id}
-                      className={isClickable ? 'cursor-pointer hover:bg-muted/50' : ''}
-                      onClick={() => {
-                        if (activity.source === 'strava' && activity.stravaActivityId) {
-                          navigate(`/athlete/running/strava/${activity.stravaActivityId}`);
-                        } else if (activity.polyline) {
-                          navigate(`/athlete/running/${activity.id}`);
-                        }
-                      }}
-                    >
-                      <TableCell className="font-medium">{format(activity.date, 'd MMM yyyy, HH:mm', { locale: pl })}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
+          {isLoading ? (
+            <div className="space-y-3 md:hidden">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full rounded-xl" />
+              ))}
+            </div>
+          ) : combinedActivities && combinedActivities.length > 0 ? (
+            <div className="space-y-3 md:hidden">
+              {combinedActivities.map((activity) => {
+                const isClickable = activity.source === 'strava' || !!activity.polyline;
+                return (
+                  <Card
+                    key={activity.id}
+                    className={isClickable ? 'cursor-pointer overflow-hidden hover:bg-muted/50' : 'overflow-hidden'}
+                    onClick={() => {
+                      if (activity.source === 'strava' && activity.stravaActivityId) {
+                        navigate(`/athlete/running/strava/${activity.stravaActivityId}`);
+                      } else if (activity.polyline) {
+                        navigate(`/athlete/running/${activity.id}`);
+                      }
+                    }}
+                  >
+                    <CardContent className="p-4">
+                      <div className="mb-2 flex items-start justify-between gap-2">
+                        <span className="text-sm font-medium">{format(activity.date, 'd MMM yyyy, HH:mm', { locale: pl })}</span>
+                        <div className="flex items-center gap-1.5">
                           {activity.source === 'strava' && (
                             <Badge variant="secondary" className="bg-[#FC4C02]/10 text-[#FC4C02] hover:bg-[#FC4C02]/20">
-                              <Activity className="mr-1 h-3 w-3" />
-                              Strava
+                              <Activity className="h-3 w-3" />
                             </Badge>
                           )}
                           {activity.programName && (
-                            <Badge variant="secondary">
-                              <Footprints className="mr-1 h-3 w-3" />
+                            <Badge variant="secondary" className="gap-1">
+                              <Footprints className="h-3 w-3" />
                               {activity.programName}
                             </Badge>
                           )}
-                          <span className="text-sm">{activity.name || activity.notes || '-'}</span>
                         </div>
-                      </TableCell>
-                      <TableCell>{activity.distance.toFixed(2)} km</TableCell>
-                      <TableCell>{activity.duration.toFixed(1)} min</TableCell>
-                      <TableCell>{formatPace(activity.avgPace)}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                      </div>
+                      <p className="mb-3 truncate text-sm text-muted-foreground">{activity.name || activity.notes || '-'}</p>
+                      <div className="grid grid-cols-3 gap-2 text-sm">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Dystans</p>
+                          <p className="font-medium">{activity.distance.toFixed(2)} km</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Czas</p>
+                          <p className="font-medium">{activity.duration.toFixed(1)} min</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Tempo</p>
+                          <p className="font-medium">{formatPace(activity.avgPace)}</p>
+                        </div>
+                      </div>
+                      {(activity.totalElevationGain !== undefined || activity.averageHeartrate !== undefined || (activity.kudosCount !== undefined && activity.kudosCount > 0)) && (
+                        <div className="mt-3 flex flex-wrap gap-3 border-t pt-3 text-xs text-muted-foreground">
                           {activity.totalElevationGain !== undefined && (
                             <span className="flex items-center gap-1">
                               <Mountain className="h-3 w-3" />
@@ -464,27 +459,123 @@ export default function RunningPage() {
                             <span>❤️ {activity.kudosCount}</span>
                           )}
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                      <Footprints className="h-8 w-8" />
-                      <span>Nie zarejestrowano jeszcze żadnych biegów.</span>
-                      {isStravaConnected && (
-                        <Button variant="link" onClick={handleSyncStrava} className="text-[#FC4C02]">
-                          Zsynchronizuj aktywności ze Strava
-                        </Button>
                       )}
-                    </div>
-                  </TableCell>
-                </TableRow>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-2 py-12 text-center text-muted-foreground md:hidden">
+              <Footprints className="h-8 w-8" />
+              <span>Nie zarejestrowano jeszcze żadnych biegów.</span>
+              {isStravaConnected && (
+                <Button variant="link" onClick={handleSyncStrava} className="text-[#FC4C02]">
+                  Zsynchronizuj aktywności ze Strava
+                </Button>
               )}
-            </TableBody>
-          </Table>
+            </div>
+          )}
+
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Nazwa/Notatki</TableHead>
+                  <TableHead>Dystans</TableHead>
+                  <TableHead>Czas</TableHead>
+                  <TableHead>Średnie Tempo</TableHead>
+                  <TableHead>Szczegóły</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : combinedActivities && combinedActivities.length > 0 ? (
+                  combinedActivities.map((activity) => {
+                    const isClickable = activity.source === 'strava' || !!activity.polyline;
+                    return (
+                      <TableRow
+                        key={activity.id}
+                        className={isClickable ? 'cursor-pointer hover:bg-muted/50' : ''}
+                        onClick={() => {
+                          if (activity.source === 'strava' && activity.stravaActivityId) {
+                            navigate(`/athlete/running/strava/${activity.stravaActivityId}`);
+                          } else if (activity.polyline) {
+                            navigate(`/athlete/running/${activity.id}`);
+                          }
+                        }}
+                      >
+                        <TableCell className="font-medium">{format(activity.date, 'd MMM yyyy, HH:mm', { locale: pl })}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {activity.source === 'strava' && (
+                              <Badge variant="secondary" className="bg-[#FC4C02]/10 text-[#FC4C02] hover:bg-[#FC4C02]/20">
+                                <Activity className="h-3 w-3" />
+                              </Badge>
+                            )}
+                            {activity.programName && (
+                              <Badge variant="secondary">
+                                <Footprints className="mr-1 h-3 w-3" />
+                                {activity.programName}
+                              </Badge>
+                            )}
+                            <span className="text-sm">{activity.name || activity.notes || '-'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{activity.distance.toFixed(2)} km</TableCell>
+                        <TableCell>{activity.duration.toFixed(1)} min</TableCell>
+                        <TableCell>{formatPace(activity.avgPace)}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                            {activity.totalElevationGain !== undefined && (
+                              <span className="flex items-center gap-1">
+                                <Mountain className="h-3 w-3" />
+                                {Math.round(activity.totalElevationGain)}m
+                              </span>
+                            )}
+                            {activity.averageHeartrate !== undefined && (
+                              <span className="flex items-center gap-1">
+                                <Heart className="h-3 w-3 text-red-500" />
+                                {Math.round(activity.averageHeartrate)} bpm
+                              </span>
+                            )}
+                            {activity.kudosCount !== undefined && activity.kudosCount > 0 && (
+                              <span>❤️ {activity.kudosCount}</span>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                        <Footprints className="h-8 w-8" />
+                        <span>Nie zarejestrowano jeszcze żadnych biegów.</span>
+                        {isStravaConnected && (
+                          <Button variant="link" onClick={handleSyncStrava} className="text-[#FC4C02]">
+                            Zsynchronizuj aktywności ze Strava
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

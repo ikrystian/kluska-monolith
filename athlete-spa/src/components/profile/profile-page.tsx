@@ -9,7 +9,8 @@ import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link } from 'react-router-dom';
-import { Camera, Instagram, Facebook, Twitter, Loader2, Activity, CheckCircle2, XCircle, Footprints, Globe, UserPlus } from 'lucide-react';
+import { Camera, Instagram, Facebook, Twitter, Loader2, Activity, CheckCircle2, XCircle, Footprints, Globe, UserPlus, MapPin, Bell, Music2 } from 'lucide-react';
+import { Geolocation } from '@capacitor/geolocation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,6 +31,19 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Switch } from '@/components/ui/switch';
 import { haptic, isHapticsEnabled, isHapticsSupported, setHapticsEnabled } from '@/lib/haptics';
+import {
+  isBrowserNotificationSupported,
+  isLocationSharingEnabled,
+  isPushNotificationsEnabled,
+  isSpotifyWidgetEnabled,
+  isWeeklySummaryEnabled,
+  isWorkoutRemindersEnabled,
+  setLocationSharingEnabled,
+  setPushNotificationsEnabled,
+  setSpotifyWidgetEnabled,
+  setWeeklySummaryEnabled,
+  setWorkoutRemindersEnabled,
+} from '@/lib/app-permissions';
 import { useUserProfile } from '@/contexts/UserProfileContext';
 import type { RunningSession, StravaActivity } from '@/lib/types';
 
@@ -59,6 +73,34 @@ export function ProfilePage() {
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const hapticsSupported = useMemo(() => isHapticsSupported(), []);
   const [hapticsOn, setHapticsOn] = useState(() => isHapticsEnabled());
+
+  const pushSupported = useMemo(() => isBrowserNotificationSupported(), []);
+  const [locationSharingOn, setLocationSharingOn] = useState(() => isLocationSharingEnabled());
+  const [isRequestingLocation, setIsRequestingLocation] = useState(false);
+  const [pushOn, setPushOn] = useState(() => isPushNotificationsEnabled());
+  const [workoutRemindersOn, setWorkoutRemindersOn] = useState(() => isWorkoutRemindersEnabled());
+  const [weeklySummaryOn, setWeeklySummaryOn] = useState(() => isWeeklySummaryEnabled());
+
+  const [isSpotifyConnected, setIsSpotifyConnected] = useState(false);
+  const [isSpotifyStatusLoading, setIsSpotifyStatusLoading] = useState(true);
+  const [isSpotifyDisconnecting, setIsSpotifyDisconnecting] = useState(false);
+  const [spotifyWidgetOn, setSpotifyWidgetOn] = useState(() => isSpotifyWidgetEnabled());
+
+  const refetchSpotifyStatus = async () => {
+    try {
+      const response = await apiFetch('/api/spotify/status');
+      if (!response.ok) return;
+      const data = await response.json();
+      setIsSpotifyConnected(!!data.connected);
+    } finally {
+      setIsSpotifyStatusLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refetchSpotifyStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { data: userProfile, isLoading: profileLoading, refetch } = useDoc<UserProfile>('users', user?.uid || null);
   const { refetch: refetchProfileContext } = useUserProfile();
@@ -137,18 +179,42 @@ export function ProfilePage() {
           description: 'Nie udało się połączyć ze Strava.',
           variant: 'destructive',
         });
+      } else if (data.url.includes('spotify-callback') || data.url.includes('spotify_connected')) {
+        try {
+          await Browser.close();
+        } catch {
+          // Browser sheet might already be closed
+        }
+        refetchSpotifyStatus();
+        toast({
+          title: 'Sukces!',
+          description: 'Połączono z kontem Spotify.',
+        });
+      } else if (data.url.includes('spotify_error')) {
+        try {
+          await Browser.close();
+        } catch {
+          // Browser sheet might already be closed
+        }
+        toast({
+          title: 'Błąd!',
+          description: 'Nie udało się połączyć ze Spotify.',
+          variant: 'destructive',
+        });
       }
     };
 
     const appListenerPromise = App.addListener('appUrlOpen', handleUrlOpen);
     const browserListenerPromise = Browser.addListener('browserFinished', () => {
       refetch();
+      refetchSpotifyStatus();
     });
 
     return () => {
       appListenerPromise.then((l) => l.remove());
       browserListenerPromise.then((l) => l.remove());
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refetch, toast]);
 
   const handleConnectStrava = async () => {
@@ -190,6 +256,47 @@ export function ProfilePage() {
     }
   };
 
+  const handleConnectSpotify = async () => {
+    const token = getStoredToken();
+    const apiBase = getApiBaseUrl();
+    if (Capacitor.isNativePlatform()) {
+      await Browser.open({
+        url: `${apiBase}/api/spotify/connect?token=${encodeURIComponent(token ?? '')}&platform=capacitor`,
+      });
+    } else {
+      window.location.href = `${apiBase}/api/spotify/connect?token=${encodeURIComponent(token ?? '')}`;
+    }
+  };
+
+  const handleDisconnectSpotify = async () => {
+    setIsSpotifyDisconnecting(true);
+    try {
+      const response = await apiFetch('/api/spotify/disconnect', {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to disconnect Spotify');
+      }
+
+      await refetchSpotifyStatus();
+      setSpotifyWidgetOn(false);
+      setSpotifyWidgetEnabled(false);
+      toast({
+        title: 'Sukces!',
+        description: 'Spotify zostało odłączone.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Błąd!',
+        description: 'Nie udało się odłączyć Spotify.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSpotifyDisconnecting(false);
+    }
+  };
+
   const handleAvatarUpload = async (url: string) => {
     if (!user || !userProfile) return;
     try {
@@ -225,6 +332,70 @@ export function ProfilePage() {
         description: 'Nie udało się zaktualizować profilu.',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleLocationSharingToggle = async (checked: boolean) => {
+    if (!checked) {
+      setLocationSharingOn(false);
+      setLocationSharingEnabled(false);
+      return;
+    }
+    setIsRequestingLocation(true);
+    try {
+      const status = await Geolocation.requestPermissions();
+      const granted = status.location === 'granted' || status.coarseLocation === 'granted';
+      setLocationSharingOn(granted);
+      setLocationSharingEnabled(granted);
+      if (!granted) {
+        toast({
+          title: 'Brak dostępu do lokalizacji',
+          description: 'Włącz uprawnienie lokalizacji dla aplikacji w ustawieniach systemowych, aby śledzić trasy biegowe GPS.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      setLocationSharingOn(false);
+      setLocationSharingEnabled(false);
+      toast({
+        title: 'Błąd!',
+        description: 'Nie udało się poprosić o dostęp do lokalizacji.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRequestingLocation(false);
+    }
+  };
+
+  const handlePushToggle = async (checked: boolean) => {
+    if (!checked) {
+      setPushOn(false);
+      setPushNotificationsEnabled(false);
+      return;
+    }
+    if (!pushSupported) {
+      toast({
+        title: 'Niedostępne',
+        description: 'Ta przeglądarka/urządzenie nie obsługuje powiadomień.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    try {
+      const permission = await Notification.requestPermission();
+      const granted = permission === 'granted';
+      setPushOn(granted);
+      setPushNotificationsEnabled(granted);
+      if (!granted) {
+        toast({
+          title: 'Brak zgody na powiadomienia',
+          description: 'Włącz powiadomienia dla aplikacji w ustawieniach systemowych.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      setPushOn(false);
+      setPushNotificationsEnabled(false);
     }
   };
 
@@ -526,6 +697,80 @@ export function ProfilePage() {
                     )}
                   </div>
 
+                  <div className="space-y-4 pt-4 border-t">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <Music2 className="h-5 w-5 text-[#1DB954]" />
+                      Integracja Spotify
+                    </h3>
+                    {isSpotifyStatusLoading ? (
+                      <Skeleton className="h-20 w-full" />
+                    ) : isSpotifyConnected ? (
+                      <div className="rounded-xl border bg-muted/50 p-4">
+                        <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
+                          <div className="flex items-center gap-3">
+                            <CheckCircle2 className="h-6 w-6 shrink-0 text-green-500" />
+                            <div>
+                              <p className="font-medium">Połączono ze Spotify</p>
+                              <p className="text-sm text-muted-foreground">
+                                Możesz sterować odtwarzaniem podczas treningu
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full rounded-lg sm:w-auto"
+                            onClick={handleDisconnectSpotify}
+                            disabled={isSpotifyDisconnecting}
+                          >
+                            {isSpotifyDisconnecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Odłącz
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border p-4">
+                        <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
+                          <div className="flex items-center gap-3">
+                            <XCircle className="h-6 w-6 shrink-0 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium">Nie połączono</p>
+                              <p className="text-sm text-muted-foreground">
+                                Połącz ze Spotify, aby sterować muzyką podczas śledzenia treningu
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="w-full rounded-lg bg-[#1DB954] text-white hover:bg-[#1aa34a] sm:w-auto"
+                            onClick={handleConnectSpotify}
+                          >
+                            <Music2 className="mr-2 h-4 w-4" />
+                            Połącz ze Spotify
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    {isSpotifyConnected && (
+                      <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
+                        <div className="min-w-0">
+                          <FormLabel htmlFor="spotify-widget">Widget Spotify podczas treningu</FormLabel>
+                          <p className="text-sm text-muted-foreground">Pokazuj kontrolki odtwarzania na ekranie treningu (/athlete/log).</p>
+                        </div>
+                        <Switch
+                          id="spotify-widget"
+                          checked={spotifyWidgetOn}
+                          onCheckedChange={(checked) => {
+                            setSpotifyWidgetOn(checked);
+                            setSpotifyWidgetEnabled(checked);
+                          }}
+                          className="shrink-0"
+                        />
+                      </div>
+                    )}
+                  </div>
+
                   <div className="space-y-4 pt-4">
                     <h3 className="font-semibold">Ulubione Siłownie</h3>
                     <FormField
@@ -602,21 +847,77 @@ export function ProfilePage() {
                     </div>
                   )}
 
+                  <div className="space-y-3 pt-4 border-t">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <MapPin className="h-5 w-5 text-sky-500" />
+                      Udostępnianie Lokalizacji
+                    </h3>
+                    <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
+                      <div className="min-w-0">
+                        <FormLabel htmlFor="location-sharing">Lokalizacja GPS</FormLabel>
+                        <p className="text-sm text-muted-foreground">Wymagane do śledzenia tras biegowych na żywo w module Bieganie.</p>
+                      </div>
+                      <Switch
+                        id="location-sharing"
+                        checked={locationSharingOn}
+                        disabled={isRequestingLocation}
+                        onCheckedChange={handleLocationSharingToggle}
+                        className="shrink-0"
+                      />
+                    </div>
+                  </div>
+
                   <div className="space-y-3 pt-4">
-                    <h3 className="font-medium">Ustawienia Powiadomień</h3>
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <Bell className="h-5 w-5 text-sky-500" />
+                      Ustawienia Powiadomień
+                    </h3>
+                    <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
+                      <div className="min-w-0">
+                        <FormLabel htmlFor="push-notifications">Powiadomienia push</FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          {pushSupported ? 'Zezwól aplikacji na wysyłanie powiadomień.' : 'Niedostępne na tym urządzeniu/przeglądarce.'}
+                        </p>
+                      </div>
+                      <Switch
+                        id="push-notifications"
+                        checked={pushOn}
+                        disabled={!pushSupported}
+                        onCheckedChange={handlePushToggle}
+                        className="shrink-0"
+                      />
+                    </div>
                     <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
                       <div className="min-w-0">
                         <FormLabel htmlFor="workout-reminders">Przypomnienia o treningu</FormLabel>
                         <p className="text-sm text-muted-foreground">Otrzymuj powiadomienia przed zaplanowanymi treningami.</p>
                       </div>
-                      <Switch id="workout-reminders" defaultChecked className="shrink-0" />
+                      <Switch
+                        id="workout-reminders"
+                        checked={workoutRemindersOn}
+                        disabled={!pushOn}
+                        onCheckedChange={(checked) => {
+                          setWorkoutRemindersOn(checked);
+                          setWorkoutRemindersEnabled(checked);
+                        }}
+                        className="shrink-0"
+                      />
                     </div>
                     <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
                       <div className="min-w-0">
                         <FormLabel htmlFor="weekly-summary">Tygodniowe podsumowanie</FormLabel>
                         <p className="text-sm text-muted-foreground">Otrzymuj podsumowanie swoich postępów co tydzień.</p>
                       </div>
-                      <Switch id="weekly-summary" className="shrink-0" />
+                      <Switch
+                        id="weekly-summary"
+                        checked={weeklySummaryOn}
+                        disabled={!pushOn}
+                        onCheckedChange={(checked) => {
+                          setWeeklySummaryOn(checked);
+                          setWeeklySummaryEnabled(checked);
+                        }}
+                        className="shrink-0"
+                      />
                     </div>
                   </div>
 
