@@ -102,7 +102,7 @@ export default function AdminNotificationsPage() {
 
       toast({
         title: 'Wysłano',
-        description: `Dostarczono do ${data.sentCount}/${data.targetedDevices} urządzeń${data.failedCount > 0 ? ` (${data.failedCount} nieudanych)` : ''}${data.skippedNativeCount > 0 ? ` · pominięto ${data.skippedNativeCount} urządzeń mobilnych (wymaga Firebase Admin)` : ''}.`,
+        description: `Dostarczono do ${data.sentCount}/${data.targetedDevices} urządzeń${data.failedCount > 0 ? ` (${data.failedCount} nieudanych)` : ''}${!data.firebaseConfigured ? ' · Firebase Admin nie jest skonfigurowany — urządzenia mobilne nie mogły odebrać powiadomienia' : ''}.`,
       });
 
       // Stale subscriptions get dropped server-side — refresh counts to match.
@@ -185,7 +185,7 @@ export default function AdminNotificationsPage() {
                           <Smartphone className="h-3.5 w-3.5 text-muted-foreground" />
                           {u.deviceCount}
                           {u.platforms.includes('android') || u.platforms.includes('ios') ? (
-                            <Badge variant="outline" className="text-[10px]" title="Urządzenie mobilne — dostarczanie wymaga Firebase Admin">
+                            <Badge variant="outline" className="text-[10px]" title="Urządzenie mobilne (aplikacja Android/iOS)">
                               mobile
                             </Badge>
                           ) : null}

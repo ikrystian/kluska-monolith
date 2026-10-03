@@ -3,6 +3,7 @@ import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { PushSubscription } from '@/models/PushSubscription';
 import { sendWebPush } from '@/lib/web-push';
+import { isFirebaseAdminConfigured, sendNativePush } from '@/lib/firebase-admin';
 
 // POST - admin-only: send a test push notification to one or more users'
 // subscribed devices. Stale subscriptions (the push service reports them as
@@ -35,22 +36,38 @@ export async function POST(request: NextRequest) {
     }
 
     const webSubs = subscriptions.filter((sub) => sub.platform === 'web');
-    // Native (android/ios) tokens are captured but not deliverable yet — that
-    // needs the Firebase Admin SDK with a service account, not configured here.
     const nativeSubs = subscriptions.filter((sub) => sub.platform !== 'web');
+    const firebaseConfigured = isFirebaseAdminConfigured();
 
-    const results = await Promise.all(
-      webSubs.map((sub) =>
-        sendWebPush(
-          { endpoint: sub.endpoint!, keys: sub.keys! },
-          { title, body }
-        ).then((result) => ({ ...result, userId: sub.userId }))
-      )
-    );
+    const [webResults, nativeResults] = await Promise.all([
+      Promise.all(
+        webSubs.map((sub) =>
+          sendWebPush(
+            { endpoint: sub.endpoint!, keys: sub.keys! },
+            { title, body }
+          ).then((result) => ({ ...result, userId: sub.userId }))
+        )
+      ),
+      Promise.all(
+        nativeSubs.map((sub) =>
+          sendNativePush(sub.token!, { title, body }).then((result) => ({
+            ...result,
+            endpoint: result.token,
+            userId: sub.userId,
+          }))
+        )
+      ),
+    ]);
 
-    const staleEndpoints = results.filter((r) => r.shouldDelete).map((r) => r.endpoint);
+    const results = [...webResults, ...nativeResults];
+
+    const staleEndpoints = webResults.filter((r) => r.shouldDelete).map((r) => r.endpoint);
+    const staleTokens = nativeResults.filter((r) => r.shouldDelete).map((r) => r.token);
     if (staleEndpoints.length > 0) {
       await PushSubscription.deleteMany({ endpoint: { $in: staleEndpoints } });
+    }
+    if (staleTokens.length > 0) {
+      await PushSubscription.deleteMany({ token: { $in: staleTokens } });
     }
 
     const sentCount = results.filter((r) => r.success).length;
@@ -60,8 +77,8 @@ export async function POST(request: NextRequest) {
       success: true,
       sentCount,
       failedCount,
-      skippedNativeCount: nativeSubs.length,
-      targetedDevices: results.length + nativeSubs.length,
+      targetedDevices: results.length,
+      firebaseConfigured,
       results,
     });
   } catch (error) {
