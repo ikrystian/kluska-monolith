@@ -34,10 +34,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Żaden z wybranych użytkowników nie ma aktywnej subskrypcji push' }, { status: 400 });
     }
 
+    const webSubs = subscriptions.filter((sub) => sub.platform === 'web');
+    // Native (android/ios) tokens are captured but not deliverable yet — that
+    // needs the Firebase Admin SDK with a service account, not configured here.
+    const nativeSubs = subscriptions.filter((sub) => sub.platform !== 'web');
+
     const results = await Promise.all(
-      subscriptions.map((sub) =>
+      webSubs.map((sub) =>
         sendWebPush(
-          { endpoint: sub.endpoint, keys: sub.keys },
+          { endpoint: sub.endpoint!, keys: sub.keys! },
           { title, body }
         ).then((result) => ({ ...result, userId: sub.userId }))
       )
@@ -55,7 +60,8 @@ export async function POST(request: NextRequest) {
       success: true,
       sentCount,
       failedCount,
-      targetedDevices: results.length,
+      skippedNativeCount: nativeSubs.length,
+      targetedDevices: results.length + nativeSubs.length,
       results,
     });
   } catch (error) {

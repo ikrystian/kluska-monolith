@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
           _id: '$userId',
           deviceCount: { $sum: 1 },
           lastSubscribedAt: { $max: '$updatedAt' },
+          platforms: { $addToSet: '$platform' },
         },
       },
     ]);
@@ -45,6 +46,7 @@ export async function GET(request: NextRequest) {
           role: u.role,
           deviceCount: g.deviceCount,
           lastSubscribedAt: g.lastSubscribedAt,
+          platforms: g.platforms,
         };
       })
       .filter((u): u is NonNullable<typeof u> => u !== null)

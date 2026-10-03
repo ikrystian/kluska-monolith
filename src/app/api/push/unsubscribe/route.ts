@@ -10,14 +10,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { endpoint } = await request.json();
+    const { endpoint, token } = await request.json();
     await connectToDatabase();
 
     if (endpoint) {
       // Only the owning user may remove their own subscription.
       await PushSubscription.deleteOne({ endpoint, userId: user.id });
+    } else if (token) {
+      await PushSubscription.deleteOne({ token, userId: user.id });
     } else {
-      // No endpoint supplied — the caller lost track of it (e.g. storage was
+      // Neither supplied — the caller lost track of it (e.g. storage was
       // cleared); drop every subscription this user has instead.
       await PushSubscription.deleteMany({ userId: user.id });
     }

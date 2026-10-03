@@ -44,7 +44,14 @@ import {
   setWeeklySummaryEnabled,
   setWorkoutRemindersEnabled,
 } from '@/lib/app-permissions';
-import { isPushSupported, subscribeToPush, unsubscribeFromPush } from '@/lib/push';
+import {
+  isNativePushSupported,
+  isPushSupported,
+  subscribeToNativePush,
+  subscribeToPush,
+  unsubscribeFromNativePush,
+  unsubscribeFromPush,
+} from '@/lib/push';
 import { useUserProfile } from '@/contexts/UserProfileContext';
 import type { RunningSession, StravaActivity } from '@/lib/types';
 
@@ -75,7 +82,7 @@ export function ProfilePage() {
   const hapticsSupported = useMemo(() => isHapticsSupported(), []);
   const [hapticsOn, setHapticsOn] = useState(() => isHapticsEnabled());
 
-  const pushSupported = useMemo(() => isBrowserNotificationSupported(), []);
+  const pushSupported = useMemo(() => isNativePushSupported() || isBrowserNotificationSupported(), []);
   const [locationSharingOn, setLocationSharingOn] = useState(() => isLocationSharingEnabled());
   const [isRequestingLocation, setIsRequestingLocation] = useState(false);
   const [pushOn, setPushOn] = useState(() => isPushNotificationsEnabled());
@@ -105,10 +112,13 @@ export function ProfilePage() {
 
   // Keeps the server-side subscription in sync with a previously-granted
   // preference — covers a fresh app restart or the push subscription having
-  // expired, both of which should resubscribe silently without re-prompting.
+  // expired, both of which should resubscribe silently without re-prompting
+  // (permission is already granted at this point, so neither call below
+  // shows the user anything).
   useEffect(() => {
-    if (!pushOn || !isPushSupported()) return;
-    subscribeToPush().then((subscribed) => {
+    if (!pushOn) return;
+    const resubscribe = isNativePushSupported() ? subscribeToNativePush() : isPushSupported() ? subscribeToPush() : Promise.resolve(false);
+    resubscribe.then((subscribed) => {
       if (!subscribed) {
         setPushOn(false);
         setPushNotificationsEnabled(false);
@@ -386,7 +396,8 @@ export function ProfilePage() {
     if (!checked) {
       setPushOn(false);
       setPushNotificationsEnabled(false);
-      void unsubscribeFromPush();
+      if (isNativePushSupported()) void unsubscribeFromNativePush();
+      else void unsubscribeFromPush();
       return;
     }
     if (!pushSupported) {
@@ -397,6 +408,30 @@ export function ProfilePage() {
       });
       return;
     }
+
+    // Inside the Capacitor app, the real OS permission dialog (and FCM/APNs
+    // registration) has to go through the native plugin — the in-page
+    // `Notification` API below doesn't reflect the actual system permission
+    // there and can't deliver anything once the WebView isn't running.
+    if (isNativePushSupported()) {
+      try {
+        const subscribed = await subscribeToNativePush();
+        setPushOn(subscribed);
+        setPushNotificationsEnabled(subscribed);
+        if (!subscribed) {
+          toast({
+            title: 'Brak zgody na powiadomienia',
+            description: 'Włącz powiadomienia dla aplikacji w ustawieniach systemowych telefonu.',
+            variant: 'destructive',
+          });
+        }
+      } catch (error) {
+        setPushOn(false);
+        setPushNotificationsEnabled(false);
+      }
+      return;
+    }
+
     try {
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
@@ -416,7 +451,7 @@ export function ProfilePage() {
       if (!subscribed) {
         toast({
           title: 'Nie udało się aktywować powiadomień',
-          description: 'To urządzenie nie obsługuje subskrypcji push (typowe w aplikacji mobilnej).',
+          description: 'Ta przeglądarka nie obsługuje subskrypcji push.',
           variant: 'destructive',
         });
       }

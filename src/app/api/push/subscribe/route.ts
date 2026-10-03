@@ -11,17 +11,29 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { endpoint, keys, userAgent } = body;
+    const { endpoint, keys, token, platform, userAgent } = body;
+
+    await connectToDatabase();
+
+    if (platform === 'android' || platform === 'ios') {
+      if (!token) {
+        return NextResponse.json({ error: 'Invalid native push token' }, { status: 400 });
+      }
+      await PushSubscription.findOneAndUpdate(
+        { token },
+        { userId: user.id, platform, token, userAgent },
+        { upsert: true, new: true }
+      );
+      return NextResponse.json({ success: true });
+    }
 
     if (!endpoint || !keys?.p256dh || !keys?.auth) {
       return NextResponse.json({ error: 'Invalid subscription' }, { status: 400 });
     }
 
-    await connectToDatabase();
-
     await PushSubscription.findOneAndUpdate(
       { endpoint },
-      { userId: user.id, endpoint, keys, userAgent },
+      { userId: user.id, platform: 'web', endpoint, keys, userAgent },
       { upsert: true, new: true }
     );
 

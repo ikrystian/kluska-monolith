@@ -35,6 +35,7 @@ interface EligibleUser {
   role: 'athlete' | 'trainer' | 'admin';
   deviceCount: number;
   lastSubscribedAt: string;
+  platforms: ('web' | 'android' | 'ios')[];
 }
 
 export default function AdminNotificationsPage() {
@@ -101,7 +102,7 @@ export default function AdminNotificationsPage() {
 
       toast({
         title: 'Wysłano',
-        description: `Dostarczono do ${data.sentCount}/${data.targetedDevices} urządzeń${data.failedCount > 0 ? ` (${data.failedCount} nieudanych)` : ''}.`,
+        description: `Dostarczono do ${data.sentCount}/${data.targetedDevices} urządzeń${data.failedCount > 0 ? ` (${data.failedCount} nieudanych)` : ''}${data.skippedNativeCount > 0 ? ` · pominięto ${data.skippedNativeCount} urządzeń mobilnych (wymaga Firebase Admin)` : ''}.`,
       });
 
       // Stale subscriptions get dropped server-side — refresh counts to match.
@@ -180,9 +181,14 @@ export default function AdminNotificationsPage() {
                         <Badge variant="secondary" className="capitalize">{u.role}</Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <span className="inline-flex items-center gap-1">
+                        <span className="inline-flex items-center gap-1.5">
                           <Smartphone className="h-3.5 w-3.5 text-muted-foreground" />
                           {u.deviceCount}
+                          {u.platforms.includes('android') || u.platforms.includes('ios') ? (
+                            <Badge variant="outline" className="text-[10px]" title="Urządzenie mobilne — dostarczanie wymaga Firebase Admin">
+                              mobile
+                            </Badge>
+                          ) : null}
                         </span>
                       </TableCell>
                       <TableCell className="text-right text-sm text-muted-foreground">
