@@ -53,12 +53,21 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { LocalUploadButton } from '@/components/shared/LocalUploadButton';
 import type { RunningProgram } from '@/lib/types';
 
 const cueSchema = z.object({
+  triggerType: z.enum(['time', 'distance']),
   minutes: z.coerce.number().min(0, 'Min. 0').max(600, 'Zbyt duża wartość.'),
   seconds: z.coerce.number().min(0, 'Min. 0').max(59, 'Maks. 59.'),
+  meters: z.coerce.number().min(0, 'Min. 0'),
   audioUrl: z.string().min(1, 'Wgraj plik dźwiękowy.'),
   label: z.string().optional(),
 });
@@ -111,10 +120,13 @@ export default function RunningProgramsPage() {
             targetDistanceKm: program.targetDistanceKm,
             description: program.description ?? '',
             isActive: program.isActive,
-            cues: program.cues
-              .slice()
-              .sort((a, b) => a.atSeconds - b.atSeconds)
-              .map((cue) => ({ ...secondsToParts(cue.atSeconds), audioUrl: cue.audioUrl, label: cue.label ?? '' })),
+            cues: program.cues.map((cue) => ({
+              triggerType: cue.triggerType,
+              ...(cue.triggerType === 'time' ? secondsToParts(cue.value) : { minutes: 0, seconds: 0 }),
+              meters: cue.triggerType === 'distance' ? cue.value : 0,
+              audioUrl: cue.audioUrl,
+              label: cue.label ?? '',
+            })),
           }
         : emptyDefaults
     );
@@ -127,13 +139,12 @@ export default function RunningProgramsPage() {
       targetDistanceKm: data.targetDistanceKm,
       description: data.description?.trim() || undefined,
       isActive: data.isActive,
-      cues: data.cues
-        .map((cue) => ({
-          atSeconds: cue.minutes * 60 + cue.seconds,
-          audioUrl: cue.audioUrl,
-          label: cue.label?.trim() || undefined,
-        }))
-        .sort((a, b) => a.atSeconds - b.atSeconds),
+      cues: data.cues.map((cue) => ({
+        triggerType: cue.triggerType,
+        value: cue.triggerType === 'time' ? cue.minutes * 60 + cue.seconds : cue.meters,
+        audioUrl: cue.audioUrl,
+        label: cue.label?.trim() || undefined,
+      })),
     };
 
     try {
@@ -178,7 +189,7 @@ export default function RunningProgramsPage() {
           <CardTitle>Lista Treningów</CardTitle>
           <CardDescription>
             Treningi widoczne w aplikacji mobilnej przy nagrywaniu biegu, wraz z sygnałami dźwiękowymi
-            odtwarzanymi po określonym czasie.
+            odtwarzanymi po określonym czasie lub po przebiegnięciu danego dystansu.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -249,7 +260,7 @@ export default function RunningProgramsPage() {
             <DialogTitle>{editingProgram ? 'Edytuj Trening' : 'Dodaj Nowy Trening'}</DialogTitle>
             <DialogDescription>
               Zdefiniuj dystans docelowy oraz sygnały dźwiękowe, które odtworzą się biegaczowi po
-              upływie wskazanego czasu biegu.
+              upływie wskazanego czasu lub po przebiegnięciu wskazanego dystansu.
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -309,7 +320,9 @@ export default function RunningProgramsPage() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => append({ minutes: 0, seconds: 0, audioUrl: '', label: '' })}
+                    onClick={() =>
+                      append({ triggerType: 'time', minutes: 0, seconds: 0, meters: 0, audioUrl: '', label: '' })
+                    }
                   >
                     <PlusCircle className="mr-2 h-3 w-3" />
                     Dodaj sygnał
@@ -324,29 +337,65 @@ export default function RunningProgramsPage() {
 
                 {fields.map((cueField, index) => {
                   const audioUrl = form.watch(`cues.${index}.audioUrl`);
+                  const triggerType = form.watch(`cues.${index}.triggerType`);
                   return (
                     <div key={cueField.id} className="space-y-2 rounded-md border bg-muted/30 p-3">
                       <div className="flex items-start gap-2">
                         <FormField
                           control={form.control}
-                          name={`cues.${index}.minutes`}
+                          name={`cues.${index}.triggerType`}
                           render={({ field }) => (
-                            <FormItem className="w-16">
-                              <FormLabel className="text-xs">Min</FormLabel>
-                              <FormControl><Input type="number" min="0" {...field} /></FormControl>
+                            <FormItem className="w-28">
+                              <FormLabel className="text-xs">Wyzwalacz</FormLabel>
+                              <Select value={field.value} onValueChange={field.onChange}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="time">Po czasie</SelectItem>
+                                  <SelectItem value="distance">Po dystansie</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </FormItem>
                           )}
                         />
-                        <FormField
-                          control={form.control}
-                          name={`cues.${index}.seconds`}
-                          render={({ field }) => (
-                            <FormItem className="w-16">
-                              <FormLabel className="text-xs">Sek</FormLabel>
-                              <FormControl><Input type="number" min="0" max="59" {...field} /></FormControl>
-                            </FormItem>
-                          )}
-                        />
+                        {triggerType === 'distance' ? (
+                          <FormField
+                            control={form.control}
+                            name={`cues.${index}.meters`}
+                            render={({ field }) => (
+                              <FormItem className="w-24">
+                                <FormLabel className="text-xs">Metry</FormLabel>
+                                <FormControl><Input type="number" min="0" step="50" {...field} /></FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        ) : (
+                          <>
+                            <FormField
+                              control={form.control}
+                              name={`cues.${index}.minutes`}
+                              render={({ field }) => (
+                                <FormItem className="w-16">
+                                  <FormLabel className="text-xs">Min</FormLabel>
+                                  <FormControl><Input type="number" min="0" {...field} /></FormControl>
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name={`cues.${index}.seconds`}
+                              render={({ field }) => (
+                                <FormItem className="w-16">
+                                  <FormLabel className="text-xs">Sek</FormLabel>
+                                  <FormControl><Input type="number" min="0" max="59" {...field} /></FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </>
+                        )}
                         <FormField
                           control={form.control}
                           name={`cues.${index}.label`}

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dumbbell } from 'lucide-react';
+import { Dumbbell, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { PageTransition } from '@/components/motion';
@@ -12,6 +12,7 @@ import { PageTransition } from '@/components/motion';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGuestLoading, setIsGuestLoading] = useState(false);
@@ -112,18 +113,29 @@ export default function LoginPage() {
           </div>
           <div className="grid gap-2">
             <Label htmlFor="password" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Hasło</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              placeholder="••••••••"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading}
-              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-              className="h-12 rounded-2xl bg-background/60 text-base"
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                placeholder="••••••••"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                className="h-12 rounded-2xl bg-background/60 pr-12 text-base"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                tabIndex={-1}
+                aria-label={showPassword ? 'Ukryj hasło' : 'Pokaż hasło'}
+                className="absolute inset-y-0 right-0 grid w-12 place-items-center text-muted-foreground active:scale-90"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Checkbox

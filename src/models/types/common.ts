@@ -43,6 +43,8 @@ export interface RunningTrackPoint {
   lng: number;
   /** Epoch ms when the fix was taken. */
   at: number;
+  /** Altitude in metres, when the device/provider reports one. */
+  alt?: number;
 }
 
 export interface RunningSession {
@@ -63,9 +65,12 @@ export interface RunningSession {
   programName?: string;
 }
 
+export type RunningCueTrigger = 'time' | 'distance';
+
 export interface RunningCue {
-  /** Seconds of moving time into the run when this cue should fire. */
-  atSeconds: number;
+  triggerType: RunningCueTrigger;
+  /** Seconds of moving time (triggerType 'time') or metres covered (triggerType 'distance'). */
+  value: number;
   audioUrl: string;
   label?: string;
 }

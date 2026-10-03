@@ -1,8 +1,11 @@
 import mongoose, { Schema, Model, Document } from 'mongoose';
 
+export type RunningCueTrigger = 'time' | 'distance';
+
 export interface IRunningCue {
-  /** Seconds of moving time into the run when this cue should fire. */
-  atSeconds: number;
+  triggerType: RunningCueTrigger;
+  /** Seconds of moving time (triggerType 'time') or metres covered (triggerType 'distance'). */
+  value: number;
   audioUrl: string;
   label?: string;
 }
@@ -20,7 +23,8 @@ export interface IRunningProgram extends Document {
 
 const RunningCueSchema = new Schema<IRunningCue>(
   {
-    atSeconds: { type: Number, required: true },
+    triggerType: { type: String, enum: ['time', 'distance'], required: true },
+    value: { type: Number, required: true },
     audioUrl: { type: String, required: true },
     label: { type: String },
   },

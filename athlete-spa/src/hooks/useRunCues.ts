@@ -10,14 +10,20 @@ export interface ActiveCue {
 }
 
 /**
- * Fires a training's timed audio cues as the run's moving-time clock crosses
- * each cue's threshold — pausing the run pauses the schedule too, since
- * `durationSeconds` already excludes paused time.
+ * Fires a training's audio cues as the run crosses each cue's threshold —
+ * either moving-time elapsed or distance covered. Pausing the run pauses
+ * time-based cues too, since `durationSeconds` already excludes paused time;
+ * distance-based cues simply wait for the athlete to keep moving.
  *
  * Audio elements are preloaded up front (keyed by cue index) so playback
  * isn't delayed by a network fetch at the exact moment a cue is due.
  */
-export function useRunCues(program: RunningProgram | null, durationSeconds: number, status: RunStatus) {
+export function useRunCues(
+  program: RunningProgram | null,
+  durationSeconds: number,
+  distanceMeters: number,
+  status: RunStatus
+) {
   const audioByIndexRef = useRef<Map<number, HTMLAudioElement>>(new Map());
   const firedRef = useRef<Set<number>>(new Set());
   const [activeCue, setActiveCue] = useState<ActiveCue | null>(null);
@@ -51,7 +57,9 @@ export function useRunCues(program: RunningProgram | null, durationSeconds: numb
     if (!program || status !== 'running') return;
 
     program.cues.forEach((cue, index) => {
-      if (firedRef.current.has(index) || cue.atSeconds > durationSeconds) return;
+      if (firedRef.current.has(index)) return;
+      const progress = cue.triggerType === 'distance' ? distanceMeters : durationSeconds;
+      if (cue.value > progress) return;
       firedRef.current.add(index);
 
       const audio = audioByIndexRef.current.get(index);
@@ -64,7 +72,7 @@ export function useRunCues(program: RunningProgram | null, durationSeconds: numb
       haptic('success');
       if (cue.label) setActiveCue({ label: cue.label, firedAt: Date.now() });
     });
-  }, [program, status, durationSeconds]);
+  }, [program, status, durationSeconds, distanceMeters]);
 
   useEffect(() => {
     if (!activeCue) return;

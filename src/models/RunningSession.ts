@@ -5,6 +5,8 @@ export interface IRunningTrackPoint {
   lng: number;
   /** Epoch ms when the fix was taken. */
   at: number;
+  /** Altitude in metres, when the device/provider reports one. */
+  alt?: number;
 }
 
 export interface IRunningSession extends Document {
@@ -32,6 +34,7 @@ const RunningTrackPointSchema = new Schema<IRunningTrackPoint>(
     lat: { type: Number, required: true },
     lng: { type: Number, required: true },
     at: { type: Number, required: true },
+    alt: { type: Number },
   },
   { _id: false }
 );

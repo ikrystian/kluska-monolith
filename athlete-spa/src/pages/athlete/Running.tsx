@@ -1,7 +1,8 @@
 'use client';
 
 import { apiFetch } from '@/lib/api-client';
-import { useState, useMemo, lazy, Suspense } from 'react';
+import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -33,17 +34,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Loader2, Footprints, TrendingUp, Route, Timer, Activity, RefreshCw, Heart, Mountain, Play } from 'lucide-react';
+import { PlusCircle, Loader2, Footprints, TrendingUp, Route, Timer, Activity, RefreshCw, Heart, Mountain, Play, ChevronRight, Music } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useCreateDoc, useUser, useDoc } from '@/lib/db-hooks';
-import { ActivityDetailModal } from '@/components/running/ActivityDetailModal';
-import { RunTracker, type RecordedRun } from '@/components/running/RunTracker';
 import type { RunningProgram, RunningSession, StravaActivity, UserProfile } from '@/lib/types';
-
-// Leaflet + its CSS only load when a run with a saved route is opened.
-const RouteMap = lazy(() =>
-  import('@/components/running/RouteMap').then((m) => ({ default: m.RouteMap }))
-);
 
 const runSchema = z.object({
   distance: z.coerce.number().positive('Dystans musi być liczbą dodatnią.'),
@@ -86,15 +80,12 @@ interface CombinedActivity {
 }
 
 export default function RunningPage() {
+  const navigate = useNavigate();
   const { user } = useUser();
   const { toast } = useToast();
   const { createDoc, isLoading: isCreating } = useCreateDoc();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
-  const [selectedManualRun, setSelectedManualRun] = useState<CombinedActivity | null>(null);
-  const [isTrackerOpen, setTrackerOpen] = useState(false);
-  const [isSavingTrackedRun, setIsSavingTrackedRun] = useState(false);
 
   // Recording needs the device's GPS; browsers without it keep the manual form.
   const supportsGeolocation = typeof navigator !== 'undefined' && 'geolocation' in navigator;
@@ -227,36 +218,8 @@ export default function RunningPage() {
     }
   };
 
-  const handleSaveTrackedRun = async (run: RecordedRun) => {
-    if (!user) return;
-
-    setIsSavingTrackedRun(true);
-    try {
-      await createDoc('runningSessions', {
-        date: new Date().toISOString(),
-        distance: run.distance,
-        duration: run.duration,
-        avgPace: run.avgPace,
-        // Stored alongside Strava's routes so both render on the same map.
-        polyline: run.polyline,
-        points: run.points,
-        notes: run.notes,
-        ownerId: user.uid,
-        programId: run.programId,
-        programName: run.programName,
-      });
-      toast({
-        title: 'Bieg zapisany!',
-        description: `${run.distance.toFixed(2)} km w ${Math.round(run.duration)} min.`,
-      });
-      refetchManual();
-    } catch (error) {
-      console.error('Error saving tracked run:', error);
-      toast({ title: 'Błąd', description: 'Nie udało się zapisać biegu.', variant: 'destructive' });
-      throw error;
-    } finally {
-      setIsSavingTrackedRun(false);
-    }
+  const startRecording = (programId?: string) => {
+    navigate(programId ? `/athlete/running/record?programId=${programId}` : '/athlete/running/record');
   };
 
   const handleSyncStrava = async () => {
@@ -304,9 +267,9 @@ export default function RunningPage() {
             </Button>
           )}
           {supportsGeolocation && (
-            <Button onClick={() => setTrackerOpen(true)}>
+            <Button onClick={() => startRecording()}>
               <Play className="mr-2 h-4 w-4 fill-current" />
-              Nagraj bieg
+              Szybki bieg
             </Button>
           )}
           <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
@@ -380,6 +343,37 @@ export default function RunningPage() {
         </div>
       </div>
 
+      {supportsGeolocation && runningPrograms && runningPrograms.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Treningi</CardTitle>
+            <CardDescription>Wybierz trening przygotowany przez trenera i rozpocznij nagrywanie.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {runningPrograms.map((program) => (
+              <button
+                key={program.id}
+                type="button"
+                onClick={() => startRecording(program.id)}
+                className="flex items-center justify-between gap-3 rounded-xl border p-4 text-left transition-colors hover:bg-muted/50"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">{program.name}</p>
+                  <p className="text-sm text-muted-foreground">{program.targetDistanceKm} km</p>
+                  {program.cues.length > 0 && (
+                    <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                      <Music className="h-3 w-3" />
+                      {program.cues.length} sygnałów
+                    </p>
+                  )}
+                </div>
+                <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+              </button>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard title="Wszystkie biegi" value={stats.totalRuns.toString()} icon={Footprints} isLoading={isLoading} />
         <StatCard title="Łączny dystans" value={`${stats.totalDistance.toFixed(2)} km`} icon={Route} isLoading={isLoading} />
@@ -425,9 +419,9 @@ export default function RunningPage() {
                       className={isClickable ? 'cursor-pointer hover:bg-muted/50' : ''}
                       onClick={() => {
                         if (activity.source === 'strava' && activity.stravaActivityId) {
-                          setSelectedActivityId(activity.stravaActivityId);
+                          navigate(`/athlete/running/strava/${activity.stravaActivityId}`);
                         } else if (activity.polyline) {
-                          setSelectedManualRun(activity);
+                          navigate(`/athlete/running/${activity.id}`);
                         }
                       }}
                     >
@@ -493,54 +487,6 @@ export default function RunningPage() {
           </Table>
         </CardContent>
       </Card>
-
-      <ActivityDetailModal
-        activityId={selectedActivityId}
-        onClose={() => setSelectedActivityId(null)}
-      />
-
-      <RunTracker
-        open={isTrackerOpen}
-        onOpenChange={setTrackerOpen}
-        onSave={handleSaveTrackedRun}
-        isSaving={isSavingTrackedRun}
-        programs={runningPrograms ?? []}
-      />
-
-      <Dialog open={!!selectedManualRun} onOpenChange={(open) => !open && setSelectedManualRun(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Footprints className="h-5 w-5" />
-              {selectedManualRun?.programName || 'Szczegóły biegu'}
-            </DialogTitle>
-          </DialogHeader>
-          {selectedManualRun?.polyline && (
-            <div className="overflow-hidden rounded-lg border">
-              <Suspense fallback={<Skeleton className="h-[400px] w-full" />}>
-                <RouteMap polyline={selectedManualRun.polyline} />
-              </Suspense>
-            </div>
-          )}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="rounded-lg border p-4 text-center">
-              <p className="text-xs text-muted-foreground">Dystans</p>
-              <p className="text-xl font-bold">{selectedManualRun?.distance.toFixed(2)} km</p>
-            </div>
-            <div className="rounded-lg border p-4 text-center">
-              <p className="text-xs text-muted-foreground">Czas</p>
-              <p className="text-xl font-bold">{selectedManualRun?.duration.toFixed(1)} min</p>
-            </div>
-            <div className="rounded-lg border p-4 text-center">
-              <p className="text-xs text-muted-foreground">Tempo</p>
-              <p className="text-xl font-bold">{selectedManualRun && formatPace(selectedManualRun.avgPace)}</p>
-            </div>
-          </div>
-          {selectedManualRun?.notes && (
-            <p className="text-sm text-muted-foreground">{selectedManualRun.notes}</p>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

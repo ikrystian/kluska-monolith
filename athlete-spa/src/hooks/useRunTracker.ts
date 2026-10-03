@@ -1,13 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Geolocation, type Position } from '@capacitor/geolocation';
 import { Capacitor } from '@capacitor/core';
+import { haversine, type GeoPoint } from '@/lib/geo';
 
-export interface TrackPoint {
-  lat: number;
-  lng: number;
-  /** Epoch ms when the fix was taken. */
-  at: number;
-}
+export type TrackPoint = GeoPoint;
 
 export type RunStatus = 'idle' | 'running' | 'paused' | 'finished';
 
@@ -33,20 +29,6 @@ const MAX_ACCEPTABLE_ACCURACY_M = 40;
 const MAX_PLAUSIBLE_STEP_M = 150;
 /** Below this, movement is indistinguishable from standing still and jittering. */
 const MIN_STEP_M = 2;
-
-/** Great-circle distance in metres. */
-function haversine(a: TrackPoint, b: TrackPoint): number {
-  const R = 6_371_000;
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
-  const dLat = toRad(b.lat - a.lat);
-  const dLng = toRad(b.lng - a.lng);
-  const lat1 = toRad(a.lat);
-  const lat2 = toRad(b.lat);
-
-  const h =
-    Math.sin(dLat / 2) ** 2 + Math.sin(dLng / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
-  return 2 * R * Math.asin(Math.sqrt(h));
-}
 
 interface PersistedRun {
   points: TrackPoint[];
@@ -115,8 +97,8 @@ export function useRunTracker() {
   }, []);
 
   const handlePosition = useCallback((position: Position) => {
-    const { latitude, longitude, accuracy } = position.coords;
-    const point: TrackPoint = { lat: latitude, lng: longitude, at: position.timestamp };
+    const { latitude, longitude, accuracy, altitude } = position.coords;
+    const point: TrackPoint = { lat: latitude, lng: longitude, at: position.timestamp, alt: altitude };
 
     setState(prev => {
       if (prev.status !== 'running') return { ...prev, accuracy };

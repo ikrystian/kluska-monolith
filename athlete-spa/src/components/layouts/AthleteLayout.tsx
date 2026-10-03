@@ -47,6 +47,11 @@ function AthleteLayoutContent() {
 
   const isLoading = isUserLoading || isProfileLoading;
   const isOnboardingPage = location.pathname.startsWith('/athlete/onboarding');
+  // The run recorder is a full-screen, map-first experience (map tiles under a
+  // frosted stats sheet) — the nav/header chrome and page-transition wrapper
+  // would just eat into that space and fight its own fixed-position layout.
+  const isRunRecordPage = location.pathname.startsWith('/athlete/running/record');
+  const isImmersivePage = isOnboardingPage || isRunRecordPage;
   // Active workout session hides the bottom nav, so the scroll area drops the
   // bottom clearance padding it otherwise needs to sit above it.
   const isActiveWorkoutSession = location.pathname === '/athlete/log' && new URLSearchParams(location.search).has('logId');
@@ -113,8 +118,8 @@ function AthleteLayoutContent() {
     return <WrongRoleScreen />;
   }
 
-  // If on onboarding page, render children without the full layout (nav, header, etc.)
-  if (isOnboardingPage) {
+  // Onboarding and the run recorder render without the full layout (nav, header, etc.)
+  if (isImmersivePage) {
     return <Outlet />;
   }
 
