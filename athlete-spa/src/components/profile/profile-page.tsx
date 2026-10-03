@@ -100,6 +100,8 @@ export function ProfilePage() {
       if (!response.ok) return;
       const data = await response.json();
       setIsSpotifyConnected(!!data.connected);
+    } catch (error) {
+      // Network hiccup — leave the last known connected state as-is.
     } finally {
       setIsSpotifyStatusLoading(false);
     }
@@ -722,6 +724,7 @@ export function ProfilePage() {
                             </div>
                           </div>
                           <Button
+                            type="button"
                             variant="outline"
                             size="sm"
                             className="w-full rounded-lg sm:w-auto"
@@ -746,6 +749,7 @@ export function ProfilePage() {
                             </div>
                           </div>
                           <Button
+                            type="button"
                             variant="default"
                             size="sm"
                             className="w-full rounded-lg bg-[#FC4C02] text-white hover:bg-[#E34402] sm:w-auto"
@@ -779,6 +783,7 @@ export function ProfilePage() {
                             </div>
                           </div>
                           <Button
+                            type="button"
                             variant="outline"
                             size="sm"
                             className="w-full rounded-lg sm:w-auto"
@@ -803,6 +808,7 @@ export function ProfilePage() {
                             </div>
                           </div>
                           <Button
+                            type="button"
                             variant="default"
                             size="sm"
                             className="w-full rounded-lg bg-[#1DB954] text-white hover:bg-[#1aa34a] sm:w-auto"

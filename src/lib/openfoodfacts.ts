@@ -10,7 +10,7 @@ export async function lookupBarcodeInOpenFoodFacts(barcode: string): Promise<AIF
         const response = await fetch(
             `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json?fields=product_name,product_name_pl,brands,nutriments,image_front_url,image_url`,
             {
-                headers: { 'User-Agent': 'LeniwaKluska/1.0 (kontakt: krystian@bpcoders.pl)' },
+                headers: { 'User-Agent': 'LeniwaKluska/0.9.0 (kontakt: krystian@bpcoders.pl)' },
                 cache: 'no-store',
             }
         );
