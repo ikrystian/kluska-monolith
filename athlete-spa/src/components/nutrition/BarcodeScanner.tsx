@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import { Capacitor } from '@capacitor/core';
+import { Camera } from '@capacitor/camera';
 import { CameraOff, ScanLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -17,6 +19,22 @@ interface BarcodeScannerProps {
     onDetected: (code: string) => void;
     /** Pauses detection (camera keeps running) while the parent resolves a code. */
     paused?: boolean;
+}
+
+/** On native, ask the OS for camera access up front; the WebView's getUserMedia needs it granted. */
+async function ensureCameraPermission(): Promise<boolean> {
+    if (!Capacitor.isNativePlatform()) return true;
+    try {
+        const current = await Camera.checkPermissions();
+        if (current.camera === 'granted') return true;
+        const requested = await Camera.requestPermissions({
+            permissions: ['camera'],
+        });
+        return requested.camera === 'granted';
+    } catch (err) {
+        console.error('Camera permission request failed:', err);
+        return false;
+    }
 }
 
 /**
@@ -41,21 +59,25 @@ export function BarcodeScanner({ onDetected, paused = false }: BarcodeScannerPro
         });
         scannerRef.current = scanner;
 
-        scanner
-            .start(
-                { facingMode: 'environment' },
-                { fps: 10, qrbox: { width: 240, height: 160 } },
-                (decodedText) => {
-                    if (pausedRef.current || cancelled) return;
-                    // The same frame fires repeatedly — only report a code once
-                    if (lastCodeRef.current === decodedText) return;
-                    lastCodeRef.current = decodedText;
-                    onDetected(decodedText);
-                },
-                () => {
-                    // per-frame "no code found" noise — ignore
-                }
-            )
+        ensureCameraPermission()
+            .then((granted) => {
+                if (!granted) throw new Error('camera-permission-denied');
+                if (cancelled) return;
+                return scanner.start(
+                    { facingMode: 'environment' },
+                    { fps: 10, qrbox: { width: 240, height: 160 } },
+                    (decodedText) => {
+                        if (pausedRef.current || cancelled) return;
+                        // The same frame fires repeatedly — only report a code once
+                        if (lastCodeRef.current === decodedText) return;
+                        lastCodeRef.current = decodedText;
+                        onDetected(decodedText);
+                    },
+                    () => {
+                        // per-frame "no code found" noise — ignore
+                    }
+                );
+            })
             .catch((err) => {
                 if (cancelled) return;
                 console.error('Camera start failed:', err);
@@ -68,7 +90,10 @@ export function BarcodeScanner({ onDetected, paused = false }: BarcodeScannerPro
             cancelled = true;
             scannerRef.current = null;
             if (scanner.isScanning) {
-                scanner.stop().then(() => scanner.clear()).catch(() => undefined);
+                scanner
+                    .stop()
+                    .then(() => scanner.clear())
+                    .catch(() => undefined);
             } else {
                 scanner.clear();
             }

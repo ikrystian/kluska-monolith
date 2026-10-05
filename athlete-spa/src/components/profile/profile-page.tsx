@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { Link } from 'react-router-dom';
 import { Camera, Instagram, Facebook, Twitter, Loader2, Activity, CheckCircle2, XCircle, Footprints, Globe, UserPlus, MapPin, Bell, Music2 } from 'lucide-react';
 import { Geolocation } from '@capacitor/geolocation';
+import { Camera as CameraPlugin } from '@capacitor/camera';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -85,6 +86,8 @@ export function ProfilePage() {
   const pushSupported = useMemo(() => isNativePushSupported() || isBrowserNotificationSupported(), []);
   const [locationSharingOn, setLocationSharingOn] = useState(() => isLocationSharingEnabled());
   const [isRequestingLocation, setIsRequestingLocation] = useState(false);
+  const [cameraOn, setCameraOn] = useState(false);
+  const [isRequestingCamera, setIsRequestingCamera] = useState(false);
   const [pushOn, setPushOn] = useState(() => isPushNotificationsEnabled());
   const [workoutRemindersOn, setWorkoutRemindersOn] = useState(() => isWorkoutRemindersEnabled());
   const [weeklySummaryOn, setWeeklySummaryOn] = useState(() => isWeeklySummaryEnabled());
@@ -359,6 +362,46 @@ export function ProfilePage() {
         description: 'Nie udało się zaktualizować profilu.',
         variant: 'destructive',
       });
+    }
+  };
+
+  // The camera switch mirrors the real OS permission (no local preference), so re-read it on mount
+  useEffect(() => {
+    CameraPlugin.checkPermissions()
+      .then((status) => setCameraOn(status.camera === 'granted'))
+      .catch(() => undefined);
+  }, []);
+
+  const handleCameraToggle = async (checked: boolean) => {
+    if (!checked) {
+      // An app can't revoke its own OS permission — point the user to system settings
+      toast({
+        title: 'Wyłączanie dostępu do aparatu',
+        description: 'Cofnij uprawnienie aparatu w ustawieniach systemowych: Aplikacje → LeniwaKluska → Uprawnienia.',
+      });
+      return;
+    }
+    setIsRequestingCamera(true);
+    try {
+      const status = await CameraPlugin.requestPermissions({ permissions: ['camera'] });
+      const granted = status.camera === 'granted';
+      setCameraOn(granted);
+      if (!granted) {
+        toast({
+          title: 'Brak dostępu do aparatu',
+          description: 'Włącz uprawnienie aparatu dla aplikacji w ustawieniach systemowych, aby skanować kody produktów.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      setCameraOn(false);
+      toast({
+        title: 'Błąd!',
+        description: 'Nie udało się poprosić o dostęp do aparatu.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRequestingCamera(false);
     }
   };
 
@@ -930,6 +973,26 @@ export function ProfilePage() {
                         checked={locationSharingOn}
                         disabled={isRequestingLocation}
                         onCheckedChange={handleLocationSharingToggle}
+                        className="shrink-0"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 pt-4 border-t">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <Camera className="h-5 w-5 text-sky-500" />
+                      Dostęp do Aparatu
+                    </h3>
+                    <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
+                      <div className="min-w-0">
+                        <FormLabel htmlFor="camera-access">Aparat</FormLabel>
+                        <p className="text-sm text-muted-foreground">Wymagany do skanowania kodów kreskowych i QR produktów w dzienniku kalorii.</p>
+                      </div>
+                      <Switch
+                        id="camera-access"
+                        checked={cameraOn}
+                        disabled={isRequestingCamera}
+                        onCheckedChange={handleCameraToggle}
                         className="shrink-0"
                       />
                     </div>
