@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Music2, Pause, Play, SkipBack, SkipForward } from 'lucide-react';
 import { apiFetch } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
@@ -72,7 +73,8 @@ export function SpotifyWidget({ className }: { className?: string }) {
     }
   };
 
-  if (noActiveDevice) {
+  // Connected but nothing playing (204 from Spotify) — keep the bar visible so it doesn't look broken
+  if (noActiveDevice || (state && !state.track)) {
     return (
       <div className={cn('flex items-center gap-2 rounded-xl border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground', className)}>
         <Music2 className="h-4 w-4 shrink-0" />
@@ -82,7 +84,7 @@ export function SpotifyWidget({ className }: { className?: string }) {
   }
 
   if (!state?.track) {
-    return null;
+    return null; // first poll still in flight
   }
 
   return (
@@ -99,30 +101,62 @@ export function SpotifyWidget({ className }: { className?: string }) {
         <p className="truncate text-xs text-muted-foreground">{state.track.artist}</p>
       </div>
       <div className="flex shrink-0 items-center gap-1">
-        <button
+        <motion.button
           type="button"
+          whileTap={{ scale: 0.8 }}
+          whileHover={{ scale: 1.08 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 18 }}
           aria-label="Poprzedni utwór"
           onClick={() => sendAction('previous')}
-          className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground active:scale-90"
+          className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
         >
-          <SkipBack className="h-4 w-4" />
-        </button>
-        <button
+          <motion.span
+            className="grid place-items-center"
+            whileTap={{ x: -3 }}
+            transition={{ type: 'spring', stiffness: 600, damping: 14 }}
+          >
+            <SkipBack className="h-4 w-4" />
+          </motion.span>
+        </motion.button>
+        <motion.button
           type="button"
+          whileTap={{ scale: 0.85 }}
+          whileHover={{ scale: 1.06 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 18 }}
           aria-label={state.isPlaying ? 'Pauza' : 'Odtwórz'}
           onClick={() => sendAction(state.isPlaying ? 'pause' : 'play')}
-          className="grid h-8 w-8 place-items-center rounded-full bg-[#1DB954] text-white transition-transform active:scale-90"
+          className="relative grid h-8 w-8 place-items-center rounded-full bg-[#1DB954] text-white"
         >
-          {state.isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-        </button>
-        <button
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={state.isPlaying ? 'pause' : 'play'}
+              className="grid place-items-center"
+              initial={{ scale: 0.4, rotate: -90, opacity: 0 }}
+              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+              exit={{ scale: 0.4, rotate: 90, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              {state.isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            </motion.span>
+          </AnimatePresence>
+        </motion.button>
+        <motion.button
           type="button"
+          whileTap={{ scale: 0.8 }}
+          whileHover={{ scale: 1.08 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 18 }}
           aria-label="Następny utwór"
           onClick={() => sendAction('next')}
-          className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground active:scale-90"
+          className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
         >
-          <SkipForward className="h-4 w-4" />
-        </button>
+          <motion.span
+            className="grid place-items-center"
+            whileTap={{ x: 3 }}
+            transition={{ type: 'spring', stiffness: 600, damping: 14 }}
+          >
+            <SkipForward className="h-4 w-4" />
+          </motion.span>
+        </motion.button>
       </div>
     </div>
   );

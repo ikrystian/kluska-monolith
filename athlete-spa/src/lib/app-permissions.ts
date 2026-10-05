@@ -60,7 +60,7 @@ export function isBrowserNotificationSupported(): boolean {
 const SPOTIFY_WIDGET_KEY = 'athlete-spa:spotify-widget-enabled';
 
 export function isSpotifyWidgetEnabled(): boolean {
-  return readBool(SPOTIFY_WIDGET_KEY, false);
+  return readBool(SPOTIFY_WIDGET_KEY, true);
 }
 export function setSpotifyWidgetEnabled(next: boolean): void {
   writeBool(SPOTIFY_WIDGET_KEY, next);
