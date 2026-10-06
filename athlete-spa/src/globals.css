@@ -92,6 +92,7 @@
 @layer base {
   * {
     @apply border-border;
+    outline: none !important;
   }
 
   html {
@@ -451,3 +452,29 @@ a.pressable,
     padding-inline: 8px;
   }
 }
+
+/* ?de=true — hide .toAnimate (display: none, no reserved space) until the reveal button is pressed */
+html.de-active:not(.de-revealed) .toAnimate {
+  display: none !important;
+}
+
+html.de-active.de-revealed .toAnimate {
+  animation: toAnimate-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes toAnimate-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* After reveal, desaturate everything except .toAnimate, its descendants and its ancestors
+   (a filter on an ancestor would also grey out .toAnimate, so ancestors are skipped and
+   their other children are filtered individually). */
+html.de-revealed body *:not(.toAnimate):not(.toAnimate *):not(:has(.toAnimate)) {}
