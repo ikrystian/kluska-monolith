@@ -29,6 +29,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useRunTracker, type TrackPoint } from '@/hooks/useRunTracker';
 import { useRunCues } from '@/hooks/useRunCues';
 import { useWakeLock } from '@/hooks/useWakeLock';
+import { useLiveWidget } from '@/hooks/useLiveWidget';
 import { haptic } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
 import { useCollection, useCreateDoc, useUser } from '@/lib/db-hooks';
@@ -126,6 +127,20 @@ export default function RunRecordPage() {
   }, [tracker.status]);
 
   const km = tracker.distance / 1000;
+
+  // Mirror the run on the Android home-screen widget while it is running or paused.
+  useLiveWidget(
+    isActive
+      ? {
+          activity: 'run',
+          title: selectedProgram?.name ?? 'Bieg',
+          line1: `${km.toFixed(2)} km`,
+          line2: tracker.pace > 0 ? `${formatPace(tracker.pace)} /km` : 'Tempo: --:--',
+          running: tracker.status === 'running',
+        }
+      : null,
+    () => tracker.duration * 1000
+  );
 
   const goalProgress = useMemo(() => {
     if (!goal) return null;

@@ -38,6 +38,7 @@ import { useActiveWorkout } from '@/hooks/useActiveWorkout';
 import { useExerciseHistory } from '@/hooks/useExerciseHistory';
 import { useRestTimer } from '@/hooks/useRestTimer';
 import { useWakeLock } from '@/hooks/useWakeLock';
+import { useLiveWidget } from '@/hooks/useLiveWidget';
 import { haptic } from '@/lib/haptics';
 import { isSpotifyWidgetEnabled } from '@/lib/app-permissions';
 import { PlateCalculator } from '@/components/workout/PlateCalculator';
@@ -537,6 +538,28 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
       setActiveExerciseIndex(fields.length - 1);
     }
   }, [fields.length, activeExerciseIndex]);
+
+  // Mirror the in-progress workout on the Android home-screen widget until
+  // the athlete reaches the summary screen.
+  const liveSeries = form.watch('exerciseSeries');
+  const liveTotalSets = liveSeries.reduce((acc, s) => acc + (s.sets?.length ?? 0), 0);
+  const liveCompletedSets = liveSeries.reduce((acc, s) => acc + (s.sets?.filter(set => set.completed).length ?? 0), 0);
+  const liveCurrentSeries =
+    liveSeries.find(s => (s.sets?.length ?? 0) > 0 && s.sets.some(set => !set.completed)) ?? liveSeries[activeExerciseIndex];
+  const liveCurrentExercise = allExercises?.find(ex => ex.id === liveCurrentSeries?.exerciseId)?.name ?? '';
+  const liveWorkoutName = form.watch('workoutName');
+  useLiveWidget(
+    isFinished
+      ? null
+      : {
+          activity: 'workout',
+          title: liveWorkoutName || 'Trening',
+          line1: `${liveCompletedSets}/${liveTotalSets} serii`,
+          line2: liveCurrentExercise,
+          running: true,
+        },
+    () => Date.now() - startTime.getTime()
+  );
 
   // Check for finish param
   useEffect(() => {

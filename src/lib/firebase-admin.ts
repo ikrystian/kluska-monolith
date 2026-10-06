@@ -46,6 +46,8 @@ export function isFirebaseAdminConfigured(): boolean {
 export interface NativePushPayload {
   title: string;
   body: string;
+  /** Optional in-app route (e.g. "/athlete/chat") opened when the notification is tapped. */
+  url?: string;
 }
 
 export interface NativePushSendResult {
@@ -65,6 +67,9 @@ export async function sendNativePush(token: string, payload: NativePushPayload):
     await getMessaging(firebaseApp).send({
       token,
       notification: { title: payload.title, body: payload.body },
+      data: payload.url ? { url: payload.url } : undefined,
+      // High priority + the channel the app creates at startup => heads-up banner.
+      android: { priority: 'high', notification: { channelId: 'default' } },
     });
     return { token, success: true, shouldDelete: false };
   } catch (error: any) {

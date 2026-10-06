@@ -4,6 +4,22 @@ import { apiFetch } from '@/lib/api-client';
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 const NATIVE_TOKEN_KEY = 'athlete-spa:native-push-token';
+/** Must match `android.notification.channelId` in the backend's FCM payload. */
+export const NATIVE_PUSH_CHANNEL_ID = 'default';
+
+async function sendNativeTokenToBackend(token: string): Promise<boolean> {
+  window.localStorage.setItem(NATIVE_TOKEN_KEY, token);
+  const response = await apiFetch('/api/push/subscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      platform: Capacitor.getPlatform(),
+      token,
+      userAgent: navigator.userAgent,
+    }),
+  });
+  return response.ok;
+}
 
 /** Web Push (service worker + Push API) — the path for a regular browser tab. */
 export function isPushSupported(): boolean {
@@ -120,17 +136,7 @@ export async function subscribeToNativePush(): Promise<boolean> {
 
       const registrationHandle = PushNotifications.addListener('registration', async (token) => {
         try {
-          window.localStorage.setItem(NATIVE_TOKEN_KEY, token.value);
-          const response = await apiFetch('/api/push/subscribe', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              platform: Capacitor.getPlatform(),
-              token: token.value,
-              userAgent: navigator.userAgent,
-            }),
-          });
-          finish(response.ok);
+          finish(await sendNativeTokenToBackend(token.value));
         } catch {
           finish(false);
         }
@@ -160,5 +166,67 @@ export async function unsubscribeFromNativePush(): Promise<void> {
     });
   } catch (error) {
     console.error('Native push unsubscribe failed:', error);
+  }
+}
+
+export interface NativePushHandlers {
+  /** A push arrived while the app is open — Android doesn't show these in the tray. */
+  onForeground: (notification: { title?: string; body?: string; data: Record<string, string> }) => void;
+  /** The user tapped a notification in the tray. */
+  onTap: (data: Record<string, string>) => void;
+}
+
+/**
+ * Long-lived native push wiring, meant to run once per logged-in session:
+ * creates the high-importance Android channel (heads-up banners), keeps the
+ * backend in sync when FCM rotates the token, and surfaces foreground and
+ * tapped notifications. Does nothing unless the OS permission is already
+ * granted — the permission prompt stays in the profile toggle. Returns a
+ * cleanup function.
+ */
+export async function startNativePushSession(handlers: NativePushHandlers): Promise<() => void> {
+  if (!isNativePushSupported()) return () => {};
+
+  try {
+    const permission = await PushNotifications.checkPermissions();
+    if (permission.receive !== 'granted') return () => {};
+
+    if (Capacitor.getPlatform() === 'android') {
+      await PushNotifications.createChannel({
+        id: NATIVE_PUSH_CHANNEL_ID,
+        name: 'Powiadomienia',
+        importance: 4,
+        visibility: 1,
+      });
+    }
+
+    const handles = await Promise.all([
+      PushNotifications.addListener('registration', (token) => {
+        sendNativeTokenToBackend(token.value).catch(() => {});
+      }),
+      PushNotifications.addListener('registrationError', (error) => {
+        console.error('Native push registration error:', error);
+      }),
+      PushNotifications.addListener('pushNotificationReceived', (notification) => {
+        handlers.onForeground({
+          title: notification.title,
+          body: notification.body,
+          data: (notification.data ?? {}) as Record<string, string>,
+        });
+      }),
+      PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+        handlers.onTap((action.notification.data ?? {}) as Record<string, string>);
+      }),
+    ]);
+
+    // Emits the current token via the `registration` listener above.
+    await PushNotifications.register();
+
+    return () => {
+      handles.forEach((handle) => void handle.remove());
+    };
+  } catch (error) {
+    console.error('Native push session failed:', error);
+    return () => {};
   }
 }

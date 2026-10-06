@@ -100,9 +100,11 @@ export default function AdminNotificationsPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to send');
 
+      const firstError = (data.results as { success: boolean; error?: string }[] | undefined)?.find((r) => !r.success && r.error)?.error;
+
       toast({
         title: 'Wysłano',
-        description: `Dostarczono do ${data.sentCount}/${data.targetedDevices} urządzeń${data.failedCount > 0 ? ` (${data.failedCount} nieudanych)` : ''}${!data.firebaseConfigured ? ' · Firebase Admin nie jest skonfigurowany — urządzenia mobilne nie mogły odebrać powiadomienia' : ''}.`,
+        description: `Dostarczono do ${data.sentCount}/${data.targetedDevices} urządzeń${data.failedCount > 0 ? ` (${data.failedCount} nieudanych)` : ''}${!data.firebaseConfigured ? ' · Firebase Admin nie jest skonfigurowany — urządzenia mobilne nie mogły odebrać powiadomienia' : ''}${firstError ? ` · Błąd: ${firstError}` : ''}.`,
       });
 
       // Stale subscriptions get dropped server-side — refresh counts to match.

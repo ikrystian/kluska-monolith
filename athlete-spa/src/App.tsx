@@ -6,6 +6,7 @@ import { createPersistentCacheProvider } from '@/lib/swr-cache';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from 'react-hot-toast';
 import { FullScreenFallback } from '@/components/route-fallback';
+import { NativePushBridge } from '@/components/native-push-bridge';
 
 import LoginPage from '@/pages/Login';
 import RegisterPage from '@/pages/Register';
@@ -71,6 +72,7 @@ export default function App() {
     >
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
     <AuthProvider>
+      <NativePushBridge />
       {/* Safety net for routes rendered outside AthleteLayout (onboarding,
           and anything not covered by the in-layout Suspense boundary). */}
       <Suspense fallback={<FullScreenFallback />}>
