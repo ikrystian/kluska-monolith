@@ -1,24 +1,28 @@
 import type { AIFoodResult } from '@/lib/openrouter-food';
 
 /**
- * Looks up a product by EAN/UPC barcode in the Open Food Facts database.
- * Free, no API key. Returns nutrition per 100 g or null when the product
- * is unknown or has no usable nutriment data (caller then falls back to AI).
+ * Looks up a product by EAN/UPC barcode in the Open Food Facts database
+ * (API v3, https://openfoodfacts.github.io/openfoodfacts-server/api/).
+ * Free, no API key; OFF asks for a custom User-Agent and limits product reads
+ * to 15 req/min/IP — fine here since every hit is cached locally by the caller.
+ * Returns nutrition per 100 g or null when the product is unknown or has no
+ * usable nutriment data (caller then falls back to AI).
  */
 export async function lookupBarcodeInOpenFoodFacts(barcode: string): Promise<AIFoodResult | null> {
     try {
         const response = await fetch(
-            `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json?fields=product_name,product_name_pl,brands,nutriments,image_front_url,image_url`,
+            `https://world.openfoodfacts.org/api/v3/product/${encodeURIComponent(barcode)}.json?fields=product_name,product_name_pl,brands,nutriments,image_front_url,image_url`,
             {
                 headers: { 'User-Agent': 'LeniwaKluska/0.9.1 (kontakt: krystian@bpcoders.pl)' },
                 cache: 'no-store',
             }
         );
 
+        // v3 answers unknown barcodes with 404 + status "failure"
         if (!response.ok) return null;
 
         const data = await response.json();
-        if (data.status !== 1 || !data.product) return null;
+        if (!data.product || (data.status !== 'success' && data.status !== 'success_with_warnings')) return null;
 
         const product = data.product;
         const nutriments = product.nutriments ?? {};

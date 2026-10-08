@@ -50,6 +50,7 @@ export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdd
 
     const [isResolvingCode, setIsResolvingCode] = useState(false);
     const [scanError, setScanError] = useState<string | null>(null);
+    const [manualCode, setManualCode] = useState('');
 
     const [selected, setSelected] = useState<SelectedProduct | null>(null);
     const [amount, setAmount] = useState('100');
@@ -65,6 +66,7 @@ export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdd
             setSelected(null);
             setAmount('100');
             setScanError(null);
+            setManualCode('');
             setMealType(defaultMealType);
         }
     }, [open, defaultMealType]);
@@ -105,6 +107,19 @@ export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdd
         } finally {
             setIsResolvingCode(false);
         }
+    };
+
+    const handleManualCodeSubmit = (event: React.FormEvent) => {
+        event.preventDefault();
+        if (isResolvingCode) return;
+
+        // Spaces/dashes are common when copying the number from packaging — the API expects bare digits
+        const digits = manualCode.replace(/\D/g, '');
+        if (digits.length < 8 || digits.length > 14) {
+            setScanError('Kod kreskowy składa się z 8–14 cyfr (najczęściej 13). Sprawdź numer pod kodem na opakowaniu.');
+            return;
+        }
+        handleCodeDetected(digits);
     };
 
     const handleSave = async () => {
@@ -380,6 +395,33 @@ export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdd
                                     Nakieruj aparat na kod kreskowy lub QR produktu.
                                 </p>
                             )}
+
+                            <form onSubmit={handleManualCodeSubmit} className="space-y-2 border-t pt-3">
+                                <Label htmlFor="manual-barcode">Lub wpisz kod kreskowy ręcznie</Label>
+                                <div className="flex gap-2">
+                                    <Input
+                                        id="manual-barcode"
+                                        inputMode="numeric"
+                                        autoComplete="off"
+                                        placeholder="np. 5901234123457"
+                                        maxLength={20}
+                                        value={manualCode}
+                                        onChange={(event) => setManualCode(event.target.value)}
+                                    />
+                                    <Button
+                                        type="submit"
+                                        className="shrink-0"
+                                        disabled={isResolvingCode || manualCode.replace(/\D/g, '').length < 8}
+                                    >
+                                        {isResolvingCode ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <Search className="mr-1.5 h-4 w-4" />
+                                        )}
+                                        {!isResolvingCode && 'Szukaj'}
+                                    </Button>
+                                </div>
+                            </form>
                         </TabsContent>
                     </Tabs>
                 )}

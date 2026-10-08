@@ -32,9 +32,10 @@ async function runFoodPrompt(systemPrompt: string, userContent: string): Promise
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            model: 'google/gemini-2.5-flash-lite',
-            plugins: [{ id: 'web' }],
-            web_search_options: { search_context_size: 'medium' },
+            model: 'google/gemini-3.8-flash',
+            tools: [
+                { type: 'openrouter:web_search', parameters: { search_context_size: 'medium' } },
+            ],
             messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: userContent },
@@ -88,8 +89,8 @@ async function runFoodPrompt(systemPrompt: string, userContent: string): Promise
 }
 
 /**
- * Searches for food nutrition data by name using OpenRouter (google/gemini-2.5-flash-lite)
- * with the Web Search plugin. Returns nutrition values per 100g.
+ * Searches for food nutrition data by name using OpenRouter (google/gemini-3.8-flash)
+ * with the openrouter:web_search server tool. Returns nutrition values per 100g.
  */
 export async function searchFoodWithAI(query: string): Promise<AIFoodResult[]> {
     return runFoodPrompt(
