@@ -10,12 +10,14 @@ import {
   Layers,
   LayoutDashboard,
   Map,
+  MapPin,
   MessageSquare,
   NotebookPen,
   Play,
   Ruler,
   TrendingUp,
   Trophy,
+  UserCheck,
   UtensilsCrossed,
   Users2,
   type LucideIcon,
@@ -82,6 +84,8 @@ export const athleteNavItems: NavEntry[] = [
     items: [
       { href: '/athlete/chat', label: 'Czat', icon: MessageSquare },
       { href: '/athlete/social', label: 'Social', icon: Users2 },
+      { href: '/athlete/social?tab=friends', label: 'Znajomi', icon: UserCheck },
+      { href: '/athlete/social?tab=nearby', label: 'W okolicy', icon: MapPin },
     ],
   },
   { href: '/athlete/check-in', icon: ClipboardCheck, label: 'Check-in' },
@@ -96,6 +100,26 @@ export const athleteNavLeaves: NavLeaf[] = athleteNavItems.flatMap(entry =>
 
 export function findNavLeaf(pathname: string): NavLeaf | undefined {
   return athleteNavLeaves.find(leaf => leaf.href === pathname);
+}
+
+/**
+ * Whether a nav link points at the current screen. Some links open a tab of a
+ * screen via a query param (`/athlete/social?tab=friends`); those match on the
+ * param, and the plain link to the same screen stays active only while none
+ * of its tab links does.
+ */
+export function isNavLeafActive(href: string, pathname: string, search: string): boolean {
+  const [path, query] = href.split('?');
+  if (path !== pathname) return false;
+
+  const current = new URLSearchParams(search);
+  if (query) {
+    return [...new URLSearchParams(query)].every(([key, value]) => current.get(key) === value);
+  }
+
+  return !athleteNavLeaves.some(
+    leaf => leaf.href.startsWith(`${path}?`) && isNavLeafActive(leaf.href, pathname, search)
+  );
 }
 
 /**

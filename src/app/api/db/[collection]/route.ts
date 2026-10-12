@@ -3,6 +3,7 @@ import { Model } from 'mongoose';
 import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { jsonWithEtag } from '@/lib/http-cache';
+import { describeFinishedActivity, notifyFriendsOfActivity } from '@/lib/friends';
 import { AccessContext, AccessError, isPublicCollection, sanitizeBody, scopeRead } from '@/lib/db-access';
 
 import {
@@ -170,6 +171,10 @@ export async function POST(
     const body = await sanitizeBody(new AccessContext(user), collection, await request.json(), true);
     const doc = new Model(body);
     await doc.save();
+
+    // A workout saved as already completed, or a recorded run: tell friends.
+    const activity = describeFinishedActivity(collection, doc.toObject());
+    if (activity) void notifyFriendsOfActivity(user.id, activity);
 
     return NextResponse.json({ data: doc.toJSON() }, { status: 201 });
   } catch (error) {

@@ -22,6 +22,8 @@ export * from './Workout';
 export * from './PersonalRecord';
 export * from './SocialProfile';
 export * from './SocialPost';
+export * from './SocialStatus';
+export * from './Friendship';
 export * from './CustomProduct';
 export * from './FoodDiaryEntry';
 export * from './DietPlan';

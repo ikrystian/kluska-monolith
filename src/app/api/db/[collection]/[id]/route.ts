@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/api-auth';
+import { describeFinishedActivity, notifyFriendsOfActivity } from '@/lib/friends';
 import { connectToDatabase } from '@/lib/mongodb';
 import { isValidObjectId } from 'mongoose';
 import { jsonWithEtag } from '@/lib/http-cache';
@@ -198,10 +199,21 @@ export async function PATCH(
       }
     }
 
+    // Only the in-progress -> completed transition announces a workout to friends.
+    const wasCompleted =
+      collection === 'workoutLogs' && body.status === 'completed'
+        ? (await Model.findById(id).select('status').lean())?.status === 'completed'
+        : true;
+
     const doc = await Model.findOneAndUpdate(await scopeWrite(ctx, collection, { _id: id }), body, { new: true }).exec();
 
     if (!doc) {
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
+    }
+
+    if (!wasCompleted && doc.athleteId === user.id) {
+      const activity = describeFinishedActivity(collection, doc.toObject());
+      if (activity) void notifyFriendsOfActivity(user.id, activity);
     }
 
     return NextResponse.json({ data: doc.toJSON() });

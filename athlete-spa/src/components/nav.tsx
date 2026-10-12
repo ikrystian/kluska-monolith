@@ -32,10 +32,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { resolveMediaUrl } from '@/lib/api-client';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { athleteNavItems, isNavGroup } from '@/lib/athlete-nav';
+import { athleteNavItems, isNavGroup, isNavLeafActive } from '@/lib/athlete-nav';
 
 export function AppNav() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const navigate = useNavigate();
   const avatarImage = placeholderImages.find(img => img.id === 'avatar-male');
   const { setOpenMobile } = useSidebar();
@@ -97,7 +97,7 @@ export function AppNav() {
                     <SidebarMenuSub>
                       {item.items.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.href}>
-                          <SidebarMenuSubButton asChild isActive={pathname === subItem.href}>
+                          <SidebarMenuSubButton asChild isActive={isNavLeafActive(subItem.href, pathname, search)}>
                             <Link to={subItem.href} onClick={() => setOpenMobile(false)}>
                               <subItem.icon />
                               <span>{subItem.label}</span>

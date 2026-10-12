@@ -14,6 +14,7 @@ export const DASHBOARD_SECTION_IDS = [
   'bento',
   'challenges',
   'recent-goals',
+  'friends-activity',
   'trainer-sessions',
   'plans',
   'habits',

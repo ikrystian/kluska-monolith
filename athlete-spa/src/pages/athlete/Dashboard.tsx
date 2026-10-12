@@ -12,9 +12,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useCollection, useDoc, useUser } from '@/lib/db-hooks';
 import type { WorkoutLog, Goal, BodyMeasurement, RunningSession, StravaActivity, LoggedMeal, PlannedWorkout, UserProfile, TrainingPlan, Habit, HabitLog } from '@/lib/types';
-import { Activity, Target, Weight, Footprints, ChefHat, Calendar as CalendarIcon, TrendingUp, Dumbbell, Clock, Award, Layers, User, MapPin, CheckSquare, Play, ArrowRight, Check, GripVertical, Eye, EyeOff, RotateCcw, LayoutGrid, Trophy, Zap, SlidersHorizontal, type LucideIcon } from 'lucide-react';
+import { Activity, Target, Weight, Footprints, ChefHat, Calendar as CalendarIcon, TrendingUp, Dumbbell, Clock, Award, Layers, User, MapPin, CheckSquare, Play, ArrowRight, Check, GripVertical, Eye, EyeOff, RotateCcw, LayoutGrid, Trophy, Zap, SlidersHorizontal, Users, type LucideIcon } from 'lucide-react';
 import type { TrainingSessionData } from '@/components/schedule/SessionDetailsDialog';
 import { ActiveChallenges } from '@/components/challenges/ActiveChallenges';
+import { FriendsActivityFeed } from '@/components/social/FriendsActivityFeed';
 import { useDashboardLayout, type DashboardSectionId, type DashboardSectionState } from '@/hooks/useDashboardLayout';
 
 /* ---------- Bento building blocks ---------- */
@@ -100,6 +101,7 @@ const SECTION_META: Record<DashboardSectionId, { title: string; icon: LucideIcon
   bento: { title: 'Podsumowanie', icon: LayoutGrid },
   challenges: { title: 'Wyzwania biegowe', icon: Trophy },
   'recent-goals': { title: 'Ostatnie treningi i cele', icon: Dumbbell },
+  'friends-activity': { title: 'Aktywność znajomych', icon: Users },
   'trainer-sessions': { title: 'Sesje z trenerem', icon: User },
   plans: { title: 'Plany od trenera', icon: Award },
   habits: { title: 'Nawyki', icon: CheckSquare },
@@ -670,6 +672,14 @@ export default function AthleteDashboardPage() {
         </div>
       </section>
     ),
+
+    // Friends need a full account (social is gated for guests).
+    'friends-activity': user && !user.isGuest ? (
+      <section>
+        <SectionHeader title="Aktywność znajomych" sub="Ostatnie 14 dni" href="/athlete/social?tab=friends" linkLabel="Znajomi" />
+        <FriendsActivityFeed />
+      </section>
+    ) : null,
 
     'trainer-sessions': upcomingTrainerSessions.length > 0 ? (
       <section>
