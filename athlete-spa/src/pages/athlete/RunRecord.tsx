@@ -30,6 +30,7 @@ import { useRunTracker, type TrackPoint } from '@/hooks/useRunTracker';
 import { useRunCues } from '@/hooks/useRunCues';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { useLiveWidget } from '@/hooks/useLiveWidget';
+import { RECORD_PATH } from '@/components/native-run-bridge';
 import { haptic } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
 import { useCollection, useCreateDoc, useUser } from '@/lib/db-hooks';
@@ -128,7 +129,10 @@ export default function RunRecordPage() {
 
   const km = tracker.distance / 1000;
 
-  // Mirror the run on the Android home-screen widget while it is running or paused.
+  // Mirror the run on the Android home-screen widget while it is running or
+  // paused. The widget reads distance, pace and the clock from the native
+  // recorder itself and pauses/resumes it directly; this only names the run.
+  // It stays up if the athlete leaves this screen, since the run keeps going.
   useLiveWidget(
     isActive
       ? {
@@ -137,9 +141,13 @@ export default function RunRecordPage() {
           line1: `${km.toFixed(2)} km`,
           line2: tracker.pace > 0 ? `${formatPace(tracker.pace)} /km` : 'Tempo: --:--',
           running: tracker.status === 'running',
+          openPath: RECORD_PATH,
+          finishPath: RECORD_PATH,
+          interactive: true,
         }
       : null,
-    () => tracker.duration * 1000
+    () => tracker.duration * 1000,
+    { keepOnUnmount: true }
   );
 
   const goalProgress = useMemo(() => {

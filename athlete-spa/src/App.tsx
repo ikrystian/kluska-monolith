@@ -8,6 +8,7 @@ import { Toaster } from 'react-hot-toast';
 import { FullScreenFallback } from '@/components/route-fallback';
 import { NativePushBridge } from '@/components/native-push-bridge';
 import { NativeRunBridge } from '@/components/native-run-bridge';
+import { NativeWidgetLinks } from '@/components/native-widget-bridge';
 
 import LoginPage from '@/pages/Login';
 import RegisterPage from '@/pages/Register';
@@ -75,6 +76,7 @@ export default function App() {
     <AuthProvider>
       <NativePushBridge />
       <NativeRunBridge />
+      <NativeWidgetLinks />
       {/* Safety net for routes rendered outside AthleteLayout (onboarding,
           and anything not covered by the in-layout Suspense boundary). */}
       <Suspense fallback={<FullScreenFallback />}>

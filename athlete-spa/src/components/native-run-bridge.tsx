@@ -4,7 +4,7 @@ import { App } from '@capacitor/app';
 import { useAuth } from '@/contexts/AuthContext';
 import { RunTracking, isNativeRunTrackingAvailable } from '@/lib/run-tracking';
 
-const RECORD_PATH = '/athlete/running/record';
+export const RECORD_PATH = '/athlete/running/record';
 
 /** The launch check runs once per app start, not every time the athlete leaves the recorder. */
 let launchChecked = false;

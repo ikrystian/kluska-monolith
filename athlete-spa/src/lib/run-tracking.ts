@@ -24,6 +24,12 @@ export interface NativeRunSnapshot {
 export interface NativeRunUpdate extends NativeRunSnapshot {
   /** The fix that just extended the route, when it passed the filter. */
   point?: GeoPoint;
+  /**
+   * On a status change: true when something other than this plugin's own
+   * calls caused it — the home-screen widget's pause/resume button — so the
+   * run screen must follow instead of assuming it already knows.
+   */
+  external?: boolean;
 }
 
 interface RunTrackingPlugin {

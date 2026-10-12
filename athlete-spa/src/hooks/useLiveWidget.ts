@@ -1,18 +1,36 @@
 import { useEffect, useRef } from 'react';
-import { startLiveWidget, stopLiveWidget, updateLiveWidget, type LiveWidgetState } from '@/lib/live-widget';
+import { setLiveWidgetInteractive, startLiveWidget, stopLiveWidget, updateLiveWidget, type LiveWidgetState } from '@/lib/live-widget';
 
-/** GPS fixes arrive about once a second; the widget doesn't need that cadence. */
-const MIN_UPDATE_INTERVAL_MS = 4000;
+/**
+ * GPS fixes arrive about once a second; the widget doesn't need that cadence.
+ * (A run's distance and pace are read natively anyway — this only bounds churn.)
+ */
+const MIN_RUN_UPDATE_INTERVAL_MS = 4000;
+
+interface LiveWidgetOptions {
+  /**
+   * Leave the session on the widget when the component unmounts while it is
+   * still active (the athlete navigated elsewhere mid-workout), marked as
+   * non-interactive. By default an unmount clears it.
+   */
+  keepOnUnmount?: boolean;
+}
 
 /**
  * Shows `state` on the Android home-screen widget while it is non-null and
- * clears it when it becomes null or the component unmounts. `elapsedMs` is
- * read at send time, so it does not trigger updates by itself — the widget
- * keeps its own clock; only changes to the other fields are pushed.
+ * clears it when it becomes null. `elapsedMs` is read at send time, so it does
+ * not trigger updates by itself — the widget keeps its own clock; only
+ * changes to the other fields are pushed.
  */
-export function useLiveWidget(state: Omit<LiveWidgetState, 'elapsedMs'> | null, getElapsedMs: () => number) {
+export function useLiveWidget(
+  state: Omit<LiveWidgetState, 'elapsedMs'> | null,
+  getElapsedMs: () => number,
+  { keepOnUnmount = false }: LiveWidgetOptions = {}
+) {
   const getElapsedRef = useRef(getElapsedMs);
   getElapsedRef.current = getElapsedMs;
+  const keepOnUnmountRef = useRef(keepOnUnmount);
+  keepOnUnmountRef.current = keepOnUnmount;
 
   const startedRef = useRef(false);
   const lastSentAtRef = useRef(0);
@@ -30,8 +48,11 @@ export function useLiveWidget(state: Omit<LiveWidgetState, 'elapsedMs'> | null, 
       return;
     }
 
+    const next = JSON.parse(key) as Omit<LiveWidgetState, 'elapsedMs'>;
+    const minInterval = next.activity === 'run' ? MIN_RUN_UPDATE_INTERVAL_MS : 0;
+
     const send = () => {
-      const payload: LiveWidgetState = { ...(JSON.parse(key) as Omit<LiveWidgetState, 'elapsedMs'>), elapsedMs: getElapsedRef.current() };
+      const payload: LiveWidgetState = { ...next, elapsedMs: getElapsedRef.current() };
       lastSentAtRef.current = Date.now();
       if (!startedRef.current) {
         startedRef.current = true;
@@ -42,7 +63,7 @@ export function useLiveWidget(state: Omit<LiveWidgetState, 'elapsedMs'> | null, 
     };
 
     clearTimeout(timeoutRef.current);
-    const wait = startedRef.current ? MIN_UPDATE_INTERVAL_MS - (Date.now() - lastSentAtRef.current) : 0;
+    const wait = startedRef.current ? minInterval - (Date.now() - lastSentAtRef.current) : 0;
     if (wait > 0) timeoutRef.current = setTimeout(send, wait);
     else send();
 
@@ -51,10 +72,10 @@ export function useLiveWidget(state: Omit<LiveWidgetState, 'elapsedMs'> | null, 
 
   useEffect(
     () => () => {
-      if (startedRef.current) {
-        startedRef.current = false;
-        void stopLiveWidget();
-      }
+      if (!startedRef.current) return;
+      startedRef.current = false;
+      if (keepOnUnmountRef.current) void setLiveWidgetInteractive(false);
+      else void stopLiveWidget();
     },
     []
   );

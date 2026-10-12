@@ -9,6 +9,7 @@ import { useUser } from '@/lib/db-hooks';
 import { BottomNav } from '@/components/bottom-nav';
 import { ActiveWorkoutProvider } from '@/contexts/ActiveWorkoutContext';
 import { ActiveWorkoutWidget } from '@/components/workout/ActiveWorkoutWidget';
+import { NativeWidgetBridge } from '@/components/native-widget-bridge';
 import { UserProfileProvider, useUserProfile } from '@/contexts/UserProfileContext';
 import { useAuth, ONBOARDING_PENDING_KEY } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -132,6 +133,7 @@ function AthleteLayoutContent() {
   return (
     <SidebarProvider>
       <ActiveWorkoutProvider>
+        <NativeWidgetBridge />
         <div className="flex h-dvh w-full">
           <AppNav />
           <main className="relative flex-1 flex flex-col overflow-hidden bg-background">

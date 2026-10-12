@@ -39,6 +39,8 @@ import { useExerciseHistory } from '@/hooks/useExerciseHistory';
 import { useRestTimer } from '@/hooks/useRestTimer';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { useLiveWidget } from '@/hooks/useLiveWidget';
+import { useWidgetCommands } from '@/hooks/useWidgetCommands';
+import { WIDGET_COMMAND_COMPLETE_SET } from '@/lib/live-widget';
 import { haptic } from '@/lib/haptics';
 import { isSpotifyWidgetEnabled } from '@/lib/app-permissions';
 import { PlateCalculator } from '@/components/workout/PlateCalculator';
@@ -88,6 +90,38 @@ const isWorkoutLogsListKey = (key: unknown): key is string =>
 const clearWorkoutLogsCache = (mutate: ReturnType<typeof useSWRConfig>['mutate']) => {
   purgePersistedEntries(isWorkoutLogsListKey);
   void mutate(isWorkoutLogsListKey, undefined, { revalidate: true });
+};
+
+/**
+ * What a set needs before it can be checked off, by exercise type. Shared by
+ * the set rows and the home-screen widget's "✓ Seria" button, so the widget
+ * can't complete a set the screen itself would refuse.
+ */
+const validateSetValues = (
+  exerciseType: ExerciseType,
+  { reps, weight, duration }: { reps?: number | null; weight?: number | string | null; duration?: number | null }
+): { valid: boolean; error?: string } => {
+  if (exerciseType === 'weight') {
+    // Weight exercises need both reps and weight
+    if (!reps || reps <= 0) {
+      return { valid: false, error: 'Uzupełnij liczbę powtórzeń' };
+    }
+    if (weight === undefined || weight === null || weight === '') {
+      return { valid: false, error: 'Uzupełnij ciężar' };
+    }
+  } else if (exerciseType === 'reps') {
+    // Reps-only exercises just need reps
+    if (!reps || reps <= 0) {
+      return { valid: false, error: 'Uzupełnij liczbę powtórzeń' };
+    }
+  } else if (exerciseType === 'duration') {
+    // Duration exercises need duration
+    if (!duration || duration <= 0) {
+      return { valid: false, error: 'Uzupełnij czas trwania' };
+    }
+  }
+
+  return { valid: true };
 };
 
 
@@ -540,7 +574,8 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   }, [fields.length, activeExerciseIndex]);
 
   // Mirror the in-progress workout on the Android home-screen widget until
-  // the athlete reaches the summary screen.
+  // the athlete reaches the summary screen. Leaving this screen mid-workout
+  // keeps it there (without the set button — nothing is left to act on it).
   const liveSeries = form.watch('exerciseSeries');
   const liveTotalSets = liveSeries.reduce((acc, s) => acc + (s.sets?.length ?? 0), 0);
   const liveCompletedSets = liveSeries.reduce((acc, s) => acc + (s.sets?.filter(set => set.completed).length ?? 0), 0);
@@ -548,6 +583,18 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
     liveSeries.find(s => (s.sets?.length ?? 0) > 0 && s.sets.some(set => !set.completed)) ?? liveSeries[activeExerciseIndex];
   const liveCurrentExercise = allExercises?.find(ex => ex.id === liveCurrentSeries?.exerciseId)?.name ?? '';
   const liveWorkoutName = form.watch('workoutName');
+
+  // Why the widget's last "✓ Seria" did nothing, shown in place of the exercise name for a few seconds.
+  const [widgetNotice, setWidgetNotice] = useState<string | null>(null);
+  const widgetNoticeTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(widgetNoticeTimeoutRef.current), []);
+  const showWidgetNotice = (text: string) => {
+    setWidgetNotice(text);
+    clearTimeout(widgetNoticeTimeoutRef.current);
+    widgetNoticeTimeoutRef.current = setTimeout(() => setWidgetNotice(null), 6000);
+  };
+
+  const liveWorkoutPath = workoutLogId ? `/athlete/log?logId=${workoutLogId}` : '/athlete';
   useLiveWidget(
     isFinished
       ? null
@@ -555,11 +602,42 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
           activity: 'workout',
           title: liveWorkoutName || 'Trening',
           line1: `${liveCompletedSets}/${liveTotalSets} serii`,
-          line2: liveCurrentExercise,
+          line2: widgetNotice ?? liveCurrentExercise,
           running: true,
+          openPath: liveWorkoutPath,
+          finishPath: workoutLogId ? `${liveWorkoutPath}&finish=true` : liveWorkoutPath,
+          interactive: true,
         },
-    () => Date.now() - startTime.getTime()
+    () => Date.now() - startTime.getTime(),
+    { keepOnUnmount: true }
   );
+
+  // The widget's "✓ Seria": check off the set the widget is showing, under the
+  // same rules as tapping it here — an incomplete set is reported, not forced.
+  const completeNextSetFromWidget = () => {
+    const series = form.getValues('exerciseSeries');
+    for (let i = 0; i < series.length; i++) {
+      const setIndex = series[i].sets?.findIndex(set => !set.completed) ?? -1;
+      if (setIndex < 0) continue;
+
+      const set = series[i].sets[setIndex];
+      const exerciseType = allExercises?.find(ex => ex.id === series[i].exerciseId)?.type ?? 'weight';
+      const check = validateSetValues(exerciseType, set);
+      if (!check.valid) {
+        haptic('warning');
+        showWidgetNotice(`${check.error ?? 'Uzupełnij dane serii'} w aplikacji`);
+        return;
+      }
+
+      form.setValue(`exerciseSeries.${i}.sets.${setIndex}.completed`, true);
+      setActiveExerciseIndex(i);
+      haptic('tap');
+      // The carousel runs its own rest slides; the inline countdown is the list view's.
+      if (viewMode === 'list') handleSetCompleted(Number(set.restTimeSeconds) || 0);
+      return;
+    }
+  };
+  useWidgetCommands({ [WIDGET_COMMAND_COMPLETE_SET]: completeNextSetFromWidget }, !isFinished);
 
   // Check for finish param
   useEffect(() => {
@@ -1247,33 +1325,12 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
   );
 
   // Validation function for a set - depends on exercise type
-  const validateSet = (setIndex: number): { valid: boolean; error?: string } => {
-    const reps = watch(`exerciseSeries.${index}.sets.${setIndex}.reps`);
-    const weight = watch(`exerciseSeries.${index}.sets.${setIndex}.weight`);
-    const duration = watch(`exerciseSeries.${index}.sets.${setIndex}.duration`);
-
-    if (exerciseType === 'weight') {
-      // Weight exercises need both reps and weight
-      if (!reps || reps <= 0) {
-        return { valid: false, error: 'Uzupełnij liczbę powtórzeń' };
-      }
-      if (weight === undefined || weight === null || weight === '' as any) {
-        return { valid: false, error: 'Uzupełnij ciężar' };
-      }
-    } else if (exerciseType === 'reps') {
-      // Reps-only exercises just need reps
-      if (!reps || reps <= 0) {
-        return { valid: false, error: 'Uzupełnij liczbę powtórzeń' };
-      }
-    } else if (exerciseType === 'duration') {
-      // Duration exercises need duration
-      if (!duration || duration <= 0) {
-        return { valid: false, error: 'Uzupełnij czas trwania' };
-      }
-    }
-
-    return { valid: true };
-  };
+  const validateSet = (setIndex: number): { valid: boolean; error?: string } =>
+    validateSetValues(exerciseType, {
+      reps: watch(`exerciseSeries.${index}.sets.${setIndex}.reps`),
+      weight: watch(`exerciseSeries.${index}.sets.${setIndex}.weight`),
+      duration: watch(`exerciseSeries.${index}.sets.${setIndex}.duration`),
+    });
 
   // Handle set completion with validation
   const handleSetCompletion = (setIndex: number, currentValue: boolean) => {

@@ -339,14 +339,34 @@ export function useRunTracker() {
     let handle: PluginListenerHandle | undefined;
 
     void RunTracking.addListener('update', update => {
+      // The widget can pause or resume the run while this screen is alive. Only
+      // changes flagged external are adopted: a plain update can be a stale
+      // in-flight fix that predates a pause this screen just made itself.
+      const current = stateRef.current.status;
+      const followNative =
+        update.external === true &&
+        (update.status === 'running' || update.status === 'paused') &&
+        (current === 'running' || current === 'paused') &&
+        update.status !== current;
+      if (followNative) lastTickRef.current = update.status === 'running' ? Date.now() : null;
+
       setState(prev => {
         if (prev.status !== 'running' && prev.status !== 'paused') return prev;
-        return {
+        const next = {
           ...prev,
           distance: update.distance,
           points: update.point ? [...prev.points, update.point] : prev.points,
           accuracy: update.accuracy ?? prev.accuracy,
           error: null,
+        };
+        if (!followNative || prev.status === update.status) return next;
+        const duration = update.durationMs / 1000;
+        return {
+          ...next,
+          status: update.status as RunStatus,
+          duration,
+          pace: computePace(duration, update.distance),
+          segmentStart: update.status === 'running' ? true : prev.segmentStart,
         };
       });
     }).then(h => {
