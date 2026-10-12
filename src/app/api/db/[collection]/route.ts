@@ -3,6 +3,7 @@ import { Model } from 'mongoose';
 import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { jsonWithEtag } from '@/lib/http-cache';
+import { AccessContext, AccessError, isPublicCollection, sanitizeBody, scopeRead } from '@/lib/db-access';
 
 import {
   User,
@@ -76,10 +77,7 @@ export async function GET(
 
     const { collection } = await params;
 
-    // Public collections that don't require authentication
-    const PUBLIC_COLLECTIONS = ['articles', 'articleCategories', 'muscleGroups', 'gyms', 'socialPosts'];
-
-    if (!PUBLIC_COLLECTIONS.includes(collection) && !user) {
+    if (!isPublicCollection(collection) && !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -97,12 +95,9 @@ export async function GET(
     const sortParam = searchParams.get('sort');
     const limitParam = searchParams.get('limit');
 
-    let query = Model.find();
-
-    if (queryParam) {
-      const queryObj = JSON.parse(queryParam);
-      query = query.find(queryObj);
-    }
+    // The client's filter is narrowed to the documents this user may read.
+    const filter = await scopeRead(new AccessContext(user), collection, queryParam ? JSON.parse(queryParam) : {});
+    let query = Model.find(filter);
 
     if (sortParam) {
       const sortObj = JSON.parse(sortParam);
@@ -117,7 +112,7 @@ export async function GET(
 
     // Enrich conversations with athlete avatarUrl
     if (collection === 'conversations' && data.length > 0) {
-      const athleteIds = [...new Set(data.map((conv: any) => conv.athleteId))];
+      const athleteIds = [...new Set<string>(data.map((conv: any) => conv.athleteId))];
       const athletes = await User.find({ _id: { $in: athleteIds } }).lean();
       const athleteMap = new Map(athletes.map((a: any) => [a._id.toString(), a]));
 
@@ -135,6 +130,9 @@ export async function GET(
 
     return jsonWithEtag(request, { data });
   } catch (error) {
+    if (error instanceof AccessError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error('GET /api/db/[collection] error:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
@@ -169,12 +167,15 @@ export async function POST(
       return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
     }
 
-    const body = await request.json();
+    const body = await sanitizeBody(new AccessContext(user), collection, await request.json(), true);
     const doc = new Model(body);
     await doc.save();
 
     return NextResponse.json({ data: doc.toJSON() }, { status: 201 });
   } catch (error) {
+    if (error instanceof AccessError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error('POST /api/db/[collection] error:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },

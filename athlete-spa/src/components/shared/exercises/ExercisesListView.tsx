@@ -103,7 +103,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
 
   const { data: planExercises } = useCollection<Exercise>(
     role === 'athlete' && exerciseIdsFromPlans.length > 0 ? 'exercises' : null,
-    exerciseIdsFromPlans.length > 0 ? { id: { $in: exerciseIdsFromPlans } } : undefined
+    exerciseIdsFromPlans.length > 0 ? { _id: { $in: exerciseIdsFromPlans } } : undefined
   );
 
   // Combine all exercises

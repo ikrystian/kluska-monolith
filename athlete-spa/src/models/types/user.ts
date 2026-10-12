@@ -26,8 +26,8 @@ export interface UserProfile {
   weight?: number;
   trainingLevel?: TrainingLevelType;
   // Strava integration
-  stravaAccessToken?: string;
-  stravaRefreshToken?: string;
+  /** Set by the API in place of the Strava tokens, which never leave the server. */
+  stravaConnected?: boolean;
   stravaTokenExpiresAt?: string;
   stravaAthleteId?: string;
 }

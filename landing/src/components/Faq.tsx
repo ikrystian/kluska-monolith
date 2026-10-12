@@ -34,28 +34,33 @@ const faqs = [
 
 export function Faq() {
   return (
-    <section id="faq" aria-labelledby="faq-title" className="border-t border-rule py-20 sm:py-28">
-      <div className="shell grid gap-10 lg:grid-cols-12 lg:gap-12">
-        <div {...reveal(0)} className="lg:col-span-4">
-          <h2 id="faq-title" className="display text-[clamp(2.5rem,5vw,4rem)]">
+    <section id="faq" aria-labelledby="faq-title" className="section bg-paper-2">
+      <div className="shell grid gap-10 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:gap-16">
+        <div {...reveal(0)} className="lg:sticky lg:top-28 lg:self-start">
+          <h2 id="faq-title" className="h-section">
             Pytania przed pierwszym treningiem.
           </h2>
-          <p className="mt-5 text-ink-2">
-            Czegoś brakuje? Zaloguj się i napisz do nas z poziomu aplikacji.
-          </p>
+          <p className="mt-5 text-ink-2">Czegoś brakuje? Zaloguj się i napisz do nas z poziomu aplikacji.</p>
         </div>
 
-        <div className="border-t-2 border-ink lg:col-span-8">
+        <div className="space-y-2.5">
           {faqs.map((f, i) => (
-            <details {...reveal(Math.min(i, 4))} key={f.q} open={i === 0} className="group border-b border-rule">
-              <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-5 [&::-webkit-details-marker]:hidden">
-                <span className="text-lg font-semibold sm:text-xl">{f.q}</span>
-                <Plus
-                  className="mt-1 size-5 shrink-0 text-ink-2 transition-transform duration-200 ease-[var(--ease-out)] group-open:rotate-45 group-open:text-accent-ink"
-                  aria-hidden
-                />
+            <details
+              {...reveal(Math.min(i, 4))}
+              key={f.q}
+              open={i === 0}
+              className="group rounded-[20px] border border-rule bg-card transition-colors open:border-rule-strong"
+            >
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 rounded-[20px] px-5 py-5 sm:px-6 [&::-webkit-details-marker]:hidden">
+                <span className="text-[1.0625rem] font-semibold">{f.q}</span>
+                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-paper-2 transition-colors group-open:bg-ink group-open:text-paper">
+                  <Plus
+                    className="size-4 transition-transform duration-200 ease-[var(--ease-out)] group-open:rotate-45"
+                    aria-hidden
+                  />
+                </span>
               </summary>
-              <p className="max-w-2xl pb-6 leading-relaxed text-ink-2">{f.a}</p>
+              <p className="max-w-2xl px-5 pb-6 leading-relaxed text-ink-2 sm:px-6">{f.a}</p>
             </details>
           ))}
         </div>

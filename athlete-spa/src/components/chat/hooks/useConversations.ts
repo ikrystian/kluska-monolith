@@ -1,4 +1,3 @@
-import { apiFetch } from '@/lib/api-client';
 import { useCollection, useCreateDoc, useDeleteDoc, useUpdateDoc } from '@/lib/db-hooks';
 import { Conversation } from '@/lib/chat/types';
 import { useUser } from '@/lib/db-hooks';
@@ -20,19 +19,7 @@ export function useConversations() {
     };
 
     const deleteConversation = async (conversationId: string) => {
-        // First fetch messages to delete them
-        // Note: In a real app, this should be a backend function or a batch operation
-        try {
-            const response = await apiFetch(`/api/db/messages?query=${encodeURIComponent(JSON.stringify({ conversationId }))}`);
-            const messages = await response.json();
-
-            if (messages && Array.isArray(messages)) {
-                await Promise.all(messages.map((m: any) => deleteDoc('messages', m.id)));
-            }
-        } catch (e) {
-            console.error("Failed to delete messages for conversation", e);
-        }
-
+        // The server removes the conversation's messages along with it.
         return await deleteDoc('conversations', conversationId);
     };
 

@@ -1,9 +1,11 @@
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
+import { ReplaceStrip } from './components/ReplaceStrip';
+import { Benefits } from './components/Benefits';
 import { FeatureSimulator } from './components/FeatureSimulator';
-import { RunningFold } from './components/RunningFold';
 import { PlateCalcInteractive } from './components/PlateCalcInteractive';
-import { OfflineFold } from './components/OfflineFold';
+import { CoachSection } from './components/CoachSection';
+import { Pricing } from './components/Pricing';
 import { Faq } from './components/Faq';
 import { CtaSection } from './components/CtaSection';
 import { Footer } from './components/Footer';
@@ -17,10 +19,12 @@ export default function App() {
       <Navbar />
       <main>
         <Hero />
+        <ReplaceStrip />
+        <Benefits />
         <FeatureSimulator />
-        <RunningFold />
         <PlateCalcInteractive />
-        <OfflineFold />
+        <CoachSection />
+        <Pricing />
         <Faq />
         <CtaSection />
       </main>

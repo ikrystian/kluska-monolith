@@ -75,9 +75,15 @@ const UserSchema = new Schema<IUser>(
   {
     timestamps: true,
     toJSON: {
-      transform: (_, ret) => {
+      transform: (_, ret: Record<string, any>) => {
         ret.id = ret._id.toString();
         delete ret.__v;
+        // Credentials never leave the server; clients only need to know
+        // whether Strava is linked.
+        ret.stravaConnected = Boolean(ret.stravaAccessToken);
+        delete ret.password;
+        delete ret.stravaAccessToken;
+        delete ret.stravaRefreshToken;
         return ret;
       },
     },

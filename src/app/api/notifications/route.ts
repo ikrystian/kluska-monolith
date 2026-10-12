@@ -22,13 +22,14 @@ export async function GET(req: NextRequest) {
             query.isRead = false;
         }
 
-        const notifications = await Notification.find(query)
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit);
-
-        const total = await Notification.countDocuments(query);
-        const unreadCount = await Notification.countDocuments({ userId: user.id, isRead: false });
+        const [notifications, total, unreadCount] = await Promise.all([
+            Notification.find(query)
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit),
+            Notification.countDocuments(query),
+            Notification.countDocuments({ userId: user.id, isRead: false }),
+        ]);
 
         return NextResponse.json({
             data: notifications,

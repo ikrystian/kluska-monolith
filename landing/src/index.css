@@ -1,51 +1,62 @@
-/* Hallmark · genre: editorial · macrostructure: Photographic (with Workbench tabs) · theme: custom "carbon, iron, ember"
- * paper oklch(14% 0.008 50) · accent oklch(64% 0.19 38) ember · display Archivo (condensed 800) + body Schibsted Grotesk · mono JetBrains Mono
- * axes: dark / display-condensed / warm · nav: N6-derived masthead · footer: Ft1 mast-headed · enrichment: Tier C generated stills (three.js renders)
+/* Hallmark · genre: atmospheric · macrostructure: Feature Stack · F2 sticky-scroll knobs: pinned=right, content=app screens, pins=5
+ * theme: custom · vibe: "after-hours gym, ember and volt, graphite" · paper: oklch(14.5% 0.012 45) · accent: oklch(70% 0.19 45)
+ * display: Space Grotesk 700 · body: Geist · axes: dark / grotesk-sans / warm
+ * hero: H8 mockup split → stack-of-3 app screens, floating no-frame, clipped by the fold
+ * nav: N12 banner + retract · footer: Ft2 inline single line · CTA: C4 sticky bottom bar (mobile)
+ * enrichment: Tier A HTML-built app screens + existing stills · studied: no · context: inferred
  */
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Schibsted Grotesk', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Archivo', 'Schibsted Grotesk', ui-sans-serif, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+  --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Space Grotesk', 'Geist', ui-sans-serif, sans-serif;
 
-  /* surfaces — warm carbon; --color-paper matches the render backdrops so photos bleed in */
-  --color-paper: oklch(14% 0.008 50);
-  --color-paper-2: oklch(18% 0.009 50);
-  --color-paper-3: oklch(22.5% 0.01 50);
-  --color-ink: oklch(94.5% 0.007 78);
-  --color-ink-2: oklch(72% 0.01 70);
-  --color-rule: oklch(27% 0.01 50);
-  --color-rule-strong: oklch(42% 0.01 55);
+  /* graphite surfaces — higher = lighter, no glow shadows */
+  --color-paper: oklch(14.5% 0.012 45);
+  --color-paper-2: oklch(18.5% 0.014 45);
+  --color-paper-3: oklch(23.5% 0.016 45);
+  --color-screen: oklch(20% 0.015 45);
+  --color-screen-2: oklch(25% 0.017 45);
+  --color-ink: oklch(95.5% 0.008 75);
+  --color-ink-2: oklch(77% 0.012 65);
+  --color-ink-3: oklch(64% 0.013 60);
+  --color-rule: oklch(29% 0.014 45);
+  --color-rule-strong: oklch(38% 0.016 45);
 
-  /* deeper bands for the photographic folds */
-  --color-night: oklch(11% 0.007 50);
-  --color-night-2: oklch(16% 0.008 50);
-  --color-night-ink: oklch(94.5% 0.007 78);
-  --color-night-ink-2: oklch(72% 0.01 70);
-  --color-night-rule: oklch(25% 0.009 50);
+  /* ember — the brand accent; volt — "done / synced / record" signal only */
+  --color-accent: oklch(70% 0.19 45);
+  --color-accent-hover: oklch(75.5% 0.17 50);
+  --color-accent-ink: oklch(79% 0.15 55);
+  --color-accent-wash: oklch(26% 0.055 45);
+  --color-on-accent: oklch(16% 0.02 45);
+  --color-volt: oklch(89% 0.2 122);
+  --color-on-volt: oklch(20% 0.05 125);
+  --color-danger: oklch(68% 0.19 27);
+  --color-focus: oklch(80% 0.16 60);
 
-  /* ember — the single accent */
-  --color-accent: oklch(66% 0.19 39);
-  --color-accent-hover: oklch(71% 0.17 42);
-  --color-accent-ink: oklch(74% 0.15 45);
-  --color-on-accent: oklch(14% 0.01 50);
-  --color-focus: oklch(70% 0.18 42);
+  /* the paper receipt in the pricing section — a single warm object on the dark page */
+  --color-receipt: oklch(95% 0.02 85);
+  --color-receipt-ink: oklch(21% 0.015 50);
+  --color-receipt-rule: oklch(72% 0.02 80);
 
   /* IWF plate colours — data colours for the plate calculator only */
-  --color-plate-25: oklch(45% 0.17 27);
-  --color-plate-20: oklch(38% 0.13 262);
-  --color-plate-15: oklch(76% 0.15 90);
-  --color-plate-10: oklch(43% 0.11 148);
-  --color-plate-5: oklch(93% 0.006 80);
-  --color-plate-2: oklch(24% 0.006 60);
+  --color-plate-25: oklch(52% 0.19 27);
+  --color-plate-20: oklch(48% 0.15 262);
+  --color-plate-15: oklch(80% 0.15 90);
+  --color-plate-10: oklch(52% 0.13 148);
+  --color-plate-5: oklch(95% 0.004 80);
+  --color-plate-2: oklch(40% 0.008 60);
   --color-plate-1: oklch(70% 0.02 75);
-  --color-steel: oklch(72% 0.005 80);
+  --color-steel: oklch(70% 0.006 80);
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
-  --radius-ui: 4px;
+  --radius-ui: 14px;
+  --radius-card: 28px;
+  --radius-pill: 999px;
+
+  --shadow-pop: 0 2px 4px oklch(0% 0 0 / 0.25), 0 24px 48px -20px oklch(0% 0 0 / 0.6);
 }
 
 @layer base {
@@ -55,12 +66,9 @@
   }
 
   html {
-    scroll-behavior: smooth;
-    scroll-padding-top: 5rem;
-  }
-
-  html {
     color-scheme: dark;
+    scroll-behavior: smooth;
+    scroll-padding-top: 6.5rem;
   }
 
   body {
@@ -87,79 +95,35 @@
 
   h1,
   h2,
-  h3 {
+  h3,
+  h4 {
     font-style: normal;
     overflow-wrap: anywhere;
     min-width: 0;
     text-wrap: balance;
   }
 
-  /* ---------- scroll motion ---------- */
+  p {
+    text-wrap: pretty;
+  }
 
-  /* armed by useScrollReveal(); without it everything is simply visible */
+  /* ---------- hero entrance: the one orchestrated reveal, armed by useScrollReveal() ---------- */
+
   .reveal-on [data-reveal] {
     opacity: 0;
     transition:
-      opacity 700ms var(--ease-out),
-      transform 900ms var(--ease-out);
-    transition-delay: calc(var(--i, 0) * 80ms);
+      opacity 600ms var(--ease-out),
+      transform 700ms var(--ease-out);
+    transition-delay: calc(var(--i, 0) * 70ms);
   }
 
   .reveal-on [data-reveal='up'] {
-    transform: translate3d(0, 28px, 0);
-  }
-
-  /* photographs: fade in while the frame settles from a slight zoom */
-  .reveal-on [data-reveal='image'] {
-    transition-duration: 900ms;
-  }
-
-  .reveal-on [data-reveal='image'] img {
-    transform: scale(1.07);
-    transition: transform 1600ms var(--ease-out);
+    transform: translate3d(0, 16px, 0);
   }
 
   .reveal-on [data-reveal].is-visible {
     opacity: 1;
     transform: none;
-  }
-
-  .reveal-on [data-reveal='image'].is-visible img {
-    transform: none;
-  }
-
-  /* tab panels swap with a short rise */
-  [role='tabpanel'] {
-    animation: panel-in 420ms var(--ease-out) both;
-  }
-
-  @keyframes panel-in {
-    from {
-      opacity: 0;
-      transform: translate3d(0, 10px, 0);
-    }
-  }
-
-  /* parallax on full-bleed photographs, where scroll-driven animations exist */
-  @supports (animation-timeline: view()) {
-    .parallax {
-      overflow: hidden;
-    }
-
-    .parallax > img {
-      animation: parallax linear both;
-      animation-timeline: view();
-      animation-range: cover 0% cover 100%;
-    }
-
-    @keyframes parallax {
-      from {
-        transform: translate3d(0, -7%, 0) scale(1.14);
-      }
-      to {
-        transform: translate3d(0, 7%, 0) scale(1.14);
-      }
-    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -176,55 +140,83 @@
 }
 
 @layer components {
-  /* condensed display face; the variable font carries the width axis */
   .display {
     font-family: var(--font-display);
-    font-stretch: 68%;
-    font-weight: 800;
-    letter-spacing: -0.012em;
-    line-height: 0.96;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 0.98;
+  }
+
+  .h-section {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.04;
+    font-size: clamp(2rem, 4.4vw + 0.75rem, 4rem);
+  }
+
+  .lede {
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    color: var(--color-ink-2);
+  }
+
+  @media (min-width: 640px) {
+    .lede {
+      font-size: 1.1875rem;
+    }
   }
 
   .label {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    letter-spacing: 0.02em;
-    font-variant-numeric: tabular-nums;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.3;
   }
 
   .num {
-    font-family: var(--font-mono);
+    font-family: var(--font-display);
     font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
   }
 
   .shell {
     width: 100%;
-    max-width: 84rem;
+    max-width: 76rem;
     margin-inline: auto;
     padding-inline: 1rem;
   }
 
   @media (min-width: 640px) {
     .shell {
-      padding-inline: 2rem;
+      padding-inline: 1.5rem;
     }
   }
 
   @media (min-width: 1024px) {
     .shell {
-      padding-inline: 3rem;
+      padding-inline: 2rem;
     }
   }
 
-  /* buttons — one shape for the whole page */
+  .section {
+    padding-block: 5rem;
+  }
+
+  @media (min-width: 640px) {
+    .section {
+      padding-block: 7.5rem;
+    }
+  }
+
+  /* ---------- buttons: one pill shape for the whole page ---------- */
   .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.625rem;
+    gap: 0.5rem;
     min-height: 3rem;
-    padding: 0 1.375rem;
-    border-radius: var(--radius-ui);
+    padding: 0 1.5rem;
+    border-radius: var(--radius-pill);
     font-weight: 600;
     font-size: 0.9375rem;
     white-space: nowrap;
@@ -235,14 +227,40 @@
       transform 120ms var(--ease-out);
   }
 
+  @media (hover: hover) {
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+  }
+
   .btn:active {
-    transform: translateY(1px);
+    transform: translateY(0) scale(0.98);
   }
 
   .btn:disabled,
   .btn[aria-disabled='true'] {
     opacity: 0.45;
     pointer-events: none;
+  }
+
+  .btn svg {
+    transition: transform 200ms var(--ease-out);
+  }
+
+  .btn:hover svg.nudge {
+    transform: translateX(3px);
+  }
+
+  .btn-lg {
+    min-height: 3.5rem;
+    padding: 0 1.875rem;
+    font-size: 1rem;
+  }
+
+  .btn-sm {
+    min-height: 2.5rem;
+    padding: 0 1.125rem;
+    font-size: 0.875rem;
   }
 
   .btn-primary {
@@ -255,27 +273,61 @@
   }
 
   .btn-ghost {
+    background: transparent;
     border: 1px solid var(--color-rule-strong);
     color: var(--color-ink);
   }
 
   .btn-ghost:hover {
-    background: var(--color-ink);
-    color: var(--color-paper);
+    border-color: var(--color-ink-2);
+    background: var(--color-paper-2);
   }
 
-  .on-night .btn-ghost {
-    border-color: var(--color-night-ink-2);
-    color: var(--color-night-ink);
+  .btn-light {
+    background: var(--color-receipt-ink);
+    color: var(--color-receipt);
   }
 
-  .on-night .btn-ghost:hover {
-    background: var(--color-night-ink);
-    color: var(--color-night);
+  .btn-light:hover {
+    background: oklch(30% 0.015 50);
   }
 
-  .on-night :focus-visible {
-    outline-color: var(--color-accent);
+  /* ---------- surfaces ---------- */
+  .surface {
+    background: var(--color-paper-2);
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-card);
+  }
+
+  /* an app screen — real UI, no device frame; higher = lighter */
+  .screen {
+    background: var(--color-screen);
+    border: 1px solid var(--color-rule-strong);
+    border-radius: 24px;
+    box-shadow: var(--shadow-pop);
+    overflow: hidden;
+  }
+
+  .row {
+    background: var(--color-screen-2);
+    border-radius: var(--radius-ui);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 1.75rem;
+    padding: 0 0.625rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* warm stage light behind the hero screens — one static bloom, no animation */
+  .bloom {
+    background: radial-gradient(closest-side, color-mix(in oklab, var(--color-accent) 26%, transparent), transparent);
   }
 
   /* typographic link with a drawn underline */
@@ -290,14 +342,19 @@
     background-position: 0 100%;
     background-repeat: no-repeat;
     padding-bottom: 2px;
-    transition: background-size 200ms var(--ease-out), color 160ms var(--ease-out);
+    transition: color 160ms var(--ease-out);
   }
 
   .link:hover {
     color: var(--color-accent-ink);
   }
 
-  .on-night .link:hover {
-    color: var(--color-accent);
+  /* the receipt's torn bottom edge */
+  .receipt {
+    --tooth: 9px;
+    background: var(--color-receipt);
+    color: var(--color-receipt-ink);
+    mask: conic-gradient(from -45deg at bottom, transparent, black 1deg 89deg, transparent 90deg) 50% / calc(var(--tooth) * 2) 100%;
+    padding-bottom: calc(var(--tooth) + 1.5rem);
   }
 }

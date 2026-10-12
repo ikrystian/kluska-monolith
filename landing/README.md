@@ -6,20 +6,20 @@ Responsywny landing page aplikacji **Leniwa Kluska (Athlete SPA)** — ciemny, p
 
 ## Design system
 
-- **Tokeny** w `src/index.css` (`@theme`, Tailwind v4): kolory w OKLCH (`paper`, `ink`, `muted`, `rule`, `accent`, `signal`, kolory talerzy), domyślna paleta Tailwinda jest wyłączona — używaj wyłącznie nazwanych tokenów (`bg-paper-2`, `text-muted`, `border-rule`…).
-- **Typografia**: Geist (nagłówki i tekst) + Geist Mono (liczby i dane, zawsze z `tnum`).
-- **Przyciski**: `.btn` + `.btn-primary` / `.btn-secondary` / `.btn-ghost`, rozmiary `.btn-sm` / `.btn-lg`.
-- **Panele UI**: `.panel` — podglądy ekranów aplikacji budowane jako prawdziwe UI, bez rysowanych ramek telefonu.
+- **Tokeny** w `src/index.css` (`@theme`, Tailwind v4): kolory w OKLCH — jasne tło (`paper`, `card`), ciemna „scena” na UI aplikacji (`night*`), akcent marki `accent` (ember) i `volt` (tylko na ciemnych powierzchniach). Używaj wyłącznie nazwanych tokenów.
+- **Typografia**: Space Grotesk (nagłówki, liczby `.num`) + Inter (tekst) — te same kroje co w aplikacji.
+- **Przyciski**: pigułki `.btn` + `.btn-primary` / `.btn-dark` / `.btn-ghost`, rozmiary `.btn-sm` / `.btn-lg`.
+- **Powierzchnie**: `.card` (jasny kafel), `.stage` (ciemny panel), `.ui` (ekran aplikacji na ciemnym panelu) — prawdziwe UI, bez rysowanych ramek telefonu.
 
 ## Sekcje
 
-1. **Hero** — hasło, CTA rejestracji, podgląd trwającego treningu, przycisk audio Ronniego Colemana.
-2. **Pasek cech** — offline, Strava, Android/PWA, skaner kodów.
-3. **Funkcje** (`FeatureSimulator`) — przyklejony opis po lewej + przewijane panele: dziennik z działającym stoperem przerwy, bieg z GPS, dieta i makro, check-in z trenerem. Na mobile sekcje układają się jedna pod drugą.
-4. **Kalkulator talerzy** — wpisywanie ciężaru, presety, gryf 20/15 kg, informacja gdy ciężaru nie da się złożyć dokładnie.
-5. **Pozostałe funkcje** (`MoreFeatures`) — grywalizacja, wyzwania, nawyki, atlas, postępy, kalendarz, społeczność, mapa siłowni, strefa wiedzy, hype audio.
-6. **Dla trenerów** (`CoachSection`) — podgląd listy podopiecznych i link do panelu trenera.
-7. **Cennik** — przełącznik miesięcznie/rocznie, trzy plany.
+1. **Hero** — hasło, CTA, obietnice (za darmo, offline, Strava, Android/iPhone), podgląd trwającego treningu.
+2. **Cztery aplikacje → jedna** (`ReplaceStrip`).
+3. **Korzyści** (`Benefits`) — bento: offline, bieg z GPS/Strava, progresja, skaner kodów, seria dni, widżet na ekranie blokady, muzyka + Ronnie, nawyki, atlas, trener.
+4. **Zajrzyj do środka** (`FeatureSimulator`) — zakładki trening / bieganie / dieta / trener z działającym stoperem.
+5. **Kalkulator talerzy** (`PlateCalcInteractive`).
+6. **Dla trenerów** (`CoachSection`).
+7. **Cennik + jak zacząć** (`Pricing`) — 0 zł i trzy kroki.
 8. **FAQ**, **CTA**, **stopka**.
 
 ---

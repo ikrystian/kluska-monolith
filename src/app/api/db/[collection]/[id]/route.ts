@@ -4,6 +4,14 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { isValidObjectId } from 'mongoose';
 import { jsonWithEtag } from '@/lib/http-cache';
 import { cascadeDeleteUserData } from '@/lib/user-cascade-delete';
+import {
+  AccessContext,
+  AccessError,
+  sanitizeBody,
+  scopeRead,
+  scopeWrite,
+  trainerAssignmentUpdate,
+} from '@/lib/db-access';
 
 // Import all models
 import { User } from '@/models/User';
@@ -70,11 +78,6 @@ export async function GET(
   try {
     const user = await getRequestUser(request);
 
-    // Some collections might be public, adjust as needed
-    // if (!user) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
-
     await connectToDatabase();
 
     const { collection, id } = await params;
@@ -89,7 +92,8 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid ID format' }, { status: 400 });
     }
 
-    const doc = await Model.findById(id).exec();
+    // A document outside the caller's scope is reported as missing.
+    const doc = await Model.findOne(await scopeRead(new AccessContext(user), collection, { _id: id })).exec();
 
     if (!doc) {
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
@@ -97,6 +101,9 @@ export async function GET(
 
     return jsonWithEtag(request, { data: doc.toJSON() });
   } catch (error) {
+    if (error instanceof AccessError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error('GET /api/db/[collection]/[id] error:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
@@ -130,7 +137,51 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invalid ID format' }, { status: 400 });
     }
 
-    const body = await request.json();
+    const ctx = new AccessContext(user);
+    const rawBody = await request.json();
+
+    // Special handling for socialPosts - toggle like functionality. Anyone who
+    // can see a post may like it, but only on their own behalf.
+    if (collection === 'socialPosts' && rawBody.toggleLike && rawBody.userId) {
+      if (rawBody.userId !== user.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+
+      const post = await Model.findOne(await scopeRead(ctx, collection, { _id: id })).exec();
+      if (!post) {
+        return NextResponse.json({ error: 'Post not found' }, { status: 404 });
+      }
+
+      const userId = user.id;
+      const likes = post.likes || [];
+      const isLiked = likes.includes(userId);
+
+      if (isLiked) {
+        // Remove like
+        post.likes = likes.filter((id: string) => id !== userId);
+      } else {
+        // Add like
+        post.likes = [...likes, userId];
+      }
+
+      await post.save();
+      return NextResponse.json({ data: post.toJSON() });
+    }
+
+    let body;
+    if (collection === 'users') {
+      const target = await Model.findOne(await scopeWrite(ctx, collection, { _id: id }))
+        .select('role trainerId')
+        .lean()
+        .exec();
+      if (!target) {
+        return NextResponse.json({ error: 'Document not found' }, { status: 404 });
+      }
+      // A trainer editing someone else may only (un)assign them as their athlete.
+      body = (await trainerAssignmentUpdate(ctx, target, rawBody)) ?? (await sanitizeBody(ctx, collection, rawBody, false));
+    } else {
+      body = await sanitizeBody(ctx, collection, rawBody, false);
+    }
 
     // Special validation for users collection - check email uniqueness
     if (collection === 'users' && body.email) {
@@ -147,30 +198,7 @@ export async function PATCH(
       }
     }
 
-    // Special handling for socialPosts - toggle like functionality
-    if (collection === 'socialPosts' && body.toggleLike && body.userId) {
-      const post = await Model.findById(id).exec();
-      if (!post) {
-        return NextResponse.json({ error: 'Post not found' }, { status: 404 });
-      }
-
-      const userId = body.userId;
-      const likes = post.likes || [];
-      const isLiked = likes.includes(userId);
-
-      if (isLiked) {
-        // Remove like
-        post.likes = likes.filter((id: string) => id !== userId);
-      } else {
-        // Add like
-        post.likes = [...likes, userId];
-      }
-
-      await post.save();
-      return NextResponse.json({ data: post.toJSON() });
-    }
-
-    const doc = await Model.findByIdAndUpdate(id, body, { new: true }).exec();
+    const doc = await Model.findOneAndUpdate(await scopeWrite(ctx, collection, { _id: id }), body, { new: true }).exec();
 
     if (!doc) {
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
@@ -178,6 +206,9 @@ export async function PATCH(
 
     return NextResponse.json({ data: doc.toJSON() });
   } catch (error) {
+    if (error instanceof AccessError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error('PATCH /api/db/[collection]/[id] error:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
@@ -223,14 +254,22 @@ export async function DELETE(
       await cascadeDeleteUserData(id);
     }
 
-    const doc = await Model.findByIdAndDelete(id).exec();
+    const doc = await Model.findOneAndDelete(await scopeWrite(new AccessContext(user), collection, { _id: id })).exec();
 
     if (!doc) {
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
     }
 
+    // Messages only exist inside their conversation.
+    if (collection === 'conversations') {
+      await Message.deleteMany({ conversationId: id }).exec();
+    }
+
     return NextResponse.json({ message: 'Document deleted successfully' });
   } catch (error) {
+    if (error instanceof AccessError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error('DELETE /api/db/[collection]/[id] error:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },

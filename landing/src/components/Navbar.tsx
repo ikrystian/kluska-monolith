@@ -1,24 +1,25 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, Menu, X } from 'lucide-react';
+import { Wordmark } from './Wordmark';
 
 const navLinks = [
-  { name: 'Moduły', href: '#funkcje' },
-  { name: 'Bieganie', href: '#bieganie' },
-  { name: 'Kalkulator', href: '#kalkulator' },
-  { name: 'Offline', href: '#offline' },
+  { name: 'Korzyści', href: '#korzysci' },
+  { name: 'Jak to działa', href: '#funkcje' },
+  { name: 'Dla trenerów', href: '#trenerzy' },
+  { name: 'Cennik', href: '#cennik' },
   { name: 'FAQ', href: '#faq' },
 ];
 
-export function Wordmark({ className = '' }: { className?: string }) {
-  return (
-    <span className={`display uppercase leading-none tracking-[0.035em] [font-kerning:none] ${className}`}>
-      Leniwa<span className="text-accent">·</span>Kluska
-    </span>
-  );
-}
-
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -28,38 +29,40 @@ export function Navbar() {
   }, [open]);
 
   return (
-    <>
-      {/* utility line — scrolls away */}
-      <div className="border-b border-rule">
-        <div className="shell flex h-9 items-center justify-between gap-4 label text-ink-2">
-          <p className="truncate">
-            <span className="hidden sm:inline">Dziennik treningowy · Bieganie z GPS · Dieta · Trener — </span>
-            PWA i Android
-          </p>
-          <a href="/athlete/login" className="shrink-0 hover:text-ink transition-colors">
-            Zaloguj się
-          </a>
-        </div>
-      </div>
-
-      <header className="sticky top-0 z-50 bg-paper/95 backdrop-blur-sm border-b border-rule">
-        <div className="shell flex h-16 items-center justify-between gap-6">
-          <a href="#" aria-label="Leniwa Kluska — strona główna" className="text-2xl sm:text-[1.75rem]">
+    <header className="sticky top-0 z-50 px-3 pt-3 sm:px-4">
+      <div
+        className={`mx-auto max-w-[72rem] rounded-[20px] border bg-card/90 backdrop-blur-md transition-[border-color,box-shadow] duration-200 ${
+          scrolled || open
+            ? 'border-rule shadow-float'
+            : 'border-transparent'
+        }`}
+      >
+        <div className="flex h-14 items-center justify-between gap-4 pl-3 pr-2 sm:pl-4">
+          <a href="#" aria-label="Leniwa Kluska — strona główna">
             <Wordmark />
           </a>
 
-          <nav aria-label="Sekcje" className="hidden lg:flex items-center gap-7">
+          <nav aria-label="Sekcje" className="hidden items-center gap-1 lg:flex">
             {navLinks.map((l) => (
-              <a key={l.href} href={l.href} className="text-[0.9375rem] text-ink-2 hover:text-ink transition-colors">
+              <a
+                key={l.href}
+                href={l.href}
+                className="rounded-[var(--radius-pill)] px-3.5 py-2 text-sm font-medium text-ink-2 transition-colors hover:bg-paper-2 hover:text-ink"
+              >
                 {l.name}
               </a>
             ))}
           </nav>
 
-          <div className="flex items-center gap-2">
-            <a href="/athlete/dashboard" className="btn btn-primary hidden sm:inline-flex !min-h-10 !px-4 text-sm">
-              Otwórz aplikację
-              <ArrowRight className="size-4" aria-hidden />
+          <div className="flex items-center gap-1.5">
+            <a
+              href="/athlete/login"
+              className="hidden rounded-[var(--radius-pill)] px-3.5 py-2 text-sm font-medium text-ink-2 transition-colors hover:text-ink sm:block"
+            >
+              Zaloguj się
+            </a>
+            <a href="/athlete/dashboard" className="btn btn-primary btn-sm hidden min-[420px]:inline-flex">
+              Zacznij za darmo
             </a>
             <button
               type="button"
@@ -67,7 +70,7 @@ export function Navbar() {
               aria-expanded={open}
               aria-controls="mobile-menu"
               aria-label={open ? 'Zamknij menu' : 'Otwórz menu'}
-              className="lg:hidden grid size-10 place-items-center rounded-[var(--radius-ui)] border border-rule hover:border-ink transition-colors"
+              className="grid size-10 place-items-center rounded-[var(--radius-pill)] text-ink transition-colors hover:bg-paper-2 lg:hidden"
             >
               {open ? <X className="size-5" /> : <Menu className="size-5" />}
             </button>
@@ -75,31 +78,29 @@ export function Navbar() {
         </div>
 
         {open && (
-          <div id="mobile-menu" className="lg:hidden border-t border-rule bg-paper">
-            <nav aria-label="Sekcje" className="shell py-2">
-              {navLinks.map((l) => (
-                <a
-                  key={l.href}
-                  href={l.href}
-                  onClick={() => setOpen(false)}
-                  className="flex items-center justify-between border-b border-rule py-4 display text-3xl"
-                >
-                  {l.name}
-                  <ArrowRight className="size-5 text-ink-2" aria-hidden />
-                </a>
-              ))}
-              <div className="grid gap-2 py-5 sm:grid-cols-2">
-                <a href="/athlete/dashboard" className="btn btn-primary">
-                  Otwórz aplikację
-                </a>
-                <a href="/athlete/login" className="btn btn-ghost">
-                  Zaloguj się
-                </a>
-              </div>
-            </nav>
-          </div>
+          <nav id="mobile-menu" aria-label="Sekcje" className="border-t border-rule px-2 pb-3 pt-2 lg:hidden">
+            {navLinks.map((l) => (
+              <a
+                key={l.href}
+                href={l.href}
+                onClick={() => setOpen(false)}
+                className="flex items-center justify-between rounded-[var(--radius-ui)] px-3 py-3.5 font-display text-xl font-semibold tracking-[-0.02em] hover:bg-paper-2"
+              >
+                {l.name}
+                <ArrowRight className="size-4 text-ink-2" aria-hidden />
+              </a>
+            ))}
+            <div className="mt-2 grid gap-2 px-1 sm:grid-cols-2">
+              <a href="/athlete/dashboard" className="btn btn-primary">
+                Zacznij za darmo
+              </a>
+              <a href="/athlete/login" className="btn btn-ghost">
+                Zaloguj się
+              </a>
+            </div>
+          </nav>
         )}
-      </header>
-    </>
+      </div>
+    </header>
   );
 }

@@ -11,28 +11,26 @@ export async function GET(
 
     await connectToDatabase();
 
-    // Get social profile
-    const profile = await SocialProfile.findOne({ userId }).exec();
+    // Independent lookups run in parallel — each one is a full round trip to Atlas.
+    const [profile, posts, records] = await Promise.all([
+      SocialProfile.findOne({ userId }).exec(),
+      SocialPost.find({ authorId: userId }).sort({ createdAt: -1 }).exec(),
+      // Personal records (top 5 by achievement date)
+      PersonalRecord.find({ athleteId: userId })
+        .sort({ achievedAt: -1 })
+        .limit(5)
+        .exec(),
+    ]);
 
     if (!profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
-    // Get post count and total likes
-    const posts = await SocialPost.find({ authorId: userId }).exec();
+    // Post count and total likes
     const totalLikes = posts.reduce((sum, post) => sum + (post.likes?.length || post.likesCount || 0), 0);
 
-    // Get recent posts (last 6)
-    const recentPosts = await SocialPost.find({ authorId: userId })
-      .sort({ createdAt: -1 })
-      .limit(6)
-      .exec();
-
-    // Get personal records (top 5 by achievement date)
-    const records = await PersonalRecord.find({ athleteId: userId })
-      .sort({ achievedAt: -1 })
-      .limit(5)
-      .exec();
+    // Recent posts (last 6) — already sorted newest first
+    const recentPosts = posts.slice(0, 6);
 
     return NextResponse.json({
       profile: profile.toJSON(),

@@ -1,8 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useCallback, useState, useEffect, useRef } from 'react';
-import { useUser } from '@/lib/db-hooks';
-import { apiFetch } from '@/lib/api-client';
+import React, { createContext, useContext, useCallback } from 'react';
+import useSWR from 'swr';
+import { useUser, swrFetcher } from '@/lib/db-hooks';
 import { UserProfile } from '@/lib/types';
 
 interface UserProfileContextType {
@@ -16,58 +16,26 @@ const UserProfileContext = createContext<UserProfileContextType | undefined>(und
 
 export function UserProfileProvider({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const userIdRef = useRef<string | null>(null);
 
-  const fetchUserProfile = useCallback(async (userId: string) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-
-      const response = await apiFetch(`/api/db/users/${userId}`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch user profile: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      setUserProfile(result.data || null);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
-      setUserProfile(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!isUserLoading) {
-      if (user?.uid) {
-        userIdRef.current = user.uid;
-        fetchUserProfile(user.uid);
-      } else {
-        userIdRef.current = null;
-        setUserProfile(null);
-        setIsLoading(false);
-      }
-    }
-  }, [isUserLoading, user?.uid, fetchUserProfile]);
+  // Same key as `useDoc('users', uid)`, so pages reading the profile share this
+  // request and its cache instead of fetching the document a second time after
+  // the layout has already waited for it.
+  const key = !isUserLoading && user?.uid ? `/api/db/users/${user.uid}` : null;
+  const { data, error, isLoading, mutate } = useSWR<UserProfile>(key, swrFetcher, {
+    // Never show the previous account's profile while switching users.
+    keepPreviousData: false,
+  });
 
   const refetch = useCallback(async () => {
-    if (userIdRef.current) {
-      await fetchUserProfile(userIdRef.current);
-    }
-  }, [fetchUserProfile]);
+    await mutate();
+  }, [mutate]);
 
   return (
     <UserProfileContext.Provider
       value={{
-        userProfile,
+        userProfile: key ? data ?? null : null,
         isLoading: isUserLoading || isLoading,
-        error,
+        error: error instanceof Error ? error : error ? new Error('Unknown error') : null,
         refetch,
       }}
     >

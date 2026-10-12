@@ -28,7 +28,7 @@ export interface UseDocResult<T> {
   refetch: () => void;
 }
 
-async function swrFetcher(url: string) {
+export async function swrFetcher(url: string) {
   const response = await apiFetch(url);
   if (!response.ok) {
     throw new Error(`Failed to fetch: ${response.statusText}`);
