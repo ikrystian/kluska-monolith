@@ -1,9 +1,14 @@
-/* Hallmark · genre: atmospheric · macrostructure: Feature Stack · F2 sticky-scroll knobs: pinned=right, content=app screens, pins=5
+/* Hallmark · genre: atmospheric · macrostructure: Feature Stack · F2 pinned scroll-spy (3-col: statements | screen | statements) + chapter rails
  * theme: custom · vibe: "after-hours gym, ember and volt, graphite" · paper: oklch(14.5% 0.012 45) · accent: oklch(70% 0.19 45)
  * display: Space Grotesk 700 · body: Geist · axes: dark / grotesk-sans / warm
- * hero: H8 mockup split → stack-of-3 app screens, floating no-frame, clipped by the fold
- * nav: N12 banner + retract · footer: Ft2 inline single line · CTA: C4 sticky bottom bar (mobile)
- * enrichment: Tier A HTML-built app screens + existing stills · studied: no · context: inferred
+ * hero: left-aligned column + scattered app-UI fragments (no frame), static
+ * nav: N6-derived centred stack (per reference) · footer: Ft5 statement + three link groups · CTA: closing band
+ * enrichment: Tier A HTML-built app screens + existing stills · light "sheet" cards on dark paper for the rails
+ * studied: yes · DNA-source: url (browsed live) · source-url: https://www.evolvetrainingapp.com/ · rhythm: observed in browser
+ * adopted from the reference: structure and content presentation only — Kluska's own tokens, fonts and Polish copy are kept
+ * pre-emit critique: P4 H4 E4 S4 R4 V3 (macrostructure family unchanged from the previous build, by request)
+ * contrast: pass (40–41) · nav: N6-derived · footer: Ft5 + link groups · slop: pass (42–45) · honest: pass (46) · chrome: pass (47)
+ * tokens: pass (48) · responsive: pass (49) · mobile: pass (34, 49, 50–57) · icons: pass (30)
  */
 @import "tailwindcss";
 
@@ -301,6 +306,7 @@
 
   /* an app screen — real UI, no device frame; higher = lighter */
   .screen {
+    color: var(--color-ink);
     background: var(--color-screen);
     border: 1px solid var(--color-rule-strong);
     border-radius: 24px;
@@ -356,5 +362,82 @@
     color: var(--color-receipt-ink);
     mask: conic-gradient(from -45deg at bottom, transparent, black 1deg 89deg, transparent 90deg) 50% / calc(var(--tooth) * 2) 100%;
     padding-bottom: calc(var(--tooth) + 1.5rem);
+  }
+}
+
+/* ---------- chapter rails: light "sheet" cards on the dark page (appended) ---------- */
+
+@theme {
+  --color-sheet: oklch(94.5% 0.012 80);
+  --color-sheet-2: oklch(89.5% 0.014 78);
+  --color-sheet-ink: oklch(19% 0.015 50);
+  --color-sheet-ink-2: oklch(42% 0.016 55);
+  --color-sheet-rule: oklch(80% 0.016 75);
+  --color-sheet-accent: oklch(47% 0.16 40);
+}
+
+@layer base {
+  :root {
+    --shell-pad: 1rem;
+    --header-h: 3.75rem;
+  }
+
+  @media (min-width: 640px) {
+    :root {
+      --shell-pad: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    :root {
+      --shell-pad: 2rem;
+      --header-h: 6.5rem;
+    }
+  }
+}
+
+@layer components {
+  /* light card — the rail cards and the pricing receipt sit on it */
+  .sheet {
+    background: var(--color-sheet);
+    color: var(--color-sheet-ink);
+    border-radius: var(--radius-card);
+  }
+
+  .sheet .muted {
+    color: var(--color-sheet-ink-2);
+  }
+
+  .sheet .well {
+    background: var(--color-sheet-2);
+    border-radius: var(--radius-ui);
+  }
+
+  /* horizontal card rail — scrolls inside itself, aligned to the page shell on the left */
+  .rail {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    padding-inline: max(var(--shell-pad), calc((100% - 76rem) / 2 + var(--shell-pad)));
+    scroll-padding-inline: max(var(--shell-pad), calc((100% - 76rem) / 2 + var(--shell-pad)));
+  }
+
+  .rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .rail > * {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+
+  /* the pinned stage of the scroll-spy section */
+  .pin-stage {
+    position: sticky;
+    top: var(--header-h);
+    height: calc(100dvh - var(--header-h));
   }
 }

@@ -1,5 +1,4 @@
 import { Plus } from 'lucide-react';
-import { reveal } from '../lib/reveal';
 
 const faqs = [
   {
@@ -35,8 +34,8 @@ const faqs = [
 export function Faq() {
   return (
     <section id="faq" aria-labelledby="faq-title" className="section bg-paper-2">
-      <div className="shell grid gap-10 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:gap-16">
-        <div {...reveal(0)} className="lg:sticky lg:top-28 lg:self-start">
+      <div className="shell grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:gap-16">
+        <div className="lg:sticky lg:top-36 lg:self-start">
           <h2 id="faq-title" className="h-section">
             Pytania przed pierwszym treningiem.
           </h2>
@@ -46,14 +45,13 @@ export function Faq() {
         <div className="space-y-2.5">
           {faqs.map((f, i) => (
             <details
-              {...reveal(Math.min(i, 4))}
               key={f.q}
               open={i === 0}
-              className="group rounded-[20px] border border-rule bg-card transition-colors open:border-rule-strong"
+              className="group rounded-[20px] border border-rule bg-paper transition-colors open:border-rule-strong"
             >
               <summary className="flex cursor-pointer list-none items-center justify-between gap-6 rounded-[20px] px-5 py-5 sm:px-6 [&::-webkit-details-marker]:hidden">
                 <span className="text-[1.0625rem] font-semibold">{f.q}</span>
-                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-paper-2 transition-colors group-open:bg-ink group-open:text-paper">
+                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-paper-3 transition-colors group-open:bg-ink group-open:text-paper">
                   <Plus
                     className="size-4 transition-transform duration-200 ease-[var(--ease-out)] group-open:rotate-45"
                     aria-hidden

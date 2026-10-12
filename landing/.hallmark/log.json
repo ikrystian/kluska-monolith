@@ -1,6 +1,18 @@
 [
  {
   "date": "2026-10-12",
+  "macrostructure": "Feature Stack",
+  "theme": "custom",
+  "theme_axes": "dark / grotesk-sans / warm",
+  "vibe": "after-hours gym, ember and volt, graphite — structure studied from evolvetrainingapp.com",
+  "enrichment": "Tier A HTML-built app screens + existing stills; scattered app-UI fragments in the hero",
+  "nav": "N6-derived centred stack",
+  "footer": "Ft5 statement + three link groups",
+  "studied": "https://www.evolvetrainingapp.com/",
+  "brief": "Leniwa Kluska · landing layout and content presentation after the Evolve reference (pinned scroll-spy, chapters with card rails)"
+ },
+ {
+  "date": "2026-10-12",
   "macrostructure": "Bento Grid",
   "theme": "custom",
   "theme_axes": "light / grotesk-sans / warm",

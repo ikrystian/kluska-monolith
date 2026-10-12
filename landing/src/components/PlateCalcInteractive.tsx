@@ -99,7 +99,7 @@ export function PlateCalcInteractive() {
             Czwarta seria przysiadów to nie czas na matematykę. Wpisz ciężar — aplikacja rozpisze talerze na stronę.
             Spróbuj tutaj, to ten sam kalkulator.
           </p>
-          <figure {...reveal(2)} className="stage mt-10 hidden overflow-hidden lg:block">
+          <figure {...reveal(2)} className="surface mt-10 hidden overflow-hidden lg:block">
             <img
               src="/images/plates-stack.webp"
               alt="Stos kolorowych talerzy olimpijskich od 25 do 2,5 kg"
@@ -111,7 +111,7 @@ export function PlateCalcInteractive() {
           </figure>
         </div>
 
-        <div {...reveal(1)} className="card overflow-hidden">
+        <div {...reveal(1)} className="surface overflow-hidden">
           <div className="grid gap-6 border-b border-rule p-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end sm:p-7">
             <div>
               <label htmlFor="target" className="label text-ink-2">
@@ -159,7 +159,7 @@ export function PlateCalcInteractive() {
 
             <fieldset>
               <legend className="label text-ink-2">Gryf</legend>
-              <div className="mt-2 inline-flex rounded-[var(--radius-pill)] bg-paper-2 p-1">
+              <div className="mt-2 inline-flex rounded-[var(--radius-pill)] bg-paper p-1">
                 {[
                   [20, 'Męski 20 kg'],
                   [15, 'Damski 15 kg'],
@@ -173,7 +173,7 @@ export function PlateCalcInteractive() {
                       if (target < (w as number)) setTarget(w as number);
                     }}
                     className={`h-10 whitespace-nowrap rounded-[var(--radius-pill)] px-4 text-sm font-semibold transition-colors ${
-                      bar === w ? 'bg-card text-ink shadow-float' : 'text-ink-2 hover:text-ink'
+                      bar === w ? 'bg-paper-3 text-ink' : 'text-ink-2 hover:text-ink'
                     }`}
                   >
                     {l}
@@ -199,11 +199,11 @@ export function PlateCalcInteractive() {
             ))}
           </div>
 
-          <div className="bg-paper-2 px-3 pt-6 sm:px-7">
+          <div className="bg-paper-3 px-3 pt-6 sm:px-7">
             <BarbellSide plates={plates} />
           </div>
 
-          <div className="bg-paper-2 px-5 pb-7 pt-4 sm:px-7" aria-live="polite">
+          <div className="bg-paper-3 px-5 pb-7 pt-4 sm:px-7" aria-live="polite">
             <p className="label text-ink-2">Na każdą stronę</p>
             {grouped.length === 0 ? (
               <p className="mt-2">Sam gryf — {bar} kg.</p>

@@ -1,6 +1,6 @@
 {
   "name": "athlete-spa",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -12,7 +12,7 @@
     "cap:sync": "npx cap sync",
     "cap:open:android": "npx cap open android",
     "cap:run:android": "npx cap run android",
-    "cap:distribute:android": "cd android && ./gradlew assembleRelease appDistributionUploadRelease"
+    "cap:distribute:android": "npm run build && npx cap sync && cd android && ./gradlew assembleRelease && firebase appdistribution:distribute app/build/outputs/apk/release/app-release.apk --app 1:612157445461:android:505ddb0428648a6061cbdc --testers \"krystian@bpcoders.pl,michalpiotrduma@gmail.com\""
   },
   "dependencies": {
     "@capacitor/app": "^8.1.1",
