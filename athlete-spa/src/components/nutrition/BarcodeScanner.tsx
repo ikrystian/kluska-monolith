@@ -33,7 +33,8 @@ async function ensureCameraPermission(): Promise<boolean> {
         return requested.camera === 'granted';
     } catch (err) {
         console.error('Camera permission request failed:', err);
-        return false;
+        // Do not prematurely block if the plugin call had an error; let getUserMedia try
+        return true;
     }
 }
 
@@ -59,24 +60,39 @@ export function BarcodeScanner({ onDetected, paused = false }: BarcodeScannerPro
         });
         scannerRef.current = scanner;
 
+        const onScanSuccess = (decodedText: string) => {
+            if (pausedRef.current || cancelled) return;
+            // The same frame fires repeatedly — only report a code once
+            if (lastCodeRef.current === decodedText) return;
+            lastCodeRef.current = decodedText;
+            onDetected(decodedText);
+        };
+        const onScanFailure = () => {
+            // per-frame "no code found" noise — ignore
+        };
+
         ensureCameraPermission()
-            .then((granted) => {
+            .then(async (granted) => {
                 if (!granted) throw new Error('camera-permission-denied');
                 if (cancelled) return;
-                return scanner.start(
-                    { facingMode: 'environment' },
-                    { fps: 10, qrbox: { width: 240, height: 160 } },
-                    (decodedText) => {
-                        if (pausedRef.current || cancelled) return;
-                        // The same frame fires repeatedly — only report a code once
-                        if (lastCodeRef.current === decodedText) return;
-                        lastCodeRef.current = decodedText;
-                        onDetected(decodedText);
-                    },
-                    () => {
-                        // per-frame "no code found" noise — ignore
-                    }
-                );
+
+                try {
+                    return await scanner.start(
+                        { facingMode: 'environment' },
+                        { fps: 20, qrbox: { width: 320, height: 240 } },
+                        onScanSuccess,
+                        onScanFailure
+                    );
+                } catch (envErr) {
+                    if (cancelled) return;
+                    console.warn('Environment camera start failed, falling back to default/user camera:', envErr);
+                    return await scanner.start(
+                        { facingMode: 'user' },
+                        { fps: 20, qrbox: { width: 320, height: 240 } },
+                        onScanSuccess,
+                        onScanFailure
+                    );
+                }
             })
             .catch((err) => {
                 if (cancelled) return;

@@ -1,0 +1,63 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000;overflow:hidden}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+</head><body>
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { W, H, makeRenderer, rubberFloorTexture, makePlate, finish, rand } from './common.js';
+
+const { renderer, scene } = makeRenderer({ exposure: 1.0, bg: 0x0d0a08 });
+scene.fog = new THREE.Fog(0x0d0a08, 1.6, 4.2);
+
+const floorTex = rubberFloorTexture(2048, ['#26231f', '#302c27', '#3d3832'], '#0f0d0b');
+floorTex.repeat.set(6, 6);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.92 }));
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+scene.add(floor);
+
+function stack(list, x, z) {
+  let y = 0;
+  list.forEach((kg, i) => {
+    const p = makePlate(kg);
+    const t = p.userData.thickness;
+    p.position.set(x + (rand() - 0.5) * 0.012, y + t / 2, z + (rand() - 0.5) * 0.012);
+    p.rotation.y = rand() * Math.PI * 2;
+    p.rotation.x = (rand() - 0.5) * 0.01;
+    scene.add(p);
+    y += t + 0.0015;
+  });
+}
+stack([25, 25, 25, 20, 20, 15, 10, 5, 2.5], 0, 0);
+stack([20, 20, 20, 15, 15], -0.62, -0.42);
+stack([25, 25, 10], 0.55, -0.7);
+
+const key = new THREE.SpotLight(0xfff8f0, 48, 0, Math.PI / 7, 0.8, 1.6);
+key.position.set(-0.9, 2.6, 0.6);
+key.target.position.set(0, 0.1, 0);
+key.castShadow = true;
+key.shadow.mapSize.set(4096, 4096);
+key.shadow.bias = -0.0002;
+scene.add(key, key.target);
+
+const rim = new THREE.SpotLight(0xff7a3d, 30, 0, Math.PI / 8, 0.9, 1.4);
+rim.position.set(1.4, 0.9, -1.6);
+rim.target.position.set(0, 0.1, 0);
+scene.add(rim, rim.target);
+
+const cam = new THREE.PerspectiveCamera(30, W / H, 0.01, 50);
+cam.position.set(0.55, 0.85, 1.0);
+cam.lookAt(-0.02, 0.1, 0);
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, cam));
+composer.addPass(new BokehPass(scene, cam, { focus: cam.position.distanceTo(new THREE.Vector3(0, 0.18, 0)), aperture: 0.006, maxblur: 0.01 }));
+composer.addPass(new OutputPass());
+composer.render();
+finish();
+</script>
+</body></html>

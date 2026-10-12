@@ -1,0 +1,303 @@
+/* Hallmark · genre: editorial · macrostructure: Photographic (with Workbench tabs) · theme: custom "carbon, iron, ember"
+ * paper oklch(14% 0.008 50) · accent oklch(64% 0.19 38) ember · display Archivo (condensed 800) + body Schibsted Grotesk · mono JetBrains Mono
+ * axes: dark / display-condensed / warm · nav: N6-derived masthead · footer: Ft1 mast-headed · enrichment: Tier C generated stills (three.js renders)
+ */
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Schibsted Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Archivo', 'Schibsted Grotesk', ui-sans-serif, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  /* surfaces — warm carbon; --color-paper matches the render backdrops so photos bleed in */
+  --color-paper: oklch(14% 0.008 50);
+  --color-paper-2: oklch(18% 0.009 50);
+  --color-paper-3: oklch(22.5% 0.01 50);
+  --color-ink: oklch(94.5% 0.007 78);
+  --color-ink-2: oklch(72% 0.01 70);
+  --color-rule: oklch(27% 0.01 50);
+  --color-rule-strong: oklch(42% 0.01 55);
+
+  /* deeper bands for the photographic folds */
+  --color-night: oklch(11% 0.007 50);
+  --color-night-2: oklch(16% 0.008 50);
+  --color-night-ink: oklch(94.5% 0.007 78);
+  --color-night-ink-2: oklch(72% 0.01 70);
+  --color-night-rule: oklch(25% 0.009 50);
+
+  /* ember — the single accent */
+  --color-accent: oklch(66% 0.19 39);
+  --color-accent-hover: oklch(71% 0.17 42);
+  --color-accent-ink: oklch(74% 0.15 45);
+  --color-on-accent: oklch(14% 0.01 50);
+  --color-focus: oklch(70% 0.18 42);
+
+  /* IWF plate colours — data colours for the plate calculator only */
+  --color-plate-25: oklch(45% 0.17 27);
+  --color-plate-20: oklch(38% 0.13 262);
+  --color-plate-15: oklch(76% 0.15 90);
+  --color-plate-10: oklch(43% 0.11 148);
+  --color-plate-5: oklch(93% 0.006 80);
+  --color-plate-2: oklch(24% 0.006 60);
+  --color-plate-1: oklch(70% 0.02 75);
+  --color-steel: oklch(72% 0.005 80);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --radius-ui: 4px;
+}
+
+@layer base {
+  html,
+  body {
+    overflow-x: clip;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  * {
+    border-color: var(--color-rule);
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 3px;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-style: normal;
+    overflow-wrap: anywhere;
+    min-width: 0;
+    text-wrap: balance;
+  }
+
+  /* ---------- scroll motion ---------- */
+
+  /* armed by useScrollReveal(); without it everything is simply visible */
+  .reveal-on [data-reveal] {
+    opacity: 0;
+    transition:
+      opacity 700ms var(--ease-out),
+      transform 900ms var(--ease-out);
+    transition-delay: calc(var(--i, 0) * 80ms);
+  }
+
+  .reveal-on [data-reveal='up'] {
+    transform: translate3d(0, 28px, 0);
+  }
+
+  /* photographs: fade in while the frame settles from a slight zoom */
+  .reveal-on [data-reveal='image'] {
+    transition-duration: 900ms;
+  }
+
+  .reveal-on [data-reveal='image'] img {
+    transform: scale(1.07);
+    transition: transform 1600ms var(--ease-out);
+  }
+
+  .reveal-on [data-reveal].is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  .reveal-on [data-reveal='image'].is-visible img {
+    transform: none;
+  }
+
+  /* tab panels swap with a short rise */
+  [role='tabpanel'] {
+    animation: panel-in 420ms var(--ease-out) both;
+  }
+
+  @keyframes panel-in {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 10px, 0);
+    }
+  }
+
+  /* parallax on full-bleed photographs, where scroll-driven animations exist */
+  @supports (animation-timeline: view()) {
+    .parallax {
+      overflow: hidden;
+    }
+
+    .parallax > img {
+      animation: parallax linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+    }
+
+    @keyframes parallax {
+      from {
+        transform: translate3d(0, -7%, 0) scale(1.14);
+      }
+      to {
+        transform: translate3d(0, 7%, 0) scale(1.14);
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      transition-duration: 120ms !important;
+      animation: none !important;
+    }
+  }
+}
+
+@layer components {
+  /* condensed display face; the variable font carries the width axis */
+  .display {
+    font-family: var(--font-display);
+    font-stretch: 68%;
+    font-weight: 800;
+    letter-spacing: -0.012em;
+    line-height: 0.96;
+  }
+
+  .label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .shell {
+    width: 100%;
+    max-width: 84rem;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .shell {
+      padding-inline: 2rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .shell {
+      padding-inline: 3rem;
+    }
+  }
+
+  /* buttons — one shape for the whole page */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.625rem;
+    min-height: 3rem;
+    padding: 0 1.375rem;
+    border-radius: var(--radius-ui);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    white-space: nowrap;
+    transition:
+      background-color 160ms var(--ease-out),
+      color 160ms var(--ease-out),
+      border-color 160ms var(--ease-out),
+      transform 120ms var(--ease-out);
+  }
+
+  .btn:active {
+    transform: translateY(1px);
+  }
+
+  .btn:disabled,
+  .btn[aria-disabled='true'] {
+    opacity: 0.45;
+    pointer-events: none;
+  }
+
+  .btn-primary {
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+
+  .btn-primary:hover {
+    background: var(--color-accent-hover);
+  }
+
+  .btn-ghost {
+    border: 1px solid var(--color-rule-strong);
+    color: var(--color-ink);
+  }
+
+  .btn-ghost:hover {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+
+  .on-night .btn-ghost {
+    border-color: var(--color-night-ink-2);
+    color: var(--color-night-ink);
+  }
+
+  .on-night .btn-ghost:hover {
+    background: var(--color-night-ink);
+    color: var(--color-night);
+  }
+
+  .on-night :focus-visible {
+    outline-color: var(--color-accent);
+  }
+
+  /* typographic link with a drawn underline */
+  .link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-weight: 600;
+    white-space: nowrap;
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 100% 1px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    padding-bottom: 2px;
+    transition: background-size 200ms var(--ease-out), color 160ms var(--ease-out);
+  }
+
+  .link:hover {
+    color: var(--color-accent-ink);
+  }
+
+  .on-night .link:hover {
+    color: var(--color-accent);
+  }
+}

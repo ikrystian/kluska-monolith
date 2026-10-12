@@ -367,9 +367,19 @@ export function ProfilePage() {
 
   // The camera switch mirrors the real OS permission (no local preference), so re-read it on mount
   useEffect(() => {
-    CameraPlugin.checkPermissions()
-      .then((status) => setCameraOn(status.camera === 'granted'))
-      .catch(() => undefined);
+    if (Capacitor.isNativePlatform()) {
+      CameraPlugin.checkPermissions()
+        .then((status) => setCameraOn(status.camera === 'granted'))
+        .catch(() => undefined);
+    } else if (typeof navigator !== 'undefined' && navigator.permissions?.query) {
+      navigator.permissions
+        .query({ name: 'camera' as PermissionName })
+        .then((status) => {
+          setCameraOn(status.state === 'granted');
+          status.onchange = () => setCameraOn(status.state === 'granted');
+        })
+        .catch(() => undefined);
+    }
   }, []);
 
   const handleCameraToggle = async (checked: boolean) => {
@@ -377,21 +387,32 @@ export function ProfilePage() {
       // An app can't revoke its own OS permission — point the user to system settings
       toast({
         title: 'Wyłączanie dostępu do aparatu',
-        description: 'Cofnij uprawnienie aparatu w ustawieniach systemowych: Aplikacje → LeniwaKluska → Uprawnienia.',
+        description: Capacitor.isNativePlatform()
+          ? 'Cofnij uprawnienie aparatu w ustawieniach systemowych: Aplikacje → LeniwaKluska → Uprawnienia.'
+          : 'Cofnij uprawnienie aparatu w ustawieniach przeglądarki (ikona kłódki/ustawień strony przy pasku adresu).',
       });
       return;
     }
     setIsRequestingCamera(true);
     try {
-      const status = await CameraPlugin.requestPermissions({ permissions: ['camera'] });
-      const granted = status.camera === 'granted';
-      setCameraOn(granted);
-      if (!granted) {
-        toast({
-          title: 'Brak dostępu do aparatu',
-          description: 'Włącz uprawnienie aparatu dla aplikacji w ustawieniach systemowych, aby skanować kody produktów.',
-          variant: 'destructive',
-        });
+      if (Capacitor.isNativePlatform()) {
+        const status = await CameraPlugin.requestPermissions({ permissions: ['camera'] });
+        const granted = status.camera === 'granted';
+        setCameraOn(granted);
+        if (!granted) {
+          toast({
+            title: 'Brak dostępu do aparatu',
+            description: 'Włącz uprawnienie aparatu dla aplikacji w ustawieniach systemowych, aby skanować kody produktów.',
+            variant: 'destructive',
+          });
+        }
+      } else {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error('getUserMedia not supported in this environment');
+        }
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream.getTracks().forEach((track) => track.stop());
+        setCameraOn(true);
       }
     } catch (error) {
       setCameraOn(false);
