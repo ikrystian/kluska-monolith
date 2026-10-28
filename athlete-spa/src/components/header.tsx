@@ -17,7 +17,7 @@ function getInitials(name: string | null | undefined) {
 
 export function AppHeader() {
   const { userProfile } = useUserProfile();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const navigate = useNavigate();
   const avatarImage = placeholderImages.find(img => img.id === 'avatar-male');
 
@@ -25,7 +25,7 @@ export function AppHeader() {
   // header. Everywhere else the header has to say where you are and offer a
   // way up — the hardware/gesture back was previously the only exit.
   const isRoot = isRootPath(pathname);
-  const screenTitle = getScreenTitle(pathname);
+  const screenTitle = getScreenTitle(pathname, search);
 
   const goBack = () => {
     haptic('tap');
