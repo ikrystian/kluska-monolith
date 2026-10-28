@@ -1,7 +1,7 @@
 'use client';
 
 import { apiFetch } from '@/lib/api-client';
-import { lazy, Suspense, useState, useEffect } from 'react';
+import { lazy, Suspense, useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,16 @@ import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Activity, Calendar, Clock, Route, TrendingUp, Heart, Mountain, Zap, Trophy, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
+import * as polyline from 'polyline-encoded';
+import {
+  buildKmSegments,
+  cumulativeDistances,
+  samplesFromStreams,
+  type LatLngTuple,
+  type PaceSample,
+} from '@/lib/run-pace';
+import { useThresholdPace } from '@/hooks/useThresholdPace';
+import { PaceDistribution } from '@/components/running/PaceDistribution';
 
 // Leaflet + its CSS only load when an activity that actually has a route is opened.
 const RouteMap = lazy(() =>
@@ -48,8 +58,18 @@ interface StravaDetailedActivity {
     average_heartrate?: number;
   }>;
   map?: {
+    polyline?: string;
     summary_polyline?: string;
   };
+}
+
+/** Per-second Strava streams, flattened server-side to `{ key: data[] }`. */
+interface StravaStreams {
+  time?: number[];
+  distance?: number[];
+  latlng?: LatLngTuple[];
+  velocity_smooth?: number[];
+  moving?: boolean[];
 }
 
 function formatPace(speedMs: number) {
@@ -77,6 +97,7 @@ export default function RunDetailStravaPage() {
   const navigate = useNavigate();
   const { activityId } = useParams();
   const [activity, setActivity] = useState<StravaDetailedActivity | null>(null);
+  const [streams, setStreams] = useState<StravaStreams | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -93,6 +114,7 @@ export default function RunDetailStravaPage() {
         }
         const data = await response.json();
         setActivity(data.data);
+        setStreams(data.streams ?? null);
       } catch (err) {
         console.error('Error fetching activity:', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
@@ -103,6 +125,42 @@ export default function RunDetailStravaPage() {
 
     fetchActivityDetails();
   }, [activityId]);
+
+  const routePolyline = activity?.map?.polyline || activity?.map?.summary_polyline;
+
+  // Route cut into kilometres, each coloured by Strava's own split pace
+  const kmSegments = useMemo(() => {
+    const splits = activity?.splits_metric;
+    if (!activity || !splits?.length) return [];
+    const splitPaces = splits.map((s) => (s.average_speed > 0 ? 1000 / s.average_speed : 0));
+
+    // Full-resolution GPS stream with matching distances — exact kilometre boundaries
+    if (streams?.latlng && streams.distance && streams.latlng.length === streams.distance.length) {
+      return buildKmSegments(streams.latlng, streams.distance, splitPaces);
+    }
+
+    // Fallback: the (simplified) polyline, its length stretched to the recorded distance
+    if (!routePolyline) return [];
+    const coords = polyline.decode(routePolyline);
+    const cumDist = cumulativeDistances(coords);
+    const scale = cumDist[cumDist.length - 1] > 0 ? activity.distance / cumDist[cumDist.length - 1] : 1;
+    return buildKmSegments(coords, cumDist.map((d) => d * scale), splitPaces);
+  }, [activity, streams, routePolyline]);
+
+  // Per-second velocity when streams are available, otherwise one sample per kilometre split
+  const paceSamples = useMemo<PaceSample[]>(() => {
+    if (streams?.time && streams.velocity_smooth) {
+      const samples = samplesFromStreams(streams.time, streams.velocity_smooth, streams.moving);
+      if (samples.length > 0) return samples;
+    }
+    return (activity?.splits_metric ?? [])
+      .filter((s) => s.average_speed > 0 && s.moving_time > 0)
+      .map((s) => ({ durationS: s.moving_time, speedMs: s.average_speed }));
+  }, [activity, streams]);
+
+  const { thresholdSecPerKm, source: thresholdSource, setThresholdPace } = useThresholdPace(
+    activity?.average_speed ? 1000 / activity.average_speed / 1.15 : 300
+  );
 
   const backButton = (
     <Button onClick={() => navigate('/athlete/running')} variant="ghost" className="mb-4">
@@ -150,10 +208,10 @@ export default function RunDetailStravaPage() {
                 <p className="text-sm text-muted-foreground">{activity.description}</p>
               )}
 
-              {activity.map?.summary_polyline && (
+              {routePolyline && (
                 <div className="rounded-lg border overflow-hidden">
                   <Suspense fallback={<Skeleton className="h-[400px] w-full" />}>
-                    <RouteMap polyline={activity.map.summary_polyline} />
+                    <RouteMap polyline={routePolyline} segments={kmSegments} />
                   </Suspense>
                 </div>
               )}
@@ -274,6 +332,18 @@ export default function RunDetailStravaPage() {
                 </>
               )}
 
+              {paceSamples.length > 0 && (
+                <>
+                  <Separator />
+                  <PaceDistribution
+                    samples={paceSamples}
+                    thresholdSecPerKm={thresholdSecPerKm}
+                    thresholdSource={thresholdSource}
+                    onThresholdChange={setThresholdPace}
+                  />
+                </>
+              )}
+
               {activity.splits_metric && activity.splits_metric.length > 0 && (
                 <>
                   <Separator />
@@ -281,7 +351,11 @@ export default function RunDetailStravaPage() {
                     <h3 className="font-semibold mb-3">Podziały na kilometry</h3>
                     <div className="space-y-2">
                       {activity.splits_metric.map((split, index) => (
-                        <div key={index} className="flex items-center justify-between text-sm border-l-4 border-[#FC4C02] pl-3 py-1">
+                        <div
+                          key={index}
+                          className="flex items-center justify-between text-sm border-l-4 border-[#FC4C02] pl-3 py-1"
+                          style={kmSegments[index] ? { borderLeftColor: kmSegments[index].color } : undefined}
+                        >
                           <span className="font-medium">Km {split.split}</span>
                           <div className="flex gap-6">
                             <span>{formatTime(split.elapsed_time)}</span>

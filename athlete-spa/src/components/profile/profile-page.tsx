@@ -9,7 +9,7 @@ import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link } from 'react-router-dom';
-import { Camera, Instagram, Facebook, Twitter, Loader2, Activity, CheckCircle2, XCircle, Footprints, Globe, UserPlus, MapPin, Bell, Music2 } from 'lucide-react';
+import { Camera, Instagram, Facebook, Twitter, Loader2, Activity, CheckCircle2, XCircle, Footprints, Globe, UserPlus, MapPin, Bell, Music2, IdCard, ArrowRight } from 'lucide-react';
 import { Geolocation } from '@capacitor/geolocation';
 import { Camera as CameraPlugin } from '@capacitor/camera';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -610,7 +610,22 @@ export function ProfilePage() {
       </section>
 
       <div className="grid gap-6 px-1 pt-6 md:grid-cols-3 md:gap-8 md:px-8">
-        <div className="md:col-span-1">
+        <div className="space-y-4 md:col-span-1">
+          {/* Summary ("profile card") entry point */}
+          <Link
+            to="/athlete/summary"
+            className="hero-ember texture-grain group relative flex items-center gap-4 overflow-hidden rounded-[1.75rem] p-5 text-white shadow-glow transition-transform duration-200 active:scale-[0.98]"
+          >
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-black/20">
+              <IdCard className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold">Twoje podsumowanie</p>
+              <p className="text-xs text-white/75">Kilometry, tony, treningi i więcej</p>
+            </div>
+            <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+
           {/* Running Statistics Card */}
           <Card className="overflow-hidden border-sky-500/20 bg-sky-500/[0.03]">
             <CardContent className="p-5 md:p-6">

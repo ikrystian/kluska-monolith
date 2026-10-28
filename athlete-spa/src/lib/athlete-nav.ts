@@ -7,6 +7,7 @@ import {
   Dumbbell,
   Footprints,
   History,
+  IdCard,
   Layers,
   LayoutDashboard,
   Map,
@@ -63,6 +64,7 @@ export const athleteNavItems: NavEntry[] = [
     label: 'Postępy',
     icon: TrendingUp,
     items: [
+      { href: '/athlete/summary', label: 'Podsumowanie', icon: IdCard },
       { href: '/athlete/progress', label: 'Postępy', icon: TrendingUp },
       { href: '/athlete/measurements', label: 'Pomiary', icon: Ruler },
       { href: '/athlete/goals', label: 'Cele i Trofea', icon: Trophy },

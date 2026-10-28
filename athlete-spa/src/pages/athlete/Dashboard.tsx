@@ -17,34 +17,9 @@ import type { TrainingSessionData } from '@/components/schedule/SessionDetailsDi
 import { ActiveChallenges } from '@/components/challenges/ActiveChallenges';
 import { FriendsActivityFeed } from '@/components/social/FriendsActivityFeed';
 import { useDashboardLayout, type DashboardSectionId, type DashboardSectionState } from '@/hooks/useDashboardLayout';
+import { Tile, TileLabel, TileValue } from '@/components/dashboard/tiles';
 
 /* ---------- Bento building blocks ---------- */
-
-const Tile = ({ to, className, children }: { to?: string; className?: string; children: ReactNode }) => {
-  const base = 'group relative block overflow-hidden rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-soft transition-all duration-200';
-  if (to) {
-    return (
-      <Link to={to} className={cn(base, 'hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lifted active:scale-[0.97]', className)}>
-        {children}
-      </Link>
-    );
-  }
-  return <div className={cn(base, className)}>{children}</div>;
-};
-
-const TileLabel = ({ children }: { children: ReactNode }) => (
-  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{children}</p>
-);
-
-const TileValue = ({ value, unit, isLoading }: { value: string | number; unit?: string; isLoading?: boolean }) =>
-  isLoading ? (
-    <Skeleton className="mt-2 h-8 w-20" />
-  ) : (
-    <p className="mt-2 font-headline text-[1.7rem] font-bold leading-none tracking-tight tabular-nums">
-      {value}
-      {unit && <span className="ml-1 text-sm font-semibold text-muted-foreground">{unit}</span>}
-    </p>
-  );
 
 function ProgressRing({ value, max, size = 116, stroke = 11, children }: { value: number; max: number; size?: number; stroke?: number; children?: ReactNode }) {
   const r = (size - stroke) / 2;
@@ -98,7 +73,7 @@ const SectionHeader = ({ title, sub, href, linkLabel = 'Wszystkie' }: { title: s
 /* ---------- Editable dashboard sections ---------- */
 
 const SECTION_META: Record<DashboardSectionId, { title: string; icon: LucideIcon }> = {
-  bento: { title: 'Podsumowanie', icon: LayoutGrid },
+  bento: { title: 'Przegląd', icon: LayoutGrid },
   challenges: { title: 'Wyzwania biegowe', icon: Trophy },
   'recent-goals': { title: 'Ostatnie treningi i cele', icon: Dumbbell },
   'friends-activity': { title: 'Aktywność znajomych', icon: Users },
@@ -957,11 +932,6 @@ export default function AthleteDashboardPage() {
               </Button>
             )}
           </div>
-          <h1 className="mt-2.5 font-display text-[1.85rem] font-extrabold uppercase leading-[1.08] tracking-tight md:text-5xl">
-            Cześć, {firstName}!
-            <br />
-            <span className="text-gradient-ember">Czas na ruch</span>
-          </h1>
         </section>
 
         {isEditing ? (

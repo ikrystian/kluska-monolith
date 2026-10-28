@@ -15,6 +15,7 @@ import { ArrowLeft, Dumbbell, Activity, Clock, MessageSquare, Building2, Repeat,
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { useDoc, useCollection, useUser } from '@/lib/db-hooks';
+import { resolveMediaUrl } from '@/lib/api-client';
 import type { WorkoutLog, Exercise, Gym, PersonalRecord } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -89,7 +90,7 @@ export default function SessionSummaryPage() {
         <CardContent className="space-y-6">
           {workoutLog.photoURL && (
             <div className="relative aspect-video w-full overflow-hidden rounded-lg">
-              <img src={workoutLog.photoURL} alt={`Zdjęcie z treningu ${workoutLog.workoutName}`} className="absolute inset-0 w-full h-full object-cover" />
+              <img src={resolveMediaUrl(workoutLog.photoURL)} alt={`Zdjęcie z treningu ${workoutLog.workoutName}`} className="absolute inset-0 w-full h-full object-cover" />
             </div>
           )}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

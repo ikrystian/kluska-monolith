@@ -12,6 +12,9 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDoc } from '@/lib/db-hooks';
 import { computeElevationGain, computeRunSplits } from '@/lib/geo';
+import { buildKmSegments, cumulativeDistances, samplesFromPoints, type LatLngTuple, type PaceSample } from '@/lib/run-pace';
+import { useThresholdPace } from '@/hooks/useThresholdPace';
+import { PaceDistribution } from '@/components/running/PaceDistribution';
 import type { RunningSession } from '@/lib/types';
 
 // Leaflet + its CSS only load when a run with a saved route is opened.
@@ -53,6 +56,25 @@ export default function RunDetailPage() {
   const elevationGain = useMemo(
     () => (session?.points ? computeElevationGain(session.points) : 0),
     [session?.points]
+  );
+
+  // Route cut into kilometres, each coloured by its split pace
+  const kmSegments = useMemo(() => {
+    if (!session?.points || splits.length === 0) return [];
+    const coords: LatLngTuple[] = session.points.map((p) => [p.lat, p.lng]);
+    return buildKmSegments(coords, cumulativeDistances(coords), splits.map((s) => s.avgPaceMinPerKm * 60));
+  }, [session?.points, splits]);
+
+  // GPS runs give a real distribution; manually logged ones only have the average pace
+  const paceSamples = useMemo<PaceSample[]>(() => {
+    if (!session) return [];
+    if (session.points && session.points.length > 1) return samplesFromPoints(session.points);
+    const seconds = session.duration * 60;
+    return seconds > 0 && session.distance > 0 ? [{ durationS: seconds, speedMs: (session.distance * 1000) / seconds }] : [];
+  }, [session]);
+
+  const { thresholdSecPerKm, source: thresholdSource, setThresholdPace } = useThresholdPace(
+    session?.avgPace ? (session.avgPace * 60) / 1.15 : 300
   );
 
   const backButton = (
@@ -119,7 +141,7 @@ export default function RunDetailPage() {
             {session.polyline && (
               <div className="rounded-lg border overflow-hidden">
                 <Suspense fallback={<Skeleton className="h-[400px] w-full" />}>
-                  <RouteMap polyline={session.polyline} />
+                  <RouteMap polyline={session.polyline} segments={kmSegments} />
                 </Suspense>
               </div>
             )}
@@ -158,16 +180,29 @@ export default function RunDetailPage() {
               </div>
             </div>
 
+            {paceSamples.length > 0 && (
+              <>
+                <Separator />
+                <PaceDistribution
+                  samples={paceSamples}
+                  thresholdSecPerKm={thresholdSecPerKm}
+                  thresholdSource={thresholdSource}
+                  onThresholdChange={setThresholdPace}
+                />
+              </>
+            )}
+
             {splits.length > 0 && (
               <>
                 <Separator />
                 <div>
                   <h3 className="font-semibold mb-3">Podziały na kilometry</h3>
                   <div className="space-y-2">
-                    {splits.map((split) => (
+                    {splits.map((split, index) => (
                       <div
                         key={split.km}
                         className="flex items-center justify-between text-sm border-l-4 border-primary pl-3 py-1"
+                        style={kmSegments[index] ? { borderLeftColor: kmSegments[index].color } : undefined}
                       >
                         <span className="font-medium">
                           Km {split.km}

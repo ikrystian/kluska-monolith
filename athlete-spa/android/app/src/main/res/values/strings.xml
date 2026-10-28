@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Athlete SPA</string>
+    <string name="title_activity_main">Athlete SPA</string>
+    <string name="package_name">com.athlete.spa</string>
+    <string name="custom_url_scheme">com.athlete.spa</string>
+    <string name="widget_description">Trening lub bieg w toku, a poza nim podsumowanie ostatnich 7 dni.</string>
+</resources>

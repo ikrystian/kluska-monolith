@@ -9,6 +9,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "lint": "eslint .",
+    "generate:icons": "bash scripts/generate-android-icons.sh",
+    "generate:assets": "bash scripts/generate-android-icons.sh --with-splash",
     "cap:sync": "npx cap sync",
     "cap:open:android": "npx cap open android",
     "cap:run:android": "npx cap run android",

@@ -58,7 +58,7 @@ export function AppHeader() {
             </Avatar>
             <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-volt ring-2 ring-background" />
           </span>
-          <span className="flex min-w-0 flex-col">
+          <span className="flex min-w-0 flex-col text-gradient-ember">
             #leniwakluska
           </span>
         </Link>
