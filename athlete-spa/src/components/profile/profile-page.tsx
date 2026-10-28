@@ -1,26 +1,59 @@
 'use client';
 
 import { apiFetch, getApiBaseUrl, getStoredToken, resolveMediaUrl } from '@/lib/api-client';
-import { lazy, Suspense, useState, useMemo, useEffect } from 'react';
+import { lazy, Suspense, useState, useMemo, useEffect, type ReactNode } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { App } from '@capacitor/app';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Link } from 'react-router-dom';
-import { Camera, Instagram, Facebook, Twitter, Loader2, Activity, CheckCircle2, XCircle, Footprints, Globe, UserPlus, MapPin, Bell, Music2, IdCard, ArrowRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useTheme } from 'next-themes';
+import {
+  Camera,
+  Instagram,
+  Facebook,
+  Twitter,
+  Loader2,
+  Activity,
+  CheckCircle2,
+  Footprints,
+  Globe,
+  UserPlus,
+  MapPin,
+  Bell,
+  Music2,
+  IdCard,
+  ArrowRight,
+  Sun,
+  Moon,
+  Monitor,
+  Vibrate,
+  Dumbbell,
+  Share2,
+  ShieldCheck,
+  User,
+  LogOut,
+  TriangleAlert,
+  Check,
+  Sparkles,
+  type LucideIcon,
+} from 'lucide-react';
 import { Geolocation } from '@capacitor/geolocation';
 import { Camera as CameraPlugin } from '@capacitor/camera';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { placeholderImages } from '@/lib/placeholder-images';
 import { useDoc, useCollection, useUser, useUpdateDoc } from '@/lib/db-hooks';
@@ -28,8 +61,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useToast } from '@/hooks/use-toast';
 import type { UserProfile, Gym } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { Switch } from '@/components/ui/switch';
 import { haptic, isHapticsEnabled, isHapticsSupported, setHapticsEnabled } from '@/lib/haptics';
 import {
@@ -54,6 +85,8 @@ import {
   unsubscribeFromPush,
 } from '@/lib/push';
 import { useUserProfile } from '@/contexts/UserProfileContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
 import type { RunningSession, StravaActivity } from '@/lib/types';
 
 // react-image-crop + its CSS only load when the athlete opens the avatar editor.
@@ -74,11 +107,128 @@ const profileSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
+const tint = (color: string, pct: number) => `color-mix(in srgb, ${color} ${pct}%, transparent)`;
+
+const ROLE_LABELS: Record<string, string> = {
+  athlete: 'Sportowiec',
+  trainer: 'Trener',
+  admin: 'Administrator',
+};
+
+function SectionCard({
+  icon: Icon,
+  color,
+  title,
+  subtitle,
+  badge,
+  children,
+  className,
+}: {
+  icon: LucideIcon;
+  color: string;
+  title: string;
+  subtitle?: string;
+  badge?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section
+      className={cn(
+        'overflow-hidden rounded-3xl border border-border/60 bg-card shadow-soft',
+        className
+      )}
+    >
+      <div
+        className="flex items-center justify-between gap-3 border-b border-border/50 px-4 py-3 md:px-5"
+        style={{ backgroundColor: tint(color, 8) }}
+      >
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-xl"
+            style={{ backgroundColor: tint(color, 18), color }}
+          >
+            <Icon className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <h2 className="truncate font-headline text-sm font-bold tracking-tight md:text-base">
+              {title}
+            </h2>
+            {subtitle && (
+              <p className="truncate text-[11px] text-muted-foreground">{subtitle}</p>
+            )}
+          </div>
+        </div>
+        {badge}
+      </div>
+      <div className="p-4 md:p-5">{children}</div>
+    </section>
+  );
+}
+
+function SettingRow({
+  icon: Icon,
+  color,
+  htmlFor,
+  title,
+  description,
+  control,
+  disabled,
+}: {
+  icon: LucideIcon;
+  color: string;
+  htmlFor?: string;
+  title: string;
+  description: string;
+  control: ReactNode;
+  disabled?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        'flex items-center justify-between gap-3.5 py-3.5 first:pt-0 last:pb-0',
+        disabled && 'opacity-60'
+      )}
+    >
+      <div className="flex min-w-0 items-start gap-3">
+        <span
+          className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl"
+          style={{ backgroundColor: tint(color, 15), color }}
+        >
+          <Icon className="h-4 w-4" />
+        </span>
+        <div className="min-w-0">
+          <FormLabel
+            htmlFor={htmlFor}
+            className="block cursor-pointer text-sm font-semibold leading-snug text-foreground"
+          >
+            {title}
+          </FormLabel>
+          <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+            {description}
+          </p>
+        </div>
+      </div>
+      <div className="shrink-0">{control}</div>
+    </div>
+  );
+}
+
+const THEME_OPTIONS = [
+  { id: 'light', label: 'Jasny', icon: Sun },
+  { id: 'dark', label: 'Ciemny', icon: Moon },
+  { id: 'system', label: 'System', icon: Monitor },
+] as const;
+
 export function ProfilePage() {
   const { toast } = useToast();
   const { user } = useUser();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const avatarImage = placeholderImages.find((img) => img.id === 'avatar-male');
   const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
+  const [guestLogoutOpen, setGuestLogoutOpen] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const hapticsSupported = useMemo(() => isHapticsSupported(), []);
   const [hapticsOn, setHapticsOn] = useState(() => isHapticsEnabled());

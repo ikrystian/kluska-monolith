@@ -18,10 +18,11 @@ export function BottomNav() {
     }
 
     const items = [
+        { href: '/athlete/social', icon: LayoutDashboard, label: 'Wall' },
         { href: '/athlete/dashboard', icon: LayoutDashboard, label: 'Panel' },
-        { href: '/athlete/calendar', icon: CalendarDays, label: 'Dziennik' },
         { href: '/athlete/log', icon: Play, label: 'Trenuj', primary: true },
-        { href: '/athlete/chat', icon: MessageSquare, label: 'Czat' },
+
+        { href: '/athlete/calendar', icon: CalendarDays, label: 'Kalendarz' },
     ];
 
     return (

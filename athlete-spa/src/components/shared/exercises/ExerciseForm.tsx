@@ -496,7 +496,7 @@ export function ExerciseFormDialog({
               </FormItem>
             )}
 
-            <DialogFooter className="pt-4">
+            <DialogFooter className="pt-4 gap-2 flex flex-row-reverse">
               <DialogClose asChild>
                 <Button type="button" variant="secondary" disabled={isSubmitting}>Anuluj</Button>
               </DialogClose>

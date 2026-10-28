@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Exercise, MuscleGroupName, MuscleGroup, WorkoutPlan } from '@/lib/types';
+import { Exercise, MuscleGroupName, MuscleGroup } from '@/lib/types';
 import { useCollection, useUser, useUpdateDoc, useDeleteDoc, useCreateDoc } from '@/lib/db-hooks';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,85 +56,33 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const [isBulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
-  const [displayCount, setDisplayCount] = useState(10);
 
-  // Fetch exercises based on role
-  const getExerciseQuery = () => {
-    if (!user?.uid) return undefined;
-
-    if (role === 'admin') {
-      return undefined; // Admin sees all
-    }
-
-    // Athlete and Trainer see public + own exercises + legacy (no owner)
-    return {
-      $or: [
-        { ownerId: { $in: ['public', user.uid] } },
-        { ownerId: { $exists: false } },
-        { ownerId: null }
-      ]
-    };
-  };
-
-  const { data: exercises, isLoading: exercisesLoading, refetch: refetchExercises } = useCollection<Exercise>(
-    user?.uid ? 'exercises' : null,
-    getExerciseQuery()
+  // Fetch all exercises from the library
+  const { data: exercises, isLoading, refetch: refetchExercises } = useCollection<Exercise>(
+    user?.uid ? 'exercises' : null
   );
 
-  // For athletes, also fetch exercises from assigned workout plans
-  const { data: assignedPlans } = useCollection<WorkoutPlan>(
-    role === 'athlete' && user?.uid ? 'workoutPlans' : null,
-    role === 'athlete' && user?.uid ? { assignedAthleteIds: { $in: [user.uid] } } : undefined
-  );
-
-  const exerciseIdsFromPlans = useMemo(() => {
-    const ids = new Set<string>();
-    if (assignedPlans) {
-      assignedPlans.forEach(plan => {
-        plan.workoutDays?.forEach(day => {
-          day.exercises?.forEach(ex => {
-            if (ex.exerciseId) ids.add(ex.exerciseId);
-          });
-        });
-      });
-    }
-    return Array.from(ids);
-  }, [assignedPlans]);
-
-  const { data: planExercises } = useCollection<Exercise>(
-    role === 'athlete' && exerciseIdsFromPlans.length > 0 ? 'exercises' : null,
-    exerciseIdsFromPlans.length > 0 ? { _id: { $in: exerciseIdsFromPlans } } : undefined
-  );
-
-  // Combine all exercises
   const allExercises = useMemo(() => {
-    const combined = new Map<string, Exercise>();
-    exercises?.forEach(ex => combined.set(ex.id, ex));
-    planExercises?.forEach(ex => combined.set(ex.id, ex));
-    return Array.from(combined.values());
-  }, [exercises, planExercises]);
-
-  const isLoading = exercisesLoading;
+    return exercises ?? [];
+  }, [exercises]);
 
   // Filter exercises
-  const filteredExercises = allExercises?.filter((exercise) => {
-    const matchesSearch = exercise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      exercise.mainMuscleGroups?.some(mg => mg.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      exercise.muscleGroup?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredExercises = useMemo(() => {
+    if (!allExercises) return [];
+    return allExercises.filter((exercise) => {
+      const matchesSearch = exercise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        exercise.mainMuscleGroups?.some(mg => mg.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        exercise.muscleGroup?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesMuscleGroup = selectedMuscleGroup === 'all' ||
-      exercise.mainMuscleGroups?.some(mg => mg.name === selectedMuscleGroup) ||
-      exercise.muscleGroup === selectedMuscleGroup;
+      const matchesMuscleGroup = selectedMuscleGroup === 'all' ||
+        exercise.mainMuscleGroups?.some(mg => mg.name === selectedMuscleGroup) ||
+        exercise.muscleGroup === selectedMuscleGroup;
 
-    return matchesSearch && matchesMuscleGroup;
-  });
+      return matchesSearch && matchesMuscleGroup;
+    });
+  }, [allExercises, searchTerm, selectedMuscleGroup]);
 
   const muscleGroupOptions = Object.values(MuscleGroupName).map(name => ({ label: name, value: name }));
-
-  // Reset display count when search or filter changes
-  useEffect(() => {
-    setDisplayCount(10);
-  }, [searchTerm, selectedMuscleGroup]);
 
   // Handlers
   const handleEdit = (exercise: Exercise) => {
@@ -266,39 +214,14 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     }
   };
 
-  // Pagination: Show only displayCount exercises
-  const paginatedExercises = useMemo(() => {
-    return filteredExercises?.slice(0, displayCount) ?? [];
-  }, [filteredExercises, displayCount]);
-
-  const hasMore = (filteredExercises?.length ?? 0) > displayCount;
-
-  // Virtualization setup
+  // Virtualization setup: virtualize all filtered exercises smoothly
   const parentRef = useRef<HTMLDivElement>(null);
   const rowVirtualizer = useVirtualizer({
-    count: paginatedExercises.length,
+    count: filteredExercises.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 128, // 120px height + 8px gap
     overscan: 5,
   });
-
-  // Detect scroll to load more exercises
-  useEffect(() => {
-    const scrollElement = parentRef.current;
-    if (!scrollElement) return;
-
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = scrollElement;
-      const scrolledToBottom = scrollHeight - scrollTop - clientHeight < 500;
-
-      if (scrolledToBottom && hasMore && !isLoading) {
-        setDisplayCount(prev => prev + 10);
-      }
-    };
-
-    scrollElement.addEventListener('scroll', handleScroll);
-    return () => scrollElement.removeEventListener('scroll', handleScroll);
-  }, [hasMore, isLoading]);
 
   return (
     <div className="container mx-auto p-4 md:p-8 h-full flex flex-col">
@@ -347,7 +270,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
             </div>
           ))}
         </div>
-      ) : paginatedExercises && paginatedExercises.length > 0 ? (
+      ) : filteredExercises && filteredExercises.length > 0 ? (
         <div
           ref={parentRef}
           className="flex-1 overflow-auto min-h-0"
@@ -362,7 +285,8 @@ export function ExercisesListView(props: ExercisesListViewProps) {
             }}
           >
             {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-              const exercise = paginatedExercises[virtualRow.index];
+              const exercise = filteredExercises[virtualRow.index];
+              if (!exercise) return null;
               return (
                 <div
                   key={exercise.id}

@@ -160,7 +160,7 @@ function AthleteLayoutContent() {
               {/* h-full so pages that build their own internal scroll region
                   (ExercisesListView's virtualized list, Log's builder) resolve
                   a real height off #outlet instead of collapsing to content. */}
-              <AnimatedOutlet className="lg:h-full" />
+              <AnimatedOutlet className="h-full" />
             </div>
             <BottomNav />
           </main>
