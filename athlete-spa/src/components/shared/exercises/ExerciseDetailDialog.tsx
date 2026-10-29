@@ -150,6 +150,25 @@ export function ExerciseDetailDialog({
                             </div>
                         )}
 
+                        {/* Setup Section (group/value pairs from DB) */}
+                        {exercise.setup && exercise.setup.length > 0 && (
+                            <div>
+                                <h3 className="font-semibold mb-2">Konfiguracja</h3>
+                                <div className="space-y-1.5">
+                                    {exercise.setup
+                                        .filter((item) => item.group !== 'Animacja' && item.group && item.value)
+                                        .map((item, idx) => (
+                                            <div key={idx} className="flex gap-2 text-sm">
+                                                <span className="text-muted-foreground shrink-0 min-w-[100px] font-medium">
+                                                    {item.group}
+                                                </span>
+                                                <span className="whitespace-pre-wrap">{item.value}</span>
+                                            </div>
+                                        ))}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Instructions/Description */}
                         <div>
                             <h3 className="font-semibold mb-2">Instrukcje</h3>

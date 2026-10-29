@@ -9,6 +9,7 @@ import { placeholderImages } from '@/lib/placeholder-images';
 import { resolveMediaUrl } from '@/lib/api-client';
 import { getScreenTitle, isRootPath } from '@/lib/athlete-nav';
 import { haptic } from '@/lib/haptics';
+import { cn } from '@/lib/utils';
 
 function getInitials(name: string | null | undefined) {
   if (!name) return 'U';
@@ -27,6 +28,10 @@ export function AppHeader() {
   const isRoot = isRootPath(pathname);
   const screenTitle = getScreenTitle(pathname, search);
 
+  // On the exercise library, keep the header pinned while scrolling (infinite
+  // list) — other screens tuck it away to reclaim reading space.
+  const keepHeaderVisible = /^\/athlete\/exercises/.test(pathname);
+
   const goBack = () => {
     haptic('tap');
     // A deep link (notification, shared URL) can land here with no history to
@@ -39,7 +44,15 @@ export function AppHeader() {
   };
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-30 flex transition-transform duration-300 ease-out group-data-[chrome=hidden]/chrome:-translate-y-full md:group-data-[chrome=hidden]/chrome:translate-y-0 h-16 shrink-0 items-center gap-3 border-b border-border/50 bg-background/70 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-2xl md:h-14 md:px-6">
+    <header
+      className={cn(
+        'fixed left-0 right-0 top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-border/50 bg-background/70 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-2xl transition-transform duration-300 ease-out md:h-14 md:px-6',
+        // Mobile chrome tucks away on scroll — but never on the exercise library.
+        keepHeaderVisible
+          ? ''
+          : 'group-data-[chrome=hidden]/chrome:-translate-y-full md:group-data-[chrome=hidden]/chrome:translate-y-0'
+      )}
+    >
       {/* Mobile: identity on root screens, back + title everywhere else */}
       {isRoot ? (
         <Link

@@ -259,7 +259,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   });
 
   return (
-    <div className="container mx-auto p-4 md:p-8 h-full flex flex-col">
+    <div className="container mx-auto p-4 md:p-8 pt-18 h-full flex flex-col">
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between flex-shrink-0">
         <h1 className="font-headline text-3xl font-bold">{title}</h1>
         <div className="flex gap-2 flex-wrap">

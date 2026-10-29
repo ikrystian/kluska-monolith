@@ -95,14 +95,28 @@ export async function GET(
     const queryParam = searchParams.get('query');
     const sortParam = searchParams.get('sort');
     const limitParam = searchParams.get('limit');
+    const skipParam = searchParams.get('skip');
+    const countParam = searchParams.get('count');
 
     // The client's filter is narrowed to the documents this user may read.
     const filter = await scopeRead(new AccessContext(user), collection, queryParam ? JSON.parse(queryParam) : {});
+
+    // count=1 → return only the number of documents matching the filter.
+    // Used for "all vs filtered" totals in paged views (e.g. exercise library).
+    if (countParam === '1') {
+      const total = await Model.countDocuments(filter);
+      return jsonWithEtag(request, { total });
+    }
+
     let query = Model.find(filter);
 
     if (sortParam) {
       const sortObj = JSON.parse(sortParam);
       query = query.sort(sortObj);
+    }
+
+    if (skipParam) {
+      query = query.skip(parseInt(skipParam, 10) || 0);
     }
 
     if (limitParam) {

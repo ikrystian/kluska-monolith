@@ -162,7 +162,7 @@ function AthleteLayoutContent() {
                 'relative z-10 flex-1 overflow-x-hidden overflow-y-auto min-h-0',
                 isActiveWorkoutSession
                   ? 'pb-[env(safe-area-inset-bottom)]'
-                  : 'pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-0'
+                  : 'pb-[calc(env(safe-area-inset-bottom))] md:pb-0'
               )}
             >
               {/* h-full so pages that build their own internal scroll region

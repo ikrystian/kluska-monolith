@@ -65,7 +65,7 @@ export function ExerciseCardHorizontal({
       onClick={() => onClick?.(exercise)}
     >
       {/* Image Section */}
-      <div className="relative w-[160px] h-full  sm:w-[80px] flex-shrink-0 bg-muted flex items-center justify-center">
+      <div className="relative aspect-square h-full flex-shrink-0 bg-muted flex items-center justify-center">
         {(exercise.mediaUrl || exercise.image) ? (
           isVideoUrl(resolveMediaUrl(exercise.mediaUrl || exercise.image)) ? (
             <div className="relative w-full h-full bg-black flex items-center justify-center">
