@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Exercise, MuscleGroupName } from '@/lib/types';
 import { useUser, useUpdateDoc, useDeleteDoc, useCreateDoc } from '@/lib/db-hooks';
-import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
+import { EMPTY_EXERCISE_FILTERS, useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -99,8 +99,8 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const { deleteDoc } = useDeleteDoc();
   const { createDoc } = useCreateDoc();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string>('all');
+  const [filters, setFilters] = useState(EMPTY_EXERCISE_FILTERS);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [isFormDialogOpen, setFormDialogOpen] = useState(false);
   const [isProgressDialogOpen, setProgressDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -119,6 +119,14 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     }
   };
 
+  // Wyszukiwanie trafia do serwera dopiero po chwili bez pisania.
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedSearch(filters.search), 300);
+    return () => clearTimeout(timeout);
+  }, [filters.search]);
+
+  const libraryFilters = useMemo(() => ({ ...filters, search: debouncedSearch }), [filters, debouncedSearch]);
+
   // Serwerowa biblioteka: pierwsze 30 ćwiczeń + infinite scroll, filtrowanie po stronie serwera.
   const {
     exercises,
@@ -128,9 +136,10 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     hasMore,
     totalAll,
     totalFiltered,
+    queryKey,
     loadMore,
     refetch: refetchExercises,
-  } = useExerciseLibrary(searchTerm, selectedMuscleGroup, !!user?.uid);
+  } = useExerciseLibrary(libraryFilters, !!user?.uid);
 
   const allExercises = exercises;
   const filteredExercises = exercises;
@@ -319,6 +328,11 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     if (nearBottom && hasMore && !isLoadingMore) loadMore();
   }, [hasMore, isLoadingMore, loadMore]);
 
+  // Nowe wyszukiwanie/filtry zaczynają od góry listy.
+  useEffect(() => {
+    parentRef.current?.scrollTo({ top: 0 });
+  }, [queryKey]);
+
   // Gdy treść nie wypełnia kontenera (np. szeroki grid), scroll nie nastąpi – dociągnij od razu.
   useEffect(() => {
     handleScroll();
@@ -380,11 +394,10 @@ export function ExercisesListView(props: ExercisesListViewProps) {
           </div>
         </div>
         <ExerciseFilters
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          selectedMuscleGroup={selectedMuscleGroup}
-          onMuscleGroupChange={setSelectedMuscleGroup}
+          filters={filters}
+          onChange={setFilters}
           muscleGroupOptions={muscleGroupOptions}
+          resultCount={isLoading ? undefined : totalFiltered}
         />
       </div>
 

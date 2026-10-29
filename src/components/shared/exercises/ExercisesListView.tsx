@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Exercise, MuscleGroupName, MuscleGroup } from '@/lib/types';
-import { useCollection, useUser, useUpdateDoc, useDeleteDoc, useCreateDoc } from '@/lib/db-hooks';
+import { useUser, useUpdateDoc, useDeleteDoc, useCreateDoc } from '@/lib/db-hooks';
+import { EMPTY_EXERCISE_FILTERS, useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -49,8 +50,8 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const { deleteDoc } = useDeleteDoc();
   const { createDoc } = useCreateDoc();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string>('all');
+  const [filters, setFilters] = useState(EMPTY_EXERCISE_FILTERS);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [isFormDialogOpen, setFormDialogOpen] = useState(false);
   const [isProgressDialogOpen, setProgressDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -61,30 +62,25 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
 
-  // Fetch all exercises from the library
-  const { data: exercises, isLoading, refetch: refetchExercises } = useCollection<Exercise>(
-    user?.uid ? 'exercises' : null
-  );
+  // Wyszukiwanie trafia do serwera dopiero po chwili bez pisania.
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedSearch(filters.search), 300);
+    return () => clearTimeout(timeout);
+  }, [filters.search]);
 
-  const allExercises = useMemo(() => {
-    return exercises ?? [];
-  }, [exercises]);
-
-  // Filter exercises
-  const filteredExercises = useMemo(() => {
-    if (!allExercises) return [];
-    return allExercises.filter((exercise) => {
-      const matchesSearch = exercise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        exercise.mainMuscleGroups?.some(mg => mg.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        exercise.muscleGroup?.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const matchesMuscleGroup = selectedMuscleGroup === 'all' ||
-        exercise.mainMuscleGroups?.some(mg => mg.name === selectedMuscleGroup) ||
-        exercise.muscleGroup === selectedMuscleGroup;
-
-      return matchesSearch && matchesMuscleGroup;
-    });
-  }, [allExercises, searchTerm, selectedMuscleGroup]);
+  // Exercises are paged and filtered on the server (50 per page).
+  const {
+    exercises,
+    isLoading,
+    isLoadingMore,
+    isRefreshing,
+    hasMore,
+    totalAll,
+    totalFiltered,
+    queryKey,
+    loadMore,
+    refetch: refetchExercises,
+  } = useExerciseLibrary({ ...filters, search: debouncedSearch }, Boolean(user?.uid));
 
   const muscleGroupOptions = Object.values(MuscleGroupName).map(name => ({ label: name, value: name }));
 
@@ -203,15 +199,19 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   };
 
   const handleBulkDeleteConfirm = async () => {
-    if (!allExercises || allExercises.length === 0) return;
+    if (totalAll === 0) return;
     setIsSubmitting(true);
 
     try {
-      // Delete all exercises
-      await Promise.all(allExercises.map(ex => deleteDoc('exercises', ex.id)));
+      // The list is paged, so the server deletes everything in one query.
+      const response = await fetch('/api/admin/exercises', { method: 'DELETE' });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || `Nie udało się usunąć ćwiczeń (HTTP ${response.status}).`);
+      }
       toast({
         title: "Sukces!",
-        description: `Usunięto ${allExercises.length} ćwiczeń.`
+        description: `Usunięto ${result.deleted} ćwiczeń.`
       });
       setBulkDeleteDialogOpen(false);
       refetchExercises();
@@ -258,34 +258,41 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     }
   };
 
-  // Virtualization setup: virtualize all filtered exercises smoothly
+  // Virtualization setup: one extra row at the end shows the "loading more" state
   const parentRef = useRef<HTMLDivElement>(null);
   const rowVirtualizer = useVirtualizer({
-    count: filteredExercises.length,
+    count: exercises.length + (hasMore ? 1 : 0),
     getScrollElement: () => parentRef.current,
     estimateSize: () => 128, // 120px height + 8px gap
     overscan: 5,
   });
 
+  // Infinite scroll: fetch the next page when the user nears the end of the list
+  const virtualItems = rowVirtualizer.getVirtualItems();
+  const lastVisibleIndex = virtualItems[virtualItems.length - 1]?.index ?? -1;
+  useEffect(() => {
+    if (hasMore && !isLoadingMore && lastVisibleIndex >= exercises.length - 10) {
+      loadMore();
+    }
+  }, [lastVisibleIndex, exercises.length, hasMore, isLoadingMore, loadMore]);
+
+  // New search/filters start from the top of the list
+  useEffect(() => {
+    parentRef.current?.scrollTo({ top: 0 });
+  }, [queryKey]);
+
   return (
     <div className="container mx-auto p-4 md:p-8 pt-18 h-full flex flex-col">
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between flex-shrink-0">
+      <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between flex-shrink-0">
         <h1 className="font-headline text-3xl font-bold">{title}</h1>
         <div className="flex gap-2 flex-wrap">
-          <ExerciseFilters
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            selectedMuscleGroup={selectedMuscleGroup}
-            onMuscleGroupChange={setSelectedMuscleGroup}
-            muscleGroupOptions={muscleGroupOptions}
-          />
-          {showBulkDelete && allExercises && allExercises.length > 0 && (
+          {showBulkDelete && totalAll > 0 && (
             <Button
               onClick={() => setBulkDeleteDialogOpen(true)}
               variant="destructive"
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              Usuń wszystkie ({allExercises.length})
+              Usuń wszystkie ({totalAll})
             </Button>
           )}
           {showImport && (
@@ -311,6 +318,22 @@ export function ExercisesListView(props: ExercisesListViewProps) {
         </div>
       </div>
 
+      <div className="mb-4 flex flex-col gap-2 flex-shrink-0">
+        <ExerciseFilters
+          filters={filters}
+          onChange={setFilters}
+          muscleGroupOptions={muscleGroupOptions}
+        />
+        {!isLoading && (
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            {isRefreshing && <Loader2 className="h-3 w-3 animate-spin" />}
+            {totalFiltered === totalAll
+              ? `Ćwiczeń: ${totalAll}`
+              : `Znaleziono ${totalFiltered} z ${totalAll} ćwiczeń`}
+          </p>
+        )}
+      </div>
+
       {/* Virtualized List Container */}
       {isLoading ? (
         <div className="flex flex-col gap-2">
@@ -328,7 +351,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
             </div>
           ))}
         </div>
-      ) : filteredExercises && filteredExercises.length > 0 ? (
+      ) : exercises.length > 0 ? (
         <div
           ref={parentRef}
           className="flex-1 overflow-auto min-h-0"
@@ -342,9 +365,27 @@ export function ExercisesListView(props: ExercisesListViewProps) {
               position: 'relative',
             }}
           >
-            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-              const exercise = filteredExercises[virtualRow.index];
-              if (!exercise) return null;
+            {virtualItems.map((virtualRow) => {
+              const exercise = exercises[virtualRow.index];
+              if (!exercise) {
+                return (
+                  <div
+                    key="load-more"
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: `${virtualRow.size}px`,
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                    className="flex items-center justify-center text-sm text-muted-foreground"
+                  >
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Ładowanie kolejnych ćwiczeń...
+                  </div>
+                );
+              }
               return (
                 <div
                   key={exercise.id}
@@ -458,7 +499,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
             <AlertDialogTitle>Czy na pewno chcesz usunąć WSZYSTKIE ćwiczenia?</AlertDialogTitle>
             <AlertDialogDescription>
               Tej operacji nie można cofnąć. To spowoduje trwałe usunięcie
-              <span className="font-semibold"> {allExercises?.length || 0} ćwiczeń </span>
+              <span className="font-semibold"> {totalAll} ćwiczeń </span>
               z bazy danych.
             </AlertDialogDescription>
           </AlertDialogHeader>

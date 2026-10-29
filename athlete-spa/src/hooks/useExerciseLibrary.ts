@@ -3,44 +3,90 @@ import useSWRInfinite from 'swr/infinite';
 import useSWR from 'swr';
 import { apiFetch } from '@/lib/api-client';
 import { Exercise } from '@/lib/types';
+import { SETUP_GROUPS } from '@/components/shared/exercises/setup';
 
 /**
  * Serwerowa biblioteka ćwiczeń z paginacją (30/str.) + filtrowaniem na serwerze.
  *
  * - pierwsze 30 pozycji pobierane od razu,
  * - kolejne strony dokładane przy scrollowaniu (infinite scroll),
- * - wyszukiwanie i filtr partii mięśniowej idą w parametrze `query` Mongo
- *   do `/api/db/exercises`, więc filtruje serwer, nie klient,
+ * - wyszukiwanie i filtry (partia, typ, część ciała, sprzęt, kategoria) idą
+ *   w parametrze `query` Mongo do `/api/db/exercises`, więc filtruje serwer,
+ *   nie klient,
  * - zwraca też liczby: wszystkich ćwiczeń (`totalAll`) i przefiltrowanych
  *   (`totalFiltered`).
  */
 
 export const EXERCISE_PAGE_SIZE = 30;
 
+/** Wartość "all" oznacza brak filtra dla danego pola. */
+export interface ExerciseLibraryFilters {
+  search: string;
+  muscleGroup: string;
+  type: string;
+  bodyPart: string;
+  equipment: string;
+  category: string;
+}
+
+export const EMPTY_EXERCISE_FILTERS: ExerciseLibraryFilters = {
+  search: '',
+  muscleGroup: 'all',
+  type: 'all',
+  bodyPart: 'all',
+  equipment: 'all',
+  category: 'all',
+};
+
+/** Liczba aktywnych filtrów poza wyszukiwaniem i partią mięśniową (chipy). */
+export function countExtraFilters(filters: ExerciseLibraryFilters): number {
+  return (['type', 'bodyPart', 'equipment', 'category'] as const)
+    .filter((key) => filters[key] !== EMPTY_EXERCISE_FILTERS[key]).length;
+}
+
+const isSet = (value: string) => Boolean(value) && value !== 'all';
+
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/** Buduje filtr Mongo na podstawie wyszukiwania i partii mięśniowej. */
-export function buildExerciseFilter(searchTerm: string, muscleGroup: string): Record<string, unknown> {
+/** Buduje filtr Mongo na podstawie pól dokumentu ćwiczenia. */
+export function buildExerciseFilter(filters: ExerciseLibraryFilters): Record<string, unknown> {
   const conds: Record<string, unknown>[] = [];
 
-  const term = searchTerm.trim();
+  const term = filters.search.trim();
   if (term) {
-    const rx = new RegExp(escapeRegExp(term), 'i');
+    // RegExp nie przechodzi przez JSON (serializuje się do `{}`) — wysyłamy $regex jako string.
+    const rx = { $regex: escapeRegExp(term), $options: 'i' };
     conds.push({
       $or: [
         { name: rx },
-        { 'mainMuscleGroups.name': rx },
+        { original_name: rx },
         { muscleGroup: rx },
+        { 'mainMuscleGroups.name': rx },
+        { 'secondaryMuscleGroups.name': rx },
+        { setup: { $elemMatch: { group: { $ne: SETUP_GROUPS.animation }, value: rx } } },
       ],
     });
   }
 
-  if (muscleGroup && muscleGroup !== 'all') {
+  if (isSet(filters.muscleGroup)) {
     conds.push({
-      $or: [{ 'mainMuscleGroups.name': muscleGroup }, { muscleGroup }],
+      $or: [{ 'mainMuscleGroups.name': filters.muscleGroup }, { muscleGroup: filters.muscleGroup }],
     });
+  }
+
+  if (isSet(filters.type)) {
+    conds.push({ type: filters.type });
+  }
+
+  const setupFilters: [string, string][] = [
+    [SETUP_GROUPS.bodyPart, filters.bodyPart],
+    [SETUP_GROUPS.equipment, filters.equipment],
+    [SETUP_GROUPS.category, filters.category],
+  ];
+  for (const [group, value] of setupFilters) {
+    if (isSet(value)) conds.push({ setup: { $elemMatch: { group, value } } });
   }
 
   return conds.length ? { $and: conds } : {};
@@ -83,6 +129,8 @@ export interface ExerciseLibraryResult {
   hasMore: boolean;
   totalAll: number;
   totalFiltered: number;
+  /** Klucz bieżącego filtra — zmienia się razem z wynikami. */
+  queryKey: string;
   loadMore: () => void;
   refetch: () => void;
 }
@@ -91,13 +139,12 @@ export interface ExerciseLibraryResult {
  * `enabled=false` odracza wszystkie zapytania (np. przed zalogowaniem).
  */
 export function useExerciseLibrary(
-  searchTerm: string,
-  muscleGroup: string,
+  filters: ExerciseLibraryFilters,
   enabled = true
 ): ExerciseLibraryResult {
   const query = useMemo(
-    () => (enabled ? buildExerciseFilter(searchTerm, muscleGroup) : null),
-    [searchTerm, muscleGroup, enabled]
+    () => (enabled ? buildExerciseFilter(filters) : null),
+    [filters, enabled]
   );
   const queryJson = useMemo(() => (query ? JSON.stringify(query) : ''), [query]);
 
@@ -150,6 +197,7 @@ export function useExerciseLibrary(
     hasMore,
     totalAll: totalAllData ?? 0,
     totalFiltered: totalFilteredData ?? 0,
+    queryKey: queryJson,
     loadMore,
     refetch: () => {
       void mutate();
