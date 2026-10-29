@@ -12,6 +12,7 @@ import {
     exercisesLabel,
     getLoggedWorkoutStats,
 } from './WorkoutExerciseList';
+import { resolveMediaUrl } from '@/lib/api-client';
 import { KIND_COLOR, KIND_LABEL, formatRunPace, type AgendaEvent } from './agenda';
 
 function Stat({ value, label, color }: { value: string; label: string; color: string }) {
@@ -60,8 +61,19 @@ export function EventSheet({ event, onOpenChange, onOpenSession }: EventSheetPro
     if (event?.kind === 'completed') {
         const s = getLoggedWorkoutStats(event.log.exercises);
         title = event.log.workoutName;
+        const photoUrl = event.log.photoURL || (event.log as unknown as { photoUrl?: string }).photoUrl;
         body = (
             <>
+                {photoUrl && (
+                    <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-muted shadow-soft">
+                        <img
+                            src={resolveMediaUrl(photoUrl)}
+                            alt={`Zdjęcie z treningu ${event.log.workoutName}`}
+                            className="absolute inset-0 h-full w-full object-cover"
+                            loading="lazy"
+                        />
+                    </div>
+                )}
                 <Stats
                     color={color}
                     items={[

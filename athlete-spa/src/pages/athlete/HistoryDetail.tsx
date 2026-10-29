@@ -88,9 +88,13 @@ export default function SessionSummaryPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {workoutLog.photoURL && (
-            <div className="relative aspect-video w-full overflow-hidden rounded-lg">
-              <img src={resolveMediaUrl(workoutLog.photoURL)} alt={`Zdjęcie z treningu ${workoutLog.workoutName}`} className="absolute inset-0 w-full h-full object-cover" />
+          {(workoutLog.photoURL || (workoutLog as unknown as { photoUrl?: string }).photoUrl) && (
+            <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-muted">
+              <img
+                src={resolveMediaUrl(workoutLog.photoURL || (workoutLog as unknown as { photoUrl?: string }).photoUrl)}
+                alt={`Zdjęcie z treningu ${workoutLog.workoutName}`}
+                className="absolute inset-0 w-full h-full object-contain"
+              />
             </div>
           )}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
