@@ -1,6 +1,7 @@
 // Export all exercises components
 export { ExercisesListView } from './ExercisesListView';
 export { ExerciseCard } from './ExerciseCard';
+export { ExerciseCardGrid } from './ExerciseCardGrid';
 export { ExerciseFilters } from './ExerciseFilters';
 export { ExerciseFormDialog } from './ExerciseForm';
 export { ProgressDialog } from './ProgressDialog';

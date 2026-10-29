@@ -1,7 +1,8 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Facebook, Instagram, Loader2, MapPin, Twitter } from 'lucide-react';
+import { Loader2, MapPin } from 'lucide-react';
+import { Facebook, Instagram, Twitter } from '@/components/ui/social-icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';

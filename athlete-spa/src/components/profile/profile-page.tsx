@@ -7,20 +7,18 @@ import {
   Award,
   Camera,
   Dumbbell,
-  Facebook,
   Globe,
   IdCard,
-  Instagram,
   LineChart,
   LogOut,
   MapPin,
   Pencil,
-  Twitter,
   UserPen,
   UserPlus,
   Users,
   type LucideIcon,
 } from 'lucide-react';
+import { Facebook, Instagram, Twitter } from '@/components/ui/social-icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';

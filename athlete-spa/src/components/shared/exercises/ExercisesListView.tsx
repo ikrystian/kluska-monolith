@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Exercise, MuscleGroupName } from '@/lib/types';
 import { useUser, useUpdateDoc, useDeleteDoc, useCreateDoc } from '@/lib/db-hooks';
-import { useExerciseLibrary, EXERCISE_PAGE_SIZE } from '@/hooks/useExerciseLibrary';
+import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
+import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,14 +20,64 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Dumbbell, Loader2, Trash2, LoaderCircle } from 'lucide-react';
+import { Plus, PlusCircle, Dumbbell, Loader2, Trash2, LoaderCircle, LayoutGrid, List } from 'lucide-react';
 
 import { ExerciseCardHorizontal } from './ExerciseCardHorizontal';
+import { ExerciseCardGrid } from './ExerciseCardGrid';
 import { ExerciseFilters } from './ExerciseFilters';
 import { ExerciseFormDialog } from './ExerciseForm';
 import { ProgressDialog } from './ProgressDialog';
 import { ExerciseDetailDialog } from './ExerciseDetailDialog';
 import { ExercisesListViewProps, ExerciseFormData, roleDefaults } from './types';
+
+type ViewMode = 'list' | 'grid';
+
+const VIEW_MODE_STORAGE_KEY = 'exercises:view-mode';
+const LIST_ROW_HEIGHT = 96; // 88px karta + 8px odstęp
+const GRID_GAP = 12;
+
+function readViewMode(): ViewMode {
+  try {
+    return localStorage.getItem(VIEW_MODE_STORAGE_KEY) === 'grid' ? 'grid' : 'list';
+  } catch {
+    return 'list';
+  }
+}
+
+/** Liczba kolumn gridu wg szerokości kontenera (nie viewportu – działa też w panelach). */
+function getGridColumns(width: number): number {
+  if (width >= 1200) return 5;
+  if (width >= 900) return 4;
+  if (width >= 600) return 3;
+  return 2;
+}
+
+function ViewModeToggle({ value, onChange }: { value: ViewMode; onChange: (mode: ViewMode) => void }) {
+  const options: { mode: ViewMode; icon: typeof List; label: string }[] = [
+    { mode: 'list', icon: List, label: 'Widok listy' },
+    { mode: 'grid', icon: LayoutGrid, label: 'Widok siatki' },
+  ];
+  return (
+    <div className="flex h-10 items-center rounded-full border bg-card p-1">
+      {options.map(({ mode, icon: Icon, label }) => (
+        <button
+          key={mode}
+          type="button"
+          aria-pressed={value === mode}
+          aria-label={label}
+          title={label}
+          onClick={() => onChange(mode)}
+          className={cn(
+            'flex h-8 w-8 items-center justify-center rounded-full transition-colors',
+            value === mode ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          <Icon className="h-4 w-4" />
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export function ExercisesListView(props: ExercisesListViewProps) {
   const { role } = props;
@@ -57,6 +108,16 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const [isBulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const [viewMode, setViewModeState] = useState<ViewMode>(readViewMode);
+
+  const setViewMode = (mode: ViewMode) => {
+    setViewModeState(mode);
+    try {
+      localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode);
+    } catch {
+      // brak dostępu do storage – tryb działa tylko w tej sesji
+    }
+  };
 
   // Serwerowa biblioteka: pierwsze 30 ćwiczeń + infinite scroll, filtrowanie po stronie serwera.
   const {
@@ -98,6 +159,19 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const handleShowDetail = (exercise: Exercise) => {
     setSelectedExercise(exercise);
     setDetailDialogOpen(true);
+  };
+
+  const canEditExercise = (exercise: Exercise) =>
+    canEdit && (exercise.ownerId === user?.uid || role === 'admin');
+
+  const handleDetailEdit = (exercise: Exercise) => {
+    setDetailDialogOpen(false);
+    handleEdit(exercise);
+  };
+
+  const handleDetailProgress = (exercise: Exercise) => {
+    setDetailDialogOpen(false);
+    handleShowProgress(exercise);
   };
 
   const handleCreate = () => {
@@ -205,16 +279,39 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     }
   };
 
-  // Infinite scroll: gdy pasek dochodzi do dołu kontenera, dołóż kolejną stronę.
-  const parentRef = useRef<HTMLDivElement>(null);
+  // Kontener scrolla: mierzymy jego szerokość, żeby dobrać liczbę kolumn gridu.
+  const parentRef = useRef<HTMLDivElement | null>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const setScrollContainer = useCallback((el: HTMLDivElement | null) => {
+    resizeObserverRef.current?.disconnect();
+    parentRef.current = el;
+    if (!el) return;
+    setContainerWidth(el.clientWidth);
+    resizeObserverRef.current = new ResizeObserver(([entry]) => setContainerWidth(entry.contentRect.width));
+    resizeObserverRef.current.observe(el);
+  }, []);
+
+  // Wirtualizujemy wiersze; w gridzie wiersz zawiera `columns` kart.
+  const columns = viewMode === 'grid' ? getGridColumns(containerWidth) : 1;
+  const rowCount = Math.ceil(filteredExercises.length / columns);
   const rowVirtualizer = useVirtualizer({
-    count: filteredExercises.length,
+    count: rowCount,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 128, // 120px height + 8px gap
-    overscan: 5,
-    getItemKey: (index) => filteredExercises[index]?.id ?? index,
+    estimateSize: () => {
+      if (viewMode === 'list') return LIST_ROW_HEIGHT;
+      const colWidth = containerWidth ? (containerWidth - GRID_GAP * (columns - 1)) / columns : 180;
+      return colWidth * 0.75 + 76 + GRID_GAP; // media 4:3 + treść + odstęp
+    },
+    overscan: viewMode === 'grid' ? 3 : 5,
+    getItemKey: (index) => `${viewMode}-${columns}-${filteredExercises[index * columns]?.id ?? index}`,
   });
 
+  useEffect(() => {
+    rowVirtualizer.measure();
+  }, [rowVirtualizer, viewMode, columns]);
+
+  // Infinite scroll: gdy pasek dochodzi do dołu kontenera, dołóż kolejną stronę.
   const handleScroll = useCallback(() => {
     const el = parentRef.current;
     if (!el) return;
@@ -222,65 +319,104 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     if (nearBottom && hasMore && !isLoadingMore) loadMore();
   }, [hasMore, isLoadingMore, loadMore]);
 
+  // Gdy treść nie wypełnia kontenera (np. szeroki grid), scroll nie nastąpi – dociągnij od razu.
+  useEffect(() => {
+    handleScroll();
+  }, [handleScroll, filteredExercises.length, viewMode, columns]);
+
+  const renderCard = (exercise: Exercise) => {
+    const CardComponent = viewMode === 'grid' ? ExerciseCardGrid : ExerciseCardHorizontal;
+    return (
+      <CardComponent
+        key={exercise.id}
+        exercise={exercise}
+        userId={user?.uid}
+        canEdit={canEdit}
+        canDelete={canDelete}
+        showProgress={showProgress}
+        showOwnerBadge={showOwnerBadge}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onShowProgress={handleShowProgress}
+        onClick={handleShowDetail}
+        allowNonOwnerEdit={role === 'admin'}
+        allowNonOwnerDelete={role === 'admin'}
+      />
+    );
+  };
+
+  const countLabel = isLoading
+    ? 'Ładowanie…'
+    : totalFiltered === totalAll
+      ? `${totalAll} ćwiczeń w bazie`
+      : `${totalFiltered} z ${totalAll} ćwiczeń`;
+
   return (
     <div className="container mx-auto p-4 md:p-8 pt-18 h-full flex flex-col">
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between flex-shrink-0">
-        <div>
-          <h1 className="font-headline text-3xl font-bold">{title}</h1>
-          {/* Liczba wszystkich i przefiltrowanych ćwiczeń */}
-          <p className="text-sm text-muted-foreground mt-1">
-            {isLoading
-              ? 'Ładowanie…'
-              : totalFiltered === totalAll
-                ? `Wszystkich ćwiczeń: ${totalAll}`
-                : `Przefiltrowano: ${totalFiltered} z ${totalAll} ćwiczeń`}
-          </p>
+      <div className="mb-4 flex flex-shrink-0 flex-col gap-4">
+        <div className="flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">{countLabel}</p>
+            <h1 className="font-headline text-3xl font-bold leading-tight">{title}</h1>
+          </div>
+          <div className="flex flex-shrink-0 items-center gap-2">
+            <ViewModeToggle value={viewMode} onChange={setViewMode} />
+            {showBulkDelete && allExercises && allExercises.length > 0 && (
+              <Button
+                onClick={() => setBulkDeleteDialogOpen(true)}
+                variant="destructive"
+                className="h-10 rounded-full"
+              >
+                <Trash2 className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Usuń wszystkie ({allExercises.length})</span>
+              </Button>
+            )}
+            {canCreate && (
+              <Button onClick={handleCreate} className="h-10 w-10 rounded-full p-0 md:w-auto md:px-4">
+                <Plus className="h-5 w-5 md:mr-1.5 md:h-4 md:w-4" />
+                <span className="sr-only md:not-sr-only">Dodaj ćwiczenie</span>
+              </Button>
+            )}
+          </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <ExerciseFilters
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            selectedMuscleGroup={selectedMuscleGroup}
-            onMuscleGroupChange={setSelectedMuscleGroup}
-            muscleGroupOptions={muscleGroupOptions}
-          />
-          {showBulkDelete && allExercises && allExercises.length > 0 && (
-            <Button
-              onClick={() => setBulkDeleteDialogOpen(true)}
-              variant="destructive"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Usuń wszystkie ({allExercises.length})
-            </Button>
-          )}
-          {canCreate && (
-            <Button onClick={handleCreate}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Dodaj ćwiczenie
-            </Button>
-          )}
-        </div>
+        <ExerciseFilters
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          selectedMuscleGroup={selectedMuscleGroup}
+          onMuscleGroupChange={setSelectedMuscleGroup}
+          muscleGroupOptions={muscleGroupOptions}
+        />
       </div>
 
-      {/* Virtualized List Container */}
       {isLoading ? (
-        <div className="flex flex-col gap-2">
-          {Array.from({ length: 8 }).map((_, index) => (
-            <div key={index} className="flex items-stretch bg-card border rounded-lg overflow-hidden h-[120px]">
-              <Skeleton className="w-[100px] h-full flex-shrink-0" />
-              <div className="flex-1 p-4 flex flex-col justify-center gap-2">
-                <Skeleton className="h-5 w-3/4" />
-                <div className="flex gap-1">
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-4 w-16" />
+        viewMode === 'grid' ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {Array.from({ length: 10 }).map((_, index) => (
+              <div key={index} className="overflow-hidden rounded-2xl border bg-card">
+                <Skeleton className="aspect-[4/3] w-full rounded-none" />
+                <div className="space-y-2 p-3">
+                  <Skeleton className="h-4 w-4/5" />
+                  <Skeleton className="h-3 w-1/2" />
                 </div>
-                <Skeleton className="h-4 w-full" />
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="flex h-[88px] items-center gap-3 rounded-2xl border bg-card p-2">
+                <Skeleton className="aspect-square h-full flex-shrink-0 rounded-xl" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                  <Skeleton className="h-3 w-16 rounded-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )
       ) : error ? (
-        <Card className="flex flex-col items-center justify-center border-dashed py-20">
+        <Card className="flex flex-col items-center justify-center rounded-3xl border-dashed py-20">
           <CardContent className="text-center">
             <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="font-headline text-xl font-semibold mb-2">Błąd ładowania</h3>
@@ -288,71 +424,70 @@ export function ExercisesListView(props: ExercisesListViewProps) {
           </CardContent>
         </Card>
       ) : filteredExercises.length > 0 ? (
-        <>
+        <div
+          ref={setScrollContainer}
+          onScroll={handleScroll}
+          className="flex-1 overflow-auto min-h-0"
+          style={{ contain: 'strict' }}
+          id="exercise-full-list"
+        >
           <div
-            ref={parentRef}
-            onScroll={handleScroll}
-            className="flex-1 overflow-auto min-h-0"
-            style={{ contain: 'strict' }}
-            id="exercise-full-list"
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
           >
-            <div
-              style={{
-                height: `${rowVirtualizer.getTotalSize()}px`,
-                width: '100%',
-                position: 'relative',
-              }}
-            >
-              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                const exercise = filteredExercises[virtualRow.index];
-                if (!exercise) return null;
-                return (
-                  <div
-                    key={exercise.id}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: `${virtualRow.size}px`,
-                      transform: `translateY(${virtualRow.start}px)`,
-                    }}
-                    className="pb-2"
-                  >
-                    <ExerciseCardHorizontal
-                      exercise={exercise}
-                      userId={user?.uid}
-                      canEdit={canEdit}
-                      canDelete={canDelete}
-                      showProgress={showProgress}
-                      showOwnerBadge={showOwnerBadge}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                      onShowProgress={handleShowProgress}
-                      onClick={handleShowDetail}
-                      allowNonOwnerEdit={role === 'admin'}
-                      allowNonOwnerDelete={role === 'admin'}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-            {isLoadingMore && (
-              <div className="flex items-center justify-center py-4 text-muted-foreground">
-                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                Ładowanie kolejnych ćwiczeń…
-              </div>
-            )}
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const rowItems = filteredExercises.slice(
+                virtualRow.index * columns,
+                virtualRow.index * columns + columns,
+              );
+              return (
+                <div
+                  key={virtualRow.key}
+                  data-index={virtualRow.index}
+                  ref={rowVirtualizer.measureElement}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                  className={viewMode === 'grid' ? 'pb-3' : 'pb-2'}
+                >
+                  {viewMode === 'grid' ? (
+                    <div
+                      className="grid"
+                      style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`, gap: GRID_GAP }}
+                    >
+                      {rowItems.map(renderCard)}
+                    </div>
+                  ) : (
+                    rowItems.map(renderCard)
+                  )}
+                </div>
+              );
+            })}
           </div>
-        </>
+          {isLoadingMore && (
+            <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
+              <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+              Ładowanie kolejnych ćwiczeń…
+            </div>
+          )}
+        </div>
       ) : (
-        <Card className="flex flex-col items-center justify-center border-dashed py-20">
+        <Card className="flex flex-col items-center justify-center rounded-3xl border-dashed py-16">
           <CardContent className="text-center">
-            <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <Dumbbell className="h-8 w-8 text-primary" />
+            </div>
             <h3 className="font-headline text-xl font-semibold mb-2">Brak ćwiczeń</h3>
-            <p className="text-muted-foreground mb-4">{emptyMessage}</p>
+            <p className="mx-auto mb-4 max-w-sm text-sm text-muted-foreground">{emptyMessage}</p>
             {canCreate && (
-              <Button variant="outline" onClick={handleCreate}>
+              <Button variant="outline" className="rounded-full" onClick={handleCreate}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Dodaj Ćwiczenie
               </Button>
@@ -390,6 +525,8 @@ export function ExercisesListView(props: ExercisesListViewProps) {
         exercise={selectedExercise}
         open={isDetailDialogOpen}
         onOpenChange={setDetailDialogOpen}
+        onShowProgress={showProgress ? handleDetailProgress : undefined}
+        onEdit={selectedExercise && canEditExercise(selectedExercise) ? handleDetailEdit : undefined}
       />
 
       {/* Delete Confirmation Dialog */}

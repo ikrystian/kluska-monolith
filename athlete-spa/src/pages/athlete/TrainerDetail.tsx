@@ -2,24 +2,24 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRight,
-  Facebook,
-  Instagram,
   Layers,
   MapPin,
   MessageSquare,
-  Twitter,
   UserCheck,
   Users,
-  type LucideIcon,
 } from 'lucide-react';
+import { Facebook, Instagram, Twitter } from '@/components/ui/social-icons';
 import { useDoc, useUser } from '@/lib/db-hooks';
 import type { UserProfile } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { tint } from '@/components/profile/profile-ui';
 import { TrainerAvatar } from '@/components/trainers/TrainerAvatar';
+import type { ComponentType, SVGProps } from 'react';
 
-const SOCIALS: { key: 'instagram' | 'facebook' | 'twitter'; label: string; icon: LucideIcon; color: string }[] = [
+type SocialIcon = ComponentType<SVGProps<SVGSVGElement>>;
+
+const SOCIALS: { key: 'instagram' | 'facebook' | 'twitter'; label: string; icon: SocialIcon; color: string }[] = [
   { key: 'instagram', label: 'Instagram', icon: Instagram, color: '#E4405F' },
   { key: 'facebook', label: 'Facebook', icon: Facebook, color: '#1877F2' },
   { key: 'twitter', label: 'X / Twitter', icon: Twitter, color: 'hsl(var(--foreground))' },
