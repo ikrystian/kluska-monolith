@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useSWRConfig } from 'swr';
 import { Loader2 } from 'lucide-react';
@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { AnimatedOutlet } from '@/components/motion';
 import { useAndroidBackButton } from '@/hooks/useAndroidBackButton';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { useHideOnScroll } from '@/hooks/useHideOnScroll';
 import { PullToRefreshIndicator } from '@/components/pull-to-refresh-indicator';
 import { OfflineBanner } from '@/components/offline-banner';
 import { cn } from '@/lib/utils';
@@ -68,6 +69,9 @@ function AthleteLayoutContent() {
   const { mutate } = useSWRConfig();
   const refreshAll = useCallback(() => mutate(() => true), [mutate]);
   const { indicatorRef } = usePullToRefresh(scrollRef, refreshAll, !isActiveWorkoutSession);
+  // Mobile chrome (header + bottom nav) tucks away while reading down, returns on scroll up.
+  const [chromeRoot, setChromeRoot] = useState<HTMLElement | null>(null);
+  const chromeHidden = useHideOnScroll(chromeRoot, location.pathname + location.search, !isActiveWorkoutSession);
 
   // Scroll the content container back to top on route change so the
   // page transition starts from a clean position.
@@ -136,7 +140,11 @@ function AthleteLayoutContent() {
         <NativeWidgetBridge />
         <div className="flex h-dvh w-full">
           <AppNav />
-          <main className="relative flex-1 flex flex-col overflow-hidden bg-background">
+          <main
+            ref={setChromeRoot}
+            data-chrome={chromeHidden ? 'hidden' : 'visible'}
+            className="group/chrome relative flex-1 flex flex-col overflow-hidden bg-background"
+          >
             {/* Aurora — ambient light field behind every screen */}
             <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
               <div className="absolute -left-32 -top-40 h-96 w-96 rounded-full bg-primary/[0.14] blur-[110px]" />

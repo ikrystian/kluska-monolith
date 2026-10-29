@@ -108,7 +108,7 @@ function EmptyExercises({ text }: { text: string }) {
 }
 
 /** Ćwiczenia z ukończonego treningu (pełne dane serii). */
-export function LoggedExerciseList({ exercises }: { exercises: ExerciseSeries[] | undefined }) {
+export function LoggedExerciseList({ exercises, scroll = true }: { exercises: ExerciseSeries[] | undefined; scroll?: boolean }) {
     if (!exercises || exercises.length === 0) {
         return <EmptyExercises text="Ten trening nie ma zapisanych ćwiczeń." />;
     }
@@ -121,7 +121,7 @@ export function LoggedExerciseList({ exercises }: { exercises: ExerciseSeries[] 
 
     return (
         <div className="space-y-2">
-            <ol className="max-h-[52vh] space-y-2 overflow-y-auto pr-0.5 no-scrollbar">
+            <ol className={cn('space-y-2', scroll && 'max-h-[52vh] overflow-y-auto pr-0.5 no-scrollbar')}>
                 {exercises.map((series, i) => {
                     const kind = exerciseKind(series);
                     const sets = series.sets ?? [];
@@ -199,13 +199,13 @@ export function LoggedExerciseList({ exercises }: { exercises: ExerciseSeries[] 
 }
 
 /** Ćwiczenia z zaplanowanego treningu (dane w formie tekstowej). */
-export function PlannedExerciseList({ exercises }: { exercises: PlannedWorkout['exercises'] | undefined }) {
+export function PlannedExerciseList({ exercises, scroll = true }: { exercises: PlannedWorkout['exercises'] | undefined; scroll?: boolean }) {
     if (!exercises || exercises.length === 0) {
         return <EmptyExercises text="Ten plan nie zawiera jeszcze ćwiczeń." />;
     }
 
     return (
-        <ol className="max-h-[52vh] space-y-2 overflow-y-auto pr-0.5 no-scrollbar">
+        <ol className={cn('space-y-2', scroll && 'max-h-[52vh] overflow-y-auto pr-0.5 no-scrollbar')}>
             {exercises.map((ex, i) => {
                 const primary = ex.sets && ex.reps
                     ? `${ex.sets} × ${ex.reps}`

@@ -29,7 +29,7 @@ export function BottomNav() {
         <>
             <nav
                 id="bottom-nav"
-                className="fixed inset-x-4 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 mx-auto block max-w-md rounded-[2rem] border border-foreground/10 bg-background/75 shadow-lifted backdrop-blur-2xl md:hidden"
+                className="fixed inset-x-4 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 mx-auto block max-w-md transition-transform duration-300 ease-out group-data-[chrome=hidden]/chrome:translate-y-[calc(100%+1.5rem+env(safe-area-inset-bottom))] rounded-[2rem] border border-foreground/10 bg-background/75 shadow-lifted backdrop-blur-2xl md:hidden"
             >
                 <div className="flex h-[4.25rem] items-center justify-between px-2">
                     {items.map((item) => {

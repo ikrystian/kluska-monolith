@@ -39,7 +39,7 @@ export function AppHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-border/50 bg-background/70 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-2xl md:h-14 md:px-6">
+    <header className="sticky top-0 z-30 flex transition-[margin-top] duration-300 ease-out group-data-[chrome=hidden]/chrome:-mt-16 md:group-data-[chrome=hidden]/chrome:mt-0 h-16 shrink-0 items-center gap-3 border-b border-border/50 bg-background/70 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-2xl md:h-14 md:px-6">
       {/* Mobile: identity on root screens, back + title everywhere else */}
       {isRoot ? (
         <Link
