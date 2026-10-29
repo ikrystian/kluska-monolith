@@ -23,6 +23,7 @@ import { PlusCircle, Dumbbell, Loader2, Trash2, Download } from 'lucide-react';
 import { ExerciseCardHorizontal } from './ExerciseCardHorizontal';
 import { ExerciseFilters } from './ExerciseFilters';
 import { ExerciseFormDialog } from './ExerciseForm';
+import { SETUP_GROUPS, withSetupValues } from './setup';
 import { ProgressDialog } from './ProgressDialog';
 import { ExerciseDetailDialog } from './ExerciseDetailDialog';
 import { ExercisesListViewProps, ExerciseFormData, roleDefaults } from './types';
@@ -120,6 +121,12 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     // Map strings back to MuscleGroup objects
     const mainMuscleGroups: MuscleGroup[] = data.mainMuscleGroups.map(name => ({ name: name as MuscleGroupName }));
     const secondaryMuscleGroups: MuscleGroup[] = (data.secondaryMuscleGroups || []).map(name => ({ name: name as MuscleGroupName }));
+    const setupValues = {
+      [SETUP_GROUPS.bodyPart]: data.bodyPart,
+      [SETUP_GROUPS.equipment]: data.equipment,
+      [SETUP_GROUPS.category]: data.category,
+      [SETUP_GROUPS.animation]: data.animationUrl,
+    };
 
     try {
       if (selectedExercise) {
@@ -128,10 +135,11 @@ export function ExercisesListView(props: ExercisesListViewProps) {
           name: data.name,
           mainMuscleGroups,
           secondaryMuscleGroups,
-          instructions: data.instructions || data.description,
+          instructions: data.instructions ?? '',
           mediaUrl: data.mediaUrl,
+          setup: withSetupValues(selectedExercise.setup, setupValues),
           type: data.type,
-          description: data.instructions || data.description,
+          description: data.description ?? '',
           // Legacy support
           muscleGroup: data.mainMuscleGroups[0],
           image: data.mediaUrl,
@@ -145,10 +153,11 @@ export function ExercisesListView(props: ExercisesListViewProps) {
           name: data.name,
           mainMuscleGroups,
           secondaryMuscleGroups,
-          instructions: data.instructions || data.description,
+          instructions: data.instructions ?? '',
           mediaUrl: data.mediaUrl,
+          setup: withSetupValues([], setupValues),
           type: data.type,
-          description: data.instructions || data.description,
+          description: data.description ?? '',
           // Legacy support
           muscleGroup: data.mainMuscleGroups[0],
           image: data.mediaUrl,

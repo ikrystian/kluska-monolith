@@ -12,21 +12,12 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Dumbbell, Repeat, Timer } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { getAnimationUrl } from './setup';
 
 interface ExerciseDetailDialogProps {
     exercise: Exercise | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
-}
-
-/**
- * Zwraca lokalny URL animacji ćwiczenia (zapisany podczas importu openGym
- * w `setup` jako grupa "Animacja"), gdy istnieje.
- */
-function getAnimationUrl(exercise: Exercise | null): string | undefined {
-    if (!exercise?.setup) return undefined;
-    const item = exercise.setup.find((s) => s.group === 'Animacja' && s.value);
-    return item?.value;
 }
 
 export function ExerciseDetailDialog({
@@ -47,7 +38,7 @@ export function ExerciseDetailDialog({
         return match && match[2].length === 11 ? `https://www.youtube.com/embed/${match[2]}` : null;
     };
 
-    // Animacja (z importu openGym) ma pierwszeństwo nad obrazkiem w szczegółach.
+    // Animacja (z importu openGym lub formularza) ma pierwszeństwo nad obrazkiem w szczegółach.
     const animationUrl = getAnimationUrl(exercise);
     const mediaUrl = animationUrl || exercise.mediaUrl || exercise.image || '';
     const isVideo = isVideoUrl(mediaUrl);

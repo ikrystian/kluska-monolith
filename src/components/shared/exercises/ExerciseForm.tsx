@@ -44,12 +44,16 @@ import {
   X,
 } from 'lucide-react';
 import { ExerciseFormData, ExerciseFormProps } from './types';
+import { SETUP_GROUPS, SETUP_SUGGESTIONS, getSetupValue, isVideoFileUrl } from './setup';
 
 const exerciseSchema = z.object({
   name: z.string().min(1, 'Nazwa jest wymagana.'),
   mainMuscleGroups: z.array(z.string()).min(1, 'Przynajmniej jedna główna grupa mięśniowa jest wymagana.'),
   secondaryMuscleGroups: z.array(z.string()).optional(),
   instructions: z.string().optional(),
+  bodyPart: z.string().optional(),
+  equipment: z.string().optional(),
+  category: z.string().optional(),
   mediaUrl: z
     .string()
     .refine(
@@ -57,23 +61,50 @@ const exerciseSchema = z.object({
       'Nieprawidłowy URL multimediów.',
     )
     .optional(),
+  animationUrl: z
+    .string()
+    .refine(
+      (value) => value === '' || /^(https?:\/\/|\/)/.test(value),
+      'Nieprawidłowy URL animacji.',
+    )
+    .optional(),
   type: z.enum(['weight', 'duration', 'reps'], { required_error: "Typ ćwiczenia jest wymagany." }).optional(),
   description: z.string().optional(),
 });
 
+interface ExerciseFormExercise {
+  id: string;
+  name: string;
+  mainMuscleGroups?: { name: string }[];
+  secondaryMuscleGroups?: { name: string }[];
+  muscleGroup?: string;
+  instructions?: string;
+  description?: string;
+  mediaUrl?: string;
+  image?: string;
+  setup?: { group: string; value: string }[];
+  type?: 'weight' | 'duration' | 'reps';
+}
+
+function getDefaultValues(exercise: ExerciseFormExercise | null): ExerciseFormData {
+  return {
+    name: exercise?.name || '',
+    mainMuscleGroups: exercise?.mainMuscleGroups?.map(mg => mg.name) ||
+      (exercise?.muscleGroup ? [exercise.muscleGroup] : []),
+    secondaryMuscleGroups: exercise?.secondaryMuscleGroups?.map(mg => mg.name) || [],
+    description: exercise?.description || '',
+    instructions: exercise?.instructions || '',
+    bodyPart: getSetupValue(exercise?.setup, SETUP_GROUPS.bodyPart) || '',
+    equipment: getSetupValue(exercise?.setup, SETUP_GROUPS.equipment) || '',
+    category: getSetupValue(exercise?.setup, SETUP_GROUPS.category) || '',
+    mediaUrl: exercise?.mediaUrl || exercise?.image || '',
+    animationUrl: getSetupValue(exercise?.setup, SETUP_GROUPS.animation) || '',
+    type: exercise?.type || 'weight',
+  };
+}
+
 interface ExerciseFormDialogProps {
-  exercise: {
-    id: string;
-    name: string;
-    mainMuscleGroups?: { name: string }[];
-    secondaryMuscleGroups?: { name: string }[];
-    muscleGroup?: string;
-    instructions?: string;
-    description?: string;
-    mediaUrl?: string;
-    image?: string;
-    type?: 'weight' | 'duration' | 'reps';
-  } | null;
+  exercise: ExerciseFormExercise | null;
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: ExerciseFormData) => Promise<void>;
@@ -99,47 +130,17 @@ export function ExerciseFormDialog({
   const [imageSourceTab, setImageSourceTab] = useState<string>(
     uploadedImageUrl ? 'url' : 'upload'
   );
+  const [animationSourceTab, setAnimationSourceTab] = useState<string>('upload');
 
   const form = useForm<ExerciseFormData>({
     resolver: zodResolver(exerciseSchema),
-    defaultValues: {
-      name: exercise?.name || '',
-      mainMuscleGroups: exercise?.mainMuscleGroups?.map(mg => mg.name) ||
-        (exercise?.muscleGroup ? [exercise.muscleGroup] : []),
-      secondaryMuscleGroups: exercise?.secondaryMuscleGroups?.map(mg => mg.name) || [],
-      instructions: exercise?.instructions || exercise?.description || '',
-      mediaUrl: exercise?.mediaUrl || exercise?.image || '',
-      type: exercise?.type || 'weight',
-      description: exercise?.description || '',
-    },
+    defaultValues: getDefaultValues(exercise),
   });
 
   useEffect(() => {
     if (isOpen) {
-      if (exercise) {
-        form.reset({
-          name: exercise.name || '',
-          mainMuscleGroups: exercise.mainMuscleGroups?.map(mg => mg.name) ||
-            (exercise.muscleGroup ? [exercise.muscleGroup] : []),
-          secondaryMuscleGroups: exercise.secondaryMuscleGroups?.map(mg => mg.name) || [],
-          instructions: exercise.instructions || exercise.description || '',
-          mediaUrl: exercise.mediaUrl || exercise.image || '',
-          type: exercise.type || 'weight',
-          description: exercise.description || '',
-        });
-        setUploadedImageUrl(exercise.mediaUrl || exercise.image || '');
-      } else {
-        form.reset({
-          name: '',
-          mainMuscleGroups: [],
-          secondaryMuscleGroups: [],
-          instructions: '',
-          mediaUrl: '',
-          type: 'weight',
-          description: '',
-        });
-        setUploadedImageUrl('');
-      }
+      form.reset(getDefaultValues(exercise));
+      setUploadedImageUrl(exercise?.mediaUrl || exercise?.image || '');
     }
   }, [exercise, isOpen, form]);
 
@@ -197,6 +198,12 @@ export function ExerciseFormDialog({
   const clearImage = () => {
     setUploadedImageUrl('');
     form.setValue('mediaUrl', '');
+  };
+
+  const animationUrl = form.watch('animationUrl');
+
+  const clearAnimation = () => {
+    form.setValue('animationUrl', '', { shouldDirty: true });
   };
 
   const isEditMode = !!exercise;
@@ -364,15 +371,64 @@ export function ExerciseFormDialog({
 
             <FormField
               control={form.control}
-              name="instructions"
+              name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Instrukcje</FormLabel>
-                  <FormControl><Textarea {...field} disabled={isSubmitting} /></FormControl>
+                  <FormLabel>Opis</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} className="min-h-[120px]" disabled={isSubmitting} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="instructions"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Instrukcje</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} className="min-h-[120px]" disabled={isSubmitting} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Setup details (zapisywane w `setup`) */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {([
+                { name: 'bodyPart', label: SETUP_GROUPS.bodyPart, placeholder: 'np. uda', suggestions: SETUP_SUGGESTIONS.bodyPart },
+                { name: 'equipment', label: SETUP_GROUPS.equipment, placeholder: 'np. hantle', suggestions: SETUP_SUGGESTIONS.equipment },
+                { name: 'category', label: SETUP_GROUPS.category, placeholder: 'np. siłowe', suggestions: SETUP_SUGGESTIONS.category },
+              ] as const).map(({ name, label, placeholder, suggestions }) => (
+                <FormField
+                  key={name}
+                  control={form.control}
+                  name={name}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{label}</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value || ''}
+                          list={`exercise-${name}-options`}
+                          placeholder={placeholder}
+                          disabled={isSubmitting}
+                        />
+                      </FormControl>
+                      <datalist id={`exercise-${name}-options`}>
+                        {suggestions.map((value) => <option key={value} value={value} />)}
+                      </datalist>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ))}
+            </div>
 
             {/* Image Selection Section */}
             {showImageUpload && (
@@ -487,6 +543,110 @@ export function ExerciseFormDialog({
                           </FormControl>
                           <FormDescription className="text-xs">
                             Wprowadź URL do zdjęcia lub wideo
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+                </Tabs>
+              </FormItem>
+            )}
+
+            {/* Animation Section */}
+            {showImageUpload && (
+              <FormItem>
+                <FormLabel>Animacja ćwiczenia</FormLabel>
+                <FormDescription className="text-xs">
+                  Wyświetlana w szczegółach ćwiczenia zamiast obrazka.
+                </FormDescription>
+
+                {/* Animation Preview */}
+                {animationUrl && (
+                  <div className="relative w-full h-40 mb-3 rounded-lg overflow-hidden bg-muted">
+                    {isVideoFileUrl(animationUrl) ? (
+                      <video
+                        key={animationUrl}
+                        src={animationUrl}
+                        className="w-full h-full object-contain"
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                      />
+                    ) : (
+                      <Image
+                        src={animationUrl}
+                        alt="Podgląd animacji"
+                        fill
+                        className="object-contain"
+                        unoptimized
+                      />
+                    )}
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2 h-8 w-8"
+                      onClick={clearAnimation}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+
+                <Tabs value={animationSourceTab} onValueChange={setAnimationSourceTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="upload" className="text-xs">
+                      <Upload className="h-3 w-3 mr-1" />
+                      Prześlij
+                    </TabsTrigger>
+                    <TabsTrigger value="url" className="text-xs">
+                      <Link className="h-3 w-3 mr-1" />
+                      URL
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="upload" className="mt-3">
+                    <LocalUploadButton
+                      accept="video/mp4,video/webm,image/gif"
+                      label={animationUrl ? 'Zmień plik animacji' : 'Prześlij plik animacji'}
+                      disabled={isSubmitting}
+                      onComplete={(files) => {
+                        if (files.length > 0) {
+                          form.setValue('animationUrl', files[0].url, { shouldDirty: true });
+                          toast({ title: "Sukces!", description: "Animacja została przesłana." });
+                        }
+                      }}
+                      onError={(error) => {
+                        toast({
+                          title: "Błąd",
+                          description: `Nie udało się przesłać animacji: ${error.message}`,
+                          variant: "destructive"
+                        });
+                      }}
+                    />
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      MP4, WebM lub GIF, maks. 128 MB.
+                    </p>
+                  </TabsContent>
+
+                  <TabsContent value="url" className="mt-3">
+                    <FormField
+                      control={form.control}
+                      name="animationUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              value={field.value || ''}
+                              placeholder="https://example.com/animation.mp4"
+                              disabled={isSubmitting}
+                            />
+                          </FormControl>
+                          <FormDescription className="text-xs">
+                            Wprowadź URL do pliku MP4, WebM lub GIF
                           </FormDescription>
                           <FormMessage />
                         </FormItem>

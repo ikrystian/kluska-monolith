@@ -12,8 +12,11 @@ const UPLOAD_DIR = path.join(process.cwd(), 'upload-data');
 /** Hard cap per file — comfortably covers 100 MB exercise media. */
 const MAX_FILE_SIZE = 128 * 1024 * 1024;
 
-/** Images (including animated GIF) and audio (running-cue sound files) are accepted. */
-const ALLOWED_TYPE_PREFIXES = ['image/', 'audio/'];
+/**
+ * Images (including animated GIF), audio (running-cue sound files) and
+ * MP4/WebM video (exercise animations) are accepted.
+ */
+const ALLOWED_TYPE_PREFIXES = ['image/', 'audio/', 'video/mp4', 'video/webm'];
 
 const EXTENSION_BY_TYPE: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -31,6 +34,8 @@ const EXTENSION_BY_TYPE: Record<string, string> = {
   'audio/x-wav': 'wav',
   'audio/ogg': 'ogg',
   'audio/aac': 'aac',
+  'video/mp4': 'mp4',
+  'video/webm': 'webm',
 };
 
 function extensionFor(file: File): string {
@@ -43,7 +48,7 @@ function extensionFor(file: File): string {
 }
 
 /**
- * Stores uploaded images/audio on the local filesystem under `upload-data/` and
+ * Stores uploaded images/audio/video on the local filesystem under `upload-data/` and
  * returns the public path(s) they are served from (`/upload-data/<file>`).
  *
  * Accepts a single `file` field or repeated `files` fields (multipart).

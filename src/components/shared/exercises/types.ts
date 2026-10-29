@@ -65,6 +65,12 @@ export interface ExerciseFormData {
   secondaryMuscleGroups?: string[];
   instructions?: string;
   mediaUrl?: string;
+  /** Wartości zapisywane w `setup` (grupy "Część ciała", "Sprzęt", "Kategoria", "Animacja") */
+  bodyPart?: string;
+  equipment?: string;
+  category?: string;
+  /** URL animacji (MP4/WebM/GIF) */
+  animationUrl?: string;
   type?: 'weight' | 'duration' | 'reps';
   description?: string;
 }
