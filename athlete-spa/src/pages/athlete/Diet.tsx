@@ -234,7 +234,7 @@ function NoDietView() {
 
 function LoadingView() {
     return (
-        <div className="container mx-auto space-y-6 p-4 md:p-8">
+        <div className="container mx-auto space-y-6 p-4 pt-18 md:p-8">
             <Skeleton className="h-44 w-full rounded-3xl" />
             <div className="flex gap-2">
                 {[1, 2, 3].map((i) => (
@@ -278,7 +278,7 @@ export default function AthleteDietPage() {
         sortedDays.reduce((acc, day) => acc + dayTotals(day).calories, 0) / sortedDays.length;
 
     return (
-        <div className="container mx-auto space-y-6 p-4 md:p-8">
+        <div className="container mx-auto space-y-6 p-4 pt-18 md:p-8">
             {/* Header */}
             <section className="relative overflow-hidden rounded-3xl border border-primary/10 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-6 md:p-8">
                 <div className="absolute top-0 right-0 -mt-16 -mr-16 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
