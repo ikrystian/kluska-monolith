@@ -1,25 +1,20 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDoc, useUser, useCreateDoc } from '@/lib/db-hooks';
-import { Workout } from '@/lib/types';
+import { Workout, type ExerciseSeries } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Clock, Signal, Dumbbell, Play, Calendar, ArrowRight, Repeat, Timer, Edit, Copy } from 'lucide-react';
-import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
-import { useActiveWorkout } from '@/hooks/useActiveWorkout';
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { type ExerciseType } from '@/lib/set-type-config';
+    ArrowLeft, ArrowRight, Calendar, ChevronDown, Clock, Copy, Dumbbell, Edit, Flame, Layers, Lightbulb, Play,
+} from 'lucide-react';
+import { useActiveWorkout } from '@/hooks/useActiveWorkout';
 import { useToast } from '@/hooks/use-toast';
-
+import { cn } from '@/lib/utils';
+import { tint } from '@/components/profile/profile-ui';
 import { ScheduleWorkoutDialog } from '@/components/workouts/ScheduleWorkoutDialog';
+import {
+    exerciseCount, exerciseTypeInfo, levelColor, levelLabel, seriesTarget, topWeight, totalSets,
+} from '@/components/workouts/workout-format';
 
 export default function WorkoutDetailsPage() {
     const params = useParams<{ id: string }>();
@@ -75,276 +70,287 @@ export default function WorkoutDetailsPage() {
 
     if (isLoading) {
         return (
-            <div className="container mx-auto p-4 md:p-8 space-y-6">
-                <div className="flex items-center gap-4 mb-6">
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <Skeleton className="h-8 w-48" />
-                </div>
-                <Skeleton className="h-64 w-full rounded-xl" />
-                <div className="space-y-4">
-                    <Skeleton className="h-24 w-full" />
-                    <Skeleton className="h-24 w-full" />
-                    <Skeleton className="h-24 w-full" />
-                </div>
+            <div className="mx-auto w-full max-w-3xl space-y-5 px-4 pb-28 pt-5 md:px-6 md:pt-8">
+                <Skeleton className="h-72 w-full rounded-[1.75rem]" />
+                <Skeleton className="h-16 w-full rounded-[1.75rem]" />
+                <Skeleton className="h-24 w-full rounded-[1.5rem]" />
+                <Skeleton className="h-24 w-full rounded-[1.5rem]" />
             </div>
         );
     }
 
     if (!workout) {
         return (
-            <div className="container mx-auto p-4 md:p-8 text-center py-20">
-                <h2 className="text-2xl font-bold mb-4">Nie znaleziono treningu</h2>
-                <p className="text-muted-foreground mb-6">Trening o podanym ID nie istnieje lub został usunięty.</p>
-                <Button onClick={() => navigate(-1)}>Wróć</Button>
+            <div className="mx-auto w-full max-w-3xl px-4 py-20 text-center">
+                <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-secondary">
+                    <Dumbbell className="h-6 w-6 text-muted-foreground" />
+                </span>
+                <h2 className="mt-4 font-headline text-2xl font-bold">Nie znaleziono treningu</h2>
+                <p className="mb-6 mt-1 text-muted-foreground">Trening o podanym ID nie istnieje lub został usunięty.</p>
+                <Button className="rounded-full" onClick={() => navigate(-1)}>Wróć</Button>
             </div>
         );
     }
 
+    const color = levelColor(workout.level);
+    const isPublic = workout.ownerId === 'public';
+    const sets = totalSets(workout.exerciseSeries);
+
     return (
-        <div className="container mx-auto p-4 md:p-8 pb-24">
-            {/* Header */}
-            <div className="flex flex-col gap-6 mb-8">
-                <div className="flex justify-between items-start">
-                    <Button
-                        variant="ghost"
-                        className="w-fit pl-0 hover:bg-transparent hover:text-primary"
+        <div className="mx-auto w-full max-w-3xl space-y-6 px-4 pb-28 pt-5 md:px-6 md:pt-8">
+            {/* Hero */}
+            <section className="relative overflow-hidden rounded-[1.75rem] bg-secondary shadow-soft">
+                <div className="relative h-64 md:h-80">
+                    {workout.imageUrl ? (
+                        <img src={workout.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                    ) : (
+                        <div className="hero-ember texture-grain absolute inset-0">
+                            <div aria-hidden className="absolute -right-12 -top-16 h-56 w-56 rounded-full border-[1.4rem] border-white/10" />
+                        </div>
+                    )}
+                    <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/30" />
+
+                    <button
+                        type="button"
                         onClick={() => navigate(-1)}
+                        aria-label="Wróć"
+                        className="absolute left-3 top-3 grid h-10 w-10 place-items-center rounded-full bg-background/80 backdrop-blur-md transition-transform active:scale-90"
                     >
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Wróć do listy
-                    </Button>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                        {/* Edit/Copy buttons */}
-                        {canEdit ? (
-                            <Button
-                                variant="outline"
-                                onClick={() => navigate(`/athlete/workouts/${id}/edit`)}
-                            >
-                                <Edit className="mr-2 h-4 w-4" /> Edytuj
-                            </Button>
-                        ) : workout && workout.ownerId !== user?.uid && (
-                            <Button
-                                variant="outline"
-                                onClick={handleCopyAndEdit}
-                                disabled={isCopying}
-                            >
-                                <Copy className="mr-2 h-4 w-4" />
-                                {isCopying ? 'Kopiowanie...' : 'Skopiuj i edytuj'}
-                            </Button>
+                        <ArrowLeft className="h-5 w-5" />
+                    </button>
+
+                    <div className="absolute right-3 top-3 flex items-center gap-2">
+                        <span
+                            className="rounded-full bg-background/85 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider backdrop-blur-md"
+                            style={{ color }}
+                        >
+                            {levelLabel(workout.level)}
+                        </span>
+                        {isPublic && (
+                            <span className="rounded-full bg-background/85 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground backdrop-blur-md">
+                                Publiczny
+                            </span>
                         )}
                     </div>
-                </div>
 
-                {/* Start workout button row */}
-                <div className="flex justify-end">
-                    {hasActiveWorkout ? (
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <div className="flex flex-col gap-2">
-                                        <Button
-                                            disabled
-                                            className="bg-muted text-muted-foreground cursor-not-allowed"
-                                        >
-                                            <Play className="mr-2 h-4 w-4" /> Rozpocznij Trening
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => navigate(`/athlete/log?logId=${activeWorkout?.id}`)}
-                                            className="text-primary"
-                                        >
-                                            <ArrowRight className="mr-2 h-4 w-4" /> Wróć do aktywnego treningu
-                                        </Button>
-                                    </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Masz aktywny trening. Zakończ go przed rozpoczęciem nowego.</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    ) : (
-                        <Button
-                            onClick={() => navigate(`/athlete/log?workoutId=${id}`)}
-                            className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
-                        >
-                            <Play className="mr-2 h-4 w-4" /> Rozpocznij Trening
-                        </Button>
-                    )}
-                    <Button
-                        variant="outline"
-                        className="ml-2"
-                        onClick={() => setIsScheduleOpen(true)}
+                    <div className="absolute inset-x-0 bottom-0 p-5 md:p-6">
+                        <h1 className="font-display text-3xl font-extrabold uppercase leading-[1.05] text-white md:text-4xl">
+                            {workout.name}
+                        </h1>
+                    </div>
+                </div>
+            </section>
+
+            {/* Key numbers */}
+            <section className="grid grid-cols-3 divide-x divide-border/60 rounded-[1.75rem] border border-border/60 bg-card py-4 shadow-soft">
+                <Stat icon={Clock} value={`${workout.durationMinutes}`} unit="min" label="Czas" color={color} />
+                <Stat icon={Dumbbell} value={`${workout.exerciseSeries.length}`} unit="" label="Ćwiczeń" color={color} />
+                <Stat icon={Layers} value={`${sets}`} unit="" label="Serii" color={color} />
+            </section>
+
+            {/* Actions */}
+            <section className="space-y-2.5">
+                {hasActiveWorkout ? (
+                    <button
+                        type="button"
+                        onClick={() => navigate(`/athlete/log?logId=${activeWorkout?.id}`)}
+                        className="hero-ember texture-grain group relative flex w-full items-center justify-between gap-4 overflow-hidden rounded-[1.75rem] p-5 text-left text-white shadow-glow transition-transform active:scale-[0.98]"
                     >
-                        <Calendar className="mr-2 h-4 w-4" /> Zaplanuj trening
-                    </Button>
-                </div>
-
-                {workout && (
-                    <ScheduleWorkoutDialog
-                        workout={workout}
-                        open={isScheduleOpen}
-                        onOpenChange={setIsScheduleOpen}
-                    />
+                        <div className="relative min-w-0">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/75">
+                                Masz trening w toku
+                            </p>
+                            <p className="mt-1 font-display text-xl font-extrabold uppercase leading-tight">
+                                Wróć do treningu
+                            </p>
+                        </div>
+                        <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white text-primary shadow-lg">
+                            <ArrowRight className="h-5 w-5" />
+                        </span>
+                    </button>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={() => navigate(`/athlete/log?workoutId=${id}`)}
+                        className="hero-ember texture-grain group relative flex w-full items-center justify-between gap-4 overflow-hidden rounded-[1.75rem] p-5 text-left text-white shadow-glow transition-transform active:scale-[0.98]"
+                    >
+                        <div aria-hidden className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full border-[1.1rem] border-white/10" />
+                        <div className="relative min-w-0">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/75">Gotowy?</p>
+                            <p className="mt-1 font-display text-xl font-extrabold uppercase leading-tight md:text-2xl">
+                                Rozpocznij trening
+                            </p>
+                        </div>
+                        <span className="relative grid h-14 w-14 shrink-0 place-items-center rounded-full bg-white text-primary shadow-lg transition-transform group-hover:scale-105">
+                            <Play className="h-6 w-6 fill-current" />
+                        </span>
+                    </button>
                 )}
 
-                <div className="relative h-48 md:h-64 w-full rounded-xl overflow-hidden bg-muted">
-                    {workout.imageUrl ? (
-                        <img
-                            src={workout.imageUrl}
-                            alt={workout.name}
-                            className="absolute inset-0 w-full h-full object-cover"
-                        />
+                <div className="grid grid-cols-2 gap-2.5">
+                    <Button
+                        variant="outline"
+                        className="h-11 gap-2 rounded-full"
+                        onClick={() => setIsScheduleOpen(true)}
+                    >
+                        <Calendar className="h-4 w-4" /> Zaplanuj
+                    </Button>
+                    {canEdit ? (
+                        <Button
+                            variant="outline"
+                            className="h-11 gap-2 rounded-full"
+                            onClick={() => navigate(`/athlete/workouts/${id}/edit`)}
+                        >
+                            <Edit className="h-4 w-4" /> Edytuj
+                        </Button>
                     ) : (
-                        <div className="flex items-center justify-center h-full text-muted-foreground bg-secondary/30">
-                            <Dumbbell className="h-16 w-16 opacity-20" />
-                        </div>
+                        <Button
+                            variant="outline"
+                            className="h-11 gap-2 rounded-full"
+                            onClick={handleCopyAndEdit}
+                            disabled={isCopying || !user}
+                        >
+                            <Copy className="h-4 w-4" />
+                            {isCopying ? 'Kopiowanie…' : 'Kopiuj i edytuj'}
+                        </Button>
                     )}
-                    <div className="absolute top-4 right-4 flex gap-2">
-                        <Badge variant="secondary" className="backdrop-blur-md bg-background/80">
-                            {workout.level}
-                        </Badge>
-                        {workout.ownerId === 'public' && (
-                            <Badge variant="secondary" className="backdrop-blur-md bg-background/80">
-                                Publiczny
-                            </Badge>
-                        )}
-                    </div>
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 pt-20">
-                        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{workout.name}</h1>
-                        <div className="flex items-center gap-4 text-white/80 text-sm">
-                            <span className="flex items-center"><Clock className="h-4 w-4 mr-1" /> {workout.durationMinutes} min</span>
-                            <span className="flex items-center"><Dumbbell className="h-4 w-4 mr-1" /> {workout.exerciseSeries.length} ćwiczeń</span>
-                        </div>
-                    </div>
                 </div>
-            </div>
+            </section>
 
-            {/* Description if exists */}
+            <ScheduleWorkoutDialog workout={workout} open={isScheduleOpen} onOpenChange={setIsScheduleOpen} />
+
             {workout.description && (
-                <div className="mb-8">
-                    <h3 className="text-lg font-semibold mb-2">Opis</h3>
-                    <p className="text-muted-foreground">{workout.description}</p>
-                </div>
+                <section>
+                    <h2 className="mb-2 px-1 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Opis</h2>
+                    <p className="rounded-[1.5rem] border border-border/60 bg-card p-4 text-sm leading-relaxed text-muted-foreground shadow-soft">
+                        {workout.description}
+                    </p>
+                </section>
             )}
 
-            {/* Exercises List */}
-            <div className="space-y-6">
-                <h3 className="text-xl font-bold flex items-center gap-2">
-                    <Dumbbell className="h-5 w-5 text-primary" />
-                    Lista Ćwiczeń
-                </h3>
-
-                <div className="grid gap-4">
+            {/* Exercises */}
+            <section>
+                <h2 className="mb-2 px-1 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                    Plan · {exerciseCount(workout.exerciseSeries.length)}
+                </h2>
+                <ol className="space-y-3">
                     {workout.exerciseSeries.map((series, index) => (
-                        <Card key={index} className="overflow-hidden border-l-4 border-l-primary/20 hover:border-l-primary transition-colors">
-                            <CardContent className="p-4 sm:p-6 flex flex-col sm:flex-row gap-4">
-                                {/* Exercise Image/Icon */}
-                                <div className="relative h-20 w-20 sm:h-24 sm:w-24 flex-shrink-0 rounded-lg overflow-hidden bg-secondary/30 flex items-center justify-center">
-                                    {series.exercise.mediaUrl || series.exercise.image ? (
-                                        <img
-                                            src={series.exercise.mediaUrl || series.exercise.image || ''}
-                                            alt={series.exercise.name}
-                                            className="absolute inset-0 w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <Dumbbell className="h-8 w-8 text-muted-foreground/40" />
-                                    )}
-                                    <div className="absolute top-1 left-1 bg-background/80 backdrop-blur text-[10px] font-mono px-1.5 py-0.5 rounded">
-                                        #{index + 1}
-                                    </div>
-                                </div>
-
-                                {/* Details */}
-                                <div className="flex-grow">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <div>
-                                            <h4 className="font-semibold text-lg">{series.exercise.name}</h4>
-                                            <p className="text-sm text-muted-foreground">
-                                                {series.exercise.mainMuscleGroups.map(mg => mg.name).join(', ')}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
-                                        <div className="bg-secondary/20 p-2 rounded text-center">
-                                            <p className="text-xs text-muted-foreground uppercase">Serie</p>
-                                            <p className="font-semibold">{series.sets.length}</p>
-                                        </div>
-                                        <div className="bg-secondary/20 p-2 rounded text-center">
-                                            <p className="text-xs text-muted-foreground uppercase">Tempo</p>
-                                            <p className="font-semibold">{series.tempo || '-'}</p>
-                                        </div>
-                                        {/* Dynamic display based on exercise type */}
-                                        {(() => {
-                                            const exerciseType: ExerciseType = series.exercise.type || 'weight';
-
-                                            if (exerciseType === 'weight') {
-                                                return (
-                                                    <div className="bg-secondary/20 p-2 rounded text-center col-span-2 sm:col-span-2">
-                                                        <p className="text-xs text-muted-foreground uppercase flex items-center justify-center gap-1">
-                                                            <Dumbbell className="h-3 w-3" /> Zakres powtórzeń
-                                                        </p>
-                                                        <p className="font-semibold">
-                                                            {series.sets.length > 0 && series.sets.some(s => s.reps !== undefined)
-                                                                ? `${Math.min(...series.sets.filter(s => s.reps !== undefined).map(s => s.reps!))} - ${Math.max(...series.sets.filter(s => s.reps !== undefined).map(s => s.reps!))}`
-                                                                : '-'
-                                                            }
-                                                        </p>
-                                                    </div>
-                                                );
-                                            } else if (exerciseType === 'reps') {
-                                                return (
-                                                    <div className="bg-secondary/20 p-2 rounded text-center col-span-2 sm:col-span-2">
-                                                        <p className="text-xs text-muted-foreground uppercase flex items-center justify-center gap-1">
-                                                            <Repeat className="h-3 w-3" /> Zakres powtórzeń
-                                                        </p>
-                                                        <p className="font-semibold">
-                                                            {series.sets.length > 0 && series.sets.some(s => s.reps !== undefined)
-                                                                ? `${Math.min(...series.sets.filter(s => s.reps !== undefined).map(s => s.reps!))} - ${Math.max(...series.sets.filter(s => s.reps !== undefined).map(s => s.reps!))}`
-                                                                : '-'
-                                                            }
-                                                        </p>
-                                                    </div>
-                                                );
-                                            } else {
-                                                return (
-                                                    <div className="bg-secondary/20 p-2 rounded text-center col-span-2 sm:col-span-2">
-                                                        <p className="text-xs text-muted-foreground uppercase flex items-center justify-center gap-1">
-                                                            <Timer className="h-3 w-3" /> Zakres czasu
-                                                        </p>
-                                                        <p className="font-semibold">
-                                                            {series.sets.length > 0 && series.sets.some(s => s.duration !== undefined)
-                                                                ? `${Math.min(...series.sets.filter(s => s.duration !== undefined).map(s => s.duration!))} - ${Math.max(...series.sets.filter(s => s.duration !== undefined).map(s => s.duration!))} sek.`
-                                                                : '-'
-                                                            }
-                                                        </p>
-                                                    </div>
-                                                );
-                                            }
-                                        })()}
-                                    </div>
-
-                                    {/* Exercise type badge */}
-                                    <div className="mt-2">
-                                        <Badge variant="outline" className="text-xs gap-1">
-                                            {series.exercise.type === 'weight' && <Dumbbell className="h-3 w-3" />}
-                                            {series.exercise.type === 'reps' && <Repeat className="h-3 w-3" />}
-                                            {series.exercise.type === 'duration' && <Timer className="h-3 w-3" />}
-                                            {series.exercise.type === 'weight' ? 'Na ciężar' : series.exercise.type === 'reps' ? 'Na powtórzenia' : series.exercise.type === 'duration' ? 'Na czas' : 'Na ciężar'}
-                                        </Badge>
-                                    </div>
-
-                                    {series.tip && (
-                                        <div className="mt-3 text-sm bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 p-2 rounded border border-yellow-500/20">
-                                            <span className="font-semibold mr-1">Wskazówka:</span> {series.tip}
-                                        </div>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <ExerciseRow key={index} series={series} index={index} color={color} />
                     ))}
-                </div>
-            </div>
+                </ol>
+            </section>
         </div>
+    );
+}
+
+function Stat({
+    icon: Icon, value, unit, label, color,
+}: { icon: typeof Clock; value: string; unit: string; label: string; color: string }) {
+    return (
+        <div className="flex flex-col items-center gap-1 px-2">
+            <span className="grid h-8 w-8 place-items-center rounded-full" style={{ backgroundColor: tint(color, 15), color }}>
+                <Icon className="h-4 w-4" />
+            </span>
+            <p className="font-display text-2xl font-extrabold leading-none tabular-nums">
+                {value}
+                {unit && <span className="ml-0.5 font-headline text-xs font-bold text-muted-foreground">{unit}</span>}
+            </p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
+        </div>
+    );
+}
+
+function ExerciseRow({ series, index, color }: { series: ExerciseSeries; index: number; color: string }) {
+    const [open, setOpen] = useState(false);
+    const { exercise } = series;
+    const target = seriesTarget(series);
+    const weight = topWeight(series);
+    const { icon: TypeIcon, label: typeLabel } = exerciseTypeInfo(exercise.type);
+    const media = exercise.mediaUrl || exercise.image;
+    const muscles = exercise.mainMuscleGroups?.map(mg => mg.name).join(', ');
+    const isDuration = exercise.type === 'duration';
+
+    return (
+        <li className="overflow-hidden rounded-[1.5rem] border border-border/60 bg-card shadow-soft">
+            <button
+                type="button"
+                onClick={() => setOpen(o => !o)}
+                aria-expanded={open}
+                className="flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-secondary/40"
+            >
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-secondary/60">
+                    {media ? (
+                        <img src={media} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+                    ) : (
+                        <div className="grid h-full w-full place-items-center">
+                            <TypeIcon className="h-6 w-6 text-muted-foreground/50" />
+                        </div>
+                    )}
+                    <span className="absolute left-1 top-1 grid h-5 min-w-5 place-items-center rounded-full bg-foreground px-1 text-[10px] font-bold tabular-nums text-background">
+                        {index + 1}
+                    </span>
+                </div>
+
+                <div className="min-w-0 flex-1">
+                    <p className="truncate font-headline text-base font-bold">{exercise.name}</p>
+                    {muscles && <p className="truncate text-xs text-muted-foreground">{muscles}</p>}
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs font-semibold tabular-nums">
+                        <span style={{ color }}>
+                            {target.sets} × {target.value}
+                            {isDuration ? ' s' : ''}
+                        </span>
+                        {weight !== null && <span className="text-muted-foreground">do {weight} kg</span>}
+                        {series.tempo && (
+                            <span className="inline-flex items-center gap-0.5 text-muted-foreground">
+                                <Flame className="h-3 w-3" /> {series.tempo}
+                            </span>
+                        )}
+                    </div>
+                </div>
+
+                <ChevronDown className={cn('h-5 w-5 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')} />
+            </button>
+
+            {open && (
+                <div className="space-y-3 border-t border-border/60 bg-secondary/20 p-3">
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                        <TypeIcon className="h-3.5 w-3.5" /> {typeLabel}
+                    </div>
+                    <div className="overflow-hidden rounded-xl border border-border/60 bg-card text-sm">
+                        <div className="grid grid-cols-[2rem_1fr_1fr_1fr] gap-2 border-b border-border/60 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                            <span>#</span>
+                            <span>{isDuration ? 'Czas' : 'Powt.'}</span>
+                            <span>{exercise.type === 'weight' || !exercise.type ? 'Ciężar' : ''}</span>
+                            <span className="text-right">Przerwa</span>
+                        </div>
+                        {series.sets.map((set, i) => (
+                            <div
+                                key={i}
+                                className="grid grid-cols-[2rem_1fr_1fr_1fr] gap-2 px-3 py-2 tabular-nums even:bg-secondary/30"
+                            >
+                                <span className="text-muted-foreground">{i + 1}</span>
+                                <span className="font-semibold">
+                                    {isDuration ? (set.duration !== undefined ? `${set.duration} s` : '–') : (set.reps ?? '–')}
+                                </span>
+                                <span>
+                                    {set.weight
+                                        ? set.weightUnit === 'rpe' ? `RPE ${set.weight}` : `${set.weight} kg`
+                                        : set.rpe ? `RPE ${set.rpe}` : ''}
+                                </span>
+                                <span className="text-right text-muted-foreground">
+                                    {set.restTimeSeconds ? `${set.restTimeSeconds} s` : '–'}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                    {series.tip && (
+                        <div className="flex gap-2 rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-3 text-sm text-yellow-800 dark:text-yellow-300">
+                            <Lightbulb className="mt-0.5 h-4 w-4 shrink-0" />
+                            <p>{series.tip}</p>
+                        </div>
+                    )}
+                </div>
+            )}
+        </li>
     );
 }
