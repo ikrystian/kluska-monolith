@@ -9,7 +9,7 @@ export function FriendButton({ athlete }: { athlete: AthleteListItem }) {
 
   if (isPending) {
     return (
-      <Button size="sm" variant="outline" disabled className="shrink-0">
+      <Button size="sm" variant="outline" disabled className="h-9 shrink-0 rounded-full">
         <Loader2 className="h-4 w-4 animate-spin" />
       </Button>
     );
@@ -18,7 +18,7 @@ export function FriendButton({ athlete }: { athlete: AthleteListItem }) {
   switch (athlete.relation) {
     case 'friends':
       return (
-        <Button size="sm" variant="secondary" disabled className="shrink-0 gap-1.5 disabled:opacity-100">
+        <Button size="sm" variant="secondary" disabled className="h-9 shrink-0 gap-1.5 rounded-full disabled:opacity-100">
           <UserCheck className="h-4 w-4 text-volt" />
           Znajomi
         </Button>
@@ -33,7 +33,7 @@ export function FriendButton({ athlete }: { athlete: AthleteListItem }) {
           <Button
             size="icon"
             variant="ghost"
-            className="h-9 w-9"
+            className="h-9 w-9 rounded-full"
             aria-label={`Anuluj zaproszenie dla ${athlete.displayName}`}
             onClick={() => athlete.friendshipId && remove(athlete.friendshipId, 'Zaproszenie anulowane')}
           >
@@ -45,7 +45,7 @@ export function FriendButton({ athlete }: { athlete: AthleteListItem }) {
       return (
         <Button
           size="sm"
-          className="shrink-0 gap-1.5"
+          className="h-9 shrink-0 gap-1.5 rounded-full"
           onClick={() => athlete.friendshipId && accept(athlete.friendshipId)}
         >
           <Check className="h-4 w-4" />
@@ -57,7 +57,7 @@ export function FriendButton({ athlete }: { athlete: AthleteListItem }) {
         <Button
           size="sm"
           variant="outline"
-          className="shrink-0 gap-1.5"
+          className="h-9 shrink-0 gap-1.5 rounded-full"
           aria-label={`Dodaj ${athlete.displayName} do znajomych`}
           onClick={() => invite(athlete.userId)}
         >

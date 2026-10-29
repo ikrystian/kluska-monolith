@@ -125,7 +125,7 @@ export function FriendsActivityFeed({ limit = 5 }: { limit?: number }) {
         </p>
         {!hasFriends && (
           <Button variant="outline" size="sm" className="mt-3" asChild>
-            <Link to={pendingInvites > 0 ? '/athlete/social?tab=friends' : '/athlete/social?tab=nearby'}>
+            <Link to="/athlete/social?tab=people">
               {pendingInvites > 0 ? 'Zobacz zaproszenia' : 'Znajdź znajomych'}
             </Link>
           </Button>

@@ -6,14 +6,18 @@ import { Loader2 } from 'lucide-react';
 import { useUser, useCollection } from '@/lib/db-hooks';
 import { useFriends } from '@/lib/friends';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SocialWall } from '@/components/social/SocialWall';
 import { NicknameSetup } from '@/components/social/NicknameSetup';
-import { FriendsWall } from '@/components/social/FriendsWall';
-import { NearbyAthletes } from '@/components/social/NearbyAthletes';
+import { FriendsFeed } from '@/components/social/FriendsFeed';
+import { DiscoverGrid } from '@/components/social/DiscoverGrid';
+import { PeopleTab } from '@/components/social/PeopleTab';
 import { PublicProfileDialog } from '@/components/social/PublicProfileDialog';
 
-const SOCIAL_TABS = ['wall', 'friends', 'nearby'] as const;
+const SOCIAL_TABS = ['feed', 'discover', 'people'] as const;
 type SocialTab = (typeof SOCIAL_TABS)[number];
+const DEFAULT_TAB: SocialTab = 'feed';
+
+/** Tab ids from before the redesign, still found in bookmarks and push links. */
+const LEGACY_TABS: Record<string, SocialTab> = { wall: 'discover', friends: 'feed', nearby: 'people' };
 
 function isSocialTab(value: string | null): value is SocialTab {
   return SOCIAL_TABS.includes(value as SocialTab);
@@ -34,7 +38,8 @@ export default function AthleteSocialPage() {
   const [hasProfile, setHasProfile] = useState<boolean | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const activeTab: SocialTab = isSocialTab(tabParam) ? tabParam : 'wall';
+  const legacyTab = tabParam ? LEGACY_TABS[tabParam] : undefined;
+  const activeTab: SocialTab = isSocialTab(tabParam) ? tabParam : legacyTab ?? DEFAULT_TAB;
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
 
   const { data: friendsData } = useFriends(Boolean(user?.uid));
@@ -42,8 +47,12 @@ export default function AthleteSocialPage() {
 
   const setActiveTab = (tab: string) => {
     if (!isSocialTab(tab)) return;
-    setSearchParams(tab === 'wall' ? {} : { tab }, { replace: true });
+    setSearchParams(tab === DEFAULT_TAB ? {} : { tab }, { replace: true });
   };
+
+  useEffect(() => {
+    if (legacyTab) setSearchParams(legacyTab === DEFAULT_TAB ? {} : { tab: legacyTab }, { replace: true });
+  }, [legacyTab, setSearchParams]);
 
   // Fetch user's social profile
   const { data: profiles, isLoading: isProfileLoading, refetch } = useCollection<SocialProfile>(
@@ -62,7 +71,6 @@ export default function AthleteSocialPage() {
     refetch();
   };
 
-  // Loading state
   if (isUserLoading || isProfileLoading || hasProfile === null) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
@@ -74,22 +82,26 @@ export default function AthleteSocialPage() {
     );
   }
 
-  // Show nickname setup if user doesn't have a profile
   if (!hasProfile) {
     return (
-      <div className="container mx-auto p-4 md:p-8">
+      <div className="mx-auto w-full max-w-2xl px-4 pb-28 pt-5 md:px-6 md:pt-8">
         <NicknameSetup onComplete={handleProfileCreated} />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-4 md:p-8">
+    <div className="mx-auto w-full max-w-2xl px-4 pb-28 pt-5 md:px-6 md:pt-8">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4 grid w-full grid-cols-3 md:w-auto md:min-w-[26rem]">
-          <TabsTrigger value="wall">Tablica</TabsTrigger>
-          <TabsTrigger value="friends" className="gap-1.5">
+        <TabsList className="sticky top-[calc(env(safe-area-inset-top))] z-20 md:top-16 grid h-auto w-full grid-cols-3 gap-1 rounded-full border border-border/60 bg-background/80 p-1 shadow-soft backdrop-blur-md">
+          <TabsTrigger value="feed" className="h-9 rounded-full text-sm font-semibold data-[state=active]:bg-card data-[state=active]:shadow-soft">
             Znajomi
+          </TabsTrigger>
+          <TabsTrigger value="discover" className="h-9 rounded-full text-sm font-semibold data-[state=active]:bg-card data-[state=active]:shadow-soft">
+            Odkrywaj
+          </TabsTrigger>
+          <TabsTrigger value="people" className="gap-1.5 h-9 rounded-full text-sm font-semibold data-[state=active]:bg-card data-[state=active]:shadow-soft">
+            Ludzie
             {incomingCount > 0 && (
               <span
                 className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold tabular-nums text-primary-foreground"
@@ -99,17 +111,16 @@ export default function AthleteSocialPage() {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="nearby">W okolicy</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="wall">
-          <SocialWall />
+        <TabsContent value="feed" className="mt-5">
+          <FriendsFeed onProfileClick={setProfileUserId} onOpenPeople={() => setActiveTab('people')} />
         </TabsContent>
-        <TabsContent value="friends">
-          <FriendsWall onProfileClick={setProfileUserId} onFindFriends={() => setActiveTab('nearby')} />
+        <TabsContent value="discover" className="mt-5">
+          <DiscoverGrid onProfileClick={setProfileUserId} />
         </TabsContent>
-        <TabsContent value="nearby">
-          <NearbyAthletes onProfileClick={setProfileUserId} />
+        <TabsContent value="people" className="mt-5">
+          <PeopleTab onProfileClick={setProfileUserId} />
         </TabsContent>
       </Tabs>
 

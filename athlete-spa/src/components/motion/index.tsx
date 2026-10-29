@@ -113,7 +113,7 @@ export function AnimatedOutlet({ className }: { className?: string }) {
           if (definition === 'animate') endPageTransition();
         }}
         style={{ willChange: 'opacity' }}
-        className={cn('min-h-full w-full', className)}
+        className={cn('min-h-full', className)}
       >
         {/* Lazily-loaded page chunks suspend here, so the nav/header/bottom-nav
             shell stays mounted and only the content area shows the spinner. */}

@@ -6,6 +6,7 @@ import {
   ClipboardCheck,
   ClipboardList,
   Compass,
+  Images,
   Dumbbell,
   Footprints,
   History,
@@ -13,7 +14,6 @@ import {
   Layers,
   LayoutDashboard,
   Map,
-  MapPin,
   MessageSquare,
   Newspaper,
   NotebookPen,
@@ -109,9 +109,9 @@ export const athleteNavItems: NavEntry[] = [
     color: 'hsl(var(--chart-4))',
     items: [
       { href: '/athlete/chat', label: 'Czat', icon: MessageSquare, description: 'Rozmowy z trenerem', keywords: ['wiadomości', 'trener', 'rozmowa'] },
-      { href: '/athlete/social', label: 'Tablica', icon: Newspaper, description: 'Posty i aktywność', keywords: ['social', 'posty', 'feed'] },
-      { href: '/athlete/social?tab=friends', label: 'Znajomi', icon: UserCheck, description: 'Znajomi i zaproszenia', keywords: ['przyjaciele', 'zaproszenia', 'social'] },
-      { href: '/athlete/social?tab=nearby', label: 'W okolicy', icon: MapPin, description: 'Sportowcy w pobliżu', keywords: ['blisko', 'okolica', 'social'] },
+      { href: '/athlete/social', label: 'Aktywność znajomych', icon: Newspaper, description: 'Treningi, biegi i statusy', keywords: ['social', 'feed', 'znajomi', 'tablica'] },
+      { href: '/athlete/social?tab=discover', label: 'Odkrywaj', icon: Images, description: 'Zdjęcia społeczności', keywords: ['posty', 'zdjęcia', 'tablica', 'social'] },
+      { href: '/athlete/social?tab=people', label: 'Ludzie', icon: UserCheck, description: 'Znajomi, zaproszenia, okolica', keywords: ['przyjaciele', 'zaproszenia', 'blisko', 'okolica', 'social'] },
     ],
   },
   {
@@ -136,7 +136,7 @@ export function findNavLeaf(pathname: string): NavLeaf | undefined {
 
 /**
  * Whether a nav link points at the current screen. Some links open a tab of a
- * screen via a query param (`/athlete/social?tab=friends`); those match on the
+ * screen via a query param (`/athlete/social?tab=people`); those match on the
  * param, and the plain link to the same screen stays active only while none
  * of its tab links does.
  */
@@ -216,7 +216,7 @@ const EXTRA_TITLES: { match: RegExp; title: string }[] = [
 
 /** Label for the current screen, or undefined when there is nothing sensible to show. */
 export function getScreenTitle(pathname: string, search = ''): string | undefined {
-  // Tab links (`/athlete/social?tab=friends`) title their own tab, not the screen's default one.
+  // Tab links (`/athlete/social?tab=people`) title their own tab, not the screen's default one.
   const activeLeaf = athleteNavLeaves.find(leaf => isNavLeafActive(leaf.href, pathname, search));
   return activeLeaf?.label ?? findNavLeaf(pathname)?.label ?? EXTRA_TITLES.find(e => e.match.test(pathname))?.title;
 }

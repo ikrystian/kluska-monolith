@@ -6,7 +6,7 @@ import type { Article, ArticleCategory } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, Loader2, Edit, Trash2, Library, Eye } from 'lucide-react';
+import { PlusCircle, Loader2, Edit, Trash2, Library, Eye, BookOpen } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -138,7 +138,11 @@ export default function ManageArticlesPage() {
   }
 
   return (
-    <div>
+    <div className="container mx-auto p-4 md:p-8">
+      <div className="mb-6 flex items-center gap-3">
+        <BookOpen className="h-8 w-8 text-primary" />
+        <h1 className="font-headline text-3xl font-bold">Strefa Wiedzy</h1>
+      </div>
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <div>
