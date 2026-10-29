@@ -4,9 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Exercise, MuscleGroupName, MuscleGroup } from '@/lib/types';
 import { useUser, useUpdateDoc, useDeleteDoc, useCreateDoc } from '@/lib/db-hooks';
-import { EMPTY_EXERCISE_FILTERS, useExerciseLibrary } from '@/hooks/useExerciseLibrary';
+import { EMPTY_EXERCISE_FILTERS, ExerciseSort, useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,6 +42,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const showOwnerBadge = props.showOwnerBadge ?? defaults.showOwnerBadge ?? false;
   const showBulkDelete = props.showBulkDelete ?? defaults.showBulkDelete ?? false;
   const showImport = props.showImport ?? defaults.showImport ?? false;
+  const showSort = props.showSort ?? defaults.showSort ?? false;
   const title = props.title ?? defaults.title ?? 'Biblioteka Ćwiczeń';
   const emptyMessage = props.emptyMessage ?? defaults.emptyMessage ?? 'Nie znaleziono żadnych ćwiczeń.';
 
@@ -51,6 +53,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const { createDoc } = useCreateDoc();
 
   const [filters, setFilters] = useState(EMPTY_EXERCISE_FILTERS);
+  const [sort, setSort] = useState<ExerciseSort>('name');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [isFormDialogOpen, setFormDialogOpen] = useState(false);
   const [isProgressDialogOpen, setProgressDialogOpen] = useState(false);
@@ -80,7 +83,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     queryKey,
     loadMore,
     refetch: refetchExercises,
-  } = useExerciseLibrary({ ...filters, search: debouncedSearch }, Boolean(user?.uid));
+  } = useExerciseLibrary({ ...filters, search: debouncedSearch }, Boolean(user?.uid), sort);
 
   const muscleGroupOptions = Object.values(MuscleGroupName).map(name => ({ label: name, value: name }));
 
@@ -276,10 +279,10 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     }
   }, [lastVisibleIndex, exercises.length, hasMore, isLoadingMore, loadMore]);
 
-  // New search/filters start from the top of the list
+  // New search/filters/sort start from the top of the list
   useEffect(() => {
     parentRef.current?.scrollTo({ top: 0 });
-  }, [queryKey]);
+  }, [queryKey, sort]);
 
   return (
     <div className="container mx-auto p-4 md:p-8 pt-18 h-full flex flex-col">
@@ -324,14 +327,27 @@ export function ExercisesListView(props: ExercisesListViewProps) {
           onChange={setFilters}
           muscleGroupOptions={muscleGroupOptions}
         />
-        {!isLoading && (
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            {isRefreshing && <Loader2 className="h-3 w-3 animate-spin" />}
-            {totalFiltered === totalAll
-              ? `Ćwiczeń: ${totalAll}`
-              : `Znaleziono ${totalFiltered} z ${totalAll} ćwiczeń`}
-          </p>
-        )}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {!isLoading && (
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              {isRefreshing && <Loader2 className="h-3 w-3 animate-spin" />}
+              {totalFiltered === totalAll
+                ? `Ćwiczeń: ${totalAll}`
+                : `Znaleziono ${totalFiltered} z ${totalAll} ćwiczeń`}
+            </p>
+          )}
+          {showSort && (
+            <Select value={sort} onValueChange={(value) => setSort(value as ExerciseSort)}>
+              <SelectTrigger aria-label="Sortowanie" className="h-8 w-auto gap-2 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Nazwa (A–Z)</SelectItem>
+                <SelectItem value="updatedAt">Ostatnio edytowane</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+        </div>
       </div>
 
       {/* Virtualized List Container */}

@@ -90,7 +90,13 @@ interface ExercisePage {
   data: Exercise[];
 }
 
-const SORT = JSON.stringify({ name: 1, _id: 1 });
+/** Kolejność listy: alfabetycznie albo od ostatnio edytowanych. */
+export type ExerciseSort = 'name' | 'updatedAt';
+
+const SORT_QUERY: Record<ExerciseSort, Record<string, 1 | -1>> = {
+  name: { name: 1, _id: 1 },
+  updatedAt: { updatedAt: -1, _id: -1 },
+};
 
 async function pageFetcher(url: string): Promise<ExercisePage> {
   const res = await fetch(url);
@@ -105,8 +111,12 @@ async function countFetcher(url: string): Promise<number> {
   return payload.total ?? 0;
 }
 
-function collectionUrl(query: Record<string, unknown>, params: Record<string, string> = {}): string {
-  const qs = new URLSearchParams({ query: JSON.stringify(query), sort: SORT, ...params });
+function collectionUrl(
+  query: Record<string, unknown>,
+  sort: ExerciseSort,
+  params: Record<string, string> = {}
+): string {
+  const qs = new URLSearchParams({ query: JSON.stringify(query), sort: JSON.stringify(SORT_QUERY[sort]), ...params });
   return `/api/db/exercises?${qs.toString()}`;
 }
 
@@ -129,14 +139,15 @@ export interface ExerciseLibraryResult {
 /** `enabled=false` odracza wszystkie zapytania (np. przed zalogowaniem). */
 export function useExerciseLibrary(
   filters: ExerciseLibraryFilters,
-  enabled = true
+  enabled = true,
+  sort: ExerciseSort = 'name'
 ): ExerciseLibraryResult {
   const queryKey = useMemo(() => JSON.stringify(buildExerciseFilter(filters)), [filters]);
 
   const getKey = (pageIndex: number, previousPageData: ExercisePage | null): string | null => {
     if (!enabled) return null;
     if (previousPageData && previousPageData.data.length < EXERCISE_PAGE_SIZE) return null;
-    return collectionUrl(JSON.parse(queryKey), {
+    return collectionUrl(JSON.parse(queryKey), sort, {
       limit: String(EXERCISE_PAGE_SIZE),
       skip: String(pageIndex * EXERCISE_PAGE_SIZE),
     });
@@ -154,12 +165,12 @@ export function useExerciseLibrary(
   const hasMore = Boolean(lastPage) && (lastPage!.data?.length ?? 0) >= EXERCISE_PAGE_SIZE;
   const isLoadingMore = size > 0 && data !== undefined && typeof data[size - 1] === 'undefined';
 
-  const filteredKey = enabled ? collectionUrl(JSON.parse(queryKey), { count: '1' }) : null;
+  const filteredKey = enabled ? collectionUrl(JSON.parse(queryKey), sort, { count: '1' }) : null;
   const { data: totalFiltered, mutate: mutateFiltered } = useSWR<number>(filteredKey, countFetcher, {
     keepPreviousData: true,
   });
 
-  const allKey = enabled ? collectionUrl({}, { count: '1' }) : null;
+  const allKey = enabled ? collectionUrl({}, sort, { count: '1' }) : null;
   const { data: totalAll, mutate: mutateAll } = useSWR<number>(allKey, countFetcher);
 
   const loadMore = () => {

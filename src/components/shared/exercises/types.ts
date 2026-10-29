@@ -29,6 +29,9 @@ export interface ExercisesListViewProps {
   /** Show the "Importuj ćwiczenia" button - admin feature (default: false) */
   showImport?: boolean;
 
+  /** Show the sort selector (name / recently edited) - admin feature (default: false) */
+  showSort?: boolean;
+
   /** Custom title */
   title?: string;
 
@@ -117,6 +120,7 @@ export const roleDefaults: Record<ExercisesRole, Partial<ExercisesListViewProps>
     showOwnerBadge: true,
     showBulkDelete: true,
     showImport: true,
+    showSort: true,
     title: 'Wszystkie Ćwiczenia',
     emptyMessage: 'Brak ćwiczeń spełniających kryteria.',
   },
