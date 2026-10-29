@@ -1,21 +1,29 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { App } from '@capacitor/app';
-import { format, isSameDay, startOfDay, subDays } from 'date-fns';
+import useSWR from 'swr';
+import { addDays, format, isSameDay, startOfDay, subDays } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { useActiveWorkout } from '@/hooks/useActiveWorkout';
-import { useCollection, useUser } from '@/lib/db-hooks';
+import type { GamificationStats } from '@/hooks/useGamification';
+import { jsonFetcher, useCollection, useUser } from '@/lib/db-hooks';
 import {
   ensureWorkoutWidget,
   isLiveWidgetSupported,
+  publishUpNext,
   publishWeeklyStats,
   stopWorkoutWidget,
+  type UpNextWorkout,
   type WeeklyStats,
 } from '@/lib/live-widget';
-import type { RunningSession, StravaActivity, WorkoutLog } from '@/lib/types';
+import type { PlannedWorkout, RunningSession, StravaActivity, WorkoutLog } from '@/lib/types';
 
 const WIDGET_URL_PREFIX = 'leniwakluska.com://app';
 const WINDOW_DAYS = 7;
+/** How far ahead planned workouts are handed to the widget. */
+const UP_NEXT_DAYS = 14;
+/** A few spares, so the widget still has a next one after today's start time passes. */
+const UP_NEXT_LIMIT = 5;
 
 /** The launch intent is replayed to every listener; act on it once per process. */
 let launchUrlHandled = false;
@@ -67,7 +75,8 @@ export function NativeWidgetLinks() {
 function computeWeeklyStats(
   workouts: WorkoutLog[],
   runs: RunningSession[],
-  stravaActivities: StravaActivity[]
+  stravaActivities: StravaActivity[],
+  streak: number
 ): WeeklyStats {
   const today = new Date();
   const days = Array.from({ length: WINDOW_DAYS }, (_, i) => startOfDay(subDays(today, WINDOW_DAYS - 1 - i)));
@@ -113,7 +122,28 @@ function computeWeeklyStats(
     distanceKm: Math.round(distanceKm * 10) / 10,
     activeMinutes: Math.round(activeMinutes),
     days: days.map((day, i) => ({ label: format(day, 'EEEEE', { locale: pl }).toUpperCase(), count: counts[i] })),
+    streak,
   };
+}
+
+function toUpNext(planned: PlannedWorkout[]): UpNextWorkout[] {
+  return planned
+    .map(plan => ({ plan, at: Date.parse(plan.date) }))
+    .filter(({ at }) => !Number.isNaN(at))
+    .sort((a, b) => a.at - b.at)
+    .slice(0, UP_NEXT_LIMIT)
+    .map(({ plan, at }) => {
+      // Scheduled from a saved workout → start it; anything else only has the calendar entry.
+      const workoutId = (plan as { workoutId?: string }).workoutId;
+      return {
+        title: plan.workoutName || 'Trening',
+        at,
+        exercises: plan.exercises?.length ?? 0,
+        openPath: workoutId
+          ? `/athlete/log?workoutId=${workoutId}`
+          : `/athlete/calendar?date=${format(new Date(at), 'yyyy-MM-dd')}`,
+      };
+    });
 }
 
 /** Keeps the widget's "last 7 days" face current — it is what the home screen shows between workouts. */
@@ -132,9 +162,12 @@ function useWeeklyStatsPublisher() {
   );
   const runs = useCollection<RunningSession>(userId ? 'runningSessions' : null, { ownerId: userId, date: { $gte: since } });
   const strava = useCollection<StravaActivity>(userId ? 'stravaActivities' : null, { ownerId: userId, date: { $gte: since } });
+  // Same key as useGamificationProfile, so the two share one cached read.
+  const gamification = useSWR<GamificationStats>(userId ? '/api/gamification/profile' : null, jsonFetcher);
+  const streak = gamification.data?.streaks?.workout ?? 0;
 
   const refetchRef = useRef<Array<() => void>>([]);
-  refetchRef.current = [workouts.refetch, runs.refetch, strava.refetch];
+  refetchRef.current = [workouts.refetch, runs.refetch, strava.refetch, () => void gamification.mutate()];
 
   // Going to the home screen is when the widget gets looked at: catch up with
   // anything saved this session (a run, a synced activity) before it does.
@@ -155,15 +188,43 @@ function useWeeklyStatsPublisher() {
   const statsJson = useMemo(
     () =>
       loaded
-        ? JSON.stringify(computeWeeklyStats(workouts.data ?? [], runs.data ?? [], strava.data ?? []))
+        ? JSON.stringify(computeWeeklyStats(workouts.data ?? [], runs.data ?? [], strava.data ?? [], streak))
         : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [loaded, workouts.data, runs.data, strava.data, dayKey]
+    [loaded, workouts.data, runs.data, strava.data, streak, dayKey]
   );
 
   useEffect(() => {
     if (statsJson) void publishWeeklyStats(JSON.parse(statsJson) as WeeklyStats);
   }, [statsJson]);
+
+  return dayKey;
+}
+
+/** Keeps the widget's "next workout" row current; the widget drops the ones whose time has passed. */
+function useUpNextPublisher(dayKey: string) {
+  const { user } = useUser();
+  const userId = isLiveWidgetSupported() ? user?.uid : undefined;
+
+  const range = useMemo(() => {
+    const today = startOfDay(new Date());
+    return { from: today.toISOString(), to: addDays(today, UP_NEXT_DAYS).toISOString() };
+  }, [dayKey]);
+
+  const planned = useCollection<PlannedWorkout>(
+    userId ? 'plannedWorkouts' : null,
+    { ownerId: userId, date: { $gte: range.from, $lte: range.to } },
+    { sort: { date: 1 } }
+  );
+
+  const upNextJson = useMemo(
+    () => (planned.isLoading ? null : JSON.stringify(toUpNext(planned.data ?? []))),
+    [planned.isLoading, planned.data]
+  );
+
+  useEffect(() => {
+    if (upNextJson) void publishUpNext(JSON.parse(upNextJson) as UpNextWorkout[]);
+  }, [upNextJson]);
 }
 
 /**
@@ -200,11 +261,12 @@ function useActiveWorkoutSession() {
 
 /**
  * What the home-screen widget needs from the athlete's data and isn't tied to
- * one screen: weekly stats while idle, and the in-progress workout. Needs the
- * ActiveWorkoutProvider. Renders nothing.
+ * one screen: weekly stats, streak and the next planned workout while idle,
+ * and the in-progress workout. Needs the ActiveWorkoutProvider. Renders nothing.
  */
 export function NativeWidgetBridge() {
-  useWeeklyStatsPublisher();
+  const dayKey = useWeeklyStatsPublisher();
+  useUpNextPublisher(dayKey);
   useActiveWorkoutSession();
   return null;
 }

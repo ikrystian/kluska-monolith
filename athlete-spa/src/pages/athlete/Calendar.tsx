@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { format, addMinutes, isSameDay } from 'date-fns';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { format, addMinutes, isSameDay, isValid, parse } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { CalendarDays } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -26,8 +27,22 @@ const statusColors = {
 
 type RunCalendarItem = AgendaRun;
 
+/** `?date=2026-11-07` (e.g. from the home-screen widget) → that day; anything else → null. */
+const parseDateParam = (value: string | null): Date | null => {
+    if (!value) return null;
+    const date = parse(value, 'yyyy-MM-dd', new Date());
+    return isValid(date) ? date : null;
+};
+
 export default function CalendarPage() {
-    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+    const [searchParams] = useSearchParams();
+    const dateParam = searchParams.get('date');
+    const [selectedDate, setSelectedDate] = useState<Date>(() => parseDateParam(dateParam) ?? new Date());
+    // The page stays mounted when a widget link lands on it again with another day.
+    useEffect(() => {
+        const date = parseDateParam(dateParam);
+        if (date) setSelectedDate(date);
+    }, [dateParam]);
     const { user } = useUser();
     const [openEvent, setOpenEvent] = useState<AgendaEvent | null>(null);
     const [selectedSession, setSelectedSession] = useState<TrainingSessionData | null>(null);

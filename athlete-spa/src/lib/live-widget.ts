@@ -65,14 +65,15 @@ export interface WeeklyStats {
   streak: number;
 }
 
-export interface UpNextWorkout {
+// A type rather than an interface: the plugin's JsonValue needs an implicit index signature.
+export type UpNextWorkout = {
   title: string;
   /** Epoch ms of the planned start; the widget words it as "Dziś 18:00", "Jutro", "Pt 7.11". */
   at: number;
   exercises: number;
   /** App route behind the widget's "Start" button. */
   openPath: string;
-}
+};
 
 /**
  * Commands the widget can send; the screen that owns the session handles them.
@@ -160,7 +161,7 @@ export function updateLiveWidget(state: LiveWidgetState): Promise<void> {
  * countdown belongs to the screen, so it goes when the commands do.
  */
 export function setLiveWidgetInteractive(interactive: boolean): Promise<void> {
-  const state = interactive ? { interactive } : { interactive, restEndsAt: null };
+  const state: Record<string, boolean | null> = interactive ? { interactive } : { interactive, restEndsAt: null };
   return enqueue('interactive', () => CapgoWidgetKit.updateWidgetSession({ widgetId: WIDGET_ID, state, merge: true }));
 }
 

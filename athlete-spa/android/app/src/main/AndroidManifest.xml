@@ -44,7 +44,7 @@
             android:exported="false"
             android:foregroundServiceType="location" />
 
-        <!-- Home-screen widget: workout / run in progress, otherwise the last 7 days. -->
+        <!-- Home-screen widget: workout / run in progress, otherwise the last 7 days and the next planned workout. -->
         <receiver
             android:name=".widget.SessionWidgetProvider"
             android:exported="false">
