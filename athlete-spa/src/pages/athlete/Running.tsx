@@ -214,7 +214,7 @@ export default function RunningPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-7 px-4 pb-28 pt-5 md:px-6 md:pt-8">
+    <div className="mx-auto w-full max-w-3xl space-y-7 px-4 pb-5 pt-20 md:px-6 md:pt-8">
       <header className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Bieganie</p>

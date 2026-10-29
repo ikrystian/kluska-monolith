@@ -55,7 +55,7 @@ export default function AthleteTrainersPage() {
   }, [trainers, query, city, myTrainer?.id]);
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-6 px-4 pb-28 pt-5 md:px-6 md:pt-8">
+    <div className="mx-auto w-full max-w-4xl space-y-6 px-4 pb-4 pt-18 md:px-6 md:pt-8">
       <header>
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Trener osobisty</p>
         <h1 className="font-headline text-3xl font-bold tracking-tight md:text-4xl">Znajdź trenera</h1>

@@ -2320,7 +2320,7 @@ export default function LogWorkoutPage() {
 
   if (view === 'active' && builderData) {
     return (
-      <div className="container mx-auto flex h-full justify-center p-4 md:p-8">
+      <div className="container mx-auto flex h-full justify-center p-4 pt-18 md:p-8">
         <div className="flex h-full w-full max-w-lg flex-col">
           <ActiveWorkoutView
             initialWorkout={builderData}

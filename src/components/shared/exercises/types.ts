@@ -25,6 +25,9 @@ export interface ExercisesListViewProps {
   /** Show bulk delete button - admin feature (default: false) */
   showBulkDelete?: boolean;
 
+  /** Show the "Importuj ćwiczenia" button - admin feature (default: false) */
+  showImport?: boolean;
+
   /** Custom title */
   title?: string;
 
@@ -108,6 +111,7 @@ export const roleDefaults: Record<ExercisesRole, Partial<ExercisesListViewProps>
     showProgress: false,
     showOwnerBadge: true,
     showBulkDelete: true,
+    showImport: true,
     title: 'Wszystkie Ćwiczenia',
     emptyMessage: 'Brak ćwiczeń spełniających kryteria.',
   },

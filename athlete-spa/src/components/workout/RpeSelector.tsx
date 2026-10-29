@@ -1,5 +1,3 @@
-import { useState } from 'react';
-import { Pencil } from 'lucide-react';
 import { haptic } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
 
@@ -14,13 +12,6 @@ export function rpeToRir(rpe: number): string {
   return `${rir} powt. zapasu`;
 }
 
-function toneFor(rpe: number): string {
-  if (rpe >= 9.5) return 'bg-destructive text-destructive-foreground border-transparent';
-  if (rpe >= 8.5) return 'bg-primary text-primary-foreground border-transparent';
-  if (rpe >= 7.5) return 'bg-volt text-volt-foreground border-transparent';
-  return 'bg-secondary text-foreground border-transparent';
-}
-
 /**
  * Rate of perceived exertion for a finished set.
  *
@@ -30,8 +21,7 @@ function toneFor(rpe: number): string {
  *
  * Presented as chips rather than a numeric field: it is answered right after a
  * set, with shaky hands, and the scale has nine valid values. Once answered it
- * folds into a single chip, so a list of finished sets stays short; tapping
- * that chip opens the scale again.
+ * disappears for that set, so a list of finished sets stays short.
  */
 export function RpeSelector({
   value,
@@ -42,14 +32,12 @@ export function RpeSelector({
   onChange: (value: number | undefined) => void;
   className?: string;
 }) {
-  const [editing, setEditing] = useState(false);
+  // Every valid rating is ≥ 6, so anything falsy (undefined, or null/'' from the form) means "not rated yet".
+  if (value) return null;
 
   const select = (rpe: number) => {
     haptic('tap');
-    // Tapping the active chip clears it — the field is optional — and keeps the scale open.
-    const next = value === rpe ? undefined : rpe;
-    onChange(next);
-    setEditing(next === undefined);
+    onChange(rpe);
   };
 
   return (
@@ -58,29 +46,20 @@ export function RpeSelector({
         <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
           RPE
         </span>
-        <span className="text-[10px] text-muted-foreground">
-          {value ? rpeToRir(value) : 'jak ciężka była seria?'}
-        </span>
+        <span className="text-[10px] text-muted-foreground">jak ciężka była seria?</span>
       </div>
       <div className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5">
-        {RPE_VALUES.map(rpe => {
-          const isActive = value === rpe;
-          return (
-            <button
-              key={rpe}
-              type="button"
-              onClick={() => select(rpe)}
-              aria-pressed={isActive}
-              aria-label={`RPE ${rpe} — ${rpeToRir(rpe)}`}
-              className={cn(
-                'h-9 min-w-[2.75rem] shrink-0 rounded-xl border border-border/60 text-sm font-bold tabular-nums transition-all active:scale-90',
-                isActive ? toneFor(rpe) : 'text-muted-foreground'
-              )}
-            >
-              {rpe}
-            </button>
-          );
-        })}
+        {RPE_VALUES.map(rpe => (
+          <button
+            key={rpe}
+            type="button"
+            onClick={() => select(rpe)}
+            aria-label={`RPE ${rpe} — ${rpeToRir(rpe)}`}
+            className="h-9 min-w-[2.75rem] shrink-0 rounded-xl border border-border/60 text-sm font-bold tabular-nums text-muted-foreground transition-all active:scale-90"
+          >
+            {rpe}
+          </button>
+        ))}
       </div>
     </div>
   );

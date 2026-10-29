@@ -84,14 +84,14 @@ export default function AthleteSocialPage() {
 
   if (!hasProfile) {
     return (
-      <div className="mx-auto w-full max-w-2xl px-4 pb-28 pt-5 md:px-6 md:pt-8">
+      <div className="mx-auto w-full max-w-2xl px-4 pb-5 pt-20 md:px-6 md:pt-8">
         <NicknameSetup onComplete={handleProfileCreated} />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 pb-28 pt-5 md:px-6 md:pt-8">
+    <div className="mx-auto w-full max-w-2xl px-4 pb-5 pt-20 md:px-6 md:pt-8">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="sticky top-[calc(env(safe-area-inset-top))] z-20 md:top-16 grid h-auto w-full grid-cols-3 gap-1 rounded-full border border-border/60 bg-background/80 p-1 shadow-soft backdrop-blur-md">
           <TabsTrigger value="feed" className="h-9 rounded-full text-sm font-semibold data-[state=active]:bg-card data-[state=active]:shadow-soft">

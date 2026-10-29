@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Dumbbell, Loader2, Trash2 } from 'lucide-react';
+import { PlusCircle, Dumbbell, Loader2, Trash2, Download } from 'lucide-react';
 
 import { ExerciseCardHorizontal } from './ExerciseCardHorizontal';
 import { ExerciseFilters } from './ExerciseFilters';
@@ -38,6 +38,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const showProgress = props.showProgress ?? defaults.showProgress ?? false;
   const showOwnerBadge = props.showOwnerBadge ?? defaults.showOwnerBadge ?? false;
   const showBulkDelete = props.showBulkDelete ?? defaults.showBulkDelete ?? false;
+  const showImport = props.showImport ?? defaults.showImport ?? false;
   const title = props.title ?? defaults.title ?? 'Biblioteka Ćwiczeń';
   const emptyMessage = props.emptyMessage ?? defaults.emptyMessage ?? 'Nie znaleziono żadnych ćwiczeń.';
 
@@ -54,6 +55,8 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDetailDialogOpen, setDetailDialogOpen] = useState(false);
   const [isBulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [isImportDialogOpen, setImportDialogOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
 
@@ -214,6 +217,38 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     }
   };
 
+  const handleImportConfirm = async () => {
+    setIsImporting(true);
+
+    try {
+      const response = await fetch('/api/admin/exercises/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || `Nie udało się zaimportować ćwiczeń (HTTP ${response.status}).`);
+      }
+
+      toast({
+        title: "Sukces!",
+        description: `Zaimportowano ${result.inserted} ćwiczeń. Pominięto ${result.skipped} istniejących (duplikatów).`,
+      });
+      setImportDialogOpen(false);
+      refetchExercises();
+    } catch (error) {
+      toast({
+        title: 'Błąd',
+        description: error instanceof Error ? error.message : 'Nie udało się zaimportować ćwiczeń.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   // Virtualization setup: virtualize all filtered exercises smoothly
   const parentRef = useRef<HTMLDivElement>(null);
   const rowVirtualizer = useVirtualizer({
@@ -242,6 +277,20 @@ export function ExercisesListView(props: ExercisesListViewProps) {
             >
               <Trash2 className="mr-2 h-4 w-4" />
               Usuń wszystkie ({allExercises.length})
+            </Button>
+          )}
+          {showImport && (
+            <Button
+              onClick={() => setImportDialogOpen(true)}
+              variant="outline"
+              disabled={isImporting}
+            >
+              {isImporting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="mr-2 h-4 w-4" />
+              )}
+              Importuj ćwiczenia
             </Button>
           )}
           {canCreate && (
@@ -415,6 +464,33 @@ export function ExercisesListView(props: ExercisesListViewProps) {
             >
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Usuń wszystkie
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Import Exercises Confirmation Dialog */}
+      <AlertDialog open={isImportDialogOpen} onOpenChange={setImportDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Importuj ćwiczenia z biblioteki openGym?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Importuje wszystkie ćwiczenia z pliku <b>opengym-exercises-pl.json</b>
+              do bazy danych, zachowując obecną strukturę ćwiczeń.
+              Ćwiczenia, które już istnieją (po nazwie), zostaną pominięte.
+              Import może potrwać kilka chwil.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isImporting}>
+              Anuluj
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleImportConfirm}
+              disabled={isImporting}
+            >
+              {isImporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isImporting ? 'Importowanie...' : 'Importuj'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -920,7 +920,7 @@ export default function AthleteDashboardPage() {
   };
 
   return (
-    <div className="container mx-auto max-w-7xl px-4 pb-24 pt-5 md:px-8 md:pt-8">
+    <div className="container mx-auto max-w-7xl px-4 pb-4 pt-18 md:px-8 md:pt-8">
       <div className={cn(!isEditing && 'stagger-rise')}>
         {/* Hero — typographic statement */}
         <section className="mb-6 md:mb-10">

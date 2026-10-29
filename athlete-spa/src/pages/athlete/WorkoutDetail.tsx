@@ -70,7 +70,7 @@ export default function WorkoutDetailsPage() {
 
     if (isLoading) {
         return (
-            <div className="mx-auto w-full max-w-3xl space-y-5 px-4 pb-28 pt-5 md:px-6 md:pt-8">
+            <div className="mx-auto w-full max-w-3xl space-y-5 px-4 pb-5 pt-20 md:px-6 md:pt-8">
                 <Skeleton className="h-72 w-full rounded-[1.75rem]" />
                 <Skeleton className="h-16 w-full rounded-[1.75rem]" />
                 <Skeleton className="h-24 w-full rounded-[1.5rem]" />
@@ -97,7 +97,7 @@ export default function WorkoutDetailsPage() {
     const sets = totalSets(workout.exerciseSeries);
 
     return (
-        <div className="mx-auto w-full max-w-3xl space-y-6 px-4 pb-4 pt-20 md:px-6 md:pt-8">
+        <div className="mx-auto w-full max-w-3xl space-y-6 px-4 pb-4 pt-18 md:px-6 md:pt-8">
             {/* Hero */}
             <section className="relative overflow-hidden rounded-[1.75rem] bg-secondary shadow-soft">
                 <div className="relative h-64 md:h-80">

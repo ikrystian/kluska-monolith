@@ -202,7 +202,7 @@ export default function CalendarPage() {
     const isLoading = sessionsLoading || plannedLoading || trainingSessionsLoading || runningLoading || stravaLoading;
 
     return (
-        <div className="mx-auto w-full max-w-3xl space-y-5 px-4 pb-28 pt-5 md:px-6 md:pt-8">
+        <div className="mx-auto w-full max-w-3xl space-y-5 px-4 pb-5 pt-20 md:px-6 md:pt-8">
             <header>
                 <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Plan</p>
                 <h1 className="font-headline text-3xl font-bold tracking-tight md:text-4xl">Kalendarz</h1>
