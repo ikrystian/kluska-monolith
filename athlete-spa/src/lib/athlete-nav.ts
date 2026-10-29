@@ -25,13 +25,13 @@ import {
   Users,
   UtensilsCrossed,
   Users2,
-  type LucideIcon,
-} from 'lucide-react';
+} from '@/components/animated-icons';
+import type { AnimatedIcon } from '@/components/animated-icons';
 
 export interface NavLeaf {
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon: AnimatedIcon;
   /** One-line hint shown in search results and tooltips. */
   description?: string;
   /** Extra words the menu search should match (synonyms, features on the screen). */
@@ -40,7 +40,7 @@ export interface NavLeaf {
 
 export interface NavGroup {
   label: string;
-  icon: LucideIcon;
+  icon: AnimatedIcon;
   /** CSS colour that identifies the group everywhere in the menu. */
   color: string;
   items: NavLeaf[];

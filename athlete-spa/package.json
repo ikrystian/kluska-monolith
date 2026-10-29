@@ -17,6 +17,7 @@
     "cap:distribute:android": "npm run build && npx cap sync && cd android && ./gradlew assembleRelease && firebase appdistribution:distribute app/build/outputs/apk/release/app-release.apk --app 1:612157445461:android:505ddb0428648a6061cbdc --testers \"krystian@bpcoders.pl,michalpiotrduma@gmail.com\""
   },
   "dependencies": {
+    "@animateicons/react": "^0.13.0",
     "@capacitor/app": "^8.1.1",
     "@capacitor/browser": "^8.0.4",
     "@capacitor/camera": "^8.2.5",

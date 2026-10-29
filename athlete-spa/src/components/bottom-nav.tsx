@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Play, CalendarDays, MessageSquare, Menu } from 'lucide-react';
+import { LayoutDashboard, Play, CalendarDays, Menu } from '@/components/animated-icons';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { MobileMoreSheet } from '@/components/mobile-more-sheet';

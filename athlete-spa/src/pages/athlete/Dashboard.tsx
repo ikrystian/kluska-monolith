@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useCollection, useDoc, useUser } from '@/lib/db-hooks';
 import type { WorkoutLog, Goal, BodyMeasurement, RunningSession, StravaActivity, LoggedMeal, PlannedWorkout, UserProfile, TrainingPlan, Habit, HabitLog } from '@/lib/types';
-import { Activity, Target, Weight, Footprints, ChefHat, Calendar as CalendarIcon, TrendingUp, Dumbbell, Clock, Award, Layers, User, MapPin, CheckSquare, Play, ArrowRight, Check, GripVertical, Eye, EyeOff, RotateCcw, LayoutGrid, Trophy, Zap, SlidersHorizontal, Users, type LucideIcon } from 'lucide-react';
+import { Activity, Target, Weight, Footprints, ChefHat, Calendar as CalendarIcon, TrendingUp, Dumbbell, Clock, Award, Layers, User, MapPin, CheckSquare, Play, ArrowRight, Check, GripVertical, Eye, EyeOff, RotateCcw, LayoutGrid, Trophy, Zap, SlidersHorizontal, Users, type AnimatedIcon } from '@/components/animated-icons';
 import type { TrainingSessionData } from '@/components/schedule/SessionDetailsDialog';
 import { ActiveChallenges } from '@/components/challenges/ActiveChallenges';
 import { FriendsActivityFeed } from '@/components/social/FriendsActivityFeed';
@@ -72,7 +72,7 @@ const SectionHeader = ({ title, sub, href, linkLabel = 'Wszystkie' }: { title: s
 
 /* ---------- Editable dashboard sections ---------- */
 
-const SECTION_META: Record<DashboardSectionId, { title: string; icon: LucideIcon }> = {
+const SECTION_META: Record<DashboardSectionId, { title: string; icon: AnimatedIcon }> = {
   bento: { title: 'Przegląd', icon: LayoutGrid },
   challenges: { title: 'Wyzwania biegowe', icon: Trophy },
   'recent-goals': { title: 'Ostatnie treningi i cele', icon: Dumbbell },
