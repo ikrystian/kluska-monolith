@@ -37,6 +37,15 @@ export async function swrFetcher(url: string) {
   return result.data;
 }
 
+/** For endpoints that return the payload directly rather than wrapped in `{ data }`. */
+export async function jsonFetcher<T = unknown>(url: string): Promise<T> {
+  const response = await apiFetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch: ${response.statusText}`);
+  }
+  return response.json();
+}
+
 /**
  * Hook to fetch a collection from MongoDB via API
  *

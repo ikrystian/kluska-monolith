@@ -394,7 +394,7 @@ function WorkoutBuilderView({ initialData, onStart, onCancel, allExercises, isLo
                               {index + 1}
                             </div>
                             <div className="min-w-0">
-                              <p className="truncate font-semibold">{exerciseDetails?.name || (isLoadingExercises ? 'Ładowanie...' : 'Nieznane ćwiczenie')}</p>
+                              <p className="line-clamp-2 font-semibold">{exerciseDetails?.name || (isLoadingExercises ? 'Ładowanie...' : 'Nieznane ćwiczenie')}</p>
                               <p className="truncate text-xs text-muted-foreground">
                                 {exerciseDetails?.mainMuscleGroups?.map(mg => mg.name).join(', ') || 'Ogólnorozwojowe'}
                               </p>
@@ -599,15 +599,15 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
     isFinished
       ? null
       : {
-          activity: 'workout',
-          title: liveWorkoutName || 'Trening',
-          line1: `${liveCompletedSets}/${liveTotalSets} serii`,
-          line2: widgetNotice ?? liveCurrentExercise,
-          running: true,
-          openPath: liveWorkoutPath,
-          finishPath: workoutLogId ? `${liveWorkoutPath}&finish=true` : liveWorkoutPath,
-          interactive: true,
-        },
+        activity: 'workout',
+        title: liveWorkoutName || 'Trening',
+        line1: `${liveCompletedSets}/${liveTotalSets} serii`,
+        line2: widgetNotice ?? liveCurrentExercise,
+        running: true,
+        openPath: liveWorkoutPath,
+        finishPath: workoutLogId ? `${liveWorkoutPath}&finish=true` : liveWorkoutPath,
+        interactive: true,
+      },
     () => Date.now() - startTime.getTime(),
     { keepOnUnmount: true }
   );
@@ -1930,7 +1930,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h3 className="truncate font-semibold">{template.name}</h3>
+                          <h3 className="line-clamp-2 font-semibold">{template.name}</h3>
                           <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
@@ -1990,7 +1990,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
                         <Calendar className="h-6 w-6" />
                       </div>
                       <div className="min-w-0">
-                        <h3 className="truncate font-semibold">{plan.name}</h3>
+                        <h3 className="line-clamp-2 font-semibold">{plan.name}</h3>
                         <p className="text-xs text-muted-foreground">{plan.stages?.length || 0} etapów</p>
                       </div>
                       <ChevronRight className="ml-auto h-5 w-5 shrink-0 text-muted-foreground" />
@@ -2088,7 +2088,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
                         <RotateCcw className="h-5 w-5" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="truncate font-semibold">{log.workoutName}</h3>
+                        <h3 className="line-clamp-2 font-semibold">{log.workoutName}</h3>
                         <p className="text-xs text-muted-foreground">{format(new Date(log.endTime as unknown as string | number | Date), 'd MMMM yyyy', { locale: pl })}</p>
                       </div>
                       <span className="text-[11px] font-bold uppercase tracking-wider text-primary">Powtórz</span>

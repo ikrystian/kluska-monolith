@@ -89,7 +89,7 @@ export function ActiveWorkoutWidget() {
             </span>
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-2">
-                <span className="truncate font-semibold leading-tight">
+                <span className="line-clamp-2 font-semibold leading-tight">
                   {activeWorkout?.workoutName || 'Trening'}
                 </span>
                 <span className="shrink-0 font-mono text-sm tabular-nums text-primary">{elapsedTime}</span>

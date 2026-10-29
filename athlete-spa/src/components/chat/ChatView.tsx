@@ -41,7 +41,7 @@ export function ChatView({
                     <AvatarFallback>{otherParticipant?.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">
-                    <h2 className="truncate font-semibold leading-tight">{otherParticipant?.name}</h2>
+                    <h2 className="line-clamp-2 font-semibold leading-tight">{otherParticipant?.name}</h2>
                     <p className="text-xs text-muted-foreground capitalize">{otherParticipant?.role}</p>
                 </div>
             </header>

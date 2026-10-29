@@ -1,7 +1,9 @@
 'use client';
 
-import { apiFetch, resolveMediaUrl } from '@/lib/api-client';
-import React, { useState, useEffect, useCallback } from 'react';
+import useSWR from 'swr';
+import { resolveMediaUrl } from '@/lib/api-client';
+import { jsonFetcher } from '@/lib/db-hooks';
+import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -24,26 +26,11 @@ L.Marker.prototype.options.icon = DefaultIcon;
 const center: [number, number] = [52.237049, 21.017532]; // Center of Warsaw
 
 function GymFavorites({ gymId }: { gymId: string }) {
-    const [favorites, setFavorites] = useState<{ _id: string; name: string; avatarUrl?: string }[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchFavorites = async () => {
-            try {
-                const response = await apiFetch(`/api/gyms/${gymId}/favorites`);
-                if (response.ok) {
-                    const data = await response.json();
-                    setFavorites(data);
-                }
-            } catch (error) {
-                console.error('Error fetching favorites:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchFavorites();
-    }, [gymId]);
+    const { data, isLoading: loading } = useSWR<{ _id: string; name: string; avatarUrl?: string }[]>(
+        `/api/gyms/${gymId}/favorites`,
+        jsonFetcher
+    );
+    const favorites = data ?? [];
 
     if (loading) return <div className="h-6 w-20 animate-pulse bg-muted rounded" />;
     if (favorites.length === 0) return null;
@@ -72,30 +59,33 @@ function GymFavorites({ gymId }: { gymId: string }) {
     );
 }
 
+const EMPTY_GYMS: Gym[] = [];
+
+const GEOCODE_STORAGE_KEY = 'athlete-spa:geocode';
+type Coords = { lat: number; lng: number };
+
+function readGeocode(address: string): Coords | undefined {
+    try {
+        return JSON.parse(localStorage.getItem(GEOCODE_STORAGE_KEY) ?? '{}')[address];
+    } catch {
+        return undefined;
+    }
+}
+
+function writeGeocode(address: string, coords: Coords) {
+    try {
+        const all = JSON.parse(localStorage.getItem(GEOCODE_STORAGE_KEY) ?? '{}');
+        all[address] = coords;
+        localStorage.setItem(GEOCODE_STORAGE_KEY, JSON.stringify(all));
+    } catch {
+        // Storage unavailable — geocoding just isn't remembered.
+    }
+}
+
 export default function GymMap() {
-    const [gyms, setGyms] = useState<Gym[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data: gymsData, isLoading: loading } = useSWR<Gym[]>('/api/gyms', jsonFetcher);
+    const gyms = gymsData ?? EMPTY_GYMS;
     const [geocodedGyms, setGeocodedGyms] = useState<(Gym & { lat: number; lng: number })[]>([]);
-
-    const fetchGyms = useCallback(async () => {
-        try {
-            const response = await apiFetch('/api/gyms');
-            if (response.ok) {
-                const data = await response.json();
-                setGyms(data);
-            } else {
-                console.error('Failed to fetch gyms');
-            }
-        } catch (error) {
-            console.error('Error fetching gyms:', error);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchGyms();
-    }, [fetchGyms]);
 
     useEffect(() => {
         if (gyms.length > 0) {
@@ -109,20 +99,24 @@ export default function GymMap() {
                     if (gym.location && gym.location.lat && gym.location.lng) {
                         processed.push({ ...gym, lat: gym.location.lat, lng: gym.location.lng });
                     } else if (gym.address) {
-                        // Geocode using Nominatim
+                        // Geocode using Nominatim; an address never moves, so the result is
+                        // remembered and Nominatim's 1 req/s limit is only paid once.
+                        const cached = readGeocode(gym.address);
+                        if (cached) {
+                            processed.push({ ...gym, ...cached });
+                            continue;
+                        }
                         try {
-                            const response = await apiFetch(
+                            const response = await fetch(
                                 `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
                                     gym.address
                                 )}&format=json&limit=1`
                             );
                             const data = await response.json();
                             if (data && data[0]) {
-                                processed.push({
-                                    ...gym,
-                                    lat: parseFloat(data[0].lat),
-                                    lng: parseFloat(data[0].lon),
-                                });
+                                const coords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+                                writeGeocode(gym.address, coords);
+                                processed.push({ ...gym, ...coords });
                             }
                             // Respect Nominatim rate limit (1s delay)
                             await new Promise((resolve) => setTimeout(resolve, 1000));

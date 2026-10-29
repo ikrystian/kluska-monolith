@@ -1,3 +1,4 @@
+import { invalidateAfterMutation } from '@/lib/cache-invalidation';
 import { reportNetworkFailure, reportNetworkSuccess } from '@/lib/network-status';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -60,6 +61,12 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   if (response.status === 401) {
     localStorage.removeItem(TOKEN_STORAGE_KEY);
     unauthorizedHandler?.();
+  }
+
+  // A successful write means anything cached from before it may be stale.
+  const method = (options.method ?? 'GET').toUpperCase();
+  if (response.ok && method !== 'GET' && method !== 'HEAD') {
+    invalidateAfterMutation(path);
   }
 
   return response;

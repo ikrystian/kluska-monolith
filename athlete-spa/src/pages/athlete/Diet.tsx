@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import useSWR from 'swr';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -16,7 +17,7 @@ import {
     NotebookPen,
 } from 'lucide-react';
 
-import { apiFetch } from '@/lib/api-client';
+import { jsonFetcher } from '@/lib/db-hooks';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -247,37 +248,13 @@ function LoadingView() {
 }
 
 export default function AthleteDietPage() {
-    const [diet, setDiet] = useState<AssignedDiet | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [selectedDay, setSelectedDay] = useState(1);
-
-    useEffect(() => {
-        let cancelled = false;
-
-        async function fetchDiet() {
-            try {
-                const response = await apiFetch('/api/athlete/diet');
-                if (!response.ok) throw new Error('Request failed');
-                const data = await response.json();
-                if (!cancelled) {
-                    setDiet(data.diet);
-                    if (data.diet?.days?.length) {
-                        setSelectedDay(data.diet.days[0].dayNumber);
-                    }
-                }
-            } catch {
-                if (!cancelled) setError('Nie udało się pobrać diety. Spróbuj ponownie później.');
-            } finally {
-                if (!cancelled) setIsLoading(false);
-            }
-        }
-
-        fetchDiet();
-        return () => {
-            cancelled = true;
-        };
-    }, []);
+    const { data, error: fetchError, isLoading } = useSWR<{ diet: AssignedDiet | null }>(
+        '/api/athlete/diet',
+        jsonFetcher
+    );
+    const diet = data?.diet ?? null;
+    const error = fetchError && !data ? 'Nie udało się pobrać diety. Spróbuj ponownie później.' : null;
+    const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
     if (isLoading) return <LoadingView />;
 

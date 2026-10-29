@@ -1,6 +1,7 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { SWRConfig } from 'swr';
+import { SWRConfig, useSWRConfig } from 'swr';
+import { bindCacheInvalidation, trackActiveKeys } from '@/lib/cache-invalidation';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { createPersistentCacheProvider } from '@/lib/swr-cache';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -63,6 +64,16 @@ const WorkoutEditPage = lazy(() => import('@/pages/athlete/WorkoutEdit'));
 // would throw away the cache on every re-render.
 const cacheProvider = createPersistentCacheProvider();
 
+/** Hands the provider-bound `mutate`/`cache` to the invalidation layer. */
+function CacheInvalidationBinder() {
+  const { mutate, cache } = useSWRConfig();
+  useEffect(() => {
+    bindCacheInvalidation({ mutate, cache });
+    return () => bindCacheInvalidation(null);
+  }, [mutate, cache]);
+  return null;
+}
+
 export default function App() {
   return (
     <SWRConfig
@@ -73,8 +84,10 @@ export default function App() {
         revalidateOnFocus: true,
         revalidateOnReconnect: true,
         keepPreviousData: true,
+        use: [trackActiveKeys],
       }}
     >
+    <CacheInvalidationBinder />
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
     <AuthProvider>
       <NativePushBridge />

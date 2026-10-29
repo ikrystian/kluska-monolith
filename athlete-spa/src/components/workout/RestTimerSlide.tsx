@@ -170,7 +170,7 @@ export function RestTimerSlide({
                 <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                   {nextSetInfo.isNewExercise ? 'Następne ćwiczenie' : 'Następna seria'}
                 </p>
-                <p className="truncate font-semibold text-sm">
+                <p className="line-clamp-2 font-semibold text-sm">
                   {nextSetInfo.isNewExercise ? nextSetInfo.exerciseName : `Seria ${nextSetInfo.setNumber}`}
                 </p>
               </div>

@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { apiFetch, setUnauthorizedHandler, TOKEN_STORAGE_KEY } from '@/lib/api-client';
 import { getDeviceId } from '@/lib/device-id';
 import { clearPersistedCache } from '@/lib/swr-cache';
+import { clearMemoryCache } from '@/lib/cache-invalidation';
 import { clearOfflineQueue } from '@/lib/offline-queue';
 
 /**
@@ -210,6 +211,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // this the next sign-in on the same device would render it before the
     // first fetch lands.
     clearPersistedCache();
+    clearMemoryCache();
     // Pending writes belong to the account that made them; replaying them
     // under whoever signs in next would attribute data to the wrong athlete.
     clearOfflineQueue();

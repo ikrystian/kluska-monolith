@@ -101,7 +101,7 @@ export function StartRunDialog({ open, onOpenChange, programs }: StartRunDialogP
                   className="flex w-full items-center justify-between gap-3 rounded-2xl border border-border/60 bg-card p-3.5 text-left shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted active:scale-[0.99]"
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-semibold">{program.name}</p>
+                    <p className="line-clamp-2 font-semibold">{program.name}</p>
                     <p className="text-sm text-muted-foreground">{program.targetDistanceKm} km</p>
                     {program.cues.length > 0 && (
                       <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">

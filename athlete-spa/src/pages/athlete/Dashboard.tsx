@@ -570,7 +570,7 @@ export default function AthleteDashboardPage() {
                       <Dumbbell className="h-5 w-5" />
                     </span>
                     <div className="min-w-0 max-w-[50%] flex-1">
-                      <p className="truncate font-semibold">{workout.workoutName}</p>
+                      <p className="line-clamp-2 font-semibold">{workout.workoutName}</p>
                       <p className="text-xs text-muted-foreground">
                         {format(new Date(workout.endTime), 'd MMM yyyy', { locale: pl })} · {workout.duration} min
                       </p>
@@ -669,7 +669,7 @@ export default function AthleteDashboardPage() {
                 className="w-[16.5rem] shrink-0 snap-start rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted active:scale-[0.98] md:w-auto"
               >
                 <div className="mb-3 flex items-start justify-between gap-2">
-                  <h4 className="min-w-0 truncate font-semibold">{session.title}</h4>
+                  <h4 className="min-w-0 line-clamp-2 font-semibold">{session.title}</h4>
                   <Badge
                     className={session.status === 'confirmed'
                       ? 'border-transparent bg-volt text-volt-foreground'
@@ -719,7 +719,7 @@ export default function AthleteDashboardPage() {
                 className="w-[16.5rem] shrink-0 snap-start rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted active:scale-[0.98] md:w-auto"
               >
                 <div className="mb-3 flex items-start justify-between gap-2">
-                  <h4 className="min-w-0 truncate font-semibold">{plan.name}</h4>
+                  <h4 className="min-w-0 line-clamp-2 font-semibold">{plan.name}</h4>
                   <Badge variant="outline">{plan.level}</Badge>
                 </div>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -830,7 +830,7 @@ export default function AthleteDashboardPage() {
                 className="w-[16.5rem] shrink-0 snap-start rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted md:w-auto"
               >
                 <div className="mb-3 flex items-start justify-between gap-2">
-                  <h4 className="min-w-0 truncate font-semibold">{workout.workoutName}</h4>
+                  <h4 className="min-w-0 line-clamp-2 font-semibold">{workout.workoutName}</h4>
                   <Badge className={diffDays === 0 ? '' : 'border-transparent bg-secondary text-foreground'}>
                     {timeBadge}
                   </Badge>
