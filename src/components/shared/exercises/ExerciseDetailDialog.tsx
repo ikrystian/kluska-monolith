@@ -10,13 +10,23 @@ import {
     DialogDescription,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Dumbbell, PlayCircle, Repeat, Timer } from 'lucide-react';
+import { Dumbbell, Repeat, Timer } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface ExerciseDetailDialogProps {
     exercise: Exercise | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
+}
+
+/**
+ * Zwraca lokalny URL animacji ćwiczenia (zapisany podczas importu openGym
+ * w `setup` jako grupa "Animacja"), gdy istnieje.
+ */
+function getAnimationUrl(exercise: Exercise | null): string | undefined {
+    if (!exercise?.setup) return undefined;
+    const item = exercise.setup.find((s) => s.group === 'Animacja' && s.value);
+    return item?.value;
 }
 
 export function ExerciseDetailDialog({
@@ -37,7 +47,9 @@ export function ExerciseDetailDialog({
         return match && match[2].length === 11 ? `https://www.youtube.com/embed/${match[2]}` : null;
     };
 
-    const mediaUrl = exercise.mediaUrl || exercise.image || '';
+    // Animacja (z importu openGym) ma pierwszeństwo nad obrazkiem w szczegółach.
+    const animationUrl = getAnimationUrl(exercise);
+    const mediaUrl = animationUrl || exercise.mediaUrl || exercise.image || '';
     const isVideo = isVideoUrl(mediaUrl);
     const youtubeEmbedUrl = isVideo && mediaUrl ? getYouTubeEmbedUrl(mediaUrl) : null;
 
@@ -65,17 +77,25 @@ export function ExerciseDetailDialog({
                                             allowFullScreen
                                         />
                                     ) : (
-                                        <div className="w-full h-full bg-black flex items-center justify-center">
-                                            <PlayCircle className="h-16 w-16 text-white opacity-80" />
-                                            <p className="text-white mt-4">Video URL: {mediaUrl}</p>
-                                        </div>
+                                        <video
+                                            src={mediaUrl}
+                                            className="w-full h-full object-contain"
+                                            controls
+                                            autoPlay
+                                            loop
+                                            muted
+                                            playsInline
+                                            poster={exercise.image || exercise.mediaUrl || undefined}
+                                        >
+                                            <source src={mediaUrl} />
+                                        </video>
                                     )
                                 ) : (
                                     <Image
                                         src={mediaUrl}
                                         alt={exercise.name}
                                         fill
-                                        className="object-cover"
+                                        className="object-contain"
                                     />
                                 )}
                             </div>
