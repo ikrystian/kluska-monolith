@@ -7,12 +7,13 @@ import { RunTracking, isNativeRunTrackingAvailable } from '@/lib/run-tracking';
  * (SessionWidgetProvider in the android project) through
  * @capgo/capacitor-widget-kit's shared widget-session store.
  *
- * The widget has two faces and two sessions:
+ * The widget has two faces fed by three sessions:
  *  - "active-session": the workout or run in progress. The widget renders it
- *    natively and ticks its own chronometer, so JS only pushes state when
- *    something visible changes.
- *  - "weekly-stats": totals for the last 7 days, shown while nothing is in
- *    progress.
+ *    natively and ticks its own chronometers (elapsed time, rest countdown),
+ *    so JS only pushes state when something visible changes.
+ *  - "weekly-stats": totals for the last 7 days and the workout streak, and
+ *  - "up-next": the next planned workouts — together the face shown while
+ *    nothing is in progress.
  * Buttons on the widget come back as widget-to-app messages (see
  * takeWidgetCommands).
  */
@@ -20,14 +21,23 @@ import { RunTracking, isNativeRunTrackingAvailable } from '@/lib/run-tracking';
 const WIDGET_ID = 'active-session';
 const WIDGET_KIND = 'active-session';
 const STATS_WIDGET_ID = 'weekly-stats';
+const UP_NEXT_WIDGET_ID = 'up-next';
 
 export interface LiveWidgetState {
   activity: 'workout' | 'run';
   title: string;
-  /** Primary stat line, e.g. "3/12 serii" or "2.35 km". */
+  /** Primary stat line, e.g. the current exercise or "2.35 km". */
   line1: string;
-  /** Secondary stat line, e.g. current exercise or pace. */
+  /** Secondary stat line, e.g. "Seria 2/4 · 80 kg × 8" or pace. */
   line2: string;
+  /** Sets done and planned across the workout, drawn as a progress bar; null hides it. */
+  setsDone?: number | null;
+  setsTotal?: number | null;
+  /**
+   * Epoch ms the rest between sets ends; null while not resting. The widget
+   * counts down to it on its own and offers skip / +30 s.
+   */
+  restEndsAt?: number | null;
   /** Elapsed time in ms at the moment this state is sent. */
   elapsedMs: number;
   /** False while a run is paused — the widget freezes its clock. */
@@ -51,10 +61,28 @@ export interface WeeklyStats {
   activeMinutes: number;
   /** Oldest to newest, one entry per day of the 7-day window. */
   days: { label: string; count: number }[];
+  /** Consecutive days of training, as the gamification profile counts it. */
+  streak: number;
 }
 
-/** Commands the widget can send; the screen that owns the session handles them. */
+export interface UpNextWorkout {
+  title: string;
+  /** Epoch ms of the planned start; the widget words it as "Dziś 18:00", "Jutro", "Pt 7.11". */
+  at: number;
+  exercises: number;
+  /** App route behind the widget's "Start" button. */
+  openPath: string;
+}
+
+/**
+ * Commands the widget can send; the screen that owns the session handles them.
+ * Must match the COMMAND_* constants in SessionWidgetProvider.java.
+ */
 export const WIDGET_COMMAND_COMPLETE_SET = 'completeSet';
+export const WIDGET_COMMAND_SKIP_REST = 'skipRest';
+export const WIDGET_COMMAND_EXTEND_REST = 'extendRest';
+/** How much the widget's "+30 s" adds; must match REST_EXTENSION_MS in SessionWidgetProvider.java. */
+export const WIDGET_REST_EXTENSION_SECONDS = 30;
 
 export interface WidgetCommand {
   name: string;
@@ -101,7 +129,9 @@ function enqueue(label: string, task: () => Promise<unknown>): Promise<void> {
 }
 
 function toStatePayload(state: LiveWidgetState) {
-  return { ...state, sampledAt: Date.now() };
+  // Updates are merged into the stored state, so a field left out would keep
+  // its old value: spell out the optional ones.
+  return { setsDone: null, setsTotal: null, restEndsAt: null, ...state, sampledAt: Date.now() };
 }
 
 export function startLiveWidget(state: LiveWidgetState): Promise<void> {
@@ -126,12 +156,12 @@ export function updateLiveWidget(state: LiveWidgetState): Promise<void> {
 
 /**
  * Flips the widget's commands on or off without touching its clock — unlike
- * updateLiveWidget, this does not resample the elapsed time.
+ * updateLiveWidget, this does not resample the elapsed time. The rest
+ * countdown belongs to the screen, so it goes when the commands do.
  */
 export function setLiveWidgetInteractive(interactive: boolean): Promise<void> {
-  return enqueue('interactive', () =>
-    CapgoWidgetKit.updateWidgetSession({ widgetId: WIDGET_ID, state: { interactive }, merge: true })
-  );
+  const state = interactive ? { interactive } : { interactive, restEndsAt: null };
+  return enqueue('interactive', () => CapgoWidgetKit.updateWidgetSession({ widgetId: WIDGET_ID, state, merge: true }));
 }
 
 export function stopLiveWidget(): Promise<void> {
@@ -179,6 +209,17 @@ export function publishWeeklyStats(stats: WeeklyStats): Promise<void> {
       widgetId: STATS_WIDGET_ID,
       kind: STATS_WIDGET_ID,
       state: { ...stats, sampledAt: Date.now() },
+    })
+  );
+}
+
+/** Replaces the planned workouts shown on the idle face; past ones are skipped by the widget itself. */
+export function publishUpNext(workouts: UpNextWorkout[]): Promise<void> {
+  return enqueue('up next', () =>
+    CapgoWidgetKit.startWidgetSession({
+      widgetId: UP_NEXT_WIDGET_ID,
+      kind: UP_NEXT_WIDGET_ID,
+      state: { workouts, sampledAt: Date.now() },
     })
   );
 }

@@ -9,6 +9,8 @@ interface UseRestTimerReturn {
   isRunning: boolean;
   isComplete: boolean;
   progress: number; // 0 to 1
+  /** Epoch ms the running countdown ends; null while paused or idle. */
+  deadline: number | null;
   start: (duration: number) => void;
   pause: () => void;
   resume: () => void;
@@ -185,6 +187,7 @@ export function useRestTimer(onComplete?: () => void): UseRestTimerReturn {
     isRunning,
     isComplete: state.isComplete,
     progress,
+    deadline,
     start,
     pause,
     resume,

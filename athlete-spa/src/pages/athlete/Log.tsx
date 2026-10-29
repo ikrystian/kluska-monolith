@@ -40,7 +40,12 @@ import { useRestTimer } from '@/hooks/useRestTimer';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { useLiveWidget } from '@/hooks/useLiveWidget';
 import { useWidgetCommands } from '@/hooks/useWidgetCommands';
-import { WIDGET_COMMAND_COMPLETE_SET } from '@/lib/live-widget';
+import {
+  WIDGET_COMMAND_COMPLETE_SET,
+  WIDGET_COMMAND_EXTEND_REST,
+  WIDGET_COMMAND_SKIP_REST,
+  WIDGET_REST_EXTENSION_SECONDS,
+} from '@/lib/live-widget';
 import { haptic } from '@/lib/haptics';
 import { isSpotifyWidgetEnabled } from '@/lib/app-permissions';
 import { PlateCalculator } from '@/components/workout/PlateCalculator';
@@ -157,6 +162,27 @@ const formatSeconds = (total: number) => {
   const m = Math.floor(total / 60);
   const s = total % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
+};
+
+/** "Seria 2/4 · 80 kg × 8" — the set the home-screen widget's "Seria ✓" would check off. */
+const describeSetForWidget = (
+  exerciseType: Exercise['type'],
+  set: Pick<WorkoutSet, 'reps' | 'weight' | 'duration'>,
+  setNumber: number,
+  setCount: number
+) => {
+  const parts = [`Seria ${setNumber}/${setCount}`];
+  const reps = Number(set.reps) || 0;
+  const weight = Number(set.weight) || 0;
+  const duration = Number(set.duration) || 0;
+  if (exerciseType === 'duration') {
+    if (duration > 0) parts.push(formatSeconds(duration));
+  } else if (exerciseType === 'weight' && weight > 0) {
+    parts.push(`${weight} kg × ${reps}`);
+  } else if (reps > 0) {
+    parts.push(`${reps} powt.`);
+  }
+  return parts.join(' · ');
 };
 
 /**
@@ -581,7 +607,18 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   const liveCompletedSets = liveSeries.reduce((acc, s) => acc + (s.sets?.filter(set => set.completed).length ?? 0), 0);
   const liveCurrentSeries =
     liveSeries.find(s => (s.sets?.length ?? 0) > 0 && s.sets.some(set => !set.completed)) ?? liveSeries[activeExerciseIndex];
-  const liveCurrentExercise = allExercises?.find(ex => ex.id === liveCurrentSeries?.exerciseId)?.name ?? '';
+  const liveCurrentExerciseDef = allExercises?.find(ex => ex.id === liveCurrentSeries?.exerciseId);
+  const liveCurrentExercise = liveCurrentExerciseDef?.name ?? '';
+  const liveNextSetIndex = liveCurrentSeries?.sets?.findIndex(set => !set.completed) ?? -1;
+  const liveNextSet =
+    liveNextSetIndex >= 0
+      ? describeSetForWidget(
+        liveCurrentExerciseDef?.type ?? 'weight',
+        liveCurrentSeries.sets[liveNextSetIndex],
+        liveNextSetIndex + 1,
+        liveCurrentSeries.sets.length
+      )
+      : 'Wszystkie serie zrobione';
   const liveWorkoutName = form.watch('workoutName');
 
   // Why the widget's last "✓ Seria" did nothing, shown in place of the exercise name for a few seconds.
@@ -601,8 +638,12 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
       : {
         activity: 'workout',
         title: liveWorkoutName || 'Trening',
-        line1: `${liveCompletedSets}/${liveTotalSets} serii`,
-        line2: widgetNotice ?? liveCurrentExercise,
+        line1: liveCurrentExercise || `${liveCompletedSets}/${liveTotalSets} serii`,
+        line2: widgetNotice ?? liveNextSet,
+        setsDone: liveCompletedSets,
+        setsTotal: liveTotalSets,
+        // Only the list view's countdown lives here; the carousel's rest slides keep their own.
+        restEndsAt: viewMode === 'list' && isResting ? restTimer.deadline : null,
         running: true,
         openPath: liveWorkoutPath,
         finishPath: workoutLogId ? `${liveWorkoutPath}&finish=true` : liveWorkoutPath,
@@ -637,7 +678,16 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
       return;
     }
   };
-  useWidgetCommands({ [WIDGET_COMMAND_COMPLETE_SET]: completeNextSetFromWidget }, !isFinished);
+  useWidgetCommands(
+    {
+      [WIDGET_COMMAND_COMPLETE_SET]: completeNextSetFromWidget,
+      [WIDGET_COMMAND_SKIP_REST]: dismissRest,
+      [WIDGET_COMMAND_EXTEND_REST]: () => {
+        if (restTimer.isRunning) restTimer.addTime(WIDGET_REST_EXTENSION_SECONDS);
+      },
+    },
+    !isFinished
+  );
 
   // Check for finish param
   useEffect(() => {
