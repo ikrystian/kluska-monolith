@@ -165,7 +165,9 @@ export function parseOpenGymExercises(raw: unknown): ParsedExercise[] {
     const mainKeys = [e.target_muscle, e.main_muscle_group];
     return {
       id: String(e.id ?? ''),
-      name: e.name_pl || e.name,
+      // Angielska nazwa ćwiczenia jest zapisywana w bazie (name_pl jest dalej
+      // dostępna w pliku źródłowym, ale import zapisuje wersję oryginalną).
+      name: e.name || e.name_pl,
       category: e.category,
       category_pl: e.category_pl || e.category,
       body_part_pl: e.body_part_pl || e.body_part,

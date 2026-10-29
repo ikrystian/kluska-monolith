@@ -1,6 +1,7 @@
 'use client';
 
 import { Exercise } from '@/lib/types';
+import { resolveMediaUrl } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -66,13 +67,13 @@ export function ExerciseCardHorizontal({
       {/* Image Section */}
       <div className="relative w-[160px] h-full  sm:w-[80px] flex-shrink-0 bg-muted flex items-center justify-center">
         {(exercise.mediaUrl || exercise.image) ? (
-          isVideoUrl(exercise.mediaUrl || exercise.image) ? (
+          isVideoUrl(resolveMediaUrl(exercise.mediaUrl || exercise.image)) ? (
             <div className="relative w-full h-full bg-black flex items-center justify-center">
               <PlayCircle className="h-8 w-8 text-white opacity-80" />
             </div>
           ) : (
             <img
-              src={exercise.mediaUrl || exercise.image || ''}
+              src={resolveMediaUrl(exercise.mediaUrl || exercise.image || '')}
               alt={exercise.name}
               className="absolute inset-0 w-full h-full object-cover"
             />

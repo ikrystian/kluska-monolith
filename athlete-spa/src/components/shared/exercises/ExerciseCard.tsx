@@ -1,6 +1,7 @@
 'use client';
 
 import { Exercise } from '@/lib/types';
+import { resolveMediaUrl } from '@/lib/api-client';
 import {
   Card,
   CardContent,
@@ -67,14 +68,14 @@ export function ExerciseCard({
     <Card className="overflow-hidden transition-all hover:shadow-lg flex flex-col">
       <div className="relative h-48 w-full bg-muted flex items-center justify-center group">
         {(exercise.mediaUrl || exercise.image) ? (
-          isVideoUrl(exercise.mediaUrl || exercise.image) ? (
+          isVideoUrl(resolveMediaUrl(exercise.mediaUrl || exercise.image)) ? (
             <div className="relative w-full h-full bg-black flex items-center justify-center">
               <PlayCircle className="h-12 w-12 text-white opacity-80" />
               <span className="absolute bottom-2 right-2 text-xs text-white bg-black/50 px-1 rounded">Wideo</span>
             </div>
           ) : (
             <img
-              src={exercise.mediaUrl || exercise.image || ''}
+              src={resolveMediaUrl(exercise.mediaUrl || exercise.image || '')}
               alt={exercise.name}
               className="absolute inset-0 w-full h-full object-cover"
             />
