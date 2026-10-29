@@ -13,7 +13,7 @@ import {
     Trash2,
     Wheat,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 
 import { apiFetch } from '@/lib/api-client';
 import { useFrozenDuringTransition } from '@/lib/page-transition';

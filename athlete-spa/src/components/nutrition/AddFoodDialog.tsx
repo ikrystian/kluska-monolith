@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { ArrowLeft, Flame, Loader2, Plus, ScanBarcode, Search, Sparkles } from 'lucide-react';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 
 import { apiFetch } from '@/lib/api-client';
 import {

@@ -15,7 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { Habit, HabitLog, FrequencyType } from '@/lib/types';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 import {
     PlusCircle,
     Loader2,
@@ -653,27 +653,21 @@ export default function HabitsPage() {
         try {
             if (editingHabit) {
                 await updateDoc('habits', editingHabit.id, habitData);
-                toast.success('Nawyk Zaktualizowany!', {
-                    description: `Nawyk "${data.name}" został zmieniony.`,
-                });
+                toast.success(`Nawyk "${data.name}" został zaktualizowany.`);
             } else {
                 await createDoc('habits', {
                     ...habitData,
                     ownerId: user.uid,
                     isActive: true,
                 });
-                toast.success('Nawyk Dodany!', {
-                    description: `Nowy nawyk "${data.name}" został dodany.`,
-                });
+                toast.success(`Nowy nawyk "${data.name}" został dodany.`);
             }
             setHabitDialogOpen(false);
             setEditingHabit(null);
             refetchHabits();
         } catch (error) {
             console.error('Error saving habit:', error);
-            toast.error('Błąd', {
-                description: 'Nie udało się zapisać nawyku.',
-            });
+            toast.error('Nie udało się zapisać nawyku.');
         }
     };
 
@@ -681,16 +675,12 @@ export default function HabitsPage() {
         if (!habitToDelete || !user) return;
         try {
             await deleteDoc('habits', habitToDelete.id);
-            toast.success('Nawyk Usunięty', {
-                description: `Nawyk "${habitToDelete.name}" został usunięty.`,
-            });
+            toast.success(`Nawyk "${habitToDelete.name}" został usunięty.`);
             setHabitToDelete(null);
             refetchHabits();
         } catch (error) {
             console.error('Error deleting habit:', error);
-            toast.error('Błąd', {
-                description: 'Nie udało się usunąć nawyku.',
-            });
+            toast.error('Nie udało się usunąć nawyku.');
         }
     };
 
@@ -792,9 +782,7 @@ export default function HabitsPage() {
                 return newMap;
             });
 
-            toast.error("Błąd", {
-                description: "Nie udało się zaktualizować statusu nawyku",
-            });
+            toast.error('Nie udało się zaktualizować statusu nawyku.');
         }
     };
 
