@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { MongoDBProvider } from '@/lib/mongodb-provider';
 import { ThemeProvider } from '@/components/theme-provider';
+import { AnimateReveal } from '@/components/animate-reveal';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -52,6 +53,7 @@ export default function RootLayout({
             {children}
             <Toaster />
             <SonnerToaster />
+            <AnimateReveal />
           </MongoDBProvider>
         </ThemeProvider>
       </body>

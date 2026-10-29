@@ -1,606 +1,425 @@
 'use client';
 
-import { apiFetch, getApiBaseUrl, getStoredToken, resolveMediaUrl } from '@/lib/api-client';
-import { useState, useMemo, useEffect } from 'react';
-import { Capacitor } from '@capacitor/core';
-import { Browser } from '@capacitor/browser';
-import { App } from '@capacitor/app';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Link } from 'react-router-dom';
-import { Camera, Instagram, Facebook, Twitter, Loader2, Activity, CheckCircle2, XCircle, Footprints, Globe, UserPlus } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { lazy, Suspense, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { placeholderImages } from '@/lib/placeholder-images';
-import { useDoc, useCollection, useUser, useUpdateDoc } from '@/lib/db-hooks';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useToast } from '@/hooks/use-toast';
-import type { UserProfile, Gym } from '@/lib/types';
+  ArrowRight,
+  Award,
+  Camera,
+  Dumbbell,
+  Globe,
+  IdCard,
+  LineChart,
+  LogOut,
+  MapPin,
+  Pencil,
+  UserPen,
+  UserPlus,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
+import { Facebook, Instagram, Twitter } from '@/components/ui/social-icons';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { Switch } from '@/components/ui/switch';
-import { AvatarUploadDialog } from './AvatarUploadDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { resolveMediaUrl } from '@/lib/api-client';
+import { placeholderImages } from '@/lib/placeholder-images';
+import { useCollection, useDoc, useUpdateDoc, useUser } from '@/lib/db-hooks';
+import { useToast } from '@/hooks/use-toast';
+import { haptic } from '@/lib/haptics';
 import { useUserProfile } from '@/contexts/UserProfileContext';
-import type { RunningSession, StravaActivity } from '@/lib/types';
+import { useAuth } from '@/contexts/AuthContext';
+import type { RunningSession, StravaActivity, UserProfile } from '@/lib/types';
+import { SettingsGroup, SettingsLinkRow, tint } from './profile-ui';
+import { IntegrationsSection } from './IntegrationsSection';
+import { AppSettingsSections } from './AppSettingsSections';
 
-const profileSchema = z.object({
-  name: z.string().min(1, 'Imię jest wymagane.'),
-  email: z.string().email('Nieprawidłowy adres email.'),
-  socialLinks: z.object({
-    instagram: z.string().url().or(z.literal('')),
-    facebook: z.string().url().or(z.literal('')),
-    twitter: z.string().url().or(z.literal('')),
-  }).optional(),
-  favoriteGymIds: z.array(z.string()).optional(),
-});
+// Editors (react-image-crop, zod form, gyms list) only load when the athlete opens them.
+const AvatarUploadDialog = lazy(() =>
+  import('./AvatarUploadDialog').then((m) => ({ default: m.AvatarUploadDialog }))
+);
+const ProfileEditSheet = lazy(() =>
+  import('./ProfileEditSheet').then((m) => ({ default: m.ProfileEditSheet }))
+);
+const FavoriteGymsSheet = lazy(() =>
+  import('./FavoriteGymsSheet').then((m) => ({ default: m.FavoriteGymsSheet }))
+);
 
-type ProfileFormValues = z.infer<typeof profileSchema>;
+const EARTH_EQUATOR_KM = 40075;
+
+const ROLE_LABELS: Record<string, string> = {
+  athlete: 'Sportowiec',
+  trainer: 'Trener',
+  admin: 'Administrator',
+};
+
+const QUICK_LINKS: { to: string; label: string; hint: string; icon: LucideIcon; color: string }[] = [
+  { to: '/athlete/progress', label: 'Postępy', hint: 'Wykresy i rekordy', icon: LineChart, color: 'hsl(var(--chart-4))' },
+  { to: '/athlete/gamification', label: 'Osiągnięcia', hint: 'Odznaki i poziomy', icon: Award, color: 'hsl(var(--chart-5))' },
+  { to: '/athlete/social', label: 'Społeczność', hint: 'Znajomi i feed', icon: Users, color: 'hsl(var(--primary))' },
+  { to: '/athlete/history', label: 'Historia', hint: 'Wszystkie treningi', icon: Dumbbell, color: 'hsl(var(--volt))' },
+];
+
+const getInitials = (name: string | undefined) =>
+  name
+    ? name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase()
+    : 'U';
+
+const fmtKm = (km: number) =>
+  km.toLocaleString('pl-PL', { minimumFractionDigits: km < 100 ? 1 : 0, maximumFractionDigits: km < 100 ? 1 : 0 });
+
+function HeroStat({ label, value, unit, isLoading }: { label: string; value: string; unit?: string; isLoading: boolean }) {
+  return (
+    <div className="min-w-0 px-2 text-center">
+      {isLoading ? (
+        <Skeleton className="mx-auto h-7 w-12 bg-white/20" />
+      ) : (
+        <p className="truncate font-headline text-2xl font-extrabold leading-none tabular-nums">
+          {value}
+          {unit && <span className="ml-0.5 text-xs font-bold text-white/70">{unit}</span>}
+        </p>
+      )}
+      <p className="mt-1.5 truncate text-[10px] font-bold uppercase tracking-[0.16em] text-white/70">{label}</p>
+    </div>
+  );
+}
 
 export function ProfilePage() {
   const { toast } = useToast();
   const { user } = useUser();
-  const avatarImage = placeholderImages.find((img) => img.id === 'avatar-male');
-  const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
-  const [isDisconnecting, setIsDisconnecting] = useState(false);
-
-  const { data: userProfile, isLoading: profileLoading, refetch } = useDoc<UserProfile>('users', user?.uid || null);
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const { updateDoc } = useUpdateDoc();
   const { refetch: refetchProfileContext } = useUserProfile();
+  const fallbackAvatar = placeholderImages.find((img) => img.id === 'avatar-male');
 
-  const { data: allGyms, isLoading: gymsLoading } = useCollection<Gym>('gyms');
+  const [openPanel, setOpenPanel] = useState<'avatar' | 'edit' | 'gyms' | null>(null);
+  const [guestLogoutOpen, setGuestLogoutOpen] = useState(false);
+  const closePanel = (open: boolean) => !open && setOpenPanel(null);
 
-  // Fetch running sessions and Strava activities
-  const { data: runningSessions } = useCollection<RunningSession>(
+  const { data: userProfile, isLoading, refetch } = useDoc<UserProfile>('users', user?.uid || null);
+
+  const { data: runningSessions, isLoading: runsLoading } = useCollection<RunningSession>(
     user ? 'runningSessions' : null,
     { ownerId: user?.uid }
   );
-  const { data: stravaActivities } = useCollection<StravaActivity>(
+  const { data: stravaActivities, isLoading: stravaLoading } = useCollection<StravaActivity>(
     user ? 'stravaActivities' : null,
     { ownerId: user?.uid }
   );
 
-  // Calculate total running distance
-  const totalRunningKm = useMemo(() => {
-    let total = 0;
-    // Add manual running sessions
-    if (runningSessions) {
-      total += runningSessions.reduce((sum, session) => sum + session.distance, 0);
-    }
-    // Add Strava activities (convert meters to km)
-    if (stravaActivities) {
-      total += stravaActivities.reduce((sum, activity) => sum + (activity.distance / 1000), 0);
-    }
-    return total;
+  const { totalKm, activityCount } = useMemo(() => {
+    const manualKm = (runningSessions ?? []).reduce((sum, s) => sum + (s.distance || 0), 0);
+    const stravaKm = (stravaActivities ?? []).reduce((sum, a) => sum + (a.distance || 0) / 1000, 0);
+    return {
+      totalKm: manualKm + stravaKm,
+      activityCount: (runningSessions?.length ?? 0) + (stravaActivities?.length ?? 0),
+    };
   }, [runningSessions, stravaActivities]);
 
-  const EARTH_EQUATOR_KM = 40075;
-  const earthPercentage = (totalRunningKm / EARTH_EQUATOR_KM) * 100;
+  const statsLoading = (runsLoading && !runningSessions) || (stravaLoading && !stravaActivities);
+  const earthPercentage = (totalKm / EARTH_EQUATOR_KM) * 100;
+  const favoriteGymsCount = userProfile?.favoriteGymIds?.length ?? 0;
 
-  const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema),
-    values: {
-      name: userProfile?.name || '',
-      email: userProfile?.email || '',
-      socialLinks: {
-        instagram: userProfile?.socialLinks?.instagram || '',
-        facebook: userProfile?.socialLinks?.facebook || '',
-        twitter: userProfile?.socialLinks?.twitter || '',
-      },
-      favoriteGymIds: userProfile?.favoriteGymIds || [],
-    }
-  });
+  const socialLinks = [
+    { href: userProfile?.socialLinks?.instagram, icon: Instagram, label: 'Instagram' },
+    { href: userProfile?.socialLinks?.facebook, icon: Facebook, label: 'Facebook' },
+    { href: userProfile?.socialLinks?.twitter, icon: Twitter, label: 'Twitter / X' },
+  ].filter((l): l is { href: string; icon: typeof Instagram; label: string } => Boolean(l.href));
 
-  const isLoading = profileLoading || gymsLoading;
-  const { updateDoc } = useUpdateDoc();
-
-  const isStravaConnected = !!userProfile?.stravaAccessToken;
-
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
-
-    const handleUrlOpen = async (data: { url: string }) => {
-      if (data.url.includes('strava-callback') || data.url.includes('strava_connected')) {
-        try {
-          await Browser.close();
-        } catch {
-          // Browser sheet might already be closed
-        }
-        refetch();
-        toast({
-          title: 'Sukces!',
-          description: 'Połączono z kontem Strava.',
-        });
-      } else if (data.url.includes('strava_error')) {
-        try {
-          await Browser.close();
-        } catch {
-          // Browser sheet might already be closed
-        }
-        toast({
-          title: 'Błąd!',
-          description: 'Nie udało się połączyć ze Strava.',
-          variant: 'destructive',
-        });
-      }
-    };
-
-    const appListenerPromise = App.addListener('appUrlOpen', handleUrlOpen);
-    const browserListenerPromise = Browser.addListener('browserFinished', () => {
-      refetch();
-    });
-
-    return () => {
-      appListenerPromise.then((l) => l.remove());
-      browserListenerPromise.then((l) => l.remove());
-    };
-  }, [refetch, toast]);
-
-  const handleConnectStrava = async () => {
-    const token = getStoredToken();
-    const apiBase = getApiBaseUrl();
-    if (Capacitor.isNativePlatform()) {
-      await Browser.open({
-        url: `${apiBase}/api/strava/connect?token=${encodeURIComponent(token ?? '')}&platform=capacitor`,
-      });
-    } else {
-      window.location.href = `${apiBase}/api/strava/connect?token=${encodeURIComponent(token ?? '')}`;
-    }
-  };
-
-  const handleDisconnectStrava = async () => {
-    setIsDisconnecting(true);
-    try {
-      const response = await apiFetch('/api/strava/disconnect', {
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to disconnect Strava');
-      }
-
-      await refetch();
-      toast({
-        title: 'Sukces!',
-        description: 'Strava została odłączona.',
-      });
-    } catch (error) {
-      toast({
-        title: 'Błąd!',
-        description: 'Nie udało się odłączyć Strava.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsDisconnecting(false);
-    }
+  const handleProfileSaved = () => {
+    refetch();
+    refetchProfileContext();
   };
 
   const handleAvatarUpload = async (url: string) => {
     if (!user || !userProfile) return;
     try {
       await updateDoc('users', user.uid, { ...userProfile, avatarUrl: url });
-      refetch();
-      refetchProfileContext();
-    } catch (error) {
-      toast({
-        title: 'Błąd!',
-        description: 'Nie udało się zapisać avatara.',
-        variant: 'destructive',
-      });
+      handleProfileSaved();
+    } catch {
+      toast({ title: 'Błąd!', description: 'Nie udało się zapisać avatara.', variant: 'destructive' });
     }
   };
 
-  const onSubmit = async (data: ProfileFormValues) => {
-    if (!userProfile || !user) return;
+  const doLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
-    const updatedData: UserProfile = {
-      ...userProfile,
-      ...data
-    };
-
-    try {
-      await updateDoc('users', user.uid, updatedData);
-      toast({
-        title: 'Sukces!',
-        description: 'Twój profil został zaktualizowany.',
-      });
-    } catch (error) {
-      toast({
-        title: 'Błąd!',
-        description: 'Nie udało się zaktualizować profilu.',
-        variant: 'destructive',
-      });
+  const handleLogout = () => {
+    haptic('impact');
+    if (user?.isGuest) {
+      setGuestLogoutOpen(true);
+      return;
     }
+    doLogout();
   };
 
-  const getInitials = (name: string | undefined) => {
-    if (!name) return 'U';
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase();
-  };
+  const avatarSrc = userProfile?.avatarUrl ? resolveMediaUrl(userProfile.avatarUrl) : fallbackAvatar?.imageUrl;
 
   return (
-    <div className="container mx-auto max-w-6xl pb-8 space-y-4">
+    <div className="mx-auto w-full max-w-5xl px-4 pb-28 pt-5 md:px-8 md:pt-8">
       {user?.isGuest && (
-        <div className="mx-4 mt-4 md:mx-8 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 shadow-sm backdrop-blur-sm dark:border-amber-500/20 dark:bg-amber-500/10">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400">
-                <UserPlus className="h-5 w-5" />
-              </div>
-              <div className="space-y-1">
-                <h4 className="font-semibold text-foreground">Konto gościa</h4>
-                <p className="text-sm text-muted-foreground">
-                  Aby zmiany, które będziesz wprowadzał, zostały zapisane na stałe, musisz założyć konto. Twój dotychczasowy progress zostanie zapisany w nowo utworzonym koncie.
-                </p>
-              </div>
+        <div className="mb-5 flex flex-col gap-3 rounded-[1.5rem] border border-amber-500/30 bg-amber-500/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400">
+              <UserPlus className="h-5 w-5" />
+            </span>
+            <div className="space-y-0.5">
+              <p className="font-semibold">Konto gościa</p>
+              <p className="text-sm text-muted-foreground">
+                Załóż konto, aby zapisać zmiany na stałe — dotychczasowy progres zostanie przeniesiony.
+              </p>
             </div>
-            <Button asChild size="sm" className="shrink-0 rounded-xl font-semibold shadow-sm">
-              <Link to="/register">Załóż konto</Link>
-            </Button>
           </div>
+          <Button asChild size="sm" className="shrink-0 rounded-full font-semibold">
+            <Link to="/register">Załóż konto</Link>
+          </Button>
         </div>
       )}
-      {/* Cover + avatar hero */}
-      <section className="relative">
-        <div className="hero-ember texture-grain relative h-32 w-full overflow-hidden rounded-b-3xl shadow-glow md:h-40 md:rounded-3xl" />
-        <div className="px-4 md:px-8">
-          <div className="-mt-12 flex flex-col items-center text-center md:-mt-14 md:flex-row md:items-end md:gap-5 md:text-left">
-            <Avatar className="h-24 w-24 border-4 border-background shadow-lifted md:h-28 md:w-28">
-              {userProfile?.avatarUrl ? (
-                <AvatarImage src={resolveMediaUrl(userProfile.avatarUrl)} alt="Awatar użytkownika" />
-              ) : avatarImage ? (
-                <AvatarImage src={avatarImage.imageUrl} alt="Awatar użytkownika" />
-              ) : null}
-              <AvatarFallback className="text-xl">
-                {isLoading ? <Skeleton className="h-full w-full" /> : getInitials(userProfile?.name)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="mt-3 min-w-0 flex-1 md:mb-2 md:mt-0">
-              {isLoading ? (
-                <>
-                  <Skeleton className="mx-auto h-7 w-40 md:mx-0" />
-                  <Skeleton className="mx-auto mt-2 h-4 w-24 md:mx-0" />
-                </>
-              ) : (
-                <>
-                  <h1 className="truncate font-headline text-2xl font-extrabold tracking-tight">{userProfile?.name}</h1>
-                  <p className="text-sm capitalize text-muted-foreground">{userProfile?.role}</p>
-                </>
-              )}
+
+      <div className="grid gap-6 md:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] md:items-start md:gap-8">
+        {/* Identity column */}
+        <div className="space-y-4 md:sticky md:top-6">
+          <section className="hero-ember texture-grain relative overflow-hidden rounded-[2rem] p-5 pb-4 text-white shadow-glow">
+            <div className="relative flex items-start gap-4">
+              <div className="relative shrink-0">
+                <Avatar className="h-20 w-20 border-[3px] border-white/80 shadow-lifted">
+                  {avatarSrc && <AvatarImage src={avatarSrc} alt="Awatar użytkownika" className="object-cover" />}
+                  <AvatarFallback className="bg-black/25 text-xl font-bold text-white">
+                    {isLoading ? '' : getInitials(userProfile?.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <button
+                  type="button"
+                  onClick={() => setOpenPanel('avatar')}
+                  aria-label="Zmień zdjęcie profilowe"
+                  className="absolute -bottom-1 -right-1 grid h-8 w-8 place-items-center rounded-full border-2 border-white bg-foreground text-background shadow-soft transition-transform active:scale-90"
+                >
+                  <Camera className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="min-w-0 flex-1 pt-1">
+                {isLoading ? (
+                  <>
+                    <Skeleton className="h-6 w-36 bg-white/20" />
+                    <Skeleton className="mt-2 h-4 w-20 bg-white/20" />
+                  </>
+                ) : (
+                  <>
+                    <h1 className="truncate font-headline text-2xl font-extrabold leading-tight tracking-tight">
+                      {userProfile?.name || 'Twój profil'}
+                    </h1>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs font-semibold">
+                      <span className="rounded-full bg-black/20 px-2.5 py-0.5">
+                        {user?.isGuest ? 'Gość' : ROLE_LABELS[userProfile?.role ?? ''] ?? 'Sportowiec'}
+                      </span>
+                      {userProfile?.location && (
+                        <span className="flex min-w-0 items-center gap-1 text-white/85">
+                          <MapPin className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{userProfile.location}</span>
+                        </span>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                onClick={() => setOpenPanel('edit')}
+                disabled={!userProfile}
+                aria-label="Edytuj profil"
+                className="h-9 w-9 shrink-0 rounded-full bg-black/20 text-white hover:bg-black/30 hover:text-white"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-3 rounded-xl md:mt-0"
-              onClick={() => setIsAvatarDialogOpen(true)}
+
+            {socialLinks.length > 0 && (
+              <div className="relative mt-4 flex gap-2">
+                {socialLinks.map(({ href, icon: Icon, label }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={label}
+                    className="grid h-8 w-8 place-items-center rounded-full bg-black/20 transition-colors hover:bg-black/30"
+                  >
+                    <Icon className="h-4 w-4" />
+                  </a>
+                ))}
+              </div>
+            )}
+
+            <div className="relative mt-5 grid grid-cols-3 divide-x divide-white/20 rounded-2xl bg-black/20 py-3 backdrop-blur-sm">
+              <HeroStat label="Kilometry" value={fmtKm(totalKm)} isLoading={statsLoading} />
+              <HeroStat label="Aktywności" value={String(activityCount)} isLoading={statsLoading} />
+              <HeroStat label="Siłownie" value={String(favoriteGymsCount)} isLoading={isLoading} />
+            </div>
+          </section>
+
+          {/* Around-the-equator goal */}
+          <section className="rounded-[1.5rem] border border-border/60 bg-card p-4 shadow-soft">
+            <div className="flex items-center gap-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sky-500/15 text-sky-600 dark:text-sky-400">
+                <Globe className="h-[18px] w-[18px]" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold">Dookoła Ziemi</p>
+                <p className="text-xs text-muted-foreground">
+                  {earthPercentage >= 100
+                    ? 'Okrążono równik! 🎉'
+                    : `Zostało ${Math.max(0, EARTH_EQUATOR_KM - totalKm).toLocaleString('pl-PL', { maximumFractionDigits: 0 })} km`}
+                </p>
+              </div>
+              <span className="font-headline text-lg font-extrabold tabular-nums text-sky-600 dark:text-sky-400">
+                {earthPercentage.toLocaleString('pl-PL', { maximumFractionDigits: earthPercentage < 10 ? 2 : 1 })}%
+              </span>
+            </div>
+            <div
+              className="mt-3 h-2 overflow-hidden rounded-full bg-secondary"
+              role="progressbar"
+              aria-label="Postęp okrążenia Ziemi"
+              aria-valuenow={Math.min(earthPercentage, 100)}
+              aria-valuemin={0}
+              aria-valuemax={100}
             >
-              <Camera className="mr-2 h-4 w-4" />
-              Zmień zdjęcie
-            </Button>
-            <AvatarUploadDialog
-              open={isAvatarDialogOpen}
-              onOpenChange={setIsAvatarDialogOpen}
-              onUploadComplete={handleAvatarUpload}
-              currentAvatarUrl={resolveMediaUrl(userProfile?.avatarUrl)}
-            />
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-sky-500 to-emerald-500 transition-[width] duration-700"
+                style={{ width: `${Math.max(Math.min(earthPercentage, 100), earthPercentage > 0 ? 1.5 : 0)}%` }}
+              />
+            </div>
+          </section>
+
+          {/* Summary entry point */}
+          <Link
+            to="/athlete/summary"
+            className="group flex items-center gap-3 rounded-[1.5rem] border border-border/60 bg-card p-4 shadow-soft transition-transform active:scale-[0.98]"
+          >
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
+              <IdCard className="h-[18px] w-[18px]" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">Twoje podsumowanie</p>
+              <p className="text-xs text-muted-foreground">Kilometry, tony, treningi i rekordy</p>
+            </div>
+            <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+          </Link>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            {QUICK_LINKS.map(({ to, label, hint, icon: Icon, color }) => (
+              <Link
+                key={to}
+                to={to}
+                className="flex flex-col gap-2 rounded-[1.25rem] border border-border/60 bg-card p-3.5 shadow-soft transition-transform active:scale-[0.97]"
+              >
+                <span className="grid h-8 w-8 place-items-center rounded-lg" style={{ backgroundColor: tint(color, 15), color }}>
+                  <Icon className="h-4 w-4" />
+                </span>
+                <span>
+                  <span className="block text-sm font-semibold">{label}</span>
+                  <span className="block truncate text-[11px] text-muted-foreground">{hint}</span>
+                </span>
+              </Link>
+            ))}
           </div>
         </div>
-      </section>
 
-      <div className="grid gap-6 px-1 pt-6 md:grid-cols-3 md:gap-8 md:px-8">
-        <div className="md:col-span-1">
-          {/* Running Statistics Card */}
-          <Card className="overflow-hidden border-sky-500/20 bg-sky-500/[0.03]">
-            <CardContent className="p-5 md:p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-500/15 text-sky-600 dark:text-sky-400">
-                  <Footprints className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">Statystyki Biegowe</h3>
-                  <p className="text-xs text-muted-foreground">Łącznie przebiegli</p>
-                </div>
-              </div>
+        {/* Settings column */}
+        <div className="space-y-6">
+          <SettingsGroup title="Konto">
+            <SettingsLinkRow
+              icon={UserPen}
+              color="hsl(var(--primary))"
+              title="Dane profilu"
+              description={userProfile?.email || 'Imię, email, miasto, social media'}
+              onClick={() => userProfile && setOpenPanel('edit')}
+            />
+            <SettingsLinkRow
+              icon={Dumbbell}
+              color="hsl(var(--volt))"
+              title="Ulubione siłownie"
+              description="Miejsca, w których trenujesz"
+              value={isLoading ? undefined : favoriteGymsCount || 'Brak'}
+              onClick={() => userProfile && setOpenPanel('gyms')}
+            />
+          </SettingsGroup>
 
-              <div className="space-y-4">
-                <div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-headline text-4xl font-extrabold tabular-nums text-sky-600 dark:text-sky-400">{totalRunningKm.toFixed(2)}</span>
-                    <span className="text-lg font-semibold text-muted-foreground">km</span>
-                  </div>
-                </div>
+          <IntegrationsSection
+            isStravaConnected={!!userProfile?.stravaConnected}
+            isProfileLoading={isLoading}
+            onStravaChanged={refetch}
+          />
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-4 w-4 text-blue-500" />
-                      <span className="text-muted-foreground">Szerokość Ziemi na równiku</span>
-                    </div>
-                    <span className="font-medium">{EARTH_EQUATOR_KM.toLocaleString()} km</span>
-                  </div>
+          <AppSettingsSections />
 
-                  <div className="w-full bg-secondary rounded-full h-2.5 overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 transition-all duration-500"
-                      style={{ width: `${Math.min(earthPercentage, 100)}%` }}
-                    />
-                  </div>
-
-                  <div className="flex justify-between items-center text-xs text-muted-foreground">
-                    <span>{earthPercentage.toFixed(2)}% szerokości Ziemi</span>
-                    {earthPercentage >= 100 && (
-                      <span className="text-green-600 font-semibold">🎉 Okrążono Ziemię!</span>
-                    )}
-                    {earthPercentage < 100 && (
-                      <span>Pozostało: {(EARTH_EQUATOR_KM - totalRunningKm).toFixed(0)} km</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        <div className="md:col-span-2">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="font-headline">Informacje o Koncie</CardTitle>
-                  <CardDescription>
-                    Zaktualizuj swoje dane osobowe i ustawienia.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {isLoading ? (
-                    <div className="space-y-6">
-                      <Skeleton className="h-10 w-full" />
-                      <Skeleton className="h-10 w-full" />
-                    </div>
-                  ) : (
-                    <>
-                      <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Imię i Nazwisko</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Adres Email</FormLabel>
-                            <FormControl>
-                              <Input type="email" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </>
-                  )}
-
-                  <div className="space-y-4 pt-4">
-                    <h3 className="font-semibold">Media Społecznościowe</h3>
-                    {isLoading ? (
-                      <div className="space-y-4">
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-10 w-full" />
-                      </div>
-                    ) : (
-                      <>
-                        <FormField
-                          control={form.control}
-                          name="socialLinks.instagram"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="flex items-center gap-2">
-                                <Instagram className="h-4 w-4" /> Instagram
-                              </FormLabel>
-                              <FormControl>
-                                <Input placeholder="https://instagram.com/twojprofil" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="socialLinks.facebook"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="flex items-center gap-2">
-                                <Facebook className="h-4 w-4" /> Facebook
-                              </FormLabel>
-                              <FormControl>
-                                <Input placeholder="https://facebook.com/twojprofil" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="socialLinks.twitter"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="flex items-center gap-2">
-                                <Twitter className="h-4 w-4" /> Twitter / X
-                              </FormLabel>
-                              <FormControl>
-                                <Input placeholder="https://x.com/twojprofil" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </>
-                    )}
-                  </div>
-
-                  <div className="space-y-4 pt-4 border-t">
-                    <h3 className="font-semibold flex items-center gap-2">
-                      <Activity className="h-5 w-5 text-[#FC4C02]" />
-                      Integracja Strava
-                    </h3>
-                    {isLoading ? (
-                      <Skeleton className="h-20 w-full" />
-                    ) : isStravaConnected ? (
-                      <div className="rounded-xl border bg-muted/50 p-4">
-                        <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
-                          <div className="flex items-center gap-3">
-                            <CheckCircle2 className="h-6 w-6 shrink-0 text-green-500" />
-                            <div>
-                              <p className="font-medium">Połączono ze Strava</p>
-                              <p className="text-sm text-muted-foreground">
-                                Twoje aktywności biegowe są synchronizowane
-                              </p>
-                            </div>
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full rounded-lg sm:w-auto"
-                            onClick={handleDisconnectStrava}
-                            disabled={isDisconnecting}
-                          >
-                            {isDisconnecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Odłącz
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="rounded-xl border p-4">
-                        <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
-                          <div className="flex items-center gap-3">
-                            <XCircle className="h-6 w-6 shrink-0 text-muted-foreground" />
-                            <div>
-                              <p className="font-medium">Nie połączono</p>
-                              <p className="text-sm text-muted-foreground">
-                                Połącz ze Strava, aby automatycznie importować swoje biegi
-                              </p>
-                            </div>
-                          </div>
-                          <Button
-                            variant="default"
-                            size="sm"
-                            className="w-full rounded-lg bg-[#FC4C02] text-white hover:bg-[#E34402] sm:w-auto"
-                            onClick={handleConnectStrava}
-                          >
-                            <Activity className="mr-2 h-4 w-4" />
-                            Połącz ze Strava
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-4 pt-4">
-                    <h3 className="font-semibold">Ulubione Siłownie</h3>
-                    <FormField
-                      control={form.control}
-                      name="favoriteGymIds"
-                      render={() => (
-                        <FormItem>
-                          <div className="max-h-48 overflow-y-auto space-y-2 rounded-md border p-4">
-                            {isLoading && <p>Ładowanie siłowni...</p>}
-                            {allGyms?.map((gym) => (
-                              <FormField
-                                key={gym.id}
-                                control={form.control}
-                                name="favoriteGymIds"
-                                render={({ field }) => {
-                                  return (
-                                    <FormItem
-                                      key={gym.id}
-                                      className="flex flex-row items-start space-x-3 space-y-0"
-                                    >
-                                      <FormControl>
-                                        <Checkbox
-                                          checked={field.value?.includes(gym.id)}
-                                          onCheckedChange={(checked) => {
-                                            return checked
-                                              ? field.onChange([...(field.value || []), gym.id])
-                                              : field.onChange(
-                                                field.value?.filter(
-                                                  (value) => value !== gym.id
-                                                )
-                                              )
-                                          }}
-                                        />
-                                      </FormControl>
-                                      <FormLabel className="font-normal">
-                                        {gym.name}
-                                      </FormLabel>
-                                    </FormItem>
-                                  )
-                                }}
-                              />
-                            ))}
-                            {!isLoading && allGyms?.length === 0 && <p className="text-sm text-muted-foreground">Brak siłowni do wyboru.</p>}
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <FormLabel>Motyw</FormLabel>
-                    <ThemeToggle />
-                  </div>
-
-                  <div className="space-y-3 pt-4">
-                    <h3 className="font-medium">Ustawienia Powiadomień</h3>
-                    <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
-                      <div className="min-w-0">
-                        <FormLabel htmlFor="workout-reminders">Przypomnienia o treningu</FormLabel>
-                        <p className="text-sm text-muted-foreground">Otrzymuj powiadomienia przed zaplanowanymi treningami.</p>
-                      </div>
-                      <Switch id="workout-reminders" defaultChecked className="shrink-0" />
-                    </div>
-                    <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
-                      <div className="min-w-0">
-                        <FormLabel htmlFor="weekly-summary">Tygodniowe podsumowanie</FormLabel>
-                        <p className="text-sm text-muted-foreground">Otrzymuj podsumowanie swoich postępów co tydzień.</p>
-                      </div>
-                      <Switch id="weekly-summary" className="shrink-0" />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end pt-4">
-                    <Button type="submit" className="w-full rounded-xl sm:w-auto" disabled={form.formState.isSubmitting || isLoading}>
-                      {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Zapisz Zmiany
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </form>
-          </Form>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleLogout}
+            className="h-12 w-full rounded-[1.25rem] border-destructive/30 font-semibold text-destructive hover:bg-destructive/10 hover:text-destructive"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Wyloguj się
+          </Button>
         </div>
       </div>
+
+      <Suspense fallback={null}>
+        {openPanel === 'avatar' && (
+          <AvatarUploadDialog
+            open
+            onOpenChange={closePanel}
+            onUploadComplete={handleAvatarUpload}
+            currentAvatarUrl={resolveMediaUrl(userProfile?.avatarUrl)}
+          />
+        )}
+        {openPanel === 'edit' && userProfile && (
+          <ProfileEditSheet open onOpenChange={closePanel} userProfile={userProfile} onSaved={handleProfileSaved} />
+        )}
+        {openPanel === 'gyms' && userProfile && (
+          <FavoriteGymsSheet open onOpenChange={closePanel} userProfile={userProfile} onSaved={handleProfileSaved} />
+        )}
+      </Suspense>
+
+      <AlertDialog open={guestLogoutOpen} onOpenChange={setGuestLogoutOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Wylogować konto gościa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Twoje dane są przechowywane wyłącznie na tym urządzeniu. Po wylogowaniu zostaną trwale usunięte.
+              Załóż konto, aby je zachować.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction onClick={doLogout} className={buttonVariants({ variant: 'destructive' })}>
+              Rozumiem, wyloguj mnie
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
-

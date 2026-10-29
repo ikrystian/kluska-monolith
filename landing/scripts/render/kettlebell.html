@@ -1,0 +1,114 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000;overflow:hidden}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+</head><body>
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { W, H, makeRenderer, rubberFloorTexture, finish } from './common.js';
+
+const { renderer, scene } = makeRenderer({ exposure: 1.0, bg: 0x0d0a08 });
+scene.fog = new THREE.Fog(0x0d0a08, 1.8, 4.5);
+
+const floorTex = rubberFloorTexture(2048, ['#26231f', '#302c27', '#3d3832'], '#0f0d0b');
+floorTex.repeat.set(6, 6);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.92 }));
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+scene.add(floor);
+
+function label(text, ink) {
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = ink;
+  g.font = '800 170px "DejaVu Sans Condensed", sans-serif';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillText(text, 256, 140);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/* competition kettlebell: 210 mm body, ~280 mm tall */
+function kettlebell(color, kg, ink = '#f4efe9') {
+  const g = new THREE.Group();
+  const r = 0.105;
+  const cy = 0.112;
+  const pts = [new THREE.Vector2(0.0001, 0.0), new THREE.Vector2(0.04, 0.0)];
+  const a0 = Math.asin(-cy / r) ; // bottom flat where sphere meets floor-ish
+  for (let i = 0; i <= 40; i++) {
+    const a = -1.18 + (i / 40) * (1.18 + 1.35);
+    pts.push(new THREE.Vector2(Math.cos(a) * r, cy + Math.sin(a) * r));
+  }
+  pts.push(new THREE.Vector2(0.0001, cy + Math.sin(1.35) * r));
+  const bodyGeo = new THREE.LatheGeometry(pts, 96);
+  const paint = new THREE.MeshPhysicalMaterial({ color, roughness: 0.62, clearcoat: 0.15, clearcoatRoughness: 0.6 });
+  const body = new THREE.Mesh(bodyGeo, paint);
+  body.castShadow = true; body.receiveShadow = true;
+  g.add(body);
+
+  const path = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.072, 0.17, 0),
+    new THREE.Vector3(-0.08, 0.235, 0),
+    new THREE.Vector3(-0.068, 0.272, 0),
+    new THREE.Vector3(0, 0.284, 0),
+    new THREE.Vector3(0.068, 0.272, 0),
+    new THREE.Vector3(0.08, 0.235, 0),
+    new THREE.Vector3(0.072, 0.17, 0),
+  ]);
+  const handle = new THREE.Mesh(new THREE.TubeGeometry(path, 80, 0.0175, 32, false), paint);
+  handle.castShadow = true;
+  g.add(handle);
+
+  // flat face with the weight number
+  const lbl = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.11, 0.055),
+    new THREE.MeshStandardMaterial({ map: label(String(kg), ink), transparent: true, roughness: 0.6, polygonOffset: true, polygonOffsetFactor: -2 })
+  );
+  lbl.position.set(0, 0.105, r + 0.0005);
+  g.add(lbl);
+  return g;
+}
+
+const bells = [
+  { c: 0x1f5a2c, kg: 24, x: -0.05, z: 0.02, ry: -0.35 },
+  { c: 0x8e1712, kg: 32, x: 0.27, z: -0.2, ry: 0.4 },
+  { c: 0xc9a70c, kg: 16, x: -0.33, z: -0.32, ry: 0.15, ink: '#1b1b1b' },
+];
+for (const b of bells) {
+  const k = kettlebell(b.c, b.kg, b.ink);
+  k.position.set(b.x, 0, b.z);
+  k.rotation.y = b.ry;
+  scene.add(k);
+}
+
+const key = new THREE.SpotLight(0xfff8f0, 46, 0, Math.PI / 7, 0.8, 1.6);
+key.position.set(-1.0, 2.4, 1.1);
+key.target.position.set(0, 0.1, 0);
+key.castShadow = true;
+key.shadow.mapSize.set(4096, 4096);
+key.shadow.bias = -0.0002;
+scene.add(key, key.target);
+
+const rim = new THREE.SpotLight(0xff7a3d, 34, 0, Math.PI / 8, 0.9, 1.4);
+rim.position.set(1.2, 0.8, -1.8);
+rim.target.position.set(0, 0.15, 0);
+scene.add(rim, rim.target);
+
+const cam = new THREE.PerspectiveCamera(28, W / H, 0.01, 50);
+cam.position.set(0.25, 0.32, 1.25);
+cam.lookAt(-0.02, 0.14, -0.1);
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, cam));
+composer.addPass(new BokehPass(scene, cam, { focus: cam.position.distanceTo(new THREE.Vector3(-0.05, 0.14, 0.05)), aperture: 0.007, maxblur: 0.01 }));
+composer.addPass(new OutputPass());
+composer.render();
+finish();
+</script>
+</body></html>

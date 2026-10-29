@@ -3,6 +3,8 @@ import { Model } from 'mongoose';
 import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { jsonWithEtag } from '@/lib/http-cache';
+import { describeFinishedActivity, notifyFriendsOfActivity } from '@/lib/friends';
+import { AccessContext, AccessError, isPublicCollection, sanitizeBody, scopeRead } from '@/lib/db-access';
 
 import {
   User,
@@ -15,6 +17,7 @@ import {
   Message,
   BodyMeasurement,
   RunningSession,
+  RunningProgram,
   Goal,
   MuscleGroup,
   Gym,
@@ -50,6 +53,7 @@ const modelMap: Record<string, any> = {
   trainerRequests: TrainerRequest,
   meals: Meal,
   runningSessions: RunningSession,
+  runningPrograms: RunningProgram,
   achievements: Achievement,
   gyms: Gym,
   workouts: Workout,
@@ -74,10 +78,7 @@ export async function GET(
 
     const { collection } = await params;
 
-    // Public collections that don't require authentication
-    const PUBLIC_COLLECTIONS = ['articles', 'articleCategories', 'muscleGroups', 'gyms', 'socialPosts'];
-
-    if (!PUBLIC_COLLECTIONS.includes(collection) && !user) {
+    if (!isPublicCollection(collection) && !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -94,17 +95,28 @@ export async function GET(
     const queryParam = searchParams.get('query');
     const sortParam = searchParams.get('sort');
     const limitParam = searchParams.get('limit');
+    const skipParam = searchParams.get('skip');
+    const countParam = searchParams.get('count');
 
-    let query = Model.find();
+    // The client's filter is narrowed to the documents this user may read.
+    const filter = await scopeRead(new AccessContext(user), collection, queryParam ? JSON.parse(queryParam) : {});
 
-    if (queryParam) {
-      const queryObj = JSON.parse(queryParam);
-      query = query.find(queryObj);
+    // count=1 → return only the number of documents matching the filter.
+    // Used for "all vs filtered" totals in paged views (e.g. exercise library).
+    if (countParam === '1') {
+      const total = await Model.countDocuments(filter);
+      return jsonWithEtag(request, { total });
     }
+
+    let query = Model.find(filter);
 
     if (sortParam) {
       const sortObj = JSON.parse(sortParam);
       query = query.sort(sortObj);
+    }
+
+    if (skipParam) {
+      query = query.skip(parseInt(skipParam, 10) || 0);
     }
 
     if (limitParam) {
@@ -115,7 +127,7 @@ export async function GET(
 
     // Enrich conversations with athlete avatarUrl
     if (collection === 'conversations' && data.length > 0) {
-      const athleteIds = [...new Set(data.map((conv: any) => conv.athleteId))];
+      const athleteIds = [...new Set<string>(data.map((conv: any) => conv.athleteId))];
       const athletes = await User.find({ _id: { $in: athleteIds } }).lean();
       const athleteMap = new Map(athletes.map((a: any) => [a._id.toString(), a]));
 
@@ -133,6 +145,9 @@ export async function GET(
 
     return jsonWithEtag(request, { data });
   } catch (error) {
+    if (error instanceof AccessError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error('GET /api/db/[collection] error:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
@@ -167,12 +182,19 @@ export async function POST(
       return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
     }
 
-    const body = await request.json();
+    const body = await sanitizeBody(new AccessContext(user), collection, await request.json(), true);
     const doc = new Model(body);
     await doc.save();
 
+    // A workout saved as already completed, or a recorded run: tell friends.
+    const activity = describeFinishedActivity(collection, doc.toObject());
+    if (activity) void notifyFriendsOfActivity(user.id, activity);
+
     return NextResponse.json({ data: doc.toJSON() }, { status: 201 });
   } catch (error) {
+    if (error instanceof AccessError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error('POST /api/db/[collection] error:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },

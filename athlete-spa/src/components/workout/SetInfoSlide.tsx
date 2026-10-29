@@ -8,6 +8,9 @@ import { type ExerciseType, getSetTypeConfig } from '@/lib/set-type-config';
 import { SetTypeBadge } from '@/components/workout/SetTypeModal';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { haptic } from '@/lib/haptics';
+import { PlateCalculator } from '@/components/workout/PlateCalculator';
+import { RpeSelector } from '@/components/workout/RpeSelector';
 
 interface SetInfoSlideProps {
   exerciseName: string;
@@ -21,11 +24,13 @@ interface SetInfoSlideProps {
   actualReps?: number;
   actualWeight?: number;
   actualDuration?: number;
+  rpe?: number;
   tempo?: string;
   tip?: string;
   onRepsChange: (value: number) => void;
   onWeightChange: (value: number) => void;
   onDurationChange?: (value: number) => void;
+  onRpeChange?: (value: number | undefined) => void;
   isCompleted?: boolean;
   validationError?: string | null;
   onStartEditing?: () => void;
@@ -51,6 +56,7 @@ function Stepper({
   isCompleted,
   onChange,
   onFocus,
+  action,
 }: {
   label: string;
   unit: string;
@@ -62,6 +68,8 @@ function Stepper({
   isCompleted?: boolean;
   onChange: (value: number) => void;
   onFocus?: () => void;
+  /** Optional control shown beside the label, e.g. the plate calculator. */
+  action?: React.ReactNode;
 }) {
   const current = value ?? 0;
 
@@ -78,11 +86,14 @@ function Stepper({
             : 'bg-secondary/40 border-transparent'
       )}
     >
-      <div className="flex items-center justify-between px-1 mb-1.5">
+      <div className="flex items-center justify-between gap-2 px-1 mb-1.5">
         <span className="text-xs font-medium text-muted-foreground">{label}</span>
-        {target !== undefined && (
-          <span className="text-xs text-muted-foreground">cel: {target}{unit}</span>
-        )}
+        <div className="flex items-center gap-2">
+          {target !== undefined && (
+            <span className="text-xs text-muted-foreground">cel: {target}{unit}</span>
+          )}
+          {action}
+        </div>
       </div>
       <div className="flex items-center gap-2">
         <Button
@@ -90,7 +101,7 @@ function Stepper({
           variant="outline"
           size="icon"
           className="h-12 w-12 shrink-0 rounded-xl text-lg active:scale-95 transition-transform"
-          onClick={() => { onFocus?.(); onChange(clamp(current - step)); }}
+          onClick={() => { onFocus?.(); haptic('tap'); onChange(clamp(current - step)); }}
           aria-label={`Zmniejsz ${label.toLowerCase()}`}
         >
           <Minus className="h-5 w-5" />
@@ -119,7 +130,7 @@ function Stepper({
           variant="outline"
           size="icon"
           className="h-12 w-12 shrink-0 rounded-xl text-lg active:scale-95 transition-transform"
-          onClick={() => { onFocus?.(); onChange(clamp(current + step)); }}
+          onClick={() => { onFocus?.(); haptic('tap'); onChange(clamp(current + step)); }}
           aria-label={`Zwiększ ${label.toLowerCase()}`}
         >
           <Plus className="h-5 w-5" />
@@ -141,11 +152,13 @@ export function SetInfoSlide({
   actualReps,
   actualWeight,
   actualDuration,
+  rpe,
   tempo,
   tip,
   onRepsChange,
   onWeightChange,
   onDurationChange,
+  onRpeChange,
   isCompleted,
   validationError,
   onStartEditing,
@@ -222,6 +235,7 @@ export function SetInfoSlide({
                   isCompleted={isCompleted}
                   onChange={onWeightChange}
                   onFocus={handleFocus}
+                  action={<PlateCalculator targetWeight={actualWeight ?? targetWeight} />}
                 />
                 <Stepper
                   label="Powtórzenia"
@@ -265,6 +279,8 @@ export function SetInfoSlide({
               />
             )}
           </div>
+
+          {onRpeChange && <RpeSelector value={rpe} onChange={onRpeChange} />}
 
           {/* Primary action - no need to rely on swipe alone */}
           <Button

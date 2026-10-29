@@ -28,6 +28,7 @@ interface LogFormValues {
       restTimeSeconds: number;
       completed?: boolean;
       duration?: number;
+      rpe?: number;
     }[];
     tempo?: string;
     tip?: string;
@@ -329,6 +330,10 @@ export function CarouselWorkoutView({
     form.setValue(`exerciseSeries.${exerciseIndex}.sets.${setIndex}.duration`, value);
   }, [form]);
 
+  const handleRpeChange = useCallback((exerciseIndex: number, setIndex: number, value: number | undefined) => {
+    form.setValue(`exerciseSeries.${exerciseIndex}.sets.${setIndex}.rpe`, value);
+  }, [form]);
+
   if (slides.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-center">
@@ -426,11 +431,13 @@ export function CarouselWorkoutView({
                         actualReps={setData.reps}
                         actualWeight={setData.weight}
                         actualDuration={setData.duration}
+                        rpe={setData.rpe}
                         tempo={exerciseData.tempo}
                         tip={exerciseData.tip}
                         onRepsChange={(value) => handleRepsChange(slide.exerciseIndex, slide.setIndex, value)}
                         onWeightChange={(value) => handleWeightChange(slide.exerciseIndex, slide.setIndex, value)}
                         onDurationChange={(value) => handleDurationChange(slide.exerciseIndex, slide.setIndex, value)}
+                        onRpeChange={(value) => handleRpeChange(slide.exerciseIndex, slide.setIndex, value)}
                         isCompleted={setData.completed}
                         validationError={showError}
                         onStartEditing={() => handleStartEditing(slide.exerciseIndex, slide.setIndex)}

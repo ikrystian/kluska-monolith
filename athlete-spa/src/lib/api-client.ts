@@ -1,3 +1,6 @@
+import { invalidateAfterMutation } from '@/lib/cache-invalidation';
+import { reportNetworkFailure, reportNetworkSuccess } from '@/lib/network-status';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export const TOKEN_STORAGE_KEY = 'athlete-spa:token';
@@ -44,11 +47,26 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
+  } catch (error) {
+    // fetch only rejects when the request never reached the server, which is
+    // the signal navigator.onLine misses behind a captive portal.
+    reportNetworkFailure();
+    throw error;
+  }
+  reportNetworkSuccess();
 
   if (response.status === 401) {
     localStorage.removeItem(TOKEN_STORAGE_KEY);
     unauthorizedHandler?.();
+  }
+
+  // A successful write means anything cached from before it may be stale.
+  const method = (options.method ?? 'GET').toUpperCase();
+  if (response.ok && method !== 'GET' && method !== 'HEAD') {
+    invalidateAfterMutation(path);
   }
 
   return response;

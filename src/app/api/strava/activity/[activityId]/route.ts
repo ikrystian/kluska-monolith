@@ -33,6 +33,40 @@ async function refreshAccessToken(refreshToken: string): Promise<StravaTokenResp
     return await response.json();
 }
 
+const STREAM_KEYS = ['time', 'distance', 'latlng', 'velocity_smooth', 'moving'] as const;
+
+type ActivityStreams = Partial<Record<(typeof STREAM_KEYS)[number], unknown[]>>;
+
+/**
+ * Per-second activity streams, flattened to `{ key: data[] }`. Best-effort:
+ * activities without GPS (or a Strava hiccup) just yield `null` so the
+ * detail view still renders from the summary data.
+ */
+async function fetchActivityStreams(activityId: string, accessToken: string): Promise<ActivityStreams | null> {
+    try {
+        const response = await fetch(
+            `https://www.strava.com/api/v3/activities/${activityId}/streams?keys=${STREAM_KEYS.join(',')}&key_by_type=true`,
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            }
+        );
+        if (!response.ok) return null;
+
+        const raw: Record<string, { data?: unknown[] }> = await response.json();
+        const streams: ActivityStreams = {};
+        for (const key of STREAM_KEYS) {
+            const data = raw[key]?.data;
+            if (Array.isArray(data)) streams[key] = data;
+        }
+        return streams;
+    } catch (error) {
+        console.error('Failed to fetch Strava activity streams:', error);
+        return null;
+    }
+}
+
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ activityId: string }> }
@@ -81,15 +115,15 @@ export async function GET(
             }
         }
 
-        // Fetch detailed activity from Strava
-        const activityResponse = await fetch(
-            `https://www.strava.com/api/v3/activities/${activityId}`,
-            {
+        // Fetch detailed activity and its streams (for per-km route colouring and pace distribution) from Strava
+        const [activityResponse, streams] = await Promise.all([
+            fetch(`https://www.strava.com/api/v3/activities/${activityId}`, {
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
                 },
-            }
-        );
+            }),
+            fetchActivityStreams(activityId, accessToken),
+        ]);
 
         if (!activityResponse.ok) {
             console.error('Failed to fetch Strava activity:', await activityResponse.text());
@@ -101,7 +135,7 @@ export async function GET(
 
         const activityData = await activityResponse.json();
 
-        return NextResponse.json({ data: activityData });
+        return NextResponse.json({ data: activityData, streams });
     } catch (error) {
         console.error('Error fetching Strava activity details:', error);
         return NextResponse.json(

@@ -28,6 +28,7 @@ import {
   CheckSquare,
   Gauge,
   ClipboardCheck,
+  Bell,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -142,7 +143,9 @@ const adminNavItems = [
   { href: '/admin/workout-logs', icon: History, label: 'Logi Treningowe' },
   { href: '/admin/articles', icon: BookMarked, label: 'Wszystkie Artykuły' },
   { href: '/admin/gyms', icon: Building2, label: 'Siłownie' },
+  { href: '/admin/running-programs', icon: Footprints, label: 'Treningi Biegowe' },
   { href: '/admin/diet-plans', icon: Salad, label: 'Plany Dietetyczne' },
+  { href: '/admin/notifications', icon: Bell, label: 'Powiadomienia' },
 ]
 
 export function AppNav() {

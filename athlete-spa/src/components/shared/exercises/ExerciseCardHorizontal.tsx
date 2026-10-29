@@ -1,26 +1,16 @@
 'use client';
 
-import { Exercise } from '@/lib/types';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Dumbbell,
-  MoreVertical,
-  Edit,
-  Trash2,
-  LineChart as ChartIcon,
-  PlayCircle,
-  Repeat,
-  Timer,
-} from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { motion } from '@/components/motion';
 import { ExerciseCardProps } from './types';
+import {
+  ExerciseActionsMenu,
+  ExerciseThumb,
+  exerciseTypeMeta,
+  getMainMuscleNames,
+  getOwnerLabel,
+} from './ExerciseCardParts';
 
 export function ExerciseCardHorizontal({
   exercise,
@@ -39,117 +29,55 @@ export function ExerciseCardHorizontal({
   const isOwner = exercise.ownerId === userId;
   const canEditThis = canEdit && (isOwner || allowNonOwnerEdit);
   const canDeleteThis = canDelete && (isOwner || allowNonOwnerDelete);
-  const showActions = canEditThis || canDeleteThis || showProgress;
-
-  const isVideoUrl = (url: string | undefined) => {
-    if (!url) return false;
-    return url.includes('youtube.com') || url.includes('youtu.be') || url.includes('.mp4') || url.includes('.webm');
-  };
-
-  const getOwnerBadge = (ownerId: string | undefined) => {
-    if (ownerId === 'public' || !ownerId) {
-      return <Badge variant="secondary" className="text-[10px]">Publiczne</Badge>;
-    }
-    if (ownerId === userId) {
-      return <Badge variant="outline" className="text-[10px]">Własne</Badge>;
-    }
-    return <Badge variant="outline" className="text-[10px]">Użytkownika</Badge>;
-  };
+  const muscles = getMainMuscleNames(exercise);
+  const typeMeta = exercise.type ? exerciseTypeMeta[exercise.type] : null;
+  const ownerLabel = getOwnerLabel(exercise, userId, showOwnerBadge);
 
   return (
     <motion.div
       whileTap={{ scale: 0.98 }}
       transition={{ duration: 0.1 }}
-      className="flex items-stretch bg-card border rounded-lg overflow-hidden transition-all hover:shadow-md h-[120px] md:h-[120px] sm:h-[100px] cursor-pointer"
+      className="group flex h-[88px] cursor-pointer items-center gap-3 rounded-2xl border bg-card p-2 pr-1 transition-colors hover:border-primary/40 hover:bg-accent/40"
       onClick={() => onClick?.(exercise)}
     >
-      {/* Image Section */}
-      <div className="relative w-[160px] h-full  sm:w-[80px] flex-shrink-0 bg-muted flex items-center justify-center">
-        {(exercise.mediaUrl || exercise.image) ? (
-          isVideoUrl(exercise.mediaUrl || exercise.image) ? (
-            <div className="relative w-full h-full bg-black flex items-center justify-center">
-              <PlayCircle className="h-8 w-8 text-white opacity-80" />
-            </div>
-          ) : (
-            <img
-              src={exercise.mediaUrl || exercise.image || ''}
-              alt={exercise.name}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          )
-        ) : (
-          <Dumbbell className="h-8 w-8 text-muted-foreground opacity-20" />
-        )}
+      {/* Miniatura */}
+      <div className="relative aspect-square h-full flex-shrink-0 overflow-hidden rounded-xl bg-muted">
+        <ExerciseThumb exercise={exercise} iconClassName="h-6 w-6" />
       </div>
 
-      {/* Content Section */}
-      <div className="flex-1 flex flex-col justify-center px-4 py-2 min-w-0 overflow-hidden">
-        {/* Title Row */}
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-sm md:text-base line-clamp-1 flex-1">{exercise.name}</h3>
-
-          {/* Actions Dropdown */}
-          {showActions && (
-            <div onClick={(e) => e.stopPropagation()}>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {showProgress && (
-                    <DropdownMenuItem onClick={() => onShowProgress(exercise)}>
-                      <ChartIcon className="mr-2 h-4 w-4" />
-                      <span>Zobacz Postęp</span>
-                    </DropdownMenuItem>
-                  )}
-                  {canEditThis && (
-                    <DropdownMenuItem onClick={() => onEdit(exercise)}>
-                      <Edit className="mr-2 h-4 w-4" />
-                      <span>Edytuj</span>
-                    </DropdownMenuItem>
-                  )}
-                  {canDeleteThis && (
-                    <DropdownMenuItem onClick={() => onDelete(exercise)}>
-                      <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-                      <span className="text-destructive">Usuń</span>
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+      {/* Treść */}
+      <div className="min-w-0 flex-1 py-1">
+        <h3 className="line-clamp-1 text-sm font-semibold md:text-base">{exercise.name}</h3>
+        <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+          {muscles.length ? muscles.join(' · ') : 'Brak partii'}
+        </p>
+        <div className="mt-1.5 flex items-center gap-1.5">
+          {typeMeta && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+              <typeMeta.icon className="h-2.5 w-2.5" />
+              {typeMeta.short}
+            </span>
           )}
-        </div>
-
-        {/* Badges Row */}
-        <div className="flex flex-wrap gap-1 mt-1">
-          {exercise.mainMuscleGroups?.slice(0, 2).map((mg, idx) => (
-            <Badge key={idx} variant="secondary" className="text-[10px]">{mg.name}</Badge>
-          ))}
-          {exercise.mainMuscleGroups && exercise.mainMuscleGroups.length > 2 && (
-            <Badge variant="secondary" className="text-[10px]">+{exercise.mainMuscleGroups.length - 2}</Badge>
-          )}
-          {!exercise.mainMuscleGroups?.length && exercise.muscleGroup && (
-            <Badge variant="secondary" className="text-[10px]">{exercise.muscleGroup}</Badge>
-          )}
-          {/* Exercise type badge */}
-          {exercise.type && (
-            <Badge variant="outline" className="text-[10px] gap-1">
-              {exercise.type === 'weight' && <Dumbbell className="h-2.5 w-2.5" />}
-              {exercise.type === 'reps' && <Repeat className="h-2.5 w-2.5" />}
-              {exercise.type === 'duration' && <Timer className="h-2.5 w-2.5" />}
-              {exercise.type === 'weight' ? 'Ciężar' : exercise.type === 'reps' ? 'Powt.' : 'Czas'}
+          {ownerLabel && (
+            <Badge variant="outline" className="h-[18px] px-1.5 text-[10px] font-medium">
+              {ownerLabel}
             </Badge>
           )}
-          {showOwnerBadge && getOwnerBadge(exercise.ownerId)}
-          {!showOwnerBadge && isOwner && <Badge variant="outline" className="text-[10px]">Własne</Badge>}
         </div>
+      </div>
 
-        {/* Description Row */}
-        <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-          {exercise.instructions || exercise.description || 'Brak opisu'}
-        </p>
+      {/* Akcje */}
+      <div className="flex flex-shrink-0 items-center">
+        <ExerciseActionsMenu
+          exercise={exercise}
+          canEdit={canEditThis}
+          canDelete={canDeleteThis}
+          showProgress={showProgress}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onShowProgress={onShowProgress}
+        />
+        <ChevronRight className="mr-1 h-4 w-4 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
       </div>
     </motion.div>
   );

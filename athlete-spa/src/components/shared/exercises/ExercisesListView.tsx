@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Exercise, MuscleGroupName, MuscleGroup, WorkoutPlan } from '@/lib/types';
-import { useCollection, useUser, useUpdateDoc, useDeleteDoc, useCreateDoc } from '@/lib/db-hooks';
+import { Exercise, MuscleGroupName } from '@/lib/types';
+import { useUser, useUpdateDoc, useDeleteDoc, useCreateDoc } from '@/lib/db-hooks';
+import { EMPTY_EXERCISE_FILTERS, useExerciseLibrary } from '@/hooks/useExerciseLibrary';
+import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,14 +20,64 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Dumbbell, Loader2, Trash2 } from 'lucide-react';
+import { Plus, PlusCircle, Dumbbell, Loader2, Trash2, LoaderCircle, LayoutGrid, List } from 'lucide-react';
 
 import { ExerciseCardHorizontal } from './ExerciseCardHorizontal';
+import { ExerciseCardGrid } from './ExerciseCardGrid';
 import { ExerciseFilters } from './ExerciseFilters';
 import { ExerciseFormDialog } from './ExerciseForm';
 import { ProgressDialog } from './ProgressDialog';
 import { ExerciseDetailDialog } from './ExerciseDetailDialog';
 import { ExercisesListViewProps, ExerciseFormData, roleDefaults } from './types';
+
+type ViewMode = 'list' | 'grid';
+
+const VIEW_MODE_STORAGE_KEY = 'exercises:view-mode';
+const LIST_ROW_HEIGHT = 96; // 88px karta + 8px odstęp
+const GRID_GAP = 12;
+
+function readViewMode(): ViewMode {
+  try {
+    return localStorage.getItem(VIEW_MODE_STORAGE_KEY) === 'grid' ? 'grid' : 'list';
+  } catch {
+    return 'list';
+  }
+}
+
+/** Liczba kolumn gridu wg szerokości kontenera (nie viewportu – działa też w panelach). */
+function getGridColumns(width: number): number {
+  if (width >= 1200) return 5;
+  if (width >= 900) return 4;
+  if (width >= 600) return 3;
+  return 2;
+}
+
+function ViewModeToggle({ value, onChange }: { value: ViewMode; onChange: (mode: ViewMode) => void }) {
+  const options: { mode: ViewMode; icon: typeof List; label: string }[] = [
+    { mode: 'list', icon: List, label: 'Widok listy' },
+    { mode: 'grid', icon: LayoutGrid, label: 'Widok siatki' },
+  ];
+  return (
+    <div className="flex h-10 items-center rounded-full border bg-card p-1">
+      {options.map(({ mode, icon: Icon, label }) => (
+        <button
+          key={mode}
+          type="button"
+          aria-pressed={value === mode}
+          aria-label={label}
+          title={label}
+          onClick={() => onChange(mode)}
+          className={cn(
+            'flex h-8 w-8 items-center justify-center rounded-full transition-colors',
+            value === mode ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          <Icon className="h-4 w-4" />
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export function ExercisesListView(props: ExercisesListViewProps) {
   const { role } = props;
@@ -47,8 +99,8 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const { deleteDoc } = useDeleteDoc();
   const { createDoc } = useCreateDoc();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string>('all');
+  const [filters, setFilters] = useState(EMPTY_EXERCISE_FILTERS);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [isFormDialogOpen, setFormDialogOpen] = useState(false);
   const [isProgressDialogOpen, setProgressDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -56,85 +108,46 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const [isBulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
-  const [displayCount, setDisplayCount] = useState(10);
+  const [viewMode, setViewModeState] = useState<ViewMode>(readViewMode);
 
-  // Fetch exercises based on role
-  const getExerciseQuery = () => {
-    if (!user?.uid) return undefined;
-
-    if (role === 'admin') {
-      return undefined; // Admin sees all
+  const setViewMode = (mode: ViewMode) => {
+    setViewModeState(mode);
+    try {
+      localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode);
+    } catch {
+      // brak dostępu do storage – tryb działa tylko w tej sesji
     }
-
-    // Athlete and Trainer see public + own exercises + legacy (no owner)
-    return {
-      $or: [
-        { ownerId: { $in: ['public', user.uid] } },
-        { ownerId: { $exists: false } },
-        { ownerId: null }
-      ]
-    };
   };
 
-  const { data: exercises, isLoading: exercisesLoading, refetch: refetchExercises } = useCollection<Exercise>(
-    user?.uid ? 'exercises' : null,
-    getExerciseQuery()
-  );
-
-  // For athletes, also fetch exercises from assigned workout plans
-  const { data: assignedPlans } = useCollection<WorkoutPlan>(
-    role === 'athlete' && user?.uid ? 'workoutPlans' : null,
-    role === 'athlete' && user?.uid ? { assignedAthleteIds: { $in: [user.uid] } } : undefined
-  );
-
-  const exerciseIdsFromPlans = useMemo(() => {
-    const ids = new Set<string>();
-    if (assignedPlans) {
-      assignedPlans.forEach(plan => {
-        plan.workoutDays?.forEach(day => {
-          day.exercises?.forEach(ex => {
-            if (ex.exerciseId) ids.add(ex.exerciseId);
-          });
-        });
-      });
-    }
-    return Array.from(ids);
-  }, [assignedPlans]);
-
-  const { data: planExercises } = useCollection<Exercise>(
-    role === 'athlete' && exerciseIdsFromPlans.length > 0 ? 'exercises' : null,
-    exerciseIdsFromPlans.length > 0 ? { id: { $in: exerciseIdsFromPlans } } : undefined
-  );
-
-  // Combine all exercises
-  const allExercises = useMemo(() => {
-    const combined = new Map<string, Exercise>();
-    exercises?.forEach(ex => combined.set(ex.id, ex));
-    planExercises?.forEach(ex => combined.set(ex.id, ex));
-    return Array.from(combined.values());
-  }, [exercises, planExercises]);
-
-  const isLoading = exercisesLoading;
-
-  // Filter exercises
-  const filteredExercises = allExercises?.filter((exercise) => {
-    const matchesSearch = exercise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      exercise.mainMuscleGroups?.some(mg => mg.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      exercise.muscleGroup?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesMuscleGroup = selectedMuscleGroup === 'all' ||
-      exercise.mainMuscleGroups?.some(mg => mg.name === selectedMuscleGroup) ||
-      exercise.muscleGroup === selectedMuscleGroup;
-
-    return matchesSearch && matchesMuscleGroup;
-  });
-
-  const muscleGroupOptions = Object.values(MuscleGroupName).map(name => ({ label: name, value: name }));
-
-  // Reset display count when search or filter changes
+  // Wyszukiwanie trafia do serwera dopiero po chwili bez pisania.
   useEffect(() => {
-    setDisplayCount(10);
-  }, [searchTerm, selectedMuscleGroup]);
+    const timeout = setTimeout(() => setDebouncedSearch(filters.search), 300);
+    return () => clearTimeout(timeout);
+  }, [filters.search]);
+
+  const libraryFilters = useMemo(() => ({ ...filters, search: debouncedSearch }), [filters, debouncedSearch]);
+
+  // Serwerowa biblioteka: pierwsze 30 ćwiczeń + infinite scroll, filtrowanie po stronie serwera.
+  const {
+    exercises,
+    isLoading,
+    isLoadingMore,
+    error,
+    hasMore,
+    totalAll,
+    totalFiltered,
+    queryKey,
+    loadMore,
+    refetch: refetchExercises,
+  } = useExerciseLibrary(libraryFilters, !!user?.uid);
+
+  const allExercises = exercises;
+  const filteredExercises = exercises;
+
+  const muscleGroupOptions = Object.values(MuscleGroupName).map((name) => ({
+    label: name,
+    value: name,
+  }));
 
   // Handlers
   const handleEdit = (exercise: Exercise) => {
@@ -157,6 +170,19 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     setDetailDialogOpen(true);
   };
 
+  const canEditExercise = (exercise: Exercise) =>
+    canEdit && (exercise.ownerId === user?.uid || role === 'admin');
+
+  const handleDetailEdit = (exercise: Exercise) => {
+    setDetailDialogOpen(false);
+    handleEdit(exercise);
+  };
+
+  const handleDetailProgress = (exercise: Exercise) => {
+    setDetailDialogOpen(false);
+    handleShowProgress(exercise);
+  };
+
   const handleCreate = () => {
     setSelectedExercise(null);
     setFormDialogOpen(true);
@@ -166,13 +192,13 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     if (!user) return;
     setIsSubmitting(true);
 
-    // Map strings back to MuscleGroup objects
-    const mainMuscleGroups: MuscleGroup[] = data.mainMuscleGroups.map(name => ({ name: name as MuscleGroupName }));
-    const secondaryMuscleGroups: MuscleGroup[] = (data.secondaryMuscleGroups || []).map(name => ({ name: name as MuscleGroupName }));
+    const mainMuscleGroups = data.mainMuscleGroups.map((name) => ({ name: name as MuscleGroupName }));
+    const secondaryMuscleGroups = (data.secondaryMuscleGroups || []).map((name) => ({
+      name: name as MuscleGroupName,
+    }));
 
     try {
       if (selectedExercise) {
-        // Update existing exercise
         const updatedData = {
           name: data.name,
           mainMuscleGroups,
@@ -181,7 +207,6 @@ export function ExercisesListView(props: ExercisesListViewProps) {
           mediaUrl: data.mediaUrl,
           type: data.type,
           description: data.instructions || data.description,
-          // Legacy support
           muscleGroup: data.mainMuscleGroups[0],
           image: data.mediaUrl,
           imageHint: data.name.toLowerCase(),
@@ -189,7 +214,6 @@ export function ExercisesListView(props: ExercisesListViewProps) {
         await updateDoc('exercises', selectedExercise.id, updatedData);
         toast({ title: "Sukces!", description: "Ćwiczenie zostało zaktualizowane." });
       } else {
-        // Create new exercise
         const newExerciseData = {
           name: data.name,
           mainMuscleGroups,
@@ -198,7 +222,6 @@ export function ExercisesListView(props: ExercisesListViewProps) {
           mediaUrl: data.mediaUrl,
           type: data.type,
           description: data.instructions || data.description,
-          // Legacy support
           muscleGroup: data.mainMuscleGroups[0],
           image: data.mediaUrl,
           imageHint: data.name.toLowerCase(),
@@ -247,11 +270,10 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     setIsSubmitting(true);
 
     try {
-      // Delete all exercises
-      await Promise.all(allExercises.map(ex => deleteDoc('exercises', ex.id)));
+      await Promise.all(allExercises.map((ex) => deleteDoc('exercises', ex.id)));
       toast({
         title: "Sukces!",
-        description: `Usunięto ${allExercises.length} ćwiczeń.`
+        description: `Usunięto ${allExercises.length} ćwiczeń.`,
       });
       setBulkDeleteDialogOpen(false);
       refetchExercises();
@@ -266,90 +288,158 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     }
   };
 
-  // Pagination: Show only displayCount exercises
-  const paginatedExercises = useMemo(() => {
-    return filteredExercises?.slice(0, displayCount) ?? [];
-  }, [filteredExercises, displayCount]);
+  // Kontener scrolla: mierzymy jego szerokość, żeby dobrać liczbę kolumn gridu.
+  const parentRef = useRef<HTMLDivElement | null>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const setScrollContainer = useCallback((el: HTMLDivElement | null) => {
+    resizeObserverRef.current?.disconnect();
+    parentRef.current = el;
+    if (!el) return;
+    setContainerWidth(el.clientWidth);
+    resizeObserverRef.current = new ResizeObserver(([entry]) => setContainerWidth(entry.contentRect.width));
+    resizeObserverRef.current.observe(el);
+  }, []);
 
-  const hasMore = (filteredExercises?.length ?? 0) > displayCount;
-
-  // Virtualization setup
-  const parentRef = useRef<HTMLDivElement>(null);
+  // Wirtualizujemy wiersze; w gridzie wiersz zawiera `columns` kart.
+  const columns = viewMode === 'grid' ? getGridColumns(containerWidth) : 1;
+  const rowCount = Math.ceil(filteredExercises.length / columns);
   const rowVirtualizer = useVirtualizer({
-    count: paginatedExercises.length,
+    count: rowCount,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 128, // 120px height + 8px gap
-    overscan: 5,
+    estimateSize: () => {
+      if (viewMode === 'list') return LIST_ROW_HEIGHT;
+      const colWidth = containerWidth ? (containerWidth - GRID_GAP * (columns - 1)) / columns : 180;
+      return colWidth * 0.75 + 76 + GRID_GAP; // media 4:3 + treść + odstęp
+    },
+    overscan: viewMode === 'grid' ? 3 : 5,
+    getItemKey: (index) => `${viewMode}-${columns}-${filteredExercises[index * columns]?.id ?? index}`,
   });
 
-  // Detect scroll to load more exercises
   useEffect(() => {
-    const scrollElement = parentRef.current;
-    if (!scrollElement) return;
+    rowVirtualizer.measure();
+  }, [rowVirtualizer, viewMode, columns]);
 
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = scrollElement;
-      const scrolledToBottom = scrollHeight - scrollTop - clientHeight < 500;
+  // Infinite scroll: gdy pasek dochodzi do dołu kontenera, dołóż kolejną stronę.
+  const handleScroll = useCallback(() => {
+    const el = parentRef.current;
+    if (!el) return;
+    const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 400;
+    if (nearBottom && hasMore && !isLoadingMore) loadMore();
+  }, [hasMore, isLoadingMore, loadMore]);
 
-      if (scrolledToBottom && hasMore && !isLoading) {
-        setDisplayCount(prev => prev + 10);
-      }
-    };
+  // Nowe wyszukiwanie/filtry zaczynają od góry listy.
+  useEffect(() => {
+    parentRef.current?.scrollTo({ top: 0 });
+  }, [queryKey]);
 
-    scrollElement.addEventListener('scroll', handleScroll);
-    return () => scrollElement.removeEventListener('scroll', handleScroll);
-  }, [hasMore, isLoading]);
+  // Gdy treść nie wypełnia kontenera (np. szeroki grid), scroll nie nastąpi – dociągnij od razu.
+  useEffect(() => {
+    handleScroll();
+  }, [handleScroll, filteredExercises.length, viewMode, columns]);
+
+  const renderCard = (exercise: Exercise) => {
+    const CardComponent = viewMode === 'grid' ? ExerciseCardGrid : ExerciseCardHorizontal;
+    return (
+      <CardComponent
+        key={exercise.id}
+        exercise={exercise}
+        userId={user?.uid}
+        canEdit={canEdit}
+        canDelete={canDelete}
+        showProgress={showProgress}
+        showOwnerBadge={showOwnerBadge}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onShowProgress={handleShowProgress}
+        onClick={handleShowDetail}
+        allowNonOwnerEdit={role === 'admin'}
+        allowNonOwnerDelete={role === 'admin'}
+      />
+    );
+  };
+
+  const countLabel = isLoading
+    ? 'Ładowanie…'
+    : totalFiltered === totalAll
+      ? `${totalAll} ćwiczeń w bazie`
+      : `${totalFiltered} z ${totalAll} ćwiczeń`;
 
   return (
-    <div className="container mx-auto p-4 md:p-8 h-full flex flex-col">
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between flex-shrink-0">
-        <h1 className="font-headline text-3xl font-bold">{title}</h1>
-        <div className="flex gap-2 flex-wrap">
-          <ExerciseFilters
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            selectedMuscleGroup={selectedMuscleGroup}
-            onMuscleGroupChange={setSelectedMuscleGroup}
-            muscleGroupOptions={muscleGroupOptions}
-          />
-          {showBulkDelete && allExercises && allExercises.length > 0 && (
-            <Button
-              onClick={() => setBulkDeleteDialogOpen(true)}
-              variant="destructive"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Usuń wszystkie ({allExercises.length})
-            </Button>
-          )}
-          {canCreate && (
-            <Button onClick={handleCreate}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Dodaj ćwiczenie
-            </Button>
-          )}
+    <div className="container mx-auto p-4 md:p-8 pt-18 h-full flex flex-col">
+      <div className="mb-4 flex flex-shrink-0 flex-col gap-4">
+        <div className="flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">{countLabel}</p>
+            <h1 className="font-headline text-3xl font-bold leading-tight">{title}</h1>
+          </div>
+          <div className="flex flex-shrink-0 items-center gap-2">
+            <ViewModeToggle value={viewMode} onChange={setViewMode} />
+            {showBulkDelete && allExercises && allExercises.length > 0 && (
+              <Button
+                onClick={() => setBulkDeleteDialogOpen(true)}
+                variant="destructive"
+                className="h-10 rounded-full"
+              >
+                <Trash2 className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Usuń wszystkie ({allExercises.length})</span>
+              </Button>
+            )}
+            {canCreate && (
+              <Button onClick={handleCreate} className="h-10 w-10 rounded-full p-0 md:w-auto md:px-4">
+                <Plus className="h-5 w-5 md:mr-1.5 md:h-4 md:w-4" />
+                <span className="sr-only md:not-sr-only">Dodaj ćwiczenie</span>
+              </Button>
+            )}
+          </div>
         </div>
+        <ExerciseFilters
+          filters={filters}
+          onChange={setFilters}
+          muscleGroupOptions={muscleGroupOptions}
+          resultCount={isLoading ? undefined : totalFiltered}
+        />
       </div>
 
-      {/* Virtualized List Container */}
       {isLoading ? (
-        <div className="flex flex-col gap-2">
-          {Array.from({ length: 8 }).map((_, index) => (
-            <div key={index} className="flex items-stretch bg-card border rounded-lg overflow-hidden h-[120px]">
-              <Skeleton className="w-[100px] h-full flex-shrink-0" />
-              <div className="flex-1 p-4 flex flex-col justify-center gap-2">
-                <Skeleton className="h-5 w-3/4" />
-                <div className="flex gap-1">
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-4 w-16" />
+        viewMode === 'grid' ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {Array.from({ length: 10 }).map((_, index) => (
+              <div key={index} className="overflow-hidden rounded-2xl border bg-card">
+                <Skeleton className="aspect-[4/3] w-full rounded-none" />
+                <div className="space-y-2 p-3">
+                  <Skeleton className="h-4 w-4/5" />
+                  <Skeleton className="h-3 w-1/2" />
                 </div>
-                <Skeleton className="h-4 w-full" />
               </div>
-            </div>
-          ))}
-        </div>
-      ) : paginatedExercises && paginatedExercises.length > 0 ? (
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="flex h-[88px] items-center gap-3 rounded-2xl border bg-card p-2">
+                <Skeleton className="aspect-square h-full flex-shrink-0 rounded-xl" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                  <Skeleton className="h-3 w-16 rounded-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      ) : error ? (
+        <Card className="flex flex-col items-center justify-center rounded-3xl border-dashed py-20">
+          <CardContent className="text-center">
+            <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="font-headline text-xl font-semibold mb-2">Błąd ładowania</h3>
+            <p className="text-muted-foreground mb-4">{error.message || 'Nie udało się pobrać ćwiczeń.'}</p>
+          </CardContent>
+        </Card>
+      ) : filteredExercises.length > 0 ? (
         <div
-          ref={parentRef}
+          ref={setScrollContainer}
+          onScroll={handleScroll}
           className="flex-1 overflow-auto min-h-0"
           style={{ contain: 'strict' }}
           id="exercise-full-list"
@@ -362,47 +452,55 @@ export function ExercisesListView(props: ExercisesListViewProps) {
             }}
           >
             {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-              const exercise = paginatedExercises[virtualRow.index];
+              const rowItems = filteredExercises.slice(
+                virtualRow.index * columns,
+                virtualRow.index * columns + columns,
+              );
               return (
                 <div
-                  key={exercise.id}
+                  key={virtualRow.key}
+                  data-index={virtualRow.index}
+                  ref={rowVirtualizer.measureElement}
                   style={{
                     position: 'absolute',
                     top: 0,
                     left: 0,
                     width: '100%',
-                    height: `${virtualRow.size}px`,
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
-                  className="pb-2"
+                  className={viewMode === 'grid' ? 'pb-3' : 'pb-2'}
                 >
-                  <ExerciseCardHorizontal
-                    exercise={exercise}
-                    userId={user?.uid}
-                    canEdit={canEdit}
-                    canDelete={canDelete}
-                    showProgress={showProgress}
-                    showOwnerBadge={showOwnerBadge}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onShowProgress={handleShowProgress}
-                    onClick={handleShowDetail}
-                    allowNonOwnerEdit={role === 'admin'}
-                    allowNonOwnerDelete={role === 'admin'}
-                  />
+                  {viewMode === 'grid' ? (
+                    <div
+                      className="grid"
+                      style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`, gap: GRID_GAP }}
+                    >
+                      {rowItems.map(renderCard)}
+                    </div>
+                  ) : (
+                    rowItems.map(renderCard)
+                  )}
                 </div>
               );
             })}
           </div>
+          {isLoadingMore && (
+            <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
+              <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+              Ładowanie kolejnych ćwiczeń…
+            </div>
+          )}
         </div>
       ) : (
-        <Card className="flex flex-col items-center justify-center border-dashed py-20">
+        <Card className="flex flex-col items-center justify-center rounded-3xl border-dashed py-16">
           <CardContent className="text-center">
-            <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <Dumbbell className="h-8 w-8 text-primary" />
+            </div>
             <h3 className="font-headline text-xl font-semibold mb-2">Brak ćwiczeń</h3>
-            <p className="text-muted-foreground mb-4">{emptyMessage}</p>
+            <p className="mx-auto mb-4 max-w-sm text-sm text-muted-foreground">{emptyMessage}</p>
             {canCreate && (
-              <Button variant="outline" onClick={handleCreate}>
+              <Button variant="outline" className="rounded-full" onClick={handleCreate}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Dodaj Ćwiczenie
               </Button>
@@ -440,6 +538,8 @@ export function ExercisesListView(props: ExercisesListViewProps) {
         exercise={selectedExercise}
         open={isDetailDialogOpen}
         onOpenChange={setDetailDialogOpen}
+        onShowProgress={showProgress ? handleDetailProgress : undefined}
+        onEdit={selectedExercise && canEditExercise(selectedExercise) ? handleDetailEdit : undefined}
       />
 
       {/* Delete Confirmation Dialog */}
@@ -481,9 +581,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>
-              Anuluj
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={isSubmitting}>Anuluj</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBulkDeleteConfirm}
               disabled={isSubmitting}

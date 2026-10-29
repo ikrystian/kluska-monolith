@@ -115,24 +115,49 @@ export async function GET(
 
         await dbConnect();
 
-        // Fetch user (only athletes have public profiles)
-        const user = await User.findById(athleteId).lean();
+        // Everything below keys off athleteId alone, so fetch it in one parallel
+        // round trip instead of paying Atlas latency once per query.
+        const [
+            user,
+            socialProfile,
+            workoutLogs,
+            gamificationProfile,
+            personalRecords,
+            socialPosts,
+            runningSessions,
+            stravaActivities,
+        ] = await Promise.all([
+            User.findById(athleteId).lean(),
+            // Social profile for bio
+            SocialProfile.findOne({ userId: athleteId }).lean(),
+            // Workout logs (completed only)
+            WorkoutLog.find({
+                athleteId,
+                status: 'completed',
+            }).sort({ endTime: -1 }).lean(),
+            GamificationProfile.findOne({ userId: athleteId }).lean(),
+            // Personal records (top 6)
+            PersonalRecord.find({ athleteId })
+                .sort({ achievedAt: -1 })
+                .limit(6)
+                .lean(),
+            // Social photos (last 12)
+            SocialPost.find({ authorId: athleteId })
+                .sort({ createdAt: -1 })
+                .limit(12)
+                .lean(),
+            // Running statistics
+            RunningSession.find({ ownerId: athleteId }).lean(),
+            StravaActivity.find({ ownerId: athleteId }).lean(),
+        ]);
 
+        // Only athletes have public profiles
         if (!user || user.role !== 'athlete') {
             return NextResponse.json(
                 { error: 'Athlete not found' },
                 { status: 404 }
             );
         }
-
-        // Fetch social profile for bio
-        const socialProfile = await SocialProfile.findOne({ userId: athleteId }).lean();
-
-        // Fetch workout logs (completed only)
-        const workoutLogs = await WorkoutLog.find({
-            athleteId,
-            status: 'completed',
-        }).sort({ endTime: -1 }).lean();
 
         // Calculate total tonnage and volume trends
         let totalTonnage = 0;
@@ -193,21 +218,12 @@ export async function GET(
             .slice(0, 8) // Increased from 5 to 8
             .map(([name, volume]) => ({ name, volume: Math.round(volume) }));
 
-        // Fetch gamification profile
-        const gamificationProfile = await GamificationProfile.findOne({ userId: athleteId }).lean();
-
         // Calculate longest streak from history (simplified - using current)
         const longestStreak = Math.max(
             gamificationProfile?.streaks?.workout || 0,
             gamificationProfile?.streaks?.goals || 0,
             gamificationProfile?.streaks?.checkins || 0
         );
-
-        // Fetch personal records (top 6)
-        const personalRecords = await PersonalRecord.find({ athleteId })
-            .sort({ achievedAt: -1 })
-            .limit(6)
-            .lean();
 
         // Fetch favorite gyms
         const favoriteGymIds = user.favoriteGymIds || [];
@@ -230,19 +246,9 @@ export async function GET(
             .filter(date => new Date(date) >= oneYearAgo)
             .sort();
 
-        // Fetch social photos (last 12)
-        const socialPosts = await SocialPost.find({ authorId: athleteId })
-            .sort({ createdAt: -1 })
-            .limit(12)
-            .lean();
-
         const currentLevel = gamificationProfile?.level || 1;
         const currentXP = gamificationProfile?.experiencePoints || 0;
         const xpForNextLevel = calculateXPForNextLevel(currentLevel);
-
-        // Fetch running statistics
-        const runningSessions = await RunningSession.find({ ownerId: athleteId }).lean();
-        const stravaActivities = await StravaActivity.find({ ownerId: athleteId }).lean();
 
         let totalRunningKm = 0;
         // Add manual running sessions

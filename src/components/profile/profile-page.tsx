@@ -98,7 +98,7 @@ export function ProfilePage() {
   const isLoading = profileLoading || gymsLoading;
   const { updateDoc } = useUpdateDoc();
 
-  const isStravaConnected = !!userProfile?.stravaAccessToken;
+  const isStravaConnected = !!userProfile?.stravaConnected;
 
   const handleDisconnectStrava = async () => {
     setIsDisconnecting(true);

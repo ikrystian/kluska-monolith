@@ -1,27 +1,4 @@
-import {
-  CalendarDays,
-  Dumbbell,
-  History,
-  LayoutDashboard,
-  LogOut,
-  Play,
-  BookOpen,
-  Ruler,
-  MessageSquare,
-  Map,
-  ClipboardList,
-  ChevronRight,
-  Users2,
-  Layers,
-  TrendingUp,
-  CheckSquare,
-  ClipboardCheck,
-  Trophy,
-  Footprints,
-  UtensilsCrossed,
-  NotebookPen,
-  TriangleAlert,
-} from 'lucide-react';
+import { Dumbbell, LogOut, Play, TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 import {
   AlertDialog,
@@ -43,10 +20,10 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarSeparator,
   useSidebar,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { placeholderImages } from '@/lib/placeholder-images';
@@ -54,56 +31,18 @@ import { useUserProfile } from '@/contexts/UserProfileContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { resolveMediaUrl } from '@/lib/api-client';
 import { Badge } from '@/components/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { athleteNavItems, isNavGroup, isNavLeafActive, type NavLeaf } from '@/lib/athlete-nav';
 
-export const athleteNavItems = [
-  { href: '/athlete/dashboard', icon: LayoutDashboard, label: 'Panel' },
-  {
-    label: 'Trening',
-    icon: Dumbbell,
-    items: [
-      { href: '/athlete/log', label: 'Trenuj Teraz', icon: Play },
-      { href: '/athlete/workouts', label: 'Szablony', icon: ClipboardList },
-      { href: '/athlete/workout-plans', label: 'Mój Program', icon: Layers },
-      { href: '/athlete/exercises', label: 'Ćwiczenia', icon: Dumbbell },
-      { href: '/athlete/running', label: 'Bieganie', icon: Footprints },
-      { href: '/athlete/history', label: 'Historia', icon: History },
-    ]
-  },
-  {
-    label: 'Postępy',
-    icon: TrendingUp,
-    items: [
-      { href: '/athlete/progress', label: 'Dashboard Postępów', icon: TrendingUp },
-      { href: '/athlete/measurements', label: 'Pomiary', icon: Ruler },
-      { href: '/athlete/goals', label: 'Cele i Trofea', icon: Trophy },
-      { href: '/athlete/habits', label: 'Nawyki', icon: CheckSquare },
-      { href: '/athlete/calendar', label: 'Kalendarz', icon: CalendarDays },
-    ]
-  },
-  {
-    label: 'Dieta',
-    icon: UtensilsCrossed,
-    items: [
-      { href: '/athlete/diet', label: 'Plan Diety', icon: UtensilsCrossed },
-      { href: '/athlete/nutrition', label: 'Dzienniczek Kalorii', icon: NotebookPen },
-    ]
-  },
-  {
-    label: 'Społeczność',
-    icon: Users2,
-    items: [
-      { href: '/athlete/chat', label: 'Czat', icon: MessageSquare },
-      { href: '/athlete/social', label: 'Social', icon: Users2 },
-    ]
-  },
-  { href: '/athlete/check-in', icon: ClipboardCheck, label: 'Tygodniowy Check-in' },
-  { href: '/athlete/knowledge-zone', icon: BookOpen, label: 'Strefa Wiedzy' },
-  { href: '/athlete/map', icon: Map, label: 'Mapa Siłowni' },
-];
+/** The "start workout" CTA sits above the menu, so the list doesn't repeat it. */
+const CTA_HREF = '/athlete/log';
+
+const topLevelLeaves = athleteNavItems.filter((entry): entry is NavLeaf => !isNavGroup(entry));
+const groups = athleteNavItems.filter(isNavGroup);
+
+const tint = (color: string, pct: number) => `color-mix(in srgb, ${color} ${pct}%, transparent)`;
 
 export function AppNav() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const navigate = useNavigate();
   const avatarImage = placeholderImages.find(img => img.id === 'avatar-male');
   const { setOpenMobile } = useSidebar();
@@ -135,7 +74,7 @@ export function AppNav() {
 
   return (
     <Sidebar>
-      <SidebarHeader>
+      <SidebarHeader className="gap-3">
         <Link
           to="/athlete/dashboard"
           className="flex items-center gap-2.5 rounded-lg p-1.5 transition-colors hover:bg-accent/60 group-data-[state=collapsed]:justify-center"
@@ -147,58 +86,91 @@ export function AppNav() {
             Leniwa<br />Kluska
           </span>
         </Link>
+
+        <SidebarMenu className="p-0 group-data-[state=collapsed]:p-0">
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              size="lg"
+              isActive={pathname === CTA_HREF}
+              tooltip="Trenuj teraz"
+              onClick={() => setOpenMobile(false)}
+              className="hero-ember rounded-xl font-bold text-white shadow-glow hover:bg-transparent hover:brightness-110 data-[active=true]:bg-transparent data-[active=true]:text-white"
+            >
+              <Link to={CTA_HREF}>
+                <Play className="fill-current" />
+                <span>Trenuj teraz</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent>
-        <SidebarMenu>
-          {athleteNavItems.map((item: any) => (
-            item.items ? (
-              <Collapsible key={item.label} asChild defaultOpen={item.items.some((subItem: any) => pathname.startsWith(subItem.href))} className="group/collapsible">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip={item.label}>
-                      <item.icon />
-                      <span>{item.label}</span>
-                      <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {item.items.map((subItem: any) => (
-                        <SidebarMenuSubItem key={subItem.href}>
-                          <SidebarMenuSubButton asChild isActive={pathname === subItem.href}>
-                            <Link to={subItem.href} onClick={() => setOpenMobile(false)}>
-                              <subItem.icon />
-                              <span>{subItem.label}</span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
-            ) : (
+
+      <SidebarContent className="gap-0">
+        <SidebarGroup className="pb-0">
+          <SidebarMenu className="gap-0.5 p-0 group-data-[state=collapsed]:p-0">
+            {topLevelLeaves.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname.startsWith(item.href) && (item.href !== '/athlete/dashboard' || pathname === item.href)}
-                  tooltip={{ children: item.label }}
+                  isActive={pathname === item.href}
+                  tooltip={item.label}
                   onClick={() => setOpenMobile(false)}
+                  className="h-9"
                 >
-                  <Link to={item.href} className="relative">
+                  <Link to={item.href}>
                     <item.icon />
                     <span>{item.label}</span>
-                    {item.href.endsWith('/chat') && totalUnreadCount > 0 && (
-                      <Badge className="absolute right-2 top-1/2 -translate-y-1/2 h-5 min-w-[1.25rem] justify-center px-1.5 group-data-[state=collapsed]:right-auto group-data-[state=collapsed]:left-1/2 group-data-[state=collapsed]:-top-1">
-                        {totalUnreadCount}
-                      </Badge>
-                    )}
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            )
-          ))}
-        </SidebarMenu>
+            ))}
+          </SidebarMenu>
+        </SidebarGroup>
+
+        {groups.map((group) => (
+          <SidebarGroup key={group.label} className="py-1">
+            <SidebarSeparator className="mb-1 hidden group-data-[state=collapsed]:block" />
+            <SidebarGroupLabel className="gap-2 text-[10px] font-bold uppercase tracking-[0.16em]">
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: group.color }} />
+              {group.label}
+            </SidebarGroupLabel>
+            <SidebarMenu className="gap-0.5 p-0 group-data-[state=collapsed]:p-0">
+              {group.items
+                .filter((leaf) => leaf.href !== CTA_HREF)
+                .map((leaf) => {
+                  const isActive = isNavLeafActive(leaf.href, pathname, search);
+                  return (
+                    <SidebarMenuItem key={leaf.href}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive}
+                        tooltip={leaf.description ? `${leaf.label} — ${leaf.description}` : leaf.label}
+                        onClick={() => setOpenMobile(false)}
+                        className="relative h-9 data-[active=true]:font-semibold data-[active=true]:text-foreground"
+                        style={isActive ? { backgroundColor: tint(group.color, 14) } : undefined}
+                      >
+                        <Link to={leaf.href} aria-current={isActive ? 'page' : undefined}>
+                          {isActive && (
+                            <i
+                              aria-hidden
+                              className="absolute inset-y-1.5 left-0 w-1 rounded-full group-data-[state=collapsed]:hidden"
+                              style={{ backgroundColor: group.color }}
+                            />
+                          )}
+                          <leaf.icon style={{ color: group.color }} />
+                          <span>{leaf.label}</span>
+                          {leaf.href.endsWith('/chat') && totalUnreadCount > 0 && (
+                            <Badge className="ml-auto h-5 min-w-[1.25rem] justify-center px-1.5">{totalUnreadCount}</Badge>
+                          )}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+            </SidebarMenu>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
       <SidebarFooter>
         <div className="flex items-center gap-1 group-data-[state=collapsed]:flex-col">

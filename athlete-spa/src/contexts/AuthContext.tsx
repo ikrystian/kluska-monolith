@@ -1,6 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { apiFetch, setUnauthorizedHandler, TOKEN_STORAGE_KEY } from '@/lib/api-client';
 import { getDeviceId } from '@/lib/device-id';
+import { clearPersistedCache } from '@/lib/swr-cache';
+import { clearMemoryCache } from '@/lib/cache-invalidation';
+import { clearOfflineQueue } from '@/lib/offline-queue';
 
 /**
  * Set while the app is used in guest mode, so an expired guest token can be
@@ -8,6 +11,16 @@ import { getDeviceId } from '@/lib/device-id';
  * password to log back in with).
  */
 const GUEST_MODE_KEY = 'athlete-spa:guest-mode';
+
+/**
+ * Marks that this session entered through one of the two flows that should see
+ * the intro wizard: choosing "continue as guest" on the login screen, or a
+ * brand-new account's first login. `AthleteLayout` routes to
+ * `/athlete/onboarding` only while this is set and the profile isn't complete —
+ * so pre-existing accounts that never had `onboardingCompleted` are left alone.
+ * Cleared once onboarding is submitted, and on logout.
+ */
+export const ONBOARDING_PENDING_KEY = 'athlete-spa:onboarding-pending';
 
 export interface AuthUser {
   uid: string;
@@ -168,6 +181,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginAsGuest = async (): Promise<AuthUser> => {
     const guestUser = await requestGuestToken();
+    // Explicit guest sign-in from the login screen — show the intro wizard.
+    // (Silent token re-issue on relaunch goes through requestGuestToken
+    // directly and deliberately does not set this.)
+    localStorage.setItem(ONBOARDING_PENDING_KEY, '1');
     setUser(guestUser);
     return guestUser;
   };
@@ -187,7 +204,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       localStorage.removeItem(TOKEN_STORAGE_KEY);
       localStorage.removeItem(GUEST_MODE_KEY);
+      localStorage.removeItem(ONBOARDING_PENDING_KEY);
     }
+
+    // The persisted SWR snapshot holds the previous account's data; without
+    // this the next sign-in on the same device would render it before the
+    // first fetch lands.
+    clearPersistedCache();
+    clearMemoryCache();
+    // Pending writes belong to the account that made them; replaying them
+    // under whoever signs in next would attribute data to the wrong athlete.
+    clearOfflineQueue();
 
     setUser(null);
   };

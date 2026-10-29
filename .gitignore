@@ -34,9 +34,18 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local file uploads (served from /upload-data)
+/upload-data/*
+!/upload-data/.gitkeep
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 
 .genkit/*
 .env*
+athlete-spa/bun.lock
+
+# Python virtual environment
+.venv/
+venv/

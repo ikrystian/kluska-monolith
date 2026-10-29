@@ -84,7 +84,7 @@ export default function RunningPage() {
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
 
   const { data: userProfile } = useDoc<UserProfile>('users', user?.uid || null);
-  const isStravaConnected = !!userProfile?.stravaAccessToken;
+  const isStravaConnected = !!userProfile?.stravaConnected;
 
   const { data: runningSessions, isLoading: isLoadingManual, refetch: refetchManual } = useCollection<RunningSession>(
     user ? 'runningSessions' : null,

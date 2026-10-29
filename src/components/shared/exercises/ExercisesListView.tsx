@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Exercise, MuscleGroupName, MuscleGroup, WorkoutPlan } from '@/lib/types';
-import { useCollection, useUser, useUpdateDoc, useDeleteDoc, useCreateDoc } from '@/lib/db-hooks';
+import { Exercise, MuscleGroupName, MuscleGroup } from '@/lib/types';
+import { useUser, useUpdateDoc, useDeleteDoc, useCreateDoc } from '@/lib/db-hooks';
+import { EMPTY_EXERCISE_FILTERS, ExerciseSort, useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,11 +20,12 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Dumbbell, Loader2, Trash2 } from 'lucide-react';
+import { PlusCircle, Dumbbell, Loader2, Trash2, Download } from 'lucide-react';
 
 import { ExerciseCardHorizontal } from './ExerciseCardHorizontal';
 import { ExerciseFilters } from './ExerciseFilters';
 import { ExerciseFormDialog } from './ExerciseForm';
+import { SETUP_GROUPS, withSetupValues } from './setup';
 import { ProgressDialog } from './ProgressDialog';
 import { ExerciseDetailDialog } from './ExerciseDetailDialog';
 import { ExercisesListViewProps, ExerciseFormData, roleDefaults } from './types';
@@ -38,6 +41,8 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const showProgress = props.showProgress ?? defaults.showProgress ?? false;
   const showOwnerBadge = props.showOwnerBadge ?? defaults.showOwnerBadge ?? false;
   const showBulkDelete = props.showBulkDelete ?? defaults.showBulkDelete ?? false;
+  const showImport = props.showImport ?? defaults.showImport ?? false;
+  const showSort = props.showSort ?? defaults.showSort ?? false;
   const title = props.title ?? defaults.title ?? 'Biblioteka Ćwiczeń';
   const emptyMessage = props.emptyMessage ?? defaults.emptyMessage ?? 'Nie znaleziono żadnych ćwiczeń.';
 
@@ -47,94 +52,40 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const { deleteDoc } = useDeleteDoc();
   const { createDoc } = useCreateDoc();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string>('all');
+  const [filters, setFilters] = useState(EMPTY_EXERCISE_FILTERS);
+  const [sort, setSort] = useState<ExerciseSort>('name');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [isFormDialogOpen, setFormDialogOpen] = useState(false);
   const [isProgressDialogOpen, setProgressDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDetailDialogOpen, setDetailDialogOpen] = useState(false);
   const [isBulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [isImportDialogOpen, setImportDialogOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
-  const [displayCount, setDisplayCount] = useState(10);
 
-  // Fetch exercises based on role
-  const getExerciseQuery = () => {
-    if (!user?.uid) return undefined;
+  // Wyszukiwanie trafia do serwera dopiero po chwili bez pisania.
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedSearch(filters.search), 300);
+    return () => clearTimeout(timeout);
+  }, [filters.search]);
 
-    if (role === 'admin') {
-      return undefined; // Admin sees all
-    }
-
-    // Athlete and Trainer see public + own exercises + legacy (no owner)
-    return {
-      $or: [
-        { ownerId: { $in: ['public', user.uid] } },
-        { ownerId: { $exists: false } },
-        { ownerId: null }
-      ]
-    };
-  };
-
-  const { data: exercises, isLoading: exercisesLoading, refetch: refetchExercises } = useCollection<Exercise>(
-    user?.uid ? 'exercises' : null,
-    getExerciseQuery()
-  );
-
-  // For athletes, also fetch exercises from assigned workout plans
-  const { data: assignedPlans } = useCollection<WorkoutPlan>(
-    role === 'athlete' && user?.uid ? 'workoutPlans' : null,
-    role === 'athlete' && user?.uid ? { assignedAthleteIds: { $in: [user.uid] } } : undefined
-  );
-
-  const exerciseIdsFromPlans = useMemo(() => {
-    const ids = new Set<string>();
-    if (assignedPlans) {
-      assignedPlans.forEach(plan => {
-        plan.workoutDays?.forEach(day => {
-          day.exercises?.forEach(ex => {
-            if (ex.exerciseId) ids.add(ex.exerciseId);
-          });
-        });
-      });
-    }
-    return Array.from(ids);
-  }, [assignedPlans]);
-
-  const { data: planExercises } = useCollection<Exercise>(
-    role === 'athlete' && exerciseIdsFromPlans.length > 0 ? 'exercises' : null,
-    exerciseIdsFromPlans.length > 0 ? { id: { $in: exerciseIdsFromPlans } } : undefined
-  );
-
-  // Combine all exercises
-  const allExercises = useMemo(() => {
-    const combined = new Map<string, Exercise>();
-    exercises?.forEach(ex => combined.set(ex.id, ex));
-    planExercises?.forEach(ex => combined.set(ex.id, ex));
-    return Array.from(combined.values());
-  }, [exercises, planExercises]);
-
-  const isLoading = exercisesLoading;
-
-  // Filter exercises
-  const filteredExercises = allExercises?.filter((exercise) => {
-    const matchesSearch = exercise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      exercise.mainMuscleGroups?.some(mg => mg.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      exercise.muscleGroup?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesMuscleGroup = selectedMuscleGroup === 'all' ||
-      exercise.mainMuscleGroups?.some(mg => mg.name === selectedMuscleGroup) ||
-      exercise.muscleGroup === selectedMuscleGroup;
-
-    return matchesSearch && matchesMuscleGroup;
-  });
+  // Exercises are paged and filtered on the server (50 per page).
+  const {
+    exercises,
+    isLoading,
+    isLoadingMore,
+    isRefreshing,
+    hasMore,
+    totalAll,
+    totalFiltered,
+    queryKey,
+    loadMore,
+    refetch: refetchExercises,
+  } = useExerciseLibrary({ ...filters, search: debouncedSearch }, Boolean(user?.uid), sort);
 
   const muscleGroupOptions = Object.values(MuscleGroupName).map(name => ({ label: name, value: name }));
-
-  // Reset display count when search or filter changes
-  useEffect(() => {
-    setDisplayCount(10);
-  }, [searchTerm, selectedMuscleGroup]);
 
   // Handlers
   const handleEdit = (exercise: Exercise) => {
@@ -169,6 +120,12 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     // Map strings back to MuscleGroup objects
     const mainMuscleGroups: MuscleGroup[] = data.mainMuscleGroups.map(name => ({ name: name as MuscleGroupName }));
     const secondaryMuscleGroups: MuscleGroup[] = (data.secondaryMuscleGroups || []).map(name => ({ name: name as MuscleGroupName }));
+    const setupValues = {
+      [SETUP_GROUPS.bodyPart]: data.bodyPart,
+      [SETUP_GROUPS.equipment]: data.equipment,
+      [SETUP_GROUPS.category]: data.category,
+      [SETUP_GROUPS.animation]: data.animationUrl,
+    };
 
     try {
       if (selectedExercise) {
@@ -177,10 +134,11 @@ export function ExercisesListView(props: ExercisesListViewProps) {
           name: data.name,
           mainMuscleGroups,
           secondaryMuscleGroups,
-          instructions: data.instructions || data.description,
+          instructions: data.instructions ?? '',
           mediaUrl: data.mediaUrl,
+          setup: withSetupValues(selectedExercise.setup, setupValues),
           type: data.type,
-          description: data.instructions || data.description,
+          description: data.description ?? '',
           // Legacy support
           muscleGroup: data.mainMuscleGroups[0],
           image: data.mediaUrl,
@@ -194,10 +152,11 @@ export function ExercisesListView(props: ExercisesListViewProps) {
           name: data.name,
           mainMuscleGroups,
           secondaryMuscleGroups,
-          instructions: data.instructions || data.description,
+          instructions: data.instructions ?? '',
           mediaUrl: data.mediaUrl,
+          setup: withSetupValues([], setupValues),
           type: data.type,
-          description: data.instructions || data.description,
+          description: data.description ?? '',
           // Legacy support
           muscleGroup: data.mainMuscleGroups[0],
           image: data.mediaUrl,
@@ -243,15 +202,19 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   };
 
   const handleBulkDeleteConfirm = async () => {
-    if (!allExercises || allExercises.length === 0) return;
+    if (totalAll === 0) return;
     setIsSubmitting(true);
 
     try {
-      // Delete all exercises
-      await Promise.all(allExercises.map(ex => deleteDoc('exercises', ex.id)));
+      // The list is paged, so the server deletes everything in one query.
+      const response = await fetch('/api/admin/exercises', { method: 'DELETE' });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || `Nie udało się usunąć ćwiczeń (HTTP ${response.status}).`);
+      }
       toast({
         title: "Sukces!",
-        description: `Usunięto ${allExercises.length} ćwiczeń.`
+        description: `Usunięto ${result.deleted} ćwiczeń.`
       });
       setBulkDeleteDialogOpen(false);
       refetchExercises();
@@ -266,59 +229,87 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     }
   };
 
-  // Pagination: Show only displayCount exercises
-  const paginatedExercises = useMemo(() => {
-    return filteredExercises?.slice(0, displayCount) ?? [];
-  }, [filteredExercises, displayCount]);
+  const handleImportConfirm = async () => {
+    setIsImporting(true);
 
-  const hasMore = (filteredExercises?.length ?? 0) > displayCount;
+    try {
+      const response = await fetch('/api/admin/exercises/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
 
-  // Virtualization setup
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || `Nie udało się zaimportować ćwiczeń (HTTP ${response.status}).`);
+      }
+
+      toast({
+        title: "Sukces!",
+        description: `Zaimportowano ${result.inserted} ćwiczeń. Pominięto ${result.skipped} istniejących (duplikatów). Media pobrano i zapisano lokalnie.`,
+      });
+      setImportDialogOpen(false);
+      refetchExercises();
+    } catch (error) {
+      toast({
+        title: 'Błąd',
+        description: error instanceof Error ? error.message : 'Nie udało się zaimportować ćwiczeń.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  // Virtualization setup: one extra row at the end shows the "loading more" state
   const parentRef = useRef<HTMLDivElement>(null);
   const rowVirtualizer = useVirtualizer({
-    count: paginatedExercises.length,
+    count: exercises.length + (hasMore ? 1 : 0),
     getScrollElement: () => parentRef.current,
     estimateSize: () => 128, // 120px height + 8px gap
     overscan: 5,
   });
 
-  // Detect scroll to load more exercises
+  // Infinite scroll: fetch the next page when the user nears the end of the list
+  const virtualItems = rowVirtualizer.getVirtualItems();
+  const lastVisibleIndex = virtualItems[virtualItems.length - 1]?.index ?? -1;
   useEffect(() => {
-    const scrollElement = parentRef.current;
-    if (!scrollElement) return;
+    if (hasMore && !isLoadingMore && lastVisibleIndex >= exercises.length - 10) {
+      loadMore();
+    }
+  }, [lastVisibleIndex, exercises.length, hasMore, isLoadingMore, loadMore]);
 
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = scrollElement;
-      const scrolledToBottom = scrollHeight - scrollTop - clientHeight < 500;
-
-      if (scrolledToBottom && hasMore && !isLoading) {
-        setDisplayCount(prev => prev + 10);
-      }
-    };
-
-    scrollElement.addEventListener('scroll', handleScroll);
-    return () => scrollElement.removeEventListener('scroll', handleScroll);
-  }, [hasMore, isLoading]);
+  // New search/filters/sort start from the top of the list
+  useEffect(() => {
+    parentRef.current?.scrollTo({ top: 0 });
+  }, [queryKey, sort]);
 
   return (
-    <div className="container mx-auto p-4 md:p-8 h-full flex flex-col">
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between flex-shrink-0">
+    <div className="container mx-auto p-4 md:p-8 pt-18 h-full flex flex-col">
+      <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between flex-shrink-0">
         <h1 className="font-headline text-3xl font-bold">{title}</h1>
         <div className="flex gap-2 flex-wrap">
-          <ExerciseFilters
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            selectedMuscleGroup={selectedMuscleGroup}
-            onMuscleGroupChange={setSelectedMuscleGroup}
-            muscleGroupOptions={muscleGroupOptions}
-          />
-          {showBulkDelete && allExercises && allExercises.length > 0 && (
+          {showBulkDelete && totalAll > 0 && (
             <Button
               onClick={() => setBulkDeleteDialogOpen(true)}
               variant="destructive"
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              Usuń wszystkie ({allExercises.length})
+              Usuń wszystkie ({totalAll})
+            </Button>
+          )}
+          {showImport && (
+            <Button
+              onClick={() => setImportDialogOpen(true)}
+              variant="outline"
+              disabled={isImporting}
+            >
+              {isImporting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="mr-2 h-4 w-4" />
+              )}
+              Importuj ćwiczenia
             </Button>
           )}
           {canCreate && (
@@ -326,6 +317,35 @@ export function ExercisesListView(props: ExercisesListViewProps) {
               <PlusCircle className="mr-2 h-4 w-4" />
               Dodaj ćwiczenie
             </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="mb-4 flex flex-col gap-2 flex-shrink-0">
+        <ExerciseFilters
+          filters={filters}
+          onChange={setFilters}
+          muscleGroupOptions={muscleGroupOptions}
+        />
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {!isLoading && (
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              {isRefreshing && <Loader2 className="h-3 w-3 animate-spin" />}
+              {totalFiltered === totalAll
+                ? `Ćwiczeń: ${totalAll}`
+                : `Znaleziono ${totalFiltered} z ${totalAll} ćwiczeń`}
+            </p>
+          )}
+          {showSort && (
+            <Select value={sort} onValueChange={(value) => setSort(value as ExerciseSort)}>
+              <SelectTrigger aria-label="Sortowanie" className="h-8 w-auto gap-2 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Nazwa (A–Z)</SelectItem>
+                <SelectItem value="updatedAt">Ostatnio edytowane</SelectItem>
+              </SelectContent>
+            </Select>
           )}
         </div>
       </div>
@@ -347,7 +367,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
             </div>
           ))}
         </div>
-      ) : paginatedExercises && paginatedExercises.length > 0 ? (
+      ) : exercises.length > 0 ? (
         <div
           ref={parentRef}
           className="flex-1 overflow-auto min-h-0"
@@ -361,8 +381,27 @@ export function ExercisesListView(props: ExercisesListViewProps) {
               position: 'relative',
             }}
           >
-            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-              const exercise = paginatedExercises[virtualRow.index];
+            {virtualItems.map((virtualRow) => {
+              const exercise = exercises[virtualRow.index];
+              if (!exercise) {
+                return (
+                  <div
+                    key="load-more"
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: `${virtualRow.size}px`,
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                    className="flex items-center justify-center text-sm text-muted-foreground"
+                  >
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Ładowanie kolejnych ćwiczeń...
+                  </div>
+                );
+              }
               return (
                 <div
                   key={exercise.id}
@@ -476,7 +515,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
             <AlertDialogTitle>Czy na pewno chcesz usunąć WSZYSTKIE ćwiczenia?</AlertDialogTitle>
             <AlertDialogDescription>
               Tej operacji nie można cofnąć. To spowoduje trwałe usunięcie
-              <span className="font-semibold"> {allExercises?.length || 0} ćwiczeń </span>
+              <span className="font-semibold"> {totalAll} ćwiczeń </span>
               z bazy danych.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -491,6 +530,34 @@ export function ExercisesListView(props: ExercisesListViewProps) {
             >
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Usuń wszystkie
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Import Exercises Confirmation Dialog */}
+      <AlertDialog open={isImportDialogOpen} onOpenChange={setImportDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Importuj ćwiczenia z biblioteki openGym?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Importuje wszystkie ćwiczenia z pliku <b>opengym-exercises-pl.json</b>
+              do bazy danych, zachowując obecną strukturę ćwiczeń. Obrazki i animacje
+              zostaną pobrane na serwer i zapisane lokalnie (zamiast linków do opengym.ch).
+              Ćwiczenia, które już istnieją (po nazwie), zostaną pominięte.
+              Import może potrwać kilka chwil.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isImporting}>
+              Anuluj
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleImportConfirm}
+              disabled={isImporting}
+            >
+              {isImporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isImporting ? 'Importowanie...' : 'Importuj'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

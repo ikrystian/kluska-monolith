@@ -1,5 +1,6 @@
 // Types for the shared ExercisesListView component
 import { Exercise, MuscleGroup, MuscleGroupName, WorkoutLog } from '@/lib/types';
+import type { ExerciseLibraryFilters } from '@/hooks/useExerciseLibrary';
 
 export type ExercisesRole = 'athlete' | 'trainer' | 'admin';
 
@@ -24,6 +25,12 @@ export interface ExercisesListViewProps {
 
   /** Show bulk delete button - admin feature (default: false) */
   showBulkDelete?: boolean;
+
+  /** Show the "Importuj ćwiczenia" button - admin feature (default: false) */
+  showImport?: boolean;
+
+  /** Show the sort selector (name / recently edited) - admin feature (default: false) */
+  showSort?: boolean;
 
   /** Custom title */
   title?: string;
@@ -62,15 +69,19 @@ export interface ExerciseFormData {
   secondaryMuscleGroups?: string[];
   instructions?: string;
   mediaUrl?: string;
+  /** Wartości zapisywane w `setup` (grupy "Część ciała", "Sprzęt", "Kategoria", "Animacja") */
+  bodyPart?: string;
+  equipment?: string;
+  category?: string;
+  /** URL animacji (MP4/WebM/GIF) */
+  animationUrl?: string;
   type?: 'weight' | 'duration' | 'reps';
   description?: string;
 }
 
 export interface ExerciseFiltersProps {
-  searchTerm: string;
-  onSearchChange: (value: string) => void;
-  selectedMuscleGroup: string;
-  onMuscleGroupChange: (value: string) => void;
+  filters: ExerciseLibraryFilters;
+  onChange: (filters: ExerciseLibraryFilters) => void;
   muscleGroupOptions: { label: string; value: string }[];
 }
 
@@ -108,6 +119,8 @@ export const roleDefaults: Record<ExercisesRole, Partial<ExercisesListViewProps>
     showProgress: false,
     showOwnerBadge: true,
     showBulkDelete: true,
+    showImport: true,
+    showSort: true,
     title: 'Wszystkie Ćwiczenia',
     emptyMessage: 'Brak ćwiczeń spełniających kryteria.',
   },

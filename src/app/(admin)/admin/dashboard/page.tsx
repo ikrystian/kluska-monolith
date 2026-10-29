@@ -23,9 +23,13 @@ import {
   Trophy,
   Activity,
 } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+type RecentSort = 'updatedAt' | 'startTime';
 
 export default function AdminDashboardPage() {
+  const [recentSort, setRecentSort] = useState<RecentSort>('updatedAt');
   const { data: users } = useCollection('users');
   const { data: exercises } = useCollection('exercises');
   const { data: articles } = useCollection('articles');
@@ -36,6 +40,10 @@ export default function AdminDashboardPage() {
   const { data: gamificationProfiles } = useCollection('gamificationProfiles');
   const { data: bodyMeasurements } = useCollection('bodyMeasurements');
   const { data: trainerRequests } = useCollection('trainerRequests');
+  const { data: recentLogs } = useCollection('workoutLogs', undefined, {
+    sort: { [recentSort]: -1 },
+    limit: 5,
+  });
 
   // Time-based calculations
   const timeStats = useMemo(() => {
@@ -344,19 +352,31 @@ export default function AdminDashboardPage() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Ostatnia aktywność</CardTitle>
-            <CardDescription>Najnowsze treningi w systemie</CardDescription>
+          <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
+            <div className="space-y-1.5">
+              <CardTitle>Ostatnia aktywność</CardTitle>
+              <CardDescription>Treningi w systemie</CardDescription>
+            </div>
+            <Select value={recentSort} onValueChange={(value) => setRecentSort(value as RecentSort)}>
+              <SelectTrigger className="h-8 w-auto gap-2 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="updatedAt">Ostatnio edytowane</SelectItem>
+                <SelectItem value="startTime">Ostatnio rozpoczęte</SelectItem>
+              </SelectContent>
+            </Select>
           </CardHeader>
           <CardContent>
-            {workoutLogs && workoutLogs.length > 0 ? (
+            {recentLogs && recentLogs.length > 0 ? (
               <div className="space-y-2">
-                {workoutLogs.slice(0, 5).map((log: any) => (
+                {recentLogs.map((log: any) => (
                   <div key={log._id} className="flex items-center justify-between border-b pb-2">
                     <div>
                       <p className="font-medium">{log.workoutName}</p>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(log.startTime).toLocaleDateString('pl-PL')}
+                        {recentSort === 'updatedAt' ? 'Edytowano' : 'Rozpoczęto'}{' '}
+                        {new Date(log[recentSort]).toLocaleDateString('pl-PL')}
                       </p>
                     </div>
                     <span className="text-xs text-muted-foreground">{log.status}</span>

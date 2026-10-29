@@ -13,7 +13,7 @@ import {
     Trash2,
     Wheat,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 
 import { apiFetch } from '@/lib/api-client';
 import { useFrozenDuringTransition } from '@/lib/page-transition';
@@ -107,7 +107,7 @@ export default function NutritionPage() {
     const remaining = goal ? goal.dailyCalories - totals.calories : null;
 
     return (
-        <div className="container mx-auto space-y-6 p-4 md:p-8">
+        <div className="container mx-auto space-y-6 p-4 pt-18 md:p-8">
             {/* Header */}
             <section className="relative overflow-hidden rounded-3xl border border-primary/10 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-6 md:p-8">
                 <div className="absolute top-0 right-0 -mt-16 -mr-16 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />

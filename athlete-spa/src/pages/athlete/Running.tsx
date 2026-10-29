@@ -1,91 +1,131 @@
 'use client';
 
 import { apiFetch } from '@/lib/api-client';
-import { useState, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
-
+import { useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+  ChevronRight,
+  Footprints,
+  Gauge,
+  Loader2,
+  Music,
+  Play,
+  Plus,
+  RefreshCw,
+  Route,
+  Timer,
+  Trophy,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogClose,
-} from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Loader2, Footprints, TrendingUp, Route, Timer, Activity, RefreshCw, Heart, Mountain } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useCreateDoc, useUser, useDoc } from '@/lib/db-hooks';
-import { ActivityDetailModal } from '@/components/running/ActivityDetailModal';
-import type { RunningSession, StravaActivity, UserProfile } from '@/lib/types';
+import { haptic } from '@/lib/haptics';
+import { cn } from '@/lib/utils';
+import { useCollection, useUser, useDoc } from '@/lib/db-hooks';
+import type { RunningProgram, RunningSession, StravaActivity, UserProfile } from '@/lib/types';
+import { tint } from '@/components/profile/profile-ui';
+import { StartRunDialog } from '@/components/running/StartRunDialog';
+import { ManualRunSheet } from '@/components/running/ManualRunSheet';
+import { WeeklySummary } from '@/components/running/WeeklySummary';
+import { RunHistoryList, STRAVA_COLOR } from '@/components/running/RunHistoryList';
+import {
+  formatHours,
+  formatKm,
+  formatPace,
+  fromSession,
+  fromStrava,
+  runTitle,
+  type RunActivity,
+} from '@/components/running/running-format';
 
-const runSchema = z.object({
-  distance: z.coerce.number().positive('Dystans musi być liczbą dodatnią.'),
-  duration: z.coerce.number().positive('Czas trwania musi być liczbą dodatnią.'),
-  notes: z.string().optional(),
-});
+type SourceFilter = 'all' | 'app' | 'strava';
 
-type RunFormValues = z.infer<typeof runSchema>;
+const SOURCE_FILTERS: { id: SourceFilter; label: string }[] = [
+  { id: 'all', label: 'Wszystkie' },
+  { id: 'app', label: 'Aplikacja' },
+  { id: 'strava', label: 'Strava' },
+];
 
-const StatCard = ({ title, value, icon: Icon, isLoading }: { title: string; value: string; icon: React.ElementType; isLoading: boolean }) => (
-  <Card>
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium">{title}</CardTitle>
-      <Icon className="h-4 w-4 text-muted-foreground" />
-    </CardHeader>
-    <CardContent>
-      {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-2xl font-bold">{value}</div>}
-    </CardContent>
-  </Card>
-);
+/** Shortest run that counts towards the fastest-pace record, so a 200 m sprint doesn't win. */
+const PACE_RECORD_MIN_KM = 1;
 
-interface CombinedActivity {
-  id: string;
-  date: Date;
-  distance: number; // km for manual, meters for Strava
-  duration: number;// min for manual, seconds for Strava
-  avgPace: number; // min/km
-  notes?: string;
-  source: 'manual' | 'strava';
-  // Strava-specific fields
-  stravaActivityId?: string;
-  name?: string;
-  totalElevationGain?: number;
-  averageHeartrate?: number;
-  maxHeartrate?: number;
-  kudosCount?: number;
+function StatTile({
+  icon: Icon,
+  color,
+  label,
+  value,
+  isLoading,
+}: {
+  icon: LucideIcon;
+  color: string;
+  label: string;
+  value: string;
+  isLoading: boolean;
+}) {
+  return (
+    <div className="rounded-[1.5rem] border border-border/60 bg-card p-4 shadow-soft">
+      <span className="grid h-9 w-9 place-items-center rounded-xl" style={{ backgroundColor: tint(color, 15), color }}>
+        <Icon className="h-[18px] w-[18px]" />
+      </span>
+      <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+      {isLoading ? (
+        <Skeleton className="mt-1 h-7 w-20" />
+      ) : (
+        <p className="mt-0.5 truncate font-headline text-xl font-bold tabular-nums">{value}</p>
+      )}
+    </div>
+  );
+}
+
+function RecordRow({ icon: Icon, label, run, value }: { icon: LucideIcon; label: string; run: RunActivity; value: string }) {
+  const content = (
+    <>
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[hsl(var(--chart-5)/0.15)] text-[hsl(var(--chart-5))]">
+        <Icon className="h-5 w-5" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="truncate text-sm font-semibold">{runTitle(run)}</p>
+      </div>
+      <span className="shrink-0 font-headline text-base font-bold tabular-nums">{value}</span>
+      {run.href && <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/70" />}
+    </>
+  );
+  const className = 'flex items-center gap-3 px-4 py-3';
+  return run.href ? (
+    <Link to={run.href} className={cn(className, 'transition-colors hover:bg-secondary/50 active:bg-secondary')}>
+      {content}
+    </Link>
+  ) : (
+    <div className={className}>{content}</div>
+  );
+}
+
+function SectionTitle({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
+  return (
+    <div className="mb-3 flex items-end justify-between gap-3 px-1">
+      <h2 className="font-headline text-xl font-bold tracking-tight">{children}</h2>
+      {action}
+    </div>
+  );
 }
 
 export default function RunningPage() {
+  const navigate = useNavigate();
   const { user } = useUser();
   const { toast } = useToast();
-  const { createDoc, isLoading: isCreating } = useCreateDoc();
-  const [isDialogOpen, setDialogOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
+  const [quickRunDialogOpen, setQuickRunDialogOpen] = useState(false);
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
+
+  // Recording needs the device's GPS; browsers without it keep the manual form.
+  const supportsGeolocation = typeof navigator !== 'undefined' && 'geolocation' in navigator;
 
   const { data: userProfile } = useDoc<UserProfile>('users', user?.uid || null);
-  const isStravaConnected = !!userProfile?.stravaAccessToken;
+  const isStravaConnected = !!userProfile?.stravaConnected;
 
   const { data: runningSessions, isLoading: isLoadingManual, refetch: refetchManual } = useCollection<RunningSession>(
     user ? 'runningSessions' : null,
@@ -99,118 +139,50 @@ export default function RunningPage() {
     { sort: { date: -1 } }
   );
 
+  const { data: runningPrograms } = useCollection<RunningProgram>(
+    supportsGeolocation ? 'runningPrograms' : null,
+    { isActive: true }
+  );
+
   const isLoading = isLoadingManual || isLoadingStrava;
 
-  // Combine manual and Strava sessions
-  const combinedActivities = useMemo(() => {
-    const activities: CombinedActivity[] = [];
-
-    // Add manual sessions
-    if (runningSessions) {
-      runningSessions.forEach((session) => {
-        activities.push({
-          id: session.id,
-          date: new Date(session.date),
-          distance: session.distance,
-          duration: session.duration,
-          avgPace: session.avgPace,
-          notes: session.notes,
-          source: 'manual',
-        });
-      });
-    }
-
-    // Add Strava activities
-    if (stravaActivities) {
-      stravaActivities.forEach((activity) => {
-        const distanceKm = activity.distance / 1000;
-        const durationMin = activity.movingTime / 60;
-        const avgPace = durationMin / distanceKm;
-
-        activities.push({
-          id: activity.id,
-          stravaActivityId: activity.stravaActivityId,
-          date: new Date(activity.date),
-          distance: distanceKm,
-          duration: durationMin,
-          avgPace: avgPace,
-          name: activity.name,
-          totalElevationGain: activity.totalElevationGain,
-          averageHeartrate: activity.averageHeartrate,
-          maxHeartrate: activity.maxHeartrate,
-          kudosCount: activity.kudosCount,
-          source: 'strava',
-        });
-      });
-    }
-
-    // Sort by date descending
-    return activities.sort((a, b) => b.date.getTime() - a.date.getTime());
-  }, [runningSessions, stravaActivities]);
+  const runs = useMemo(
+    () =>
+      [...(runningSessions ?? []).map(fromSession), ...(stravaActivities ?? []).map(fromStrava)].sort(
+        (a, b) => b.date.getTime() - a.date.getTime()
+      ),
+    [runningSessions, stravaActivities]
+  );
 
   const stats = useMemo(() => {
-    if (!combinedActivities.length) {
-      return { totalRuns: 0, totalDistance: 0, totalDuration: 0, overallAvgPace: 0 };
-    }
-    const totalRuns = combinedActivities.length;
-    const totalDistance = combinedActivities.reduce((acc, activity) => acc + activity.distance, 0);
-    const totalDuration = combinedActivities.reduce((acc, activity) => acc + activity.duration, 0);
-    const overallAvgPace = totalDistance > 0 ? totalDuration / totalDistance : 0;
-
-    return { totalRuns, totalDistance, totalDuration, overallAvgPace };
-  }, [combinedActivities]);
-
-  const formatPace = (pace: number) => {
-    if (pace === 0) return `0'00"/km`;
-    const paceMinutes = Math.floor(pace);
-    const paceSeconds = Math.round((pace - paceMinutes) * 60);
-    return `${paceMinutes}'${paceSeconds.toString().padStart(2, '0')}"/km`;
-  };
-
-  const form = useForm<RunFormValues>({
-    resolver: zodResolver(runSchema),
-    defaultValues: {
-      distance: undefined,
-      duration: undefined,
-      notes: '',
-    },
-  });
-
-  const onSubmit = async (data: RunFormValues) => {
-    if (!user) return;
-
-    const avgPace = data.duration / data.distance;
-
-    const newRun = {
-      date: new Date().toISOString(),
-      distance: data.distance,
-      duration: data.duration,
-      avgPace: avgPace,
-      notes: data.notes,
-      ownerId: user.uid,
+    const totalDistance = runs.reduce((acc, r) => acc + r.distanceKm, 0);
+    const totalDuration = runs.reduce((acc, r) => acc + r.durationMin, 0);
+    const longest = runs.reduce<RunActivity | null>((best, r) => (!best || r.distanceKm > best.distanceKm ? r : best), null);
+    const fastest = runs
+      .filter(r => r.distanceKm >= PACE_RECORD_MIN_KM && r.avgPace > 0)
+      .reduce<RunActivity | null>((best, r) => (!best || r.avgPace < best.avgPace ? r : best), null);
+    return {
+      totalRuns: runs.length,
+      totalDistance,
+      totalDuration,
+      avgPace: totalDistance > 0 ? totalDuration / totalDistance : 0,
+      longest,
+      fastest,
     };
+  }, [runs]);
 
-    try {
-      await createDoc('runningSessions', newRun);
-      toast({
-        title: 'Bieg Zapisany!',
-        description: 'Twoja sesja biegowa została dodana do historii.',
-      });
-      form.reset();
-      setDialogOpen(false);
-      refetchManual();
-    } catch (error) {
-      console.error("Error saving run:", error);
-      toast({ title: "Błąd", description: "Nie udało się zapisać biegu.", variant: "destructive" });
-    }
+  const hasStrava = (stravaActivities?.length ?? 0) > 0;
+  const filteredRuns = sourceFilter === 'all' ? runs : runs.filter(r => r.source === sourceFilter);
+
+  const startRecording = (programId: string) => {
+    haptic('tap');
+    navigate(`/athlete/running/record?programId=${programId}`);
   };
 
   const handleSyncStrava = async () => {
     setIsSyncing(true);
     try {
-      const response = await apiFetch('/api/strava/sync', {
-        method: 'POST',
-      });
+      const response = await apiFetch('/api/strava/sync', { method: 'POST' });
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -218,14 +190,15 @@ export default function RunningPage() {
       }
 
       const data = await response.json();
+      haptic('success');
       toast({
-        title: 'Sukces!',
-        description: `Zsynchronizowano ${data.syncedCount} aktywności ze Strava.`,
+        title: 'Zsynchronizowano',
+        description: `Pobrano ${data.syncedCount} aktywności ze Strava.`,
       });
       refetchStrava();
     } catch (error) {
       toast({
-        title: 'Błąd!',
+        title: 'Błąd synchronizacji',
         description: error instanceof Error ? error.message : 'Nie udało się zsynchronizować ze Strava.',
         variant: 'destructive',
       });
@@ -234,198 +207,206 @@ export default function RunningPage() {
     }
   };
 
+  const openPrimary = () => {
+    haptic('tap');
+    if (supportsGeolocation) setQuickRunDialogOpen(true);
+    else setManualOpen(true);
+  };
+
   return (
-    <div className="container mx-auto p-4 md:p-8">
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <h1 className="font-headline text-3xl font-bold">Dziennik Biegowy</h1>
-        <div className="flex gap-2">
-          {isStravaConnected && (
-            <Button variant="outline" onClick={handleSyncStrava} disabled={isSyncing}>
-              {isSyncing ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="mr-2 h-4 w-4" />
-              )}
-              Synchronizuj Strava
-            </Button>
-          )}
-          <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Dodaj Bieg
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle className="font-headline">Zarejestruj Nowy Bieg</DialogTitle>
-                <DialogDescription>Wprowadź szczegóły swojego ostatniego treningu biegowego.</DialogDescription>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="distance"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Dystans (km)</FormLabel>
-                          <FormControl>
-                            <Input type="number" step="0.01" placeholder="np. 5.2" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="duration"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Czas (min)</FormLabel>
-                          <FormControl>
-                            <Input type="number" step="0.1" placeholder="np. 28.5" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Notatki (opcjonalnie)</FormLabel>
-                        <FormControl>
-                          <Textarea placeholder="Jak się czułeś/aś? Jaka była pogoda?" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <DialogFooter>
-                    <DialogClose asChild>
-                      <Button type="button" variant="secondary" disabled={form.formState.isSubmitting}>Anuluj</Button>
-                    </DialogClose>
-                    <Button type="submit" disabled={isCreating}>
-                      {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Zapisz Bieg
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+    <div className="mx-auto w-full max-w-3xl space-y-7 px-4 pb-5 pt-20 md:px-6 md:pt-8">
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Bieganie</p>
+          <h1 className="font-headline text-3xl font-bold tracking-tight md:text-4xl">Dziennik biegowy</h1>
         </div>
-      </div>
+        {isStravaConnected && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSyncStrava}
+            disabled={isSyncing}
+            className="shrink-0 gap-1.5 rounded-full"
+            style={{ color: STRAVA_COLOR }}
+          >
+            {isSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            Strava
+          </Button>
+        )}
+      </header>
 
-      <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Wszystkie biegi" value={stats.totalRuns.toString()} icon={Footprints} isLoading={isLoading} />
-        <StatCard title="Łączny dystans" value={`${stats.totalDistance.toFixed(2)} km`} icon={Route} isLoading={isLoading} />
-        <StatCard title="Całkowity czas" value={`${Math.round(stats.totalDuration)} min`} icon={Timer} isLoading={isLoading} />
-        <StatCard title="Średnie tempo" value={formatPace(stats.overallAvgPace)} icon={TrendingUp} isLoading={isLoading} />
-      </div>
+      <section className="grid grid-cols-[1fr_auto] gap-3">
+        <button
+          type="button"
+          onClick={openPrimary}
+          className="hero-ember texture-grain group relative flex items-center justify-between gap-4 overflow-hidden rounded-[1.75rem] p-5 text-left text-white shadow-glow transition-transform duration-200 active:scale-[0.98] md:p-6"
+        >
+          <div aria-hidden className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full border-[1.1rem] border-white/10" />
+          <div className="relative min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/75">
+              {supportsGeolocation ? 'Nagrywanie GPS' : 'Bez GPS'}
+            </p>
+            <p className="mt-1 font-display text-xl font-extrabold uppercase leading-tight md:text-2xl">
+              {supportsGeolocation ? 'Rozpocznij bieg' : 'Dodaj bieg'}
+            </p>
+          </div>
+          <span className="relative grid h-14 w-14 shrink-0 place-items-center rounded-full bg-white text-primary shadow-lg transition-transform duration-200 group-hover:scale-105 group-active:scale-95">
+            {supportsGeolocation ? <Play className="h-6 w-6 fill-current" /> : <Plus className="h-6 w-6" />}
+          </span>
+        </button>
+        {supportsGeolocation && (
+          <button
+            type="button"
+            onClick={() => setManualOpen(true)}
+            className="flex w-24 flex-col items-center justify-center gap-2 rounded-[1.75rem] border border-border/60 bg-card p-3 text-center shadow-soft transition-colors hover:bg-secondary/50 active:scale-[0.98]"
+          >
+            <span className="grid h-10 w-10 place-items-center rounded-full bg-secondary">
+              <Plus className="h-5 w-5" />
+            </span>
+            <span className="text-xs font-semibold leading-tight">Dodaj ręcznie</span>
+          </button>
+        )}
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Historia Biegów</CardTitle>
-          <CardDescription>Zapis wszystkich Twoich sesji biegowych.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>Nazwa/Notatki</TableHead>
-                <TableHead>Dystans</TableHead>
-                <TableHead>Czas</TableHead>
-                <TableHead>Średnie Tempo</TableHead>
-                <TableHead>Szczegóły</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                  </TableRow>
-                ))
-              ) : combinedActivities && combinedActivities.length > 0 ? (
-                combinedActivities.map((activity) => {
-                  const isClickable = activity.source === 'strava';
-                  return (
-                    <TableRow
-                      key={activity.id}
-                      className={isClickable ? 'cursor-pointer hover:bg-muted/50' : ''}
-                      onClick={() => isClickable && activity.stravaActivityId && setSelectedActivityId(activity.stravaActivityId)}
-                    >
-                      <TableCell className="font-medium">{format(activity.date, 'd MMM yyyy, HH:mm', { locale: pl })}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {activity.source === 'strava' && (
-                            <Badge variant="secondary" className="bg-[#FC4C02]/10 text-[#FC4C02] hover:bg-[#FC4C02]/20">
-                              <Activity className="mr-1 h-3 w-3" />
-                              Strava
-                            </Badge>
-                          )}
-                          <span className="text-sm">{activity.name || activity.notes || '-'}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{activity.distance.toFixed(2)} km</TableCell>
-                      <TableCell>{activity.duration.toFixed(1)} min</TableCell>
-                      <TableCell>{formatPace(activity.avgPace)}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                          {activity.totalElevationGain !== undefined && (
-                            <span className="flex items-center gap-1">
-                              <Mountain className="h-3 w-3" />
-                              {Math.round(activity.totalElevationGain)}m
-                            </span>
-                          )}
-                          {activity.averageHeartrate !== undefined && (
-                            <span className="flex items-center gap-1">
-                              <Heart className="h-3 w-3 text-red-500" />
-                              {Math.round(activity.averageHeartrate)} bpm
-                            </span>
-                          )}
-                          {activity.kudosCount !== undefined && activity.kudosCount > 0 && (
-                            <span>❤️ {activity.kudosCount}</span>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                      <Footprints className="h-8 w-8" />
-                      <span>Nie zarejestrowano jeszcze żadnych biegów.</span>
-                      {isStravaConnected && (
-                        <Button variant="link" onClick={handleSyncStrava} className="text-[#FC4C02]">
-                          Zsynchronizuj aktywności ze Strava
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
+      <WeeklySummary runs={runs} isLoading={isLoading} />
+
+      {supportsGeolocation && runningPrograms && runningPrograms.length > 0 && (
+        <section>
+          <SectionTitle>Treningi od trenera</SectionTitle>
+          <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:-mx-6 md:px-6 [&::-webkit-scrollbar]:hidden">
+            {runningPrograms.map(program => (
+              <button
+                key={program.id}
+                type="button"
+                onClick={() => startRecording(program.id)}
+                className="group flex w-56 shrink-0 snap-start flex-col rounded-[1.5rem] border border-border/60 bg-card p-4 text-left shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-lifted active:scale-[0.98]"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <span className="font-display text-3xl font-extrabold leading-none tabular-nums">
+                    {formatKm(program.targetDistanceKm, program.targetDistanceKm % 1 ? 1 : 0)}
+                    <span className="ml-1 font-headline text-sm font-bold text-muted-foreground">km</span>
+                  </span>
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-transform group-hover:scale-105">
+                    <Play className="h-4 w-4 fill-current" />
+                  </span>
+                </div>
+                <p className="mt-3 line-clamp-2 text-sm font-semibold leading-snug">{program.name}</p>
+                {program.description && (
+                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{program.description}</p>
+                )}
+                {program.cues.length > 0 && (
+                  <p className="mt-auto flex items-center gap-1 pt-3 text-xs font-medium text-muted-foreground">
+                    <Music className="h-3 w-3" />
+                    {program.cues.length} {program.cues.length === 1 ? 'sygnał' : 'sygnałów'} audio
+                  </p>
+                )}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {(isLoading || runs.length > 0) && (
+        <section>
+          <SectionTitle>Łącznie</SectionTitle>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <StatTile icon={Route} color="hsl(var(--primary))" label="Dystans" value={`${formatKm(stats.totalDistance, 1)} km`} isLoading={isLoading} />
+            <StatTile icon={Footprints} color="hsl(var(--chart-2))" label="Biegi" value={String(stats.totalRuns)} isLoading={isLoading} />
+            <StatTile icon={Timer} color="hsl(var(--chart-4))" label="Czas" value={formatHours(stats.totalDuration)} isLoading={isLoading} />
+            <StatTile icon={Gauge} color="hsl(var(--volt))" label="Śr. tempo" value={formatPace(stats.avgPace)} isLoading={isLoading} />
+          </div>
+
+          {!isLoading && (stats.longest || stats.fastest) && (
+            <div className="mt-3 divide-y divide-border/60 overflow-hidden rounded-[1.5rem] border border-border/60 bg-card shadow-soft">
+              {stats.longest && (
+                <RecordRow icon={Trophy} label="Najdłuższy bieg" run={stats.longest} value={`${formatKm(stats.longest.distanceKm)} km`} />
               )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              {stats.fastest && (
+                <RecordRow icon={Zap} label={`Najszybsze tempo (≥ ${PACE_RECORD_MIN_KM} km)`} run={stats.fastest} value={formatPace(stats.fastest.avgPace)} />
+              )}
+            </div>
+          )}
+        </section>
+      )}
 
-      <ActivityDetailModal
-        activityId={selectedActivityId}
-        onClose={() => setSelectedActivityId(null)}
-      />
+      <section>
+        <SectionTitle
+          action={
+            hasStrava && runs.length > 0 ? (
+              <div className="flex gap-1 rounded-full border border-border/60 bg-card p-1 shadow-soft" role="tablist" aria-label="Źródło biegów">
+                {SOURCE_FILTERS.map(f => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={sourceFilter === f.id}
+                    onClick={() => setSourceFilter(f.id)}
+                    className={cn(
+                      'h-7 rounded-full px-3 text-xs font-semibold transition-colors',
+                      sourceFilter === f.id ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            ) : undefined
+          }
+        >
+          Historia
+        </SectionTitle>
+
+        {isLoading ? (
+          <div className="space-y-px overflow-hidden rounded-[1.5rem] border border-border/60 bg-card">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-3.5">
+                <Skeleton className="h-14 w-14 rounded-2xl" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-3 w-1/3" />
+                  <Skeleton className="h-4 w-2/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredRuns.length > 0 ? (
+          <RunHistoryList key={sourceFilter} runs={filteredRuns} />
+        ) : runs.length > 0 ? (
+          <p className="rounded-[1.5rem] border border-dashed border-border bg-card/50 p-6 text-center text-sm text-muted-foreground">
+            Brak biegów z tego źródła.
+          </p>
+        ) : (
+          <div className="rounded-[1.75rem] border border-dashed border-border bg-card/50 p-8 text-center">
+            <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-secondary text-primary">
+              <Footprints className="h-7 w-7" />
+            </span>
+            <p className="font-semibold">Brak biegów</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {supportsGeolocation ? 'Nagraj pierwszy bieg z GPS albo dodaj go ręcznie.' : 'Dodaj swój pierwszy bieg.'}
+            </p>
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              <Button size="sm" className="rounded-full" onClick={openPrimary}>
+                {supportsGeolocation ? 'Rozpocznij bieg' : 'Dodaj bieg'}
+              </Button>
+              {isStravaConnected && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-full"
+                  style={{ color: STRAVA_COLOR }}
+                  onClick={handleSyncStrava}
+                  disabled={isSyncing}
+                >
+                  Pobierz ze Strava
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+      </section>
+
+      <StartRunDialog open={quickRunDialogOpen} onOpenChange={setQuickRunDialogOpen} />
+      <ManualRunSheet open={manualOpen} onOpenChange={setManualOpen} onSaved={refetchManual} />
     </div>
   );
 }

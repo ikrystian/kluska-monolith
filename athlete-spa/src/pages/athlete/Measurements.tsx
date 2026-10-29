@@ -40,7 +40,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PlusCircle, Loader2, Weight, Ruler, BarChart, Armchair, Upload, Trash2, Camera, Info } from 'lucide-react';
-import { useUploadThing } from '@/lib/uploadthing';
+import { uploadClientFiles } from '@/lib/upload';
+import { resolveMediaUrl } from '@/lib/api-client';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useCreateDoc, useUser } from '@/lib/db-hooks';
 import type { BodyMeasurement } from '@/lib/types';
@@ -51,6 +52,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Link } from 'react-router-dom';
+import { PhotoComparison } from '@/components/measurements/PhotoComparison';
 
 
 const measurementSchema = z.object({
@@ -157,18 +159,7 @@ export default function MeasurementsPage() {
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
 
-  const { startUpload, isUploading } = useUploadThing("imageUploader", {
-    onClientUploadComplete: (res) => {
-      console.log("Files: ", res);
-    },
-    onUploadError: (error: Error) => {
-      toast({
-        title: "Błąd przesyłania",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  const [isUploading, setIsUploading] = useState(false);
 
   const { data: measurements, isLoading: measurementsLoading, refetch } = useCollection<BodyMeasurement>(
     user ? 'bodyMeasurements' : null,
@@ -227,14 +218,15 @@ export default function MeasurementsPage() {
 
     let photoURLs: string[] = [];
     if (photosToUpload.length > 0) {
+      setIsUploading(true);
       try {
-        const uploadResult = await startUpload(photosToUpload);
-        if (uploadResult) {
-          photoURLs = uploadResult.map(res => res.url);
-        }
+        const uploadResult = await uploadClientFiles(photosToUpload);
+        photoURLs = uploadResult.map(res => res.url);
       } catch (error) {
         console.error("Error uploading photos: ", error);
         return;
+      } finally {
+        setIsUploading(false);
       }
     }
 
@@ -407,6 +399,8 @@ export default function MeasurementsPage() {
         <StatCard title="Postęp" value="+1.2" unit="kg" icon={BarChart} isLoading={combinedLoading} />
       </div>
 
+      <PhotoComparison measurements={displayMeasurements} />
+
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Wykresy Postępów</CardTitle>
@@ -487,7 +481,7 @@ export default function MeasurementsPage() {
                         >
                           {session.photoURLs.slice(0, 3).map((url, i) => (
                             <div key={i} className="relative h-8 w-8 rounded-full border-2 border-background">
-                              <img src={url} alt="Miniaturka" className="absolute inset-0 w-full h-full rounded-full object-cover" />
+                              <img src={resolveMediaUrl(url)} alt="Miniaturka" className="absolute inset-0 w-full h-full rounded-full object-cover" />
                             </div>
                           ))}
                           {session.photoURLs.length > 3 && (
@@ -543,7 +537,7 @@ export default function MeasurementsPage() {
                     <CarouselItem key={index}>
                       <div className="relative aspect-video w-full">
                         <img
-                          src={url}
+                          src={resolveMediaUrl(url)}
                           alt={`Zdjęcie ${index + 1}`}
                           className="absolute inset-0 w-full h-full rounded-md object-contain"
                         />

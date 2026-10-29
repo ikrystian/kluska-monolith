@@ -1,0 +1,113 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000;overflow:hidden}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+</head><body>
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { W, H, makeRenderer, finish } from './common.js';
+
+const { renderer, scene } = makeRenderer({ exposure: 1.0, bg: 0x0d0a08 });
+scene.fog = new THREE.Fog(0x0d0a08, 7, 19);
+
+/* value noise fbm */
+const P = new Uint8Array(512);
+{ let s = 7; const p = [...Array(256).keys()]; for (let i = 255; i > 0; i--) { s = (s * 16807) % 2147483647; const j = s % (i + 1); [p[i], p[j]] = [p[j], p[i]]; } for (let i = 0; i < 512; i++) P[i] = p[i & 255]; }
+const hash = (x, y) => P[(P[x & 255] + y) & 511] / 255;
+const sm = t => t * t * (3 - 2 * t);
+function vnoise(x, y) {
+  const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
+  const u = sm(xf), v = sm(yf);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+function height(x, z) {
+  let h = 0, amp = 1, f = 0.13;
+  for (let o = 0; o < 5; o++) { h += vnoise(x * f + 11, z * f + 3) * amp; amp *= 0.5; f *= 2.03; }
+  return (h - 0.9) * 2.6;
+}
+
+const SIZE = 22;
+const geo = new THREE.PlaneGeometry(SIZE, SIZE, 360, 360);
+geo.rotateX(-Math.PI / 2);
+const pos = geo.attributes.position;
+for (let i = 0; i < pos.count; i++) pos.setY(i, height(pos.getX(i), pos.getZ(i)));
+geo.computeVertexNormals();
+
+/* contour-line texture */
+const TS = 2048;
+const cv = document.createElement('canvas');
+cv.width = cv.height = TS;
+const g = cv.getContext('2d');
+const img = g.createImageData(TS, TS);
+const step = 0.16;
+for (let j = 0; j < TS; j++) {
+  for (let i = 0; i < TS; i++) {
+    const x = (i / TS - 0.5) * SIZE, z = (j / TS - 0.5) * SIZE;
+    const h = height(x, z);
+    const fr = Math.abs(((h / step) % 1 + 1) % 1 - 0.5);
+    const major = Math.abs((((h / (step * 5)) % 1) + 1) % 1 - 0.5);
+    let v = 24 + h * 6;
+    if (fr > 0.46) v = 70;
+    if (major > 0.485) v = 120;
+    const k = (j * TS + i) * 4;
+    img.data[k] = v * 1.05; img.data[k + 1] = v * 0.98; img.data[k + 2] = v * 0.9; img.data[k + 3] = 255;
+  }
+}
+g.putImageData(img, 0, 0);
+const tex = new THREE.CanvasTexture(cv);
+tex.colorSpace = THREE.SRGBColorSpace;
+tex.anisotropy = 8;
+const ground = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: tex, roughness: 0.95 }));
+ground.receiveShadow = true;
+scene.add(ground);
+
+/* the run: a loop that follows the valley floor */
+const ctrl = [];
+for (let i = 0; i < 14; i++) {
+  const a = (i / 14) * Math.PI * 2;
+  const r = 3.3 + Math.sin(a * 3 + 1) * 0.9 + Math.cos(a * 2) * 0.5;
+  const x = Math.cos(a) * r * 1.25 - 0.4, z = Math.sin(a) * r * 0.85;
+  ctrl.push(new THREE.Vector3(x, 0, z));
+}
+const flat = new THREE.CatmullRomCurve3(ctrl, true, 'centripetal');
+const routePts = flat.getSpacedPoints(600).map(p => new THREE.Vector3(p.x, height(p.x, p.z) + 0.05, p.z));
+const route = new THREE.CatmullRomCurve3(routePts, true);
+const tube = new THREE.Mesh(
+  new THREE.TubeGeometry(route, 1200, 0.045, 12, true),
+  new THREE.MeshStandardMaterial({ color: 0xff6a2b, emissive: 0xff4d12, emissiveIntensity: 2.2, roughness: 0.4 })
+);
+scene.add(tube);
+
+// km markers every ~1/10 of the loop
+for (let k = 0; k < 10; k++) {
+  const p = route.getPointAt(k / 10);
+  const m = new THREE.Mesh(new THREE.SphereGeometry(k === 0 ? 0.14 : 0.075, 24, 16),
+    new THREE.MeshStandardMaterial({ color: 0xf4efe9, emissive: k === 0 ? 0xf4efe9 : 0x000000, emissiveIntensity: 0.8, roughness: 0.4 }));
+  m.position.copy(p).add(new THREE.Vector3(0, 0.05, 0));
+  scene.add(m);
+}
+
+const sun = new THREE.DirectionalLight(0xfff1e0, 2.2);
+sun.position.set(-8, 7, -4);
+sun.castShadow = true;
+sun.shadow.mapSize.set(4096, 4096);
+Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12 });
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0x8a7a6a, 0x0d0a08, 0.4));
+
+const cam = new THREE.PerspectiveCamera(34, W / H, 0.05, 80);
+cam.position.set(1.5, 7.2, 10.5);
+cam.lookAt(-0.3, -0.6, -0.2);
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, cam));
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), 0.55, 0.5, 0.85));
+composer.addPass(new OutputPass());
+composer.render();
+finish();
+</script>
+</body></html>

@@ -884,7 +884,7 @@ export default function HabitsPage() {
                 </DialogContent>
             </Dialog>
 
-            <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-4xl">
+            <div className="container mx-auto p-4 pt-18 md:p-6 lg:p-8 max-w-4xl">
                 {/* --- Header --- */}
                 <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">

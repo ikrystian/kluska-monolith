@@ -1,6 +1,6 @@
 'use client';
 
-import { apiFetch } from '@/lib/api-client';
+import { apiFetch, resolveMediaUrl } from '@/lib/api-client';
 import { useState, useRef, useEffect } from 'react';
 import {
     Card,
@@ -60,7 +60,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useUploadThing } from '@/lib/uploadthing';
+import { uploadClientFiles } from '@/lib/upload';
 import { AnimatePresence, motion, listItemMotion } from '@/components/motion';
 
 const fetcher = (url: string) => apiFetch(url).then((res) => res.json());
@@ -126,18 +126,7 @@ function CheckInForm({
     const [photosToUpload, setPhotosToUpload] = useState<File[]>([]);
     const photoInputRef = useRef<HTMLInputElement>(null);
 
-    const { startUpload, isUploading } = useUploadThing("imageUploader", {
-        onClientUploadComplete: (res) => {
-            console.log("Files: ", res);
-        },
-        onUploadError: (error: Error) => {
-            toast({
-                title: "Błąd przesyłania",
-                description: error.message,
-                variant: "destructive",
-            });
-        },
-    });
+    const [isUploading, setIsUploading] = useState(false);
 
     // Load initial data when editing
     useEffect(() => {
@@ -175,11 +164,10 @@ function CheckInForm({
         try {
             let photoURLs: string[] = [];
             if (photosToUpload.length > 0) {
+                setIsUploading(true);
                 try {
-                    const uploadResult = await startUpload(photosToUpload);
-                    if (uploadResult) {
-                        photoURLs = uploadResult.map(res => res.url);
-                    }
+                    const uploadResult = await uploadClientFiles(photosToUpload);
+                    photoURLs = uploadResult.map(res => res.url);
                 } catch (error) {
                     console.error("Error uploading photos: ", error);
                     toast({
@@ -189,6 +177,8 @@ function CheckInForm({
                     });
                     setIsSubmitting(false);
                     return;
+                } finally {
+                    setIsUploading(false);
                 }
             }
 
@@ -652,7 +642,7 @@ function CompletedCheckInCard({
                                     {checkIn.measurements.photoURLs.map((url, index) => (
                                         <CarouselItem key={index}>
                                             <div className="relative aspect-video w-full">
-                                                <img src={url} alt={`Zdjęcie ${index + 1}`} className="absolute inset-0 w-full h-full rounded-md object-cover" />
+                                                <img src={resolveMediaUrl(url)} alt={`Zdjęcie ${index + 1}`} className="absolute inset-0 w-full h-full rounded-md object-cover" />
                                             </div>
                                         </CarouselItem>
                                     ))}

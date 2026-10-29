@@ -1,6 +1,7 @@
 'use client';
 
 import { apiFetch, resolveMediaUrl } from '@/lib/api-client';
+import { resolveStoredImageUrl } from '@/lib/upload';
 import React, { useState, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -179,7 +180,7 @@ export function PublicProfileDialog({ open, onOpenChange, userId }: PublicProfil
                   {profileData.recentPosts.slice(0, 6).map((post) => (
                     <div key={post.id} className="aspect-square relative rounded-lg overflow-hidden bg-muted">
                       <img
-                        src={`https://utfs.io/f/${post.imageUrl}`}
+                        src={resolveMediaUrl(resolveStoredImageUrl(post.imageUrl))}
                         alt="Post"
                         className="w-full h-full object-cover"
                       />

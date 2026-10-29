@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useSWRConfig } from 'swr';
 import { Loader2 } from 'lucide-react';
 import { AppNav } from '@/components/nav';
 import { AppHeader } from '@/components/header';
@@ -8,10 +9,16 @@ import { useUser } from '@/lib/db-hooks';
 import { BottomNav } from '@/components/bottom-nav';
 import { ActiveWorkoutProvider } from '@/contexts/ActiveWorkoutContext';
 import { ActiveWorkoutWidget } from '@/components/workout/ActiveWorkoutWidget';
+import { NativeWidgetBridge } from '@/components/native-widget-bridge';
 import { UserProfileProvider, useUserProfile } from '@/contexts/UserProfileContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, ONBOARDING_PENDING_KEY } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { AnimatedOutlet } from '@/components/motion';
+import { useAndroidBackButton } from '@/hooks/useAndroidBackButton';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { useHideOnScroll } from '@/hooks/useHideOnScroll';
+import { PullToRefreshIndicator } from '@/components/pull-to-refresh-indicator';
+import { OfflineBanner } from '@/components/offline-banner';
 import { cn } from '@/lib/utils';
 
 function WrongRoleScreen() {
@@ -42,10 +49,29 @@ function AthleteLayoutContent() {
 
   const isLoading = isUserLoading || isProfileLoading;
   const isOnboardingPage = location.pathname.startsWith('/athlete/onboarding');
-  // Active workout session hides the bottom nav, so the content area gets the
-  // full height (no bottom clearance) and pages can stretch with h-full.
+  // The run recorder is a full-screen, map-first experience (map tiles under a
+  // frosted stats sheet) — the nav/header chrome and page-transition wrapper
+  // would just eat into that space and fight its own fixed-position layout.
+  const isRunRecordPage = location.pathname.startsWith('/athlete/running/record');
+  const isImmersivePage = isOnboardingPage || isRunRecordPage;
+  // Active workout session hides the bottom nav, so the scroll area drops the
+  // bottom clearance padding it otherwise needs to sit above it.
   const isActiveWorkoutSession = location.pathname === '/athlete/log' && new URLSearchParams(location.search).has('logId');
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useAndroidBackButton();
+
+  // Every screen reads through SWR, so one global revalidation refreshes
+  // whatever the current page happens to be showing. It must be the mutate
+  // bound to our SWRConfig cache provider — the one exported from 'swr' talks
+  // to the default cache and does nothing here. No data argument: passing
+  // `undefined` would wipe every cached screen back to skeletons first.
+  const { mutate } = useSWRConfig();
+  const refreshAll = useCallback(() => mutate(() => true), [mutate]);
+  const { indicatorRef } = usePullToRefresh(scrollRef, refreshAll, !isActiveWorkoutSession);
+  // Mobile chrome (header + bottom nav) tucks away while reading down, returns on scroll up.
+  const [chromeRoot, setChromeRoot] = useState<HTMLElement | null>(null);
+  const chromeHidden = useHideOnScroll(chromeRoot, location.pathname + location.search, !isActiveWorkoutSession);
 
   // Scroll the content container back to top on route change so the
   // page transition starts from a clean position.
@@ -60,8 +86,16 @@ function AthleteLayoutContent() {
         // If not logged in at all, go to login
         navigate('/login');
       } else if (userProfile?.role === 'athlete') {
-        // Check if onboarding is needed (only if not already on onboarding page)
-        if (!userProfile.onboardingCompleted && !isOnboardingPage) {
+        if (userProfile.onboardingCompleted) {
+          // Profile is set up — drop any leftover "pending" marker.
+          localStorage.removeItem(ONBOARDING_PENDING_KEY);
+        } else if (
+          localStorage.getItem(ONBOARDING_PENDING_KEY) === '1' &&
+          !isOnboardingPage
+        ) {
+          // Only a guest sign-in or a new account's first login sets this
+          // marker, so existing accounts without `onboardingCompleted` are
+          // not forced through the wizard.
           navigate('/athlete/onboarding');
         }
       }
@@ -93,8 +127,8 @@ function AthleteLayoutContent() {
     return <WrongRoleScreen />;
   }
 
-  // If on onboarding page, render children without the full layout (nav, header, etc.)
-  if (isOnboardingPage) {
+  // Onboarding and the run recorder render without the full layout (nav, header, etc.)
+  if (isImmersivePage) {
     return <Outlet />;
   }
 
@@ -103,9 +137,14 @@ function AthleteLayoutContent() {
   return (
     <SidebarProvider>
       <ActiveWorkoutProvider>
+        <NativeWidgetBridge />
         <div className="flex h-dvh w-full">
           <AppNav />
-          <main className="relative flex-1 flex flex-col overflow-hidden bg-background">
+          <main
+            ref={setChromeRoot}
+            data-chrome={chromeHidden ? 'hidden' : 'visible'}
+            className="group/chrome relative flex-1 flex flex-col overflow-hidden bg-background"
+          >
             {/* Aurora — ambient light field behind every screen */}
             <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
               <div className="absolute -left-32 -top-40 h-96 w-96 rounded-full bg-primary/[0.14] blur-[110px]" />
@@ -114,6 +153,8 @@ function AthleteLayoutContent() {
               <div className="texture-grain absolute inset-0" />
             </div>
             <AppHeader />
+            <OfflineBanner />
+            <PullToRefreshIndicator ref={indicatorRef} />
             <div
               ref={scrollRef}
               id="outlet"
@@ -121,15 +162,19 @@ function AthleteLayoutContent() {
                 'relative z-10 flex-1 overflow-x-hidden overflow-y-auto min-h-0',
                 isActiveWorkoutSession
                   ? 'pb-[env(safe-area-inset-bottom)]'
-                  : 'pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-0'
+                  : 'pb-[calc(env(safe-area-inset-bottom))] md:pb-0'
               )}
             >
-              <AnimatedOutlet className={isActiveWorkoutSession ? 'h-full' : undefined} />
+              {/* h-full so pages that build their own internal scroll region
+                  (ExercisesListView's virtualized list, Log's builder) resolve
+                  a real height off #outlet instead of collapsing to content. */}
+              <AnimatedOutlet className="h-full" />
             </div>
             <BottomNav />
+            {/* Inside <main> so it follows data-chrome and drops into the bottom nav's place when that hides. */}
+            <ActiveWorkoutWidget />
           </main>
         </div>
-        <ActiveWorkoutWidget />
       </ActiveWorkoutProvider>
     </SidebarProvider>
   );

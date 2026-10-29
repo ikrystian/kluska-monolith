@@ -92,6 +92,7 @@
 @layer base {
   * {
     @apply border-border;
+    outline: none !important;
   }
 
   html {
@@ -449,5 +450,111 @@ a.pressable,
 .container {
   @media(width < 560px) {
     padding-inline: 8px;
+  }
+}
+
+/* ?de=true — hide .toAnimate (display: none, no reserved space) until the reveal button is pressed */
+html.de-active:not(.de-revealed) .toAnimate {
+  display: none !important;
+}
+
+html.de-active.de-revealed .toAnimate {
+  animation: toAnimate-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes toAnimate-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* After reveal, desaturate everything except .toAnimate, its descendants and its ancestors
+   (a filter on an ancestor would also grey out .toAnimate, so ancestors are skipped and
+   their other children are filtered individually). */
+html.de-revealed body *:not(.toAnimate):not(.toAnimate *):not(:has(.toAnimate)) {}
+/* Knowledge-zone article body. Content is trainer-authored HTML; the project has no
+   typography plugin, so the reading styles live here. */
+@layer components {
+  .article-body {
+    @apply text-[1.0625rem] leading-[1.75] text-foreground/90;
+    overflow-wrap: anywhere;
+  }
+  .article-body > * + * {
+    margin-top: 1.15em;
+  }
+  .article-body h1,
+  .article-body h2 {
+    @apply font-headline text-2xl font-bold leading-tight text-foreground;
+    margin-top: 1.8em;
+  }
+  .article-body h3,
+  .article-body h4 {
+    @apply font-headline text-lg font-bold leading-snug text-foreground;
+    margin-top: 1.6em;
+  }
+  .article-body > :first-child {
+    margin-top: 0;
+  }
+  .article-body > p:first-of-type {
+    @apply text-lg leading-relaxed text-foreground;
+  }
+  .article-body a {
+    @apply font-medium text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary;
+  }
+  .article-body strong {
+    @apply font-semibold text-foreground;
+  }
+  .article-body ul,
+  .article-body ol {
+    padding-left: 1.4em;
+  }
+  .article-body ul {
+    list-style: disc;
+  }
+  .article-body ol {
+    list-style: decimal;
+  }
+  .article-body li + li {
+    margin-top: 0.4em;
+  }
+  .article-body li::marker {
+    @apply text-primary;
+  }
+  .article-body blockquote {
+    @apply rounded-r-2xl border-l-4 border-primary bg-secondary/60 py-3 pl-5 pr-4 font-medium italic text-foreground;
+  }
+  .article-body img,
+  .article-body video,
+  .article-body iframe {
+    @apply h-auto max-w-full rounded-2xl;
+  }
+  .article-body hr {
+    @apply my-10 border-border/60;
+  }
+  .article-body code {
+    @apply rounded-md bg-secondary px-1.5 py-0.5 font-code text-[0.9em];
+  }
+  .article-body pre {
+    @apply overflow-x-auto rounded-2xl bg-secondary p-4 text-sm;
+  }
+  .article-body pre code {
+    @apply bg-transparent p-0;
+  }
+  .article-body table {
+    @apply block w-full overflow-x-auto text-sm;
+    border-collapse: collapse;
+  }
+  .article-body th,
+  .article-body td {
+    @apply border border-border/60 px-3 py-2 text-left;
+  }
+  .article-body th {
+    @apply bg-secondary font-semibold;
   }
 }

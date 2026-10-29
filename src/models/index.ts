@@ -9,6 +9,7 @@ export * from './Conversation';
 export * from './Message';
 export * from './BodyMeasurement';
 export * from './RunningSession';
+export * from './RunningProgram';
 export * from './Goal';
 export * from './MuscleGroup';
 export * from './Gym';
@@ -21,6 +22,8 @@ export * from './Workout';
 export * from './PersonalRecord';
 export * from './SocialProfile';
 export * from './SocialPost';
+export * from './SocialStatus';
+export * from './Friendship';
 export * from './CustomProduct';
 export * from './FoodDiaryEntry';
 export * from './DietPlan';
@@ -41,6 +44,10 @@ export * from './SurveyResponse';
 export * from './WeeklyCheckIn';
 // Strava models
 export * from './StravaActivity';
+// Spotify models
+export * from './SpotifyAccount';
+// Push notification models
+export * from './PushSubscription';
 // Challenge models
 export * from './Challenge';
 

@@ -1,8 +1,15 @@
+import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { SWRConfig, useSWRConfig } from 'swr';
+import { bindCacheInvalidation, trackActiveKeys } from '@/lib/cache-invalidation';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { createPersistentCacheProvider } from '@/lib/swr-cache';
 import { ThemeProvider } from '@/components/theme-provider';
-import { Toaster } from '@/components/ui/toaster';
-import { Toaster as SonnerToaster } from '@/components/ui/sonner';
+import { Toaster } from 'react-hot-toast';
+import { FullScreenFallback } from '@/components/route-fallback';
+import { NativePushBridge } from '@/components/native-push-bridge';
+import { NativeRunBridge } from '@/components/native-run-bridge';
+import { NativeWidgetLinks } from '@/components/native-widget-bridge';
 
 import LoginPage from '@/pages/Login';
 import RegisterPage from '@/pages/Register';
@@ -12,40 +19,83 @@ import OnboardingLayout from '@/components/layouts/OnboardingLayout';
 import KnowledgeZoneLayout from '@/components/layouts/KnowledgeZoneLayout';
 import { RequireFullAccount } from '@/components/guest-gate';
 
+// Each page is its own chunk: the athlete only downloads and parses the screen
+// they actually open, instead of the whole app up front. Dashboard is the
+// default landing route, so it is worth keeping eager to avoid a spinner on
+// the very first paint.
 import DashboardPage from '@/pages/athlete/Dashboard';
-import DietPage from '@/pages/athlete/Diet';
-import CalendarPage from '@/pages/athlete/Calendar';
-import ChatPage from '@/pages/athlete/Chat';
-import CheckInPage from '@/pages/athlete/CheckIn';
-import ExercisesPage from '@/pages/athlete/Exercises';
-import GamificationPage from '@/pages/athlete/Gamification';
-import GoalsPage from '@/pages/athlete/Goals';
-import HabitsPage from '@/pages/athlete/Habits';
-import HistoryPage from '@/pages/athlete/History';
-import HistoryDetailPage from '@/pages/athlete/HistoryDetail';
-import KnowledgeZonePage from '@/pages/athlete/KnowledgeZone';
-import KnowledgeZoneArticlePage from '@/pages/athlete/KnowledgeZoneArticle';
-import KnowledgeZoneManagePage from '@/pages/athlete/KnowledgeZoneManage';
-import LogPage from '@/pages/athlete/Log';
-import MapPage from '@/pages/athlete/Map';
-import MeasurementsPage from '@/pages/athlete/Measurements';
-import NutritionPage from '@/pages/athlete/Nutrition';
-import OnboardingPage from '@/pages/athlete/Onboarding';
-import ProfilePage from '@/pages/athlete/Profile';
-import ProgressPage from '@/pages/athlete/Progress';
-import RunningPage from '@/pages/athlete/Running';
-import SocialPage from '@/pages/athlete/Social';
-import TemplatesPage from '@/pages/athlete/Templates';
-import WorkoutPlansPage from '@/pages/athlete/WorkoutPlans';
-import WorkoutsPage from '@/pages/athlete/Workouts';
-import WorkoutCreatePage from '@/pages/athlete/WorkoutCreate';
-import WorkoutDetailPage from '@/pages/athlete/WorkoutDetail';
-import WorkoutEditPage from '@/pages/athlete/WorkoutEdit';
+
+const DietPage = lazy(() => import('@/pages/athlete/Diet'));
+const CalendarPage = lazy(() => import('@/pages/athlete/Calendar'));
+const ChatPage = lazy(() => import('@/pages/athlete/Chat'));
+const CheckInPage = lazy(() => import('@/pages/athlete/CheckIn'));
+const ExercisesPage = lazy(() => import('@/pages/athlete/Exercises'));
+const GamificationPage = lazy(() => import('@/pages/athlete/Gamification'));
+const GoalsPage = lazy(() => import('@/pages/athlete/Goals'));
+const HabitsPage = lazy(() => import('@/pages/athlete/Habits'));
+const HistoryPage = lazy(() => import('@/pages/athlete/History'));
+const HistoryDetailPage = lazy(() => import('@/pages/athlete/HistoryDetail'));
+const KnowledgeZonePage = lazy(() => import('@/pages/athlete/KnowledgeZone'));
+const KnowledgeZoneArticlePage = lazy(() => import('@/pages/athlete/KnowledgeZoneArticle'));
+const KnowledgeZoneManagePage = lazy(() => import('@/pages/athlete/KnowledgeZoneManage'));
+const LogPage = lazy(() => import('@/pages/athlete/Log'));
+const MapPage = lazy(() => import('@/pages/athlete/Map'));
+const MeasurementsPage = lazy(() => import('@/pages/athlete/Measurements'));
+const NutritionPage = lazy(() => import('@/pages/athlete/Nutrition'));
+const OnboardingPage = lazy(() => import('@/pages/athlete/Onboarding'));
+const ProfilePage = lazy(() => import('@/pages/athlete/Profile'));
+const ProgressPage = lazy(() => import('@/pages/athlete/Progress'));
+const RunningPage = lazy(() => import('@/pages/athlete/Running'));
+const RunRecordPage = lazy(() => import('@/pages/athlete/RunRecord'));
+const RunDetailPage = lazy(() => import('@/pages/athlete/RunDetail'));
+const RunDetailStravaPage = lazy(() => import('@/pages/athlete/RunDetailStrava'));
+const SocialPage = lazy(() => import('@/pages/athlete/Social'));
+const SummaryPage = lazy(() => import('@/pages/athlete/Summary'));
+const TemplatesPage = lazy(() => import('@/pages/athlete/Templates'));
+const TrainersPage = lazy(() => import('@/pages/athlete/Trainers'));
+const TrainerDetailPage = lazy(() => import('@/pages/athlete/TrainerDetail'));
+const WorkoutPlansPage = lazy(() => import('@/pages/athlete/WorkoutPlans'));
+const WorkoutsPage = lazy(() => import('@/pages/athlete/Workouts'));
+const WorkoutCreatePage = lazy(() => import('@/pages/athlete/WorkoutCreate'));
+const WorkoutDetailPage = lazy(() => import('@/pages/athlete/WorkoutDetail'));
+const WorkoutEditPage = lazy(() => import('@/pages/athlete/WorkoutEdit'));
+
+// Created once: SWR calls the provider on mount, and a fresh Map per render
+// would throw away the cache on every re-render.
+const cacheProvider = createPersistentCacheProvider();
+
+/** Hands the provider-bound `mutate`/`cache` to the invalidation layer. */
+function CacheInvalidationBinder() {
+  const { mutate, cache } = useSWRConfig();
+  useEffect(() => {
+    bindCacheInvalidation({ mutate, cache });
+    return () => bindCacheInvalidation(null);
+  }, [mutate, cache]);
+  return null;
+}
 
 export default function App() {
   return (
+    <SWRConfig
+      value={{
+        provider: cacheProvider,
+        // The restored snapshot can be hours old, so a screen the athlete
+        // returns to should re-check rather than trust it indefinitely.
+        revalidateOnFocus: true,
+        revalidateOnReconnect: true,
+        keepPreviousData: true,
+        use: [trackActiveKeys],
+      }}
+    >
+    <CacheInvalidationBinder />
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
     <AuthProvider>
+      <NativePushBridge />
+      <NativeRunBridge />
+      <NativeWidgetLinks />
+      {/* Safety net for routes rendered outside AthleteLayout (onboarding,
+          and anything not covered by the in-layout Suspense boundary). */}
+      <Suspense fallback={<FullScreenFallback />}>
       <Routes>
         <Route path="/" element={<Navigate to="/athlete/dashboard" replace />} />
         <Route path="/login" element={<LoginPage />} />
@@ -88,7 +138,13 @@ export default function App() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="progress" element={<ProgressPage />} />
           <Route path="running" element={<RunningPage />} />
+          <Route path="running/record" element={<RunRecordPage />} />
+          <Route path="running/strava/:activityId" element={<RunDetailStravaPage />} />
+          <Route path="running/:sessionId" element={<RunDetailPage />} />
+          <Route path="summary" element={<SummaryPage />} />
           <Route path="templates" element={<TemplatesPage />} />
+          <Route path="trainers" element={<TrainersPage />} />
+          <Route path="trainers/:id" element={<TrainerDetailPage />} />
           <Route path="workout-plans" element={<WorkoutPlansPage />} />
 
           <Route path="workouts" element={<WorkoutsPage />} />
@@ -99,9 +155,37 @@ export default function App() {
 
         <Route path="*" element={<Navigate to="/athlete/dashboard" replace />} />
       </Routes>
-      <Toaster />
-      <SonnerToaster />
+      </Suspense>
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: 'hsl(var(--background))',
+            color: 'hsl(var(--foreground))',
+            border: '1px solid hsl(var(--border))',
+            borderRadius: '0.9rem',
+            boxShadow: '0 10px 30px rgb(0 0 0 / 0.12)',
+            fontSize: '0.875rem',
+            maxWidth: '92vw',
+          },
+          error: {
+            duration: 5000,
+            iconTheme: {
+              primary: 'hsl(var(--destructive))',
+              secondary: 'hsl(var(--destructive-foreground))',
+            },
+          },
+          success: {
+            iconTheme: {
+              primary: 'hsl(var(--primary))',
+              secondary: 'hsl(var(--primary-foreground))',
+            },
+          },
+        }}
+      />
     </AuthProvider>
     </ThemeProvider>
+    </SWRConfig>
   );
 }

@@ -1,28 +1,40 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dumbbell } from 'lucide-react';
+import { ArrowRight, Loader2, Lock, Mail, UserRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { PageTransition } from '@/components/motion';
+import { AuthField, AuthShell, PasswordToggle } from '@/components/auth/AuthShell';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isGuestLoading, setIsGuestLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { login, loginAsGuest } = useAuth();
+  const isBusy = isLoading || isGuestLoading;
 
-  const handleLogin = async () => {
+  const handleLogin = async (e: FormEvent) => {
+    e.preventDefault();
+
+    const nextErrors: typeof errors = {};
+    if (!EMAIL_RE.test(email.trim())) nextErrors.email = 'Podaj poprawny adres e-mail.';
+    if (!password) nextErrors.password = 'Wpisz hasło.';
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) return;
+
     setIsLoading(true);
     try {
-      const user = await login(email, password, rememberMe);
+      const user = await login(email.trim(), password, rememberMe);
 
       if (user.role !== 'athlete') {
         toast({
@@ -62,108 +74,101 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-[100svh] flex-col overflow-hidden bg-background">
-      {/* Aurora */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-24 -top-32 h-96 w-96 rounded-full bg-primary/20 blur-[110px]" />
-        <div className="absolute -bottom-40 -right-32 h-96 w-96 rounded-full bg-[hsl(var(--volt)/0.10)] blur-[120px]" />
-        <div className="absolute right-1/4 top-1/3 h-72 w-72 rounded-full bg-[hsl(var(--chart-4)/0.08)] blur-[110px]" />
-        <div className="texture-grain absolute inset-0" />
-      </div>
-
-      <PageTransition className="relative mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 py-10">
-        {/* Brand */}
-        <div className="mb-8 flex items-center gap-3">
-          <span className="hero-ember texture-grain relative grid h-11 w-11 place-items-center rounded-2xl shadow-glow">
-            <Dumbbell className="h-5 w-5 text-white" />
-          </span>
-          <span className="font-display text-[11px] font-bold uppercase leading-[1.3] tracking-[0.28em] text-foreground">
-            Leniwa<br />Kluska
-          </span>
-        </div>
-
-        {/* Statement */}
-        <h1 className="font-display text-4xl font-extrabold uppercase leading-[1.05] tracking-tight md:text-5xl">
-          Witaj
-          <br />
-          <span className="text-gradient-ember">z powrotem</span>
-        </h1>
-        <p className="mt-3 text-sm text-muted-foreground">
-          Zaloguj się i wracaj do gry. Twoje treningi czekają.
-        </p>
-
-        {/* Form */}
-        <div className="glass mt-8 space-y-5 rounded-[2rem] p-6">
-          <div className="grid gap-2">
-            <Label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              placeholder="twoj@email.com"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading}
-              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-              className="h-12 rounded-2xl bg-background/60 text-base"
-            />
+    <AuthShell
+      mode="login"
+      title="Witaj"
+      accent="z powrotem"
+      subtitle="Zaloguj się i wracaj do gry. Twoje treningi czekają."
+      footer={
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+            <span className="h-px flex-1 bg-border" />
+            lub
+            <span className="h-px flex-1 bg-border" />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Hasło</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              placeholder="••••••••"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading}
-              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-              className="h-12 rounded-2xl bg-background/60 text-base"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="rememberMe"
-              checked={rememberMe}
-              onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-              disabled={isLoading}
-            />
-            <Label htmlFor="rememberMe" className="cursor-pointer text-sm font-normal">
-              Zapamiętaj mnie
-            </Label>
-          </div>
-          <Button
-            className="h-[3.25rem] w-full rounded-2xl text-base font-bold shadow-glow"
-            onClick={handleLogin}
-            disabled={isLoading || isGuestLoading}
+          <button
+            type="button"
+            onClick={handleGuestLogin}
+            disabled={isBusy}
+            className="group flex w-full items-center gap-4 rounded-[1.5rem] border border-dashed border-border bg-card/60 p-4 text-left transition-colors hover:border-primary/50 hover:bg-card active:scale-[0.99] disabled:pointer-events-none disabled:opacity-60"
           >
-            {isLoading ? 'Logowanie...' : 'Zaloguj się'}
-          </Button>
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-muted text-foreground">
+              {isGuestLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <UserRound className="h-5 w-5" />}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-bold">
+                {isGuestLoading ? 'Uruchamianie...' : 'Kontynuuj bez konta'}
+              </span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">
+                Dane zostaną na tym urządzeniu — konto założysz później.
+              </span>
+            </span>
+            <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+          </button>
+        </div>
+      }
+    >
+      <form onSubmit={handleLogin} noValidate className="space-y-4">
+        <AuthField
+          id="email"
+          label="Email"
+          icon={Mail}
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          placeholder="twoj@email.com"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+          }}
+          disabled={isBusy}
+          error={errors.email}
+        />
+        <AuthField
+          id="password"
+          label="Hasło"
+          icon={Lock}
+          type={showPassword ? 'text' : 'password'}
+          autoComplete="current-password"
+          placeholder="••••••••"
+          value={password}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
+          }}
+          disabled={isBusy}
+          error={errors.password}
+          trailing={<PasswordToggle visible={showPassword} onToggle={() => setShowPassword((prev) => !prev)} />}
+        />
+
+        <div className="flex items-center gap-2.5 pt-1">
+          <Checkbox
+            id="rememberMe"
+            checked={rememberMe}
+            onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+            disabled={isBusy}
+          />
+          <Label htmlFor="rememberMe" className="cursor-pointer text-sm font-normal">
+            Zapamiętaj mnie
+          </Label>
         </div>
 
-        <Button
-          variant="outline"
-          className="mt-4 h-12 w-full rounded-2xl text-base font-semibold"
-          onClick={handleGuestLogin}
-          disabled={isLoading || isGuestLoading}
-        >
-          {isGuestLoading ? 'Uruchamianie...' : 'Kontynuuj bez konta'}
+        <Button type="submit" className="h-[3.25rem] w-full rounded-2xl text-base font-bold shadow-glow" disabled={isBusy}>
+          {isLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Logowanie...
+            </>
+          ) : (
+            <>
+              Zaloguj się
+              <ArrowRight className="h-4 w-4" />
+            </>
+          )}
         </Button>
-        <p className="mt-2 text-center text-xs text-muted-foreground">
-          Twoje dane zostaną zapisane na tym urządzeniu — konto możesz założyć później.
-        </p>
-
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Nie masz konta?{' '}
-          <Link to="/register" className="font-semibold text-primary underline-offset-4 hover:underline">
-            Zarejestruj się
-          </Link>
-        </p>
-      </PageTransition>
-    </div>
+      </form>
+    </AuthShell>
   );
 }

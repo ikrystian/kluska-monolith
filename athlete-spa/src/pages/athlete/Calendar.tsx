@@ -1,21 +1,19 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { format, addMinutes, isSameDay } from 'date-fns';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { format, addMinutes, isSameDay, isValid, parse } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { CalendarDays, Clock, MapPin, User, CheckCircle, Play } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { CalendarDays } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useCollection, useUser } from '@/lib/db-hooks';
-import type { Exercise, PlannedWorkout, WorkoutLog } from '@/lib/types';
+import type { PlannedWorkout, WorkoutLog, RunningSession, StravaActivity } from '@/lib/types';
 import { SessionDetailsDialog, type TrainingSessionData } from '@/components/schedule/SessionDetailsDialog';
 import type { CalendarEvent } from '@/components/schedule/FullCalendarWrapper';
 import { DayStrip } from '@/components/schedule/DayStrip';
+import { AgendaCard } from '@/components/schedule/AgendaCard';
+import { EventSheet } from '@/components/schedule/EventSheet';
+import { KIND_COLOR, KIND_LABEL, type AgendaEvent, type AgendaRun } from '@/components/schedule/agenda';
 
 const statusColors = {
     scheduled: { bg: '#f97316', border: '#ea580c', text: '#ffffff' },
@@ -24,11 +22,29 @@ const statusColors = {
     cancelled: { bg: '#ef4444', border: '#dc2626', text: '#ffffff' },
     workout: { bg: '#8b5cf6', border: '#7c3aed', text: '#ffffff' },
     planned: { bg: '#3b82f6', border: '#2563eb', text: '#ffffff' },
+    run: { bg: '#0ea5e9', border: '#0284c7', text: '#ffffff' },
+};
+
+type RunCalendarItem = AgendaRun;
+
+/** `?date=2026-11-07` (e.g. from the home-screen widget) → that day; anything else → null. */
+const parseDateParam = (value: string | null): Date | null => {
+    if (!value) return null;
+    const date = parse(value, 'yyyy-MM-dd', new Date());
+    return isValid(date) ? date : null;
 };
 
 export default function CalendarPage() {
-    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+    const [searchParams] = useSearchParams();
+    const dateParam = searchParams.get('date');
+    const [selectedDate, setSelectedDate] = useState<Date>(() => parseDateParam(dateParam) ?? new Date());
+    // The page stays mounted when a widget link lands on it again with another day.
+    useEffect(() => {
+        const date = parseDateParam(dateParam);
+        if (date) setSelectedDate(date);
+    }, [dateParam]);
     const { user } = useUser();
+    const [openEvent, setOpenEvent] = useState<AgendaEvent | null>(null);
     const [selectedSession, setSelectedSession] = useState<TrainingSessionData | null>(null);
     const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
 
@@ -40,13 +56,56 @@ export default function CalendarPage() {
         user ? 'plannedWorkouts' : null,
         { ownerId: user?.uid }
     );
-    const { data: exercises, isLoading: exercisesLoading } = useCollection<Exercise>('exercises');
 
     // Pobierz sesje treningowe z trenerem
     const { data: trainingSessions, isLoading: trainingSessionsLoading, refetch: refetchSessions } = useCollection<TrainingSessionData>(
         user ? 'trainingSessions' : null,
         { athleteId: user?.uid }
     );
+
+    // Biegi zapisane ręcznie/GPS oraz zaimportowane ze Strava
+    const { data: runningSessions, isLoading: runningLoading } = useCollection<RunningSession>(
+        user ? 'runningSessions' : null,
+        { ownerId: user?.uid }
+    );
+    const { data: stravaActivities, isLoading: stravaLoading } = useCollection<StravaActivity>(
+        user ? 'stravaActivities' : null,
+        { ownerId: user?.uid }
+    );
+
+    const runs: RunCalendarItem[] = useMemo(() => {
+        const items: RunCalendarItem[] = [];
+
+        runningSessions?.forEach((session) => {
+            items.push({
+                id: session.id,
+                date: new Date(session.date),
+                title: session.programName || session.notes || 'Bieg',
+                distanceKm: session.distance,
+                durationMin: session.duration,
+                avgPace: session.avgPace,
+                isClickable: !!session.polyline,
+                href: `/athlete/running/${session.id}`,
+            });
+        });
+
+        stravaActivities?.forEach((activity) => {
+            const distanceKm = activity.distance / 1000;
+            const durationMin = activity.movingTime / 60;
+            items.push({
+                id: activity.id,
+                date: new Date(activity.date),
+                title: activity.name || 'Bieg (Strava)',
+                distanceKm,
+                durationMin,
+                avgPace: durationMin / distanceKm,
+                isClickable: true,
+                href: `/athlete/running/strava/${activity.stravaActivityId}`,
+            });
+        });
+
+        return items;
+    }, [runningSessions, stravaActivities]);
 
     // Konwertuj wszystkie wydarzenia na format FullCalendar
     const calendarEvents: CalendarEvent[] = useMemo(() => {
@@ -100,250 +159,109 @@ export default function CalendarPage() {
             });
         });
 
+        // Biegi
+        runs.forEach(run => {
+            events.push({
+                id: `run-${run.id}`,
+                title: `🏃 ${run.title}`,
+                start: run.date,
+                allDay: true,
+                backgroundColor: statusColors.run.bg,
+                borderColor: statusColors.run.border,
+                textColor: statusColors.run.text,
+                extendedProps: { type: 'run', data: run },
+            });
+        });
+
         return events;
-    }, [trainingSessions, workoutHistory, plannedWorkouts]);
+    }, [trainingSessions, workoutHistory, plannedWorkouts, runs]);
 
-    // Wydarzenia na wybrany dzień
-    const selectedDayEvents = useMemo(() => {
-        return {
-            trainerSessions: trainingSessions?.filter(ts =>
-                ts.status !== 'cancelled' && isSameDay(new Date(ts.date), selectedDate)
-            ) || [],
-            workouts: workoutHistory?.filter(w =>
-                w.endTime && isSameDay(new Date(w.endTime), selectedDate)
-            ) || [],
-            planned: plannedWorkouts?.filter(p =>
-                isSameDay(new Date(p.date), selectedDate)
-            ) || [],
-        };
-    }, [trainingSessions, workoutHistory, plannedWorkouts, selectedDate]);
 
-    const handleSessionClick = (session: TrainingSessionData) => {
-        setSelectedSession(session);
+    // Wydarzenia wybranego dnia jako jedna oś czasu
+    const agenda: AgendaEvent[] = useMemo(() => {
+        const items: AgendaEvent[] = [];
+        trainingSessions
+            ?.filter(ts => ts.status !== 'cancelled' && isSameDay(new Date(ts.date), selectedDate))
+            .forEach(session => items.push({ kind: 'trainer', id: session.id, date: new Date(session.date), session }));
+        workoutHistory
+            ?.filter(w => w.endTime && isSameDay(new Date(w.endTime), selectedDate))
+            .forEach(log => items.push({ kind: 'completed', id: log.id, date: new Date(log.endTime), log }));
+        plannedWorkouts
+            ?.filter(p => isSameDay(new Date(p.date), selectedDate))
+            .forEach(plan => items.push({ kind: 'planned', id: plan.id, date: new Date(plan.date), plan }));
+        runs.filter(r => isSameDay(r.date, selectedDate)).forEach(run => items.push({ kind: 'run', id: run.id, date: run.date, run }));
+        return items.sort((a, b) => a.date.getTime() - b.date.getTime());
+    }, [trainingSessions, workoutHistory, plannedWorkouts, runs, selectedDate]);
+
+    const openSessionDialog = (event: Extract<AgendaEvent, { kind: 'trainer' }>) => {
+        setOpenEvent(null);
+        setSelectedSession(event.session);
         setIsDetailsDialogOpen(true);
     };
 
-    const isLoading = sessionsLoading || plannedLoading || exercisesLoading || trainingSessionsLoading;
-    const hasEvents = selectedDayEvents.trainerSessions.length > 0 ||
-        selectedDayEvents.workouts.length > 0 ||
-        selectedDayEvents.planned.length > 0;
+    const isLoading = sessionsLoading || plannedLoading || trainingSessionsLoading || runningLoading || stravaLoading;
 
     return (
-        <div className="container mx-auto max-w-7xl p-4 pb-8 md:p-8">
-            <div className="mb-6 flex items-center gap-3">
-                <span className="hero-ember flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-glow">
-                    <CalendarDays className="h-5 w-5" />
-                </span>
-                <div>
-                    <h1 className="font-headline text-2xl font-extrabold tracking-tight md:text-3xl">Kalendarz treningowy</h1>
-                    <p className="text-sm text-muted-foreground">Wszystkie Twoje treningi w jednym miejscu</p>
+        <div className="mx-auto w-full max-w-3xl space-y-5 px-4 pb-5 pt-20 md:px-6 md:pt-8">
+            <header>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Plan</p>
+                <h1 className="font-headline text-3xl font-bold tracking-tight md:text-4xl">Kalendarz</h1>
+            </header>
+
+            <section className="overflow-hidden rounded-[1.75rem] border border-border/60 bg-card p-3 shadow-soft md:p-4">
+                {isLoading ? (
+                    <Skeleton className="h-28 w-full" />
+                ) : (
+                    <DayStrip events={calendarEvents} selectedDate={selectedDate} onDateSelect={setSelectedDate} />
+                )}
+            </section>
+
+            <section>
+                <div className="mb-3 flex items-end justify-between gap-3 px-1">
+                    <h2 className="font-headline text-xl font-bold first-letter:uppercase">
+                        {format(selectedDate, 'EEEE, d MMMM', { locale: pl })}
+                    </h2>
+                    {agenda.length > 0 && (
+                        <span className="text-xs font-semibold text-muted-foreground">{agenda.length} wpisów</span>
+                    )}
                 </div>
+
+                {isLoading ? (
+                    <div className="space-y-3">
+                        <Skeleton className="h-20 rounded-[1.25rem]" />
+                        <Skeleton className="h-20 rounded-[1.25rem]" />
+                    </div>
+                ) : agenda.length === 0 ? (
+                    <div className="rounded-[1.75rem] border-2 border-dashed border-border/70 px-6 py-12 text-center">
+                        <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-secondary">
+                            <CalendarDays className="h-6 w-6 text-muted-foreground" />
+                        </span>
+                        <p className="mt-4 font-headline text-lg font-bold">Wolny dzień</p>
+                        <p className="mx-auto mt-1 max-w-xs text-sm text-muted-foreground">
+                            Brak treningów. Czas na odpoczynek lub zaplanowanie czegoś!
+                        </p>
+                    </div>
+                ) : (
+                    <ul className="space-y-3">
+                        {agenda.map(event => (
+                            <AgendaCard key={`${event.kind}-${event.id}`} event={event} onOpen={() => setOpenEvent(event)} />
+                        ))}
+                    </ul>
+                )}
+            </section>
+
+            <div className="no-scrollbar flex gap-x-4 gap-y-1 overflow-x-auto px-1 text-[11px] text-muted-foreground">
+                {(Object.keys(KIND_LABEL) as AgendaEvent['kind'][]).map(kind => (
+                    <span key={kind} className="inline-flex shrink-0 items-center gap-1.5">
+                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: KIND_COLOR[kind] }} />
+                        {KIND_LABEL[kind]}
+                    </span>
+                ))}
             </div>
 
-            {/* Legend */}
-            <div className="no-scrollbar mb-6 flex gap-2 overflow-x-auto pb-1 text-xs md:flex-wrap md:text-sm">
-                <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: statusColors.scheduled.bg }} />
-                    <span className="font-medium">Z trenerem</span>
-                </div>
-                <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: statusColors.confirmed.bg }} />
-                    <span className="font-medium">Potwierdzone</span>
-                </div>
-                <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: statusColors.workout.bg }} />
-                    <span className="font-medium">Ukończone</span>
-                </div>
-                <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: statusColors.planned.bg }} />
-                    <span className="font-medium">Zaplanowane</span>
-                </div>
-            </div>
+            <EventSheet event={openEvent} onOpenChange={open => !open && setOpenEvent(null)} onOpenSession={openSessionDialog} />
 
-            <div className="space-y-6">
-                {/* Day strip */}
-                <Card className="overflow-hidden">
-                    <CardContent className="p-3 md:p-4">
-                        {isLoading ? (
-                            <Skeleton className="h-28 w-full" />
-                        ) : (
-                            <DayStrip
-                                events={calendarEvents}
-                                selectedDate={selectedDate}
-                                onDateSelect={setSelectedDate}
-                            />
-                        )}
-                    </CardContent>
-                </Card>
-
-                {/* Selected Day Details */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline">
-                            {format(selectedDate, 'EEEE, d MMMM', { locale: pl })}
-                        </CardTitle>
-                        <CardDescription>
-                            {hasEvents ? 'Treningi na ten dzień' : 'Brak treningów na ten dzień'}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {isLoading ? (
-                            <Skeleton className="h-40 w-full" />
-                        ) : !hasEvents ? (
-                            <p className="text-sm text-muted-foreground text-center py-8">
-                                Brak treningów. Czas na odpoczynek lub zaplanowanie czegoś!
-                            </p>
-                        ) : (
-                            <Accordion type="multiple" defaultValue={['trainer-0', 'completed-0', 'planned-0']} className="w-full space-y-2">
-                                {/* Sesje z trenerem */}
-                                {selectedDayEvents.trainerSessions.map((session, index) => {
-                                    const sessionDate = new Date(session.date);
-                                    return (
-                                        <AccordionItem value={`trainer-${index}`} key={session.id} className="border rounded-lg px-2 md:px-3">
-                                            <AccordionTrigger className="py-3">
-                                                <div className="flex flex-col sm:flex-row sm:justify-between w-full pr-2 gap-1 sm:gap-2">
-                                                    <div className="text-left min-w-0 flex-1">
-                                                        <p className="font-semibold text-sm truncate">{session.title}</p>
-                                                        <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                                            <User className="h-3 w-3 shrink-0" />
-                                                            <span className="truncate">{session.trainerName}</span>
-                                                        </p>
-                                                    </div>
-                                                    <Badge className="bg-orange-500 hover:bg-orange-600 text-xs shrink-0 self-start sm:self-center">
-                                                        {session.status === 'confirmed' ? 'Potwierdzona' : 'Z trenerem'}
-                                                    </Badge>
-                                                </div>
-                                            </AccordionTrigger>
-                                            <AccordionContent>
-                                                <div className="space-y-2 pb-2">
-                                                    <div className="flex items-center gap-2 text-sm">
-                                                        <Clock className="h-4 w-4 text-muted-foreground" />
-                                                        <span>{format(sessionDate, 'HH:mm')} ({session.duration} min)</span>
-                                                    </div>
-                                                    {session.location && (
-                                                        <div className="flex items-center gap-2 text-sm">
-                                                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                                                            <span>{session.location}</span>
-                                                        </div>
-                                                    )}
-                                                    <div className="flex gap-2 pt-2">
-                                                        {session.status === 'scheduled' && (
-                                                            <Button size="sm" onClick={() => handleSessionClick(session)}>
-                                                                <CheckCircle className="mr-1 h-3 w-3" />
-                                                                Potwierdź
-                                                            </Button>
-                                                        )}
-                                                        <Button variant="outline" size="sm" onClick={() => handleSessionClick(session)}>
-                                                            Szczegóły
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </AccordionContent>
-                                        </AccordionItem>
-                                    );
-                                })}
-
-                                {/* Ukończone treningi */}
-                                {selectedDayEvents.workouts.map((log, index) => {
-                                    const totalVolume = log.exercises.reduce((acc, ex) => {
-                                        const exVolume = ex.sets.reduce((setAcc, set) => setAcc + set.reps * set.weight, 0);
-                                        return acc + exVolume;
-                                    }, 0);
-                                    return (
-                                        <AccordionItem value={`completed-${index}`} key={log.id} className="border rounded-lg px-2 md:px-3">
-                                            <AccordionTrigger className="py-3">
-                                                <div className="flex flex-col sm:flex-row sm:justify-between w-full pr-2 gap-1 sm:gap-2">
-                                                    <div className="text-left min-w-0 flex-1">
-                                                        <p className="font-semibold text-sm truncate">{log.workoutName}</p>
-                                                        <p className="text-xs text-muted-foreground">{totalVolume.toLocaleString()} kg</p>
-                                                    </div>
-                                                    <Badge variant="default" className="text-xs shrink-0 self-start sm:self-center">Ukończono</Badge>
-                                                </div>
-                                            </AccordionTrigger>
-                                            <AccordionContent>
-                                                <Table>
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            <TableHead className="text-xs">Ćwiczenie</TableHead>
-                                                            <TableHead className="text-xs">Seria</TableHead>
-                                                            <TableHead className="text-xs text-right">Ciężar</TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {log.exercises.slice(0, 3).map((ex, exIndex) => {
-                                                            const exerciseDetails = exercises?.find(e => e.id === ex.exerciseId);
-                                                            return (
-                                                                <TableRow key={exIndex}>
-                                                                    <TableCell className="text-xs">{exerciseDetails?.name || 'Nieznane'}</TableCell>
-                                                                    <TableCell className="text-xs">{ex.sets.length}</TableCell>
-                                                                    <TableCell className="text-xs text-right">{ex.sets[0]?.weight || 0}kg</TableCell>
-                                                                </TableRow>
-                                                            );
-                                                        })}
-                                                    </TableBody>
-                                                </Table>
-                                            </AccordionContent>
-                                        </AccordionItem>
-                                    );
-                                })}
-
-                                {/* Zaplanowane */}
-                                {selectedDayEvents.planned.map((plan, index) => {
-                                    const planDate = new Date(plan.date);
-                                    return (
-                                        <AccordionItem value={`planned-${index}`} key={plan.id} className="border rounded-lg px-2 md:px-3">
-                                            <AccordionTrigger className="py-3">
-                                                <div className="flex flex-col sm:flex-row sm:justify-between w-full pr-2 gap-1 sm:gap-2">
-                                                    <div className="text-left min-w-0 flex-1">
-                                                        <p className="font-semibold text-sm truncate">{plan.workoutName}</p>
-                                                        <p className="text-xs text-muted-foreground">
-                                                            {format(planDate, 'HH:mm')} • {plan.exercises.length} ćwiczeń
-                                                        </p>
-                                                    </div>
-                                                    <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 text-xs shrink-0 self-start sm:self-center">Zaplanowano</Badge>
-                                                </div>
-                                            </AccordionTrigger>
-                                            <AccordionContent>
-                                                <div className="space-y-3 pb-2">
-                                                    <ul className="space-y-1">
-                                                        {plan.exercises.slice(0, 4).map((ex, exIndex) => (
-                                                            <li key={exIndex} className="text-xs flex justify-between p-1.5 rounded bg-secondary/50">
-                                                                <span>{ex.name}</span>
-                                                                <span className="text-muted-foreground">{ex.sets} x {ex.reps}</span>
-                                                            </li>
-                                                        ))}
-                                                        {plan.exercises.length > 4 && (
-                                                            <li className="text-xs text-muted-foreground text-center p-1.5">
-                                                                +{plan.exercises.length - 4} więcej...
-                                                            </li>
-                                                        )}
-                                                    </ul>
-                                                    {(plan as any).workoutId && (
-                                                        <div className="flex gap-2 pt-2">
-                                                            <Button size="sm" asChild>
-                                                                <Link to={`/athlete/log?workoutId=${(plan as any).workoutId}`}>
-                                                                    <Play className="mr-1 h-3 w-3" /> Rozpocznij
-                                                                </Link>
-                                                            </Button>
-                                                            <Button variant="outline" size="sm" asChild>
-                                                                <Link to={`/athlete/workouts/${(plan as any).workoutId}`}>
-                                                                    Szczegóły
-                                                                </Link>
-                                                            </Button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </AccordionContent>
-                                        </AccordionItem>
-                                    );
-                                })}
-                            </Accordion>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Session Details Dialog */}
+            {/* Dialog zarządzania sesją z trenerem (potwierdzenie / anulowanie) */}
             <SessionDetailsDialog
                 session={selectedSession}
                 open={isDetailsDialogOpen}

@@ -18,6 +18,8 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { useToast } from '@/hooks/use-toast';
 import { useUpdateDoc } from '@/lib/db-hooks';
 import { SocialPost } from '@/lib/types';
+import { resolveMediaUrl } from '@/lib/api-client';
+import { resolveStoredImageUrl } from '@/lib/upload';
 
 const editPostSchema = z.object({
     description: z.string().max(500, 'Opis może mieć maksymalnie 500 znaków'),
@@ -99,7 +101,7 @@ export function EditPostDialog({ open, onOpenChange, post, onSuccess }: EditPost
                         {/* Current Image Preview */}
                         <div className="relative">
                             <img
-                                src={`https://utfs.io/f/${post.imageUrl}`}
+                                src={resolveMediaUrl(resolveStoredImageUrl(post.imageUrl))}
                                 alt="Post image"
                                 className="w-full h-48 object-cover rounded-lg"
                             />

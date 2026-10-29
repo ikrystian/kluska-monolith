@@ -21,7 +21,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/lib/db-hooks';
+import useSWR from 'swr';
+import { useUser, swrFetcher } from '@/lib/db-hooks';
 import type { Challenge } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -29,28 +30,12 @@ export function ActiveChallenges() {
     const { toast } = useToast();
     const { user } = useUser();
     const [actionLoading, setActionLoading] = useState<string | null>(null);
-    const [challenges, setChallenges] = useState<Challenge[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    const fetchChallenges = useCallback(async () => {
-        if (!user) return;
-
-        try {
-            const response = await apiFetch('/api/challenges');
-            if (response.ok) {
-                const data = await response.json();
-                setChallenges(data.data || []);
-            }
-        } catch (error) {
-            console.error('Failed to fetch challenges:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [user]);
-
-    useEffect(() => {
-        fetchChallenges();
-    }, [fetchChallenges]);
+    const { data: challengesData, isLoading, mutate } = useSWR<Challenge[]>(
+        user ? '/api/challenges' : null,
+        swrFetcher
+    );
+    const challenges = challengesData ?? [];
+    const fetchChallenges = useCallback(() => { void mutate(); }, [mutate]);
 
     // Separate pending, active, and completed challenges
     const { pendingChallenges, activeChallenges, completedChallenges } = useMemo(() => {

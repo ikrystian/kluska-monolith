@@ -15,7 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { Habit, HabitLog, FrequencyType } from '@/lib/types';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 import {
     PlusCircle,
     Loader2,
@@ -653,27 +653,21 @@ export default function HabitsPage() {
         try {
             if (editingHabit) {
                 await updateDoc('habits', editingHabit.id, habitData);
-                toast.success('Nawyk Zaktualizowany!', {
-                    description: `Nawyk "${data.name}" został zmieniony.`,
-                });
+                toast.success(`Nawyk "${data.name}" został zaktualizowany.`);
             } else {
                 await createDoc('habits', {
                     ...habitData,
                     ownerId: user.uid,
                     isActive: true,
                 });
-                toast.success('Nawyk Dodany!', {
-                    description: `Nowy nawyk "${data.name}" został dodany.`,
-                });
+                toast.success(`Nowy nawyk "${data.name}" został dodany.`);
             }
             setHabitDialogOpen(false);
             setEditingHabit(null);
             refetchHabits();
         } catch (error) {
             console.error('Error saving habit:', error);
-            toast.error('Błąd', {
-                description: 'Nie udało się zapisać nawyku.',
-            });
+            toast.error('Nie udało się zapisać nawyku.');
         }
     };
 
@@ -681,16 +675,12 @@ export default function HabitsPage() {
         if (!habitToDelete || !user) return;
         try {
             await deleteDoc('habits', habitToDelete.id);
-            toast.success('Nawyk Usunięty', {
-                description: `Nawyk "${habitToDelete.name}" został usunięty.`,
-            });
+            toast.success(`Nawyk "${habitToDelete.name}" został usunięty.`);
             setHabitToDelete(null);
             refetchHabits();
         } catch (error) {
             console.error('Error deleting habit:', error);
-            toast.error('Błąd', {
-                description: 'Nie udało się usunąć nawyku.',
-            });
+            toast.error('Nie udało się usunąć nawyku.');
         }
     };
 
@@ -792,9 +782,7 @@ export default function HabitsPage() {
                 return newMap;
             });
 
-            toast.error("Błąd", {
-                description: "Nie udało się zaktualizować statusu nawyku",
-            });
+            toast.error('Nie udało się zaktualizować statusu nawyku.');
         }
     };
 
@@ -885,7 +873,7 @@ export default function HabitsPage() {
                 </DialogContent>
             </Dialog>
 
-            <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-4xl">
+            <div className="container mx-auto p-4 md:p-6 pt-18 lg:p-8 max-w-4xl">
                 {/* --- Header --- */}
                 <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
@@ -1027,88 +1015,88 @@ export default function HabitsPage() {
                                 {/* Mobile View - Card Layout */}
                                 <div className="block md:hidden space-y-3">
                                     <AnimatePresence initial={false}>
-                                    {habits.map((habit) => (
-                                        <motion.div key={habit.id} {...listItemMotion}>
-                                        <Card className="overflow-hidden">
-                                            <CardContent className="p-0">
-                                                {/* Habit Header */}
-                                                <div className="flex items-center gap-3 p-3 border-b bg-muted/30">
-                                                    <div
-                                                        className="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0"
-                                                        style={{ backgroundColor: `${habit.color || '#10b981'}20` }}
-                                                    >
-                                                        {habit.icon || '💪'}
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="font-medium truncate">{habit.name}</p>
-                                                        <p className="text-xs text-muted-foreground">{getFrequencyLabel(habit)}</p>
-                                                    </div>
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                                                                <MoreVertical className="h-4 w-4" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem onClick={() => { setEditingHabit(habit); setHabitDialogOpen(true); }}>
-                                                                <Edit className="mr-2 h-4 w-4" />
-                                                                Edytuj
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => setHabitToDelete(habit)} className="text-destructive focus:text-destructive">
-                                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                                Usuń
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </div>
-                                                {/* Week Days Grid */}
-                                                <div className="grid grid-cols-7 gap-1 p-2">
-                                                    {weekDates.map((date, idx) => {
-                                                        const dateStr = weekDateStrings[idx];
-                                                        const isToday = isSameDay(date, new Date());
-                                                        const isCompleted = isHabitCompleted(habit.id, dateStr);
-                                                        const isFuture = dateStr > format(new Date(), 'yyyy-MM-dd');
-                                                        const isActiveDay = isHabitActiveOnDay(habit, dateStr);
-
-                                                        return (
-                                                            <div key={dateStr} className="flex flex-col items-center gap-1">
-                                                                <span className={cn(
-                                                                    "text-[10px] font-medium uppercase",
-                                                                    isToday ? "text-primary" : "text-muted-foreground"
-                                                                )}>
-                                                                    {format(date, 'EEEEEE', { locale: pl })}
-                                                                </span>
-                                                                <span className={cn(
-                                                                    "text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full",
-                                                                    isToday && "bg-primary text-primary-foreground"
-                                                                )}>
-                                                                    {format(date, 'd')}
-                                                                </span>
-                                                                {isActiveDay ? (
-                                                                    <Checkbox
-                                                                        checked={!!isCompleted}
-                                                                        onCheckedChange={() => toggleHabitCompletion(habit.id, dateStr)}
-                                                                        disabled={isFuture}
-                                                                        className={cn(
-                                                                            'h-7 w-7 rounded-md transition-all',
-                                                                            isCompleted && 'border-transparent data-[state=checked]:border-transparent',
-                                                                            isFuture && 'opacity-40'
-                                                                        )}
-                                                                        style={isCompleted ? { backgroundColor: habit.color || '#10b981', borderColor: habit.color || '#10b981' } : undefined}
-                                                                    />
-                                                                ) : (
-                                                                    <div className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground/30 text-xs">
-                                                                        —
-                                                                    </div>
-                                                                )}
+                                        {habits.map((habit) => (
+                                            <motion.div key={habit.id} {...listItemMotion}>
+                                                <Card className="overflow-hidden">
+                                                    <CardContent className="p-0">
+                                                        {/* Habit Header */}
+                                                        <div className="flex items-center gap-3 p-3 border-b bg-muted/30">
+                                                            <div
+                                                                className="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0"
+                                                                style={{ backgroundColor: `${habit.color || '#10b981'}20` }}
+                                                            >
+                                                                {habit.icon || '💪'}
                                                             </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                        </motion.div>
-                                    ))}
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="font-medium truncate">{habit.name}</p>
+                                                                <p className="text-xs text-muted-foreground">{getFrequencyLabel(habit)}</p>
+                                                            </div>
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                                                                        <MoreVertical className="h-4 w-4" />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    <DropdownMenuItem onClick={() => { setEditingHabit(habit); setHabitDialogOpen(true); }}>
+                                                                        <Edit className="mr-2 h-4 w-4" />
+                                                                        Edytuj
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => setHabitToDelete(habit)} className="text-destructive focus:text-destructive">
+                                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                                        Usuń
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        </div>
+                                                        {/* Week Days Grid */}
+                                                        <div className="grid grid-cols-7 gap-1 p-2">
+                                                            {weekDates.map((date, idx) => {
+                                                                const dateStr = weekDateStrings[idx];
+                                                                const isToday = isSameDay(date, new Date());
+                                                                const isCompleted = isHabitCompleted(habit.id, dateStr);
+                                                                const isFuture = dateStr > format(new Date(), 'yyyy-MM-dd');
+                                                                const isActiveDay = isHabitActiveOnDay(habit, dateStr);
+
+                                                                return (
+                                                                    <div key={dateStr} className="flex flex-col items-center gap-1">
+                                                                        <span className={cn(
+                                                                            "text-[10px] font-medium uppercase",
+                                                                            isToday ? "text-primary" : "text-muted-foreground"
+                                                                        )}>
+                                                                            {format(date, 'EEEEEE', { locale: pl })}
+                                                                        </span>
+                                                                        <span className={cn(
+                                                                            "text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full",
+                                                                            isToday && "bg-primary text-primary-foreground"
+                                                                        )}>
+                                                                            {format(date, 'd')}
+                                                                        </span>
+                                                                        {isActiveDay ? (
+                                                                            <Checkbox
+                                                                                checked={!!isCompleted}
+                                                                                onCheckedChange={() => toggleHabitCompletion(habit.id, dateStr)}
+                                                                                disabled={isFuture}
+                                                                                className={cn(
+                                                                                    'h-7 w-7 rounded-md transition-all',
+                                                                                    isCompleted && 'border-transparent data-[state=checked]:border-transparent',
+                                                                                    isFuture && 'opacity-40'
+                                                                                )}
+                                                                                style={isCompleted ? { backgroundColor: habit.color || '#10b981', borderColor: habit.color || '#10b981' } : undefined}
+                                                                            />
+                                                                        ) : (
+                                                                            <div className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground/30 text-xs">
+                                                                                —
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            </motion.div>
+                                        ))}
                                     </AnimatePresence>
                                 </div>
 
@@ -1137,70 +1125,70 @@ export default function HabitsPage() {
                                     <CardContent className="px-4">
                                         <div className="space-y-1">
                                             <AnimatePresence initial={false}>
-                                            {habits.map((habit) => (
-                                                <motion.div key={habit.id} {...listItemMotion}>
-                                                <div
-                                                    className="grid grid-cols-[minmax(150px,1fr)_repeat(7,48px)] gap-2 items-center py-3 border-b last:border-b-0"
-                                                >
-                                                    <div className="flex items-center gap-2 min-w-0">
+                                                {habits.map((habit) => (
+                                                    <motion.div key={habit.id} {...listItemMotion}>
                                                         <div
-                                                            className="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0"
-                                                            style={{ backgroundColor: `${habit.color || '#10b981'}20` }}
+                                                            className="grid grid-cols-[minmax(150px,1fr)_repeat(7,48px)] gap-2 items-center py-3 border-b last:border-b-0"
                                                         >
-                                                            {habit.icon || '💪'}
-                                                        </div>
-                                                        <div className="min-w-0 flex-1">
-                                                            <p className="font-medium truncate text-sm">{habit.name}</p>
-                                                            <p className="text-xs text-muted-foreground truncate">{getFrequencyLabel(habit)}</p>
-                                                        </div>
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
-                                                                    <MoreVertical className="h-3 w-3" />
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem onClick={() => { setEditingHabit(habit); setHabitDialogOpen(true); }}>
-                                                                    <Edit className="mr-2 h-4 w-4" />
-                                                                    Edytuj
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem onClick={() => setHabitToDelete(habit)} className="text-destructive focus:text-destructive">
-                                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                                    Usuń
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    </div>
-
-                                                    {weekDates.map((date, idx) => {
-                                                        const dateStr = weekDateStrings[idx];
-                                                        const isCompleted = isHabitCompleted(habit.id, dateStr);
-                                                        const isFuture = dateStr > format(new Date(), 'yyyy-MM-dd');
-                                                        const isActiveDay = isHabitActiveOnDay(habit, dateStr);
-
-                                                        if (!isActiveDay) {
-                                                            return <div key={dateStr} className="flex justify-center text-muted-foreground/30">—</div>;
-                                                        }
-
-                                                        return (
-                                                            <div key={dateStr} className="flex justify-center">
-                                                                <Checkbox
-                                                                    checked={!!isCompleted}
-                                                                    onCheckedChange={() => toggleHabitCompletion(habit.id, dateStr)}
-                                                                    disabled={isFuture}
-                                                                    className={cn(
-                                                                        'h-8 w-8 rounded-md transition-all',
-                                                                        isCompleted && 'border-transparent data-[state=checked]:border-transparent',
-                                                                        isFuture && 'opacity-50'
-                                                                    )}
-                                                                    style={isCompleted ? { backgroundColor: habit.color || '#10b981', borderColor: habit.color || '#10b981' } : undefined}
-                                                                />
+                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                <div
+                                                                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0"
+                                                                    style={{ backgroundColor: `${habit.color || '#10b981'}20` }}
+                                                                >
+                                                                    {habit.icon || '💪'}
+                                                                </div>
+                                                                <div className="min-w-0 flex-1">
+                                                                    <p className="font-medium truncate text-sm">{habit.name}</p>
+                                                                    <p className="text-xs text-muted-foreground truncate">{getFrequencyLabel(habit)}</p>
+                                                                </div>
+                                                                <DropdownMenu>
+                                                                    <DropdownMenuTrigger asChild>
+                                                                        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
+                                                                            <MoreVertical className="h-3 w-3" />
+                                                                        </Button>
+                                                                    </DropdownMenuTrigger>
+                                                                    <DropdownMenuContent align="end">
+                                                                        <DropdownMenuItem onClick={() => { setEditingHabit(habit); setHabitDialogOpen(true); }}>
+                                                                            <Edit className="mr-2 h-4 w-4" />
+                                                                            Edytuj
+                                                                        </DropdownMenuItem>
+                                                                        <DropdownMenuItem onClick={() => setHabitToDelete(habit)} className="text-destructive focus:text-destructive">
+                                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                                            Usuń
+                                                                        </DropdownMenuItem>
+                                                                    </DropdownMenuContent>
+                                                                </DropdownMenu>
                                                             </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                                </motion.div>
-                                            ))}
+
+                                                            {weekDates.map((date, idx) => {
+                                                                const dateStr = weekDateStrings[idx];
+                                                                const isCompleted = isHabitCompleted(habit.id, dateStr);
+                                                                const isFuture = dateStr > format(new Date(), 'yyyy-MM-dd');
+                                                                const isActiveDay = isHabitActiveOnDay(habit, dateStr);
+
+                                                                if (!isActiveDay) {
+                                                                    return <div key={dateStr} className="flex justify-center text-muted-foreground/30">—</div>;
+                                                                }
+
+                                                                return (
+                                                                    <div key={dateStr} className="flex justify-center">
+                                                                        <Checkbox
+                                                                            checked={!!isCompleted}
+                                                                            onCheckedChange={() => toggleHabitCompletion(habit.id, dateStr)}
+                                                                            disabled={isFuture}
+                                                                            className={cn(
+                                                                                'h-8 w-8 rounded-md transition-all',
+                                                                                isCompleted && 'border-transparent data-[state=checked]:border-transparent',
+                                                                                isFuture && 'opacity-50'
+                                                                            )}
+                                                                            style={isCompleted ? { backgroundColor: habit.color || '#10b981', borderColor: habit.color || '#10b981' } : undefined}
+                                                                        />
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </motion.div>
+                                                ))}
                                             </AnimatePresence>
                                         </div>
                                     </CardContent>

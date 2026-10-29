@@ -1,0 +1,36 @@
+[
+ {
+  "date": "2026-10-12",
+  "macrostructure": "Feature Stack",
+  "theme": "custom",
+  "theme_axes": "dark / grotesk-sans / warm",
+  "vibe": "after-hours gym, ember and volt, graphite — structure studied from evolvetrainingapp.com",
+  "enrichment": "Tier A HTML-built app screens + existing stills; scattered app-UI fragments in the hero",
+  "nav": "N6-derived centred stack",
+  "footer": "Ft5 statement + three link groups",
+  "studied": "https://www.evolvetrainingapp.com/",
+  "brief": "Leniwa Kluska · landing layout and content presentation after the Evolve reference (pinned scroll-spy, chapters with card rails)"
+ },
+ {
+  "date": "2026-10-12",
+  "macrostructure": "Bento Grid",
+  "theme": "custom",
+  "theme_axes": "light / grotesk-sans / warm",
+  "vibe": "ember & volt, daylight gym, app brand",
+  "enrichment": "Tier A HTML-built app UI + existing renders in tiles",
+  "nav": "N5 floating pill",
+  "footer": "Ft5 statement",
+  "brief": "Leniwa Kluska · modern marketing redesign of athlete app landing"
+ },
+ {
+  "date": "2026-10-12",
+  "macrostructure": "Photographic",
+  "theme": "custom",
+  "theme_axes": "dark / display-condensed / warm",
+  "vibe": "carbon, iron, ember — sports magazine",
+  "enrichment": "Tier C generated stills (three.js renders)",
+  "nav": "N6-derived masthead",
+  "footer": "Ft1 mast-headed",
+  "brief": "Leniwa Kluska · athlete app landing redesign"
+ }
+]

@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { PlusCircle, Trash2, Save, Loader2, Dumbbell, Upload, Search, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, Clock, LayoutList, RotateCcw, CheckCircle2, Check, Circle, Timer, AlertCircle, Minus, Plus, X } from 'lucide-react';
+import { PlusCircle, Trash2, Save, Loader2, Dumbbell, Search, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, ChevronDown, ChevronUp, Clock, LayoutList, RotateCcw, CheckCircle2, Check, Circle, Timer, AlertCircle, Minus, Plus, X, Camera, Image as ImageIcon, Footprints } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
@@ -29,13 +29,29 @@ import {
   TrainingLevel,
   type ExerciseSeries,
   type WorkoutSet,
-  type DayPlan
+  type DayPlan,
+  type RunningProgram
 } from '@/lib/types';
+import { StartRunDialog } from '@/components/running/StartRunDialog';
 import { useCollection, useUser, useDoc } from '@/lib/db-hooks';
 import { useActiveWorkout } from '@/hooks/useActiveWorkout';
 import { useExerciseHistory } from '@/hooks/useExerciseHistory';
 import { useRestTimer } from '@/hooks/useRestTimer';
+import { useWakeLock } from '@/hooks/useWakeLock';
+import { useLiveWidget } from '@/hooks/useLiveWidget';
+import { useWidgetCommands } from '@/hooks/useWidgetCommands';
+import {
+  WIDGET_COMMAND_COMPLETE_SET,
+  WIDGET_COMMAND_EXTEND_REST,
+  WIDGET_COMMAND_SKIP_REST,
+  WIDGET_REST_EXTENSION_SECONDS,
+} from '@/lib/live-widget';
+import { haptic } from '@/lib/haptics';
+import { isSpotifyWidgetEnabled } from '@/lib/app-permissions';
+import { PlateCalculator } from '@/components/workout/PlateCalculator';
+import { RpeSelector } from '@/components/workout/RpeSelector';
 import { ExerciseHistoryBadge } from '@/components/workout/ExerciseProgressIndicator';
+import { SpotifyWidget } from '@/components/workout/SpotifyWidget';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -57,6 +73,61 @@ import { SetTypeModal } from '@/components/workout/SetTypeModal';
 import { getSetTypeConfig, type ExerciseType } from '@/lib/set-type-config';
 import { AnimatePresence, motion, listItemMotion } from '@/components/motion';
 import { cn } from '@/lib/utils';
+import { useSWRConfig } from 'swr';
+import { purgePersistedEntries } from '@/lib/swr-cache';
+
+/**
+ * Every locally-held `workoutLogs` list read (the active-workout lookup, the
+ * history list). The `/api/db/workoutLogs/:id` detail read is deliberately not
+ * matched — the history screen we navigate to right after saving needs it.
+ */
+const isWorkoutLogsListKey = (key: unknown): key is string =>
+  typeof key === 'string' && key.includes('/api/db/workoutLogs?');
+
+/**
+ * Wipes those reads from local storage — both the in-memory SWR entry and the
+ * localStorage snapshot it gets serialised into — so an app that is killed
+ * before it next backgrounds can't restore a saved/discarded session as a
+ * phantom "in-progress" workout. Pass SWR's scoped `mutate` (from
+ * `useSWRConfig`); the module-level `mutate` import is bound to a different
+ * cache than the app's provider and would be a no-op here.
+ */
+const clearWorkoutLogsCache = (mutate: ReturnType<typeof useSWRConfig>['mutate']) => {
+  purgePersistedEntries(isWorkoutLogsListKey);
+  void mutate(isWorkoutLogsListKey, undefined, { revalidate: true });
+};
+
+/**
+ * What a set needs before it can be checked off, by exercise type. Shared by
+ * the set rows and the home-screen widget's "✓ Seria" button, so the widget
+ * can't complete a set the screen itself would refuse.
+ */
+const validateSetValues = (
+  exerciseType: ExerciseType,
+  { reps, weight, duration }: { reps?: number | null; weight?: number | string | null; duration?: number | null }
+): { valid: boolean; error?: string } => {
+  if (exerciseType === 'weight') {
+    // Weight exercises need both reps and weight
+    if (!reps || reps <= 0) {
+      return { valid: false, error: 'Uzupełnij liczbę powtórzeń' };
+    }
+    if (weight === undefined || weight === null || weight === '') {
+      return { valid: false, error: 'Uzupełnij ciężar' };
+    }
+  } else if (exerciseType === 'reps') {
+    // Reps-only exercises just need reps
+    if (!reps || reps <= 0) {
+      return { valid: false, error: 'Uzupełnij liczbę powtórzeń' };
+    }
+  } else if (exerciseType === 'duration') {
+    // Duration exercises need duration
+    if (!duration || duration <= 0) {
+      return { valid: false, error: 'Uzupełnij czas trwania' };
+    }
+  }
+
+  return { valid: true };
+};
 
 
 // --- HELPER FUNCTIONS ---
@@ -93,6 +164,27 @@ const formatSeconds = (total: number) => {
   return `${m}:${String(s).padStart(2, '0')}`;
 };
 
+/** "Seria 2/4 · 80 kg × 8" — the set the home-screen widget's "Seria ✓" would check off. */
+const describeSetForWidget = (
+  exerciseType: Exercise['type'],
+  set: Pick<WorkoutSet, 'reps' | 'weight' | 'duration'>,
+  setNumber: number,
+  setCount: number
+) => {
+  const parts = [`Seria ${setNumber}/${setCount}`];
+  const reps = Number(set.reps) || 0;
+  const weight = Number(set.weight) || 0;
+  const duration = Number(set.duration) || 0;
+  if (exerciseType === 'duration') {
+    if (duration > 0) parts.push(formatSeconds(duration));
+  } else if (exerciseType === 'weight' && weight > 0) {
+    parts.push(`${weight} kg × ${reps}`);
+  } else if (reps > 0) {
+    parts.push(`${reps} powt.`);
+  }
+  return parts.join(' · ');
+};
+
 /**
  * Elapsed-time pill that keeps ticking on its own. Isolated in a tiny
  * component so the 30s interval re-renders just the badge, not the form.
@@ -120,6 +212,7 @@ const setSchema = z.object({
   weight: z.coerce.number().min(0, 'Ciężar musi być dodatni.').optional(),
   restTimeSeconds: z.coerce.number().min(0).default(60),
   duration: z.coerce.number().min(0, 'Czas musi być dodatni.').optional(),
+  rpe: z.coerce.number().min(1).max(10).optional(),
   completed: z.boolean().optional(),
 });
 
@@ -190,6 +283,8 @@ function AddExerciseSheet({ allExercises, onAddExercise }: { allExercises: Exerc
       <SheetTrigger asChild>
         <Button size="icon" className="hero-ember h-12 w-12 rounded-full text-white shadow-glow transition-transform hover:opacity-95 active:scale-90">
           <PlusCircle className="h-6 w-6" />
+          <span className="absolute bottom-0 text-xs">Dodaj kolejne ćwiczenie</span>
+
         </Button>
       </SheetTrigger>
       <SheetContent side="bottom" className="h-[85vh] rounded-t-[2rem]">
@@ -208,7 +303,7 @@ function AddExerciseSheet({ allExercises, onAddExercise }: { allExercises: Exerc
             />
           </div>
           <ScrollArea className="h-[60vh]">
-            <div className="space-y-4 pr-4">
+            <div className="space-y-2">
               {groupedExercises.map(group => (
                 <div key={group.name}>
                   <p className="sticky top-0 z-10 -mx-1 bg-background/95 px-1 py-2 text-xs font-bold uppercase tracking-[0.14em] text-primary backdrop-blur-sm">
@@ -223,10 +318,8 @@ function AddExerciseSheet({ allExercises, onAddExercise }: { allExercises: Exerc
                         className="flex cursor-pointer items-center justify-between rounded-2xl border border-border/60 bg-card p-3.5 transition-all hover:border-primary/30 active:scale-[0.99]"
                       >
                         <div className="min-w-0">
-                          <p className="truncate font-semibold">{ex.name}</p>
-                          <p className="truncate text-sm text-muted-foreground">
-                            {ex.mainMuscleGroups?.map(mg => mg.name).join(', ') || 'Ogólnorozwojowe'}
-                          </p>
+                          <p className=" font-semibold">{ex.name}</p>
+
                         </div>
                         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary text-primary">
                           <PlusCircle className="h-5 w-5" />
@@ -317,29 +410,29 @@ function WorkoutBuilderView({ initialData, onStart, onCancel, allExercises, isLo
             ) : (
               <div className="space-y-2.5">
                 <AnimatePresence initial={false}>
-                {fields.map((field, index) => {
-                  const exerciseDetails = allExercises?.find(ex => ex.id === field.exerciseId);
-                  return (
-                    <motion.div key={field.id} {...listItemMotion}>
-                    <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-card p-3.5 shadow-soft">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary font-headline text-sm font-bold text-primary">
-                          {index + 1}
+                  {fields.map((field, index) => {
+                    const exerciseDetails = allExercises?.find(ex => ex.id === field.exerciseId);
+                    return (
+                      <motion.div key={field.id} {...listItemMotion}>
+                        <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-card p-3.5 shadow-soft">
+                          <div className="flex min-w-0 items-center gap-3">
+                            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary font-headline text-sm font-bold text-primary">
+                              {index + 1}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="line-clamp-2 font-semibold">{exerciseDetails?.name || (isLoadingExercises ? 'Ładowanie...' : 'Nieznane ćwiczenie')}</p>
+                              <p className="truncate text-xs text-muted-foreground">
+                                {exerciseDetails?.mainMuscleGroups?.map(mg => mg.name).join(', ') || 'Ogólnorozwojowe'}
+                              </p>
+                            </div>
+                          </div>
+                          <Button type="button" variant="ghost" size="icon" className="shrink-0" onClick={() => remove(index)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
                         </div>
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold">{exerciseDetails?.name || (isLoadingExercises ? 'Ładowanie...' : 'Nieznane ćwiczenie')}</p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {exerciseDetails?.mainMuscleGroups?.map(mg => mg.name).join(', ') || 'Ogólnorozwojowe'}
-                          </p>
-                        </div>
-                      </div>
-                      <Button type="button" variant="ghost" size="icon" className="shrink-0" onClick={() => remove(index)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                    </motion.div>
-                  );
-                })}
+                      </motion.div>
+                    );
+                  })}
                 </AnimatePresence>
               </div>
             )}
@@ -375,7 +468,7 @@ function ExerciseRail({ statuses, activeIndex, onSelect }: {
   if (statuses.length === 0) return null;
 
   return (
-    <div className="scrollbar-hide -mx-1 mb-3 flex shrink-0 gap-1.5 overflow-x-auto px-1 pb-1">
+    <div className="scrollbar-hide -mx-1 mb-1 flex shrink-0 gap-1.5 overflow-x-auto px-1">
       {statuses.map((status, i) => {
         const isActive = i === activeIndex;
         return (
@@ -426,9 +519,11 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useUser();
   const { refetch: refetchActiveWorkout } = useActiveWorkout();
+  const { mutate: swrMutate } = useSWRConfig();
 
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -438,10 +533,33 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   const [viewMode, setViewMode] = useState<ViewMode>(() =>
     localStorage.getItem('athlete-log-view-mode') === 'carousel' ? 'carousel' : 'list'
   );
+  const [isHeaderExpanded, setIsHeaderExpanded] = useState(false);
+
+  const [spotifyWidgetVisible, setSpotifyWidgetVisible] = useState(false);
+  useEffect(() => {
+    if (!isSpotifyWidgetEnabled()) return;
+    let cancelled = false;
+    apiFetch('/api/spotify/status')
+      .then(async (response) => {
+        if (cancelled || !response.ok) return;
+        const data = await response.json();
+        setSpotifyWidgetVisible(!!data.connected);
+      })
+      .catch(() => {
+        // Stay hidden — the athlete can still control music from their phone directly.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Transient rest countdown shown after checking off a set in list mode
   const [isResting, setIsResting] = useState(false);
   const restTimer = useRestTimer(() => setIsResting(false));
+
+  // A set takes minutes of not touching the phone — keep the screen on until
+  // the athlete reaches the summary screen.
+  useWakeLock(!isFinished);
 
   const handleViewModeChange = (mode: ViewMode) => {
     setViewMode(mode);
@@ -480,6 +598,96 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
       setActiveExerciseIndex(fields.length - 1);
     }
   }, [fields.length, activeExerciseIndex]);
+
+  // Mirror the in-progress workout on the Android home-screen widget until
+  // the athlete reaches the summary screen. Leaving this screen mid-workout
+  // keeps it there (without the set button — nothing is left to act on it).
+  const liveSeries = form.watch('exerciseSeries');
+  const liveTotalSets = liveSeries.reduce((acc, s) => acc + (s.sets?.length ?? 0), 0);
+  const liveCompletedSets = liveSeries.reduce((acc, s) => acc + (s.sets?.filter(set => set.completed).length ?? 0), 0);
+  const liveCurrentSeries =
+    liveSeries.find(s => (s.sets?.length ?? 0) > 0 && s.sets.some(set => !set.completed)) ?? liveSeries[activeExerciseIndex];
+  const liveCurrentExerciseDef = allExercises?.find(ex => ex.id === liveCurrentSeries?.exerciseId);
+  const liveCurrentExercise = liveCurrentExerciseDef?.name ?? '';
+  const liveNextSetIndex = liveCurrentSeries?.sets?.findIndex(set => !set.completed) ?? -1;
+  const liveNextSet =
+    liveNextSetIndex >= 0
+      ? describeSetForWidget(
+        liveCurrentExerciseDef?.type ?? 'weight',
+        liveCurrentSeries.sets[liveNextSetIndex],
+        liveNextSetIndex + 1,
+        liveCurrentSeries.sets.length
+      )
+      : 'Wszystkie serie zrobione';
+  const liveWorkoutName = form.watch('workoutName');
+
+  // Why the widget's last "✓ Seria" did nothing, shown in place of the exercise name for a few seconds.
+  const [widgetNotice, setWidgetNotice] = useState<string | null>(null);
+  const widgetNoticeTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(widgetNoticeTimeoutRef.current), []);
+  const showWidgetNotice = (text: string) => {
+    setWidgetNotice(text);
+    clearTimeout(widgetNoticeTimeoutRef.current);
+    widgetNoticeTimeoutRef.current = setTimeout(() => setWidgetNotice(null), 6000);
+  };
+
+  const liveWorkoutPath = workoutLogId ? `/athlete/log?logId=${workoutLogId}` : '/athlete';
+  useLiveWidget(
+    isFinished
+      ? null
+      : {
+        activity: 'workout',
+        title: liveWorkoutName || 'Trening',
+        line1: liveCurrentExercise || `${liveCompletedSets}/${liveTotalSets} serii`,
+        line2: widgetNotice ?? liveNextSet,
+        setsDone: liveCompletedSets,
+        setsTotal: liveTotalSets,
+        // Only the list view's countdown lives here; the carousel's rest slides keep their own.
+        restEndsAt: viewMode === 'list' && isResting ? restTimer.deadline : null,
+        running: true,
+        openPath: liveWorkoutPath,
+        finishPath: workoutLogId ? `${liveWorkoutPath}&finish=true` : liveWorkoutPath,
+        interactive: true,
+      },
+    () => Date.now() - startTime.getTime(),
+    { keepOnUnmount: true }
+  );
+
+  // The widget's "✓ Seria": check off the set the widget is showing, under the
+  // same rules as tapping it here — an incomplete set is reported, not forced.
+  const completeNextSetFromWidget = () => {
+    const series = form.getValues('exerciseSeries');
+    for (let i = 0; i < series.length; i++) {
+      const setIndex = series[i].sets?.findIndex(set => !set.completed) ?? -1;
+      if (setIndex < 0) continue;
+
+      const set = series[i].sets[setIndex];
+      const exerciseType = allExercises?.find(ex => ex.id === series[i].exerciseId)?.type ?? 'weight';
+      const check = validateSetValues(exerciseType, set);
+      if (!check.valid) {
+        haptic('warning');
+        showWidgetNotice(`${check.error ?? 'Uzupełnij dane serii'} w aplikacji`);
+        return;
+      }
+
+      form.setValue(`exerciseSeries.${i}.sets.${setIndex}.completed`, true);
+      setActiveExerciseIndex(i);
+      haptic('tap');
+      // The carousel runs its own rest slides; the inline countdown is the list view's.
+      if (viewMode === 'list') handleSetCompleted(Number(set.restTimeSeconds) || 0);
+      return;
+    }
+  };
+  useWidgetCommands(
+    {
+      [WIDGET_COMMAND_COMPLETE_SET]: completeNextSetFromWidget,
+      [WIDGET_COMMAND_SKIP_REST]: dismissRest,
+      [WIDGET_COMMAND_EXTEND_REST]: () => {
+        if (restTimer.isRunning) restTimer.addTime(WIDGET_REST_EXTENSION_SECONDS);
+      },
+    },
+    !isFinished
+  );
 
   // Check for finish param
   useEffect(() => {
@@ -634,8 +842,13 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setPhotoFile(file);
-      setPhotoPreview(URL.createObjectURL(file));
+      setPhotoPreview((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return URL.createObjectURL(file);
+      });
     }
+    // Reset so picking / shooting the same file again still fires onChange.
+    e.target.value = '';
   };
 
   const handleAddExercise = (exerciseId: string) => {
@@ -668,6 +881,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   // Handle set completion from carousel view
   const handleSetComplete = useCallback((exerciseIndex: number, setIndex: number) => {
     form.setValue(`exerciseSeries.${exerciseIndex}.sets.${setIndex}.completed`, true);
+    haptic('tap');
   }, [form]);
 
 
@@ -749,6 +963,8 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
       });
 
       // Notify the ActiveWorkoutContext that the workout has been completed
+      // and drop the now-finished session from local storage right away.
+      clearWorkoutLogsCache(swrMutate);
       refetchActiveWorkout();
 
       navigate(`/athlete/history/${workoutLogId}`);
@@ -782,6 +998,8 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
         description: 'Twój trening został usunięty.',
       });
 
+      // Wipe the discarded session from local storage before leaving the page.
+      clearWorkoutLogsCache(swrMutate);
       refetchActiveWorkout();
       navigate('/athlete/dashboard');
     } catch (error) {
@@ -828,16 +1046,25 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
             </div>
           </div>
 
-          <div className="space-y-4 pt-2">
+          <div className="space-y-3 pt-2">
             {photoPreview && (
-              <div className="relative w-full aspect-video rounded-md overflow-hidden mb-2">
+              <div className="relative w-full aspect-video rounded-md overflow-hidden mb-1">
                 <img src={photoPreview} alt="Podgląd zdjęcia" className="absolute inset-0 w-full h-full object-cover" />
               </div>
             )}
-            <Button variant="outline" className="w-full" onClick={() => photoInputRef.current?.click()}>
-              <Upload className="mr-2 h-4 w-4" />
-              {photoFile ? 'Zmień zdjęcie' : 'Dodaj zdjęcie'}
-            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" className="w-full" onClick={() => cameraInputRef.current?.click()}>
+                <Camera className="mr-2 h-4 w-4" />
+                {photoFile ? 'Zrób nowe' : 'Zrób zdjęcie'}
+              </Button>
+              <Button variant="outline" className="w-full" onClick={() => photoInputRef.current?.click()}>
+                <ImageIcon className="mr-2 h-4 w-4" />
+                {photoFile ? 'Wybierz inne' : 'Z galerii'}
+              </Button>
+            </div>
+            {/* `capture` opens the phone camera straight away; the plain input lets
+                the athlete pick an existing shot from the gallery. */}
+            <input type="file" ref={cameraInputRef} accept="image/*" capture="environment" onChange={handlePhotoChange} className="hidden" />
             <input type="file" ref={photoInputRef} accept="image/*" onChange={handlePhotoChange} className="hidden" />
           </div>
 
@@ -880,6 +1107,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   const exerciseDetails = allExercises?.find(ex => ex.id === selectedExerciseId);
 
   // Live overview data for the header bar and the exercise rail
+  const watchedWorkoutName = form.watch('workoutName');
   const watchedSeries = form.watch('exerciseSeries');
   const totalSets = watchedSeries.reduce((acc, s) => acc + (s.sets?.length ?? 0), 0);
   const completedSets = watchedSeries.reduce(
@@ -908,24 +1136,61 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
         })} className="flex flex-col h-full">
 
           {/* Header Section */}
-          <div className="mb-3 px-1">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <FormField
-                  control={form.control}
-                  name="workoutName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input {...field} className="h-auto rounded-none border-0 bg-transparent p-0 font-headline text-xl font-bold shadow-none focus-visible:ring-0" />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+          <div className="mb-2 px-1 md:mb-3">
+            <div className={cn("flex justify-between gap-2", isHeaderExpanded ? "items-start" : "items-center md:items-start")}>
+              {/* Mobile collapsed trigger */}
+              <button
+                type="button"
+                onClick={() => {
+                  haptic('tap');
+                  setIsHeaderExpanded(true);
+                }}
+                className={cn(
+                  "flex min-w-0 flex-1 items-center gap-1.5 py-1 text-left active:opacity-70 md:hidden",
+                  isHeaderExpanded && "hidden"
+                )}
+                aria-label="Rozwiń nagłówek treningu"
+              >
+                <span className="truncate font-headline text-base font-bold text-foreground">
+                  {watchedWorkoutName || 'Trening'}
+                </span>
+                <span className="shrink-0 text-xs font-semibold text-muted-foreground tabular-nums">
+                  ({completedSets}/{totalSets})
+                </span>
+                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </button>
+
+              {/* Full editable header on desktop or when expanded on mobile */}
+              <div className={cn("min-w-0 flex-1", !isHeaderExpanded && "hidden md:block")}>
+                <div className="flex items-center gap-2">
+                  <FormField
+                    control={form.control}
+                    name="workoutName"
+                    render={({ field }) => (
+                      <FormItem className="min-w-0 flex-1">
+                        <FormControl>
+                          <Input {...field} className="h-auto rounded-none border-0 bg-transparent p-0 font-headline text-xl font-bold shadow-none focus-visible:ring-0" />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      haptic('tap');
+                      setIsHeaderExpanded(false);
+                    }}
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:hidden"
+                    aria-label="Zwiń nagłówek"
+                  >
+                    <ChevronUp className="h-4 w-4" />
+                  </button>
+                </div>
                 <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
                   {format(startTime, 'HH:mm')} · {fields.length} ćw. · <span className="tabular-nums">{completedSets}/{totalSets}</span> serii
                 </p>
               </div>
+
               <div className="flex shrink-0 items-center gap-2">
                 <ElapsedBadge startTime={startTime} />
                 <Button type="submit" size="sm" disabled={fields.length === 0}>
@@ -934,7 +1199,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
               </div>
             </div>
 
-            <div className="mt-3 flex items-center gap-3">
+            <div className={cn("mt-3 flex items-center gap-3", !isHeaderExpanded && "hidden md:flex")}>
               {viewMode === 'list' ? (
                 <Progress
                   value={totalSets > 0 ? (completedSets / totalSets) * 100 : 0}
@@ -968,6 +1233,8 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
                 </button>
               </div>
             </div>
+
+            {spotifyWidgetVisible && <SpotifyWidget className="mt-3" />}
           </div>
 
           {/* Main Content - Conditional based on view mode */}
@@ -1017,7 +1284,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
               </div>
 
               {/* Bottom Navigation Bar - Only for list view */}
-              <div className="glass fixed inset-x-4 bottom-[calc(1.25rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-lg items-center justify-between rounded-[2rem] px-4 py-3 md:relative md:inset-x-auto md:bottom-auto md:rounded-2xl">
+              <div className="glass fixed inset-x-4 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-lg items-center justify-between rounded-[2rem] px-4 py-3 md:relative md:inset-x-auto md:bottom-auto md:rounded-2xl">
                 <Button
                   type="button"
                   variant="ghost"
@@ -1092,6 +1359,14 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
   // Get exercise type from exercise details
   const exerciseType: ExerciseType = exerciseDetails?.type || 'weight';
 
+  // The plate calculator opens on the exercise's top set — the load people
+  // actually need help building.
+  const watchedSets = watch(`exerciseSeries.${index}.sets`);
+  const heaviestPlannedWeight = useMemo(
+    () => (watchedSets ?? []).reduce((max, set) => Math.max(max, Number(set?.weight) || 0), 0),
+    [watchedSets]
+  );
+
   // Fetch exercise history for progress comparison
   const exerciseId = watch(`exerciseSeries.${index}.exerciseId`);
   const { data: exerciseHistory, isLoading: isHistoryLoading } = useExerciseHistory(
@@ -1100,33 +1375,12 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
   );
 
   // Validation function for a set - depends on exercise type
-  const validateSet = (setIndex: number): { valid: boolean; error?: string } => {
-    const reps = watch(`exerciseSeries.${index}.sets.${setIndex}.reps`);
-    const weight = watch(`exerciseSeries.${index}.sets.${setIndex}.weight`);
-    const duration = watch(`exerciseSeries.${index}.sets.${setIndex}.duration`);
-
-    if (exerciseType === 'weight') {
-      // Weight exercises need both reps and weight
-      if (!reps || reps <= 0) {
-        return { valid: false, error: 'Uzupełnij liczbę powtórzeń' };
-      }
-      if (weight === undefined || weight === null || weight === '' as any) {
-        return { valid: false, error: 'Uzupełnij ciężar' };
-      }
-    } else if (exerciseType === 'reps') {
-      // Reps-only exercises just need reps
-      if (!reps || reps <= 0) {
-        return { valid: false, error: 'Uzupełnij liczbę powtórzeń' };
-      }
-    } else if (exerciseType === 'duration') {
-      // Duration exercises need duration
-      if (!duration || duration <= 0) {
-        return { valid: false, error: 'Uzupełnij czas trwania' };
-      }
-    }
-
-    return { valid: true };
-  };
+  const validateSet = (setIndex: number): { valid: boolean; error?: string } =>
+    validateSetValues(exerciseType, {
+      reps: watch(`exerciseSeries.${index}.sets.${setIndex}.reps`),
+      weight: watch(`exerciseSeries.${index}.sets.${setIndex}.weight`),
+      duration: watch(`exerciseSeries.${index}.sets.${setIndex}.duration`),
+    });
 
   // Handle set completion with validation
   const handleSetCompletion = (setIndex: number, currentValue: boolean) => {
@@ -1134,6 +1388,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
     if (!currentValue) {
       const validation = validateSet(setIndex);
       if (!validation.valid) {
+        haptic('warning');
         setValidationErrors(prev => ({ ...prev, [setIndex]: validation.error || 'Uzupełnij wymagane pola' }));
         toast({
           title: "Uzupełnij dane",
@@ -1153,6 +1408,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
 
     // Toggle the completion status
     setValue(`exerciseSeries.${index}.sets.${setIndex}.completed`, !currentValue);
+    haptic('tap');
 
     // Kick off the rest countdown when a set gets checked off
     if (!currentValue) {
@@ -1214,34 +1470,11 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
     fields.forEach((_, i) => setValue(`exerciseSeries.${index}.sets.${i}.restTimeSeconds`, next));
   };
 
-  // Fill a set's inputs from the previous workout's result for the same slot
-  const fillFromPrevious = (setIndex: number) => {
-    const prev = exerciseHistory?.sets[setIndex];
-    if (!prev) return;
-    if (exerciseType === 'weight') {
-      setValue(`exerciseSeries.${index}.sets.${setIndex}.weight`, prev.weight);
-      setValue(`exerciseSeries.${index}.sets.${setIndex}.reps`, prev.reps);
-    } else if (exerciseType === 'reps') {
-      setValue(`exerciseSeries.${index}.sets.${setIndex}.reps`, prev.reps);
-    } else {
-      setValue(`exerciseSeries.${index}.sets.${setIndex}.duration`, prev.duration ?? 0);
-    }
-    clearValidationError(setIndex);
-  };
-
-  const formatPreviousSet = (setIndex: number): string | null => {
-    const prev = exerciseHistory?.sets[setIndex];
-    if (!prev) return null;
-    if (exerciseType === 'weight') return `${prev.weight}×${prev.reps}`;
-    if (exerciseType === 'reps') return `${prev.reps}`;
-    return `${prev.duration ?? 0}s`;
-  };
-
   return (
     <Card className="rounded-[1.75rem]">
       <CardHeader className="flex-row items-start justify-between gap-2 pb-4">
         <div className="min-w-0">
-          <CardTitle className="font-headline text-lg font-bold">{exerciseDetails?.name || (isLoadingExercises ? "Ładowanie..." : "Wybierz ćwiczenie")}</CardTitle>
+          <CardTitle className="font-headline text-lg font-bold text-ellipsis whitespace-nowrap overflow-hidden">{exerciseDetails?.name || (isLoadingExercises ? "Ładowanie..." : "Wybierz ćwiczenie")}</CardTitle>
           {(tempo || exerciseHistory) && (
             <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
               {tempo && <span>Tempo {tempo}</span>}
@@ -1253,6 +1486,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
           )}
           {tip && <p className="text-xs text-muted-foreground mt-1 italic">Wskazówka: {tip}</p>}
         </div>
+        {exerciseType === 'weight' && <PlateCalculator targetWeight={heaviestPlannedWeight} />}
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
@@ -1277,228 +1511,224 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
         <div className="space-y-2">
           {/* Column labels - spans mirror the set rows below */}
           <div className="grid grid-cols-12 items-center gap-1.5 px-1 text-center">
-            <Label className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Seria</Label>
-            <Label className="col-span-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Poprz.</Label>
+            <Label className="col-span-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Seria</Label>
             {exerciseType === 'weight' ? (
               <>
-                <Label className="col-span-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">kg</Label>
-                <Label className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Powt.</Label>
+                <Label className="col-span-4 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">kg</Label>
+                <Label className="col-span-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Powt.</Label>
               </>
             ) : exerciseType === 'reps' ? (
-              <Label className="col-span-5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Powtórzenia</Label>
+              <Label className="col-span-7 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Powtórzenia</Label>
             ) : (
-              <Label className="col-span-5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Czas (s)</Label>
+              <Label className="col-span-7 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Czas (s)</Label>
             )}
             <Label className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">✓</Label>
           </div>
           <AnimatePresence initial={false}>
-          {fields.map((setField, setIndex) => {
-            const isCompleted = watch(`exerciseSeries.${index}.sets.${setIndex}.completed`);
-            const sets = watch(`exerciseSeries.${index}.sets`);
-            // Find the first uncompleted set to mark as active
-            const firstUncompletedIndex = sets?.findIndex((s: any) => !s.completed);
-            const isActive = firstUncompletedIndex === setIndex;
+            {fields.map((setField, setIndex) => {
+              const isCompleted = watch(`exerciseSeries.${index}.sets.${setIndex}.completed`);
+              const sets = watch(`exerciseSeries.${index}.sets`);
+              // Find the first uncompleted set to mark as active
+              const firstUncompletedIndex = sets?.findIndex((s: any) => !s.completed);
+              const isActive = firstUncompletedIndex === setIndex;
 
-            const previousLabel = formatPreviousSet(setIndex);
-
-            return (
-              <motion.div key={setField.id} {...listItemMotion}>
-              <div
-                className={`grid grid-cols-12 items-center gap-1.5 rounded-xl px-1 py-1.5 transition-all ${isCompleted
-                    ? 'opacity-55 bg-volt/[0.06]'
-                    : isActive
-                      ? 'ring-1 ring-primary/60 bg-primary/10 shadow-soft'
-                      : 'bg-transparent'
-                  }`}
-              >
-                {/* Set number doubles as the type picker: number = working set,
+              return (
+                <motion.div key={setField.id} {...listItemMotion}>
+                  <div
+                    className={`grid grid-cols-12 items-center gap-1.5 rounded-xl px-1 py-1.5 transition-all ${isCompleted
+                      ? 'opacity-55 bg-volt/[0.06]'
+                      : isActive
+                        ? 'ring-1 ring-primary/60 bg-primary/10 shadow-soft'
+                        : 'bg-transparent'
+                      }`}
+                  >
+                    {/* Set number doubles as the type picker: number = working set,
                     colored icon = special set. The modal also allows deleting. */}
-                <FormField
-                  control={control}
-                  name={`exerciseSeries.${index}.sets.${setIndex}.type`}
-                  render={({ field }) => {
-                    const typeConfig = getSetTypeConfig(field.value || SetType.WorkingSet);
-                    const isWorkingSet = (field.value || SetType.WorkingSet) === SetType.WorkingSet;
-                    const TypeIcon = typeConfig.icon;
-                    return (
-                      <FormItem className="col-span-2 space-y-0">
-                        <FormControl>
-                          <SetTypeModal
-                            value={field.value || SetType.WorkingSet}
-                            onChange={field.onChange}
-                            onDeleteSet={() => remove(setIndex)}
-                            renderTrigger={
+                    <FormField
+                      control={control}
+                      name={`exerciseSeries.${index}.sets.${setIndex}.type`}
+                      render={({ field }) => {
+                        const typeConfig = getSetTypeConfig(field.value || SetType.WorkingSet);
+                        const isWorkingSet = (field.value || SetType.WorkingSet) === SetType.WorkingSet;
+                        const TypeIcon = typeConfig.icon;
+                        return (
+                          <FormItem className="col-span-3 space-y-0">
+                            <FormControl>
+                              <SetTypeModal
+                                value={field.value || SetType.WorkingSet}
+                                onChange={field.onChange}
+                                onDeleteSet={() => remove(setIndex)}
+                                renderTrigger={
+                                  <button
+                                    type="button"
+                                    aria-label={`Seria ${setIndex + 1}: ${typeConfig.name}`}
+                                    className={cn(
+                                      'flex h-10 w-full items-center justify-center rounded-lg border font-headline text-sm font-bold tabular-nums transition-colors',
+                                      isWorkingSet
+                                        ? 'border-transparent bg-secondary/50 text-muted-foreground'
+                                        : cn(typeConfig.bgColorClass, typeConfig.borderColorClass, typeConfig.colorClass)
+                                    )}
+                                  >
+                                    {isWorkingSet ? setIndex + 1 : <TypeIcon className="h-4 w-4" />}
+                                  </button>
+                                }
+                              />
+                            </FormControl>
+                          </FormItem>
+                        );
+                      }}
+                    />
+
+                    {/* Conditional fields based on exercise type */}
+                    {exerciseType === 'weight' ? (
+                      <>
+                        <FormField
+                          control={control}
+                          name={`exerciseSeries.${index}.sets.${setIndex}.weight`}
+                          render={({ field }) => (
+                            <FormItem className="col-span-4 space-y-0">
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  inputMode="decimal"
+                                  step="0.5"
+                                  placeholder="0"
+                                  {...field}
+                                  onFocus={selectAllOnFocus}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    clearValidationError(setIndex);
+                                  }}
+                                  className={`h-10 rounded-lg text-center tabular-nums ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (field.value === undefined || field.value === null || field.value === '') ? "border-destructive ring-destructive/20 ring-1" : ""}`}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={control}
+                          name={`exerciseSeries.${index}.sets.${setIndex}.reps`}
+                          render={({ field }) => (
+                            <FormItem className="col-span-3 space-y-0">
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  inputMode="numeric"
+                                  placeholder="0"
+                                  {...field}
+                                  onFocus={selectAllOnFocus}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    clearValidationError(setIndex);
+                                  }}
+                                  className={`h-10 rounded-lg text-center tabular-nums ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    ) : exerciseType === 'reps' ? (
+                      <FormField
+                        control={control}
+                        name={`exerciseSeries.${index}.sets.${setIndex}.reps`}
+                        render={({ field }) => (
+                          <FormItem className="col-span-7 space-y-0">
+                            <FormControl>
+                              <Input
+                                type="number"
+                                inputMode="numeric"
+                                placeholder="0"
+                                {...field}
+                                onFocus={selectAllOnFocus}
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  clearValidationError(setIndex);
+                                }}
+                                className={`h-10 rounded-lg text-center tabular-nums ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    ) : (
+                      <FormField
+                        control={control}
+                        name={`exerciseSeries.${index}.sets.${setIndex}.duration`}
+                        render={({ field }) => (
+                          <FormItem className="col-span-7 space-y-0">
+                            <FormControl>
+                              <div className="relative">
+                                <Input
+                                  type="number"
+                                  inputMode="numeric"
+                                  placeholder="0"
+                                  {...field}
+                                  onFocus={selectAllOnFocus}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    clearValidationError(setIndex);
+                                  }}
+                                  className={`h-10 rounded-lg text-center tabular-nums pr-6 ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
+                                />
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
+                              </div>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    <div className="col-span-2 flex justify-center">
+                      <FormField
+                        control={control}
+                        name={`exerciseSeries.${index}.sets.${setIndex}.completed`}
+                        render={({ field }) => (
+                          <FormItem className="space-y-0">
+                            <FormControl>
                               <button
                                 type="button"
-                                aria-label={`Seria ${setIndex + 1}: ${typeConfig.name}`}
-                                className={cn(
-                                  'flex h-10 w-full items-center justify-center rounded-lg border font-headline text-sm font-bold tabular-nums transition-colors',
-                                  isWorkingSet
-                                    ? 'border-transparent bg-secondary/50 text-muted-foreground'
-                                    : cn(typeConfig.bgColorClass, typeConfig.borderColorClass, typeConfig.colorClass)
-                                )}
+                                aria-label={field.value ? 'Cofnij ukończenie serii' : 'Oznacz serię jako ukończoną'}
+                                onClick={() => handleSetCompletion(setIndex, field.value)}
+                                className={`grid h-10 w-10 place-items-center rounded-full focus:outline-none transition-transform ${isActive ? 'scale-110' : ''} ${validationErrors[setIndex] ? 'animate-shake' : ''}`}
                               >
-                                {isWorkingSet ? setIndex + 1 : <TypeIcon className="h-4 w-4" />}
+                                {field.value ? (
+                                  <CheckCircle2 className="h-6 w-6 text-volt" />
+                                ) : validationErrors[setIndex] ? (
+                                  <AlertCircle className="h-6 w-6 text-destructive" />
+                                ) : (
+                                  <Circle className={`h-6 w-6 ${isActive ? 'text-primary fill-primary/20' : 'text-muted-foreground'}`} />
+                                )}
                               </button>
-                            }
-                          />
-                        </FormControl>
-                      </FormItem>
-                    );
-                  }}
-                />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
 
-                {/* Previous workout's result for this slot - tap to fill */}
-                <div className="col-span-3">
-                  {previousLabel ? (
-                    <button
-                      type="button"
-                      disabled={isCompleted}
-                      onClick={() => fillFromPrevious(setIndex)}
-                      aria-label="Wypełnij wynikiem z poprzedniego treningu"
-                      className="h-10 w-full truncate rounded-lg text-[11px] font-semibold tabular-nums text-muted-foreground transition-colors active:bg-secondary/60 disabled:opacity-40"
-                    >
-                      {previousLabel}
-                    </button>
-                  ) : (
-                    <span aria-hidden className="block text-center text-[11px] text-muted-foreground/40">—</span>
+                  {/* RPE is asked only once the set is done — before that there is
+                  nothing to rate, and it would crowd the row. */}
+                  {isCompleted && (
+                    <FormField
+                      control={control}
+                      name={`exerciseSeries.${index}.sets.${setIndex}.rpe`}
+                      render={({ field }) => (
+                        <FormItem className="space-y-0 px-1 pb-2">
+                          <FormControl>
+                            <RpeSelector value={field.value} onChange={field.onChange} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
                   )}
-                </div>
-
-                {/* Conditional fields based on exercise type */}
-                {exerciseType === 'weight' ? (
-                  <>
-                    <FormField
-                      control={control}
-                      name={`exerciseSeries.${index}.sets.${setIndex}.weight`}
-                      render={({ field }) => (
-                        <FormItem className="col-span-3 space-y-0">
-                          <FormControl>
-                            <Input
-                              type="number"
-                              inputMode="decimal"
-                              step="0.5"
-                              placeholder="0"
-                              {...field}
-                              onFocus={selectAllOnFocus}
-                              onChange={(e) => {
-                                field.onChange(e);
-                                clearValidationError(setIndex);
-                              }}
-                              className={`h-10 rounded-lg text-center tabular-nums ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (field.value === undefined || field.value === null || field.value === '') ? "border-destructive ring-destructive/20 ring-1" : ""}`}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={control}
-                      name={`exerciseSeries.${index}.sets.${setIndex}.reps`}
-                      render={({ field }) => (
-                        <FormItem className="col-span-2 space-y-0">
-                          <FormControl>
-                            <Input
-                              type="number"
-                              inputMode="numeric"
-                              placeholder="0"
-                              {...field}
-                              onFocus={selectAllOnFocus}
-                              onChange={(e) => {
-                                field.onChange(e);
-                                clearValidationError(setIndex);
-                              }}
-                              className={`h-10 rounded-lg text-center tabular-nums ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </>
-                ) : exerciseType === 'reps' ? (
-                  <FormField
-                    control={control}
-                    name={`exerciseSeries.${index}.sets.${setIndex}.reps`}
-                    render={({ field }) => (
-                      <FormItem className="col-span-5 space-y-0">
-                        <FormControl>
-                          <Input
-                            type="number"
-                            inputMode="numeric"
-                            placeholder="0"
-                            {...field}
-                            onFocus={selectAllOnFocus}
-                            onChange={(e) => {
-                              field.onChange(e);
-                              clearValidationError(setIndex);
-                            }}
-                            className={`h-10 rounded-lg text-center tabular-nums ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                ) : (
-                  <FormField
-                    control={control}
-                    name={`exerciseSeries.${index}.sets.${setIndex}.duration`}
-                    render={({ field }) => (
-                      <FormItem className="col-span-5 space-y-0">
-                        <FormControl>
-                          <div className="relative">
-                            <Input
-                              type="number"
-                              inputMode="numeric"
-                              placeholder="0"
-                              {...field}
-                              onFocus={selectAllOnFocus}
-                              onChange={(e) => {
-                                field.onChange(e);
-                                clearValidationError(setIndex);
-                              }}
-                              className={`h-10 rounded-lg text-center tabular-nums pr-6 ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
-                            />
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
-                          </div>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                )}
-
-                <div className="col-span-2 flex justify-center">
-                  <FormField
-                    control={control}
-                    name={`exerciseSeries.${index}.sets.${setIndex}.completed`}
-                    render={({ field }) => (
-                      <FormItem className="space-y-0">
-                        <FormControl>
-                          <button
-                            type="button"
-                            aria-label={field.value ? 'Cofnij ukończenie serii' : 'Oznacz serię jako ukończoną'}
-                            onClick={() => handleSetCompletion(setIndex, field.value)}
-                            className={`grid h-10 w-10 place-items-center rounded-full focus:outline-none transition-transform ${isActive ? 'scale-110' : ''} ${validationErrors[setIndex] ? 'animate-shake' : ''}`}
-                          >
-                            {field.value ? (
-                              <CheckCircle2 className="h-6 w-6 text-volt" />
-                            ) : validationErrors[setIndex] ? (
-                              <AlertCircle className="h-6 w-6 text-destructive" />
-                            ) : (
-                              <Circle className={`h-6 w-6 ${isActive ? 'text-primary fill-primary/20' : 'text-muted-foreground'}`} />
-                            )}
-                          </button>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-              </motion.div>
-            )
-          })}
+                </motion.div>
+              )
+            })}
           </AnimatePresence>
           <div className="flex items-center gap-2 pt-1">
-            <Button type="button" variant="outline" size="sm" className="h-10 flex-1 border-dashed" onClick={handleAddSet}>
+            <Button type="button" variant="outline" size="sm" id="add-series-button" className="h-10 flex-1 border-dashed" onClick={handleAddSet}>
               <PlusCircle className="mr-2 h-4 w-4" /> Dodaj serię
             </Button>
             {fields.length > 0 && (
@@ -1530,9 +1760,70 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
   )
 }
 
+// --- WORKOUT EXERCISES PREVIEW ---
+// Short "what's inside" list shown before the athlete commits to a training,
+// so they can peek at the exercises without entering the builder first.
+const summarizeSets = (sets: WorkoutSet[] | undefined): string | null => {
+  if (!sets || sets.length === 0) return null;
+  const count = sets.length;
+  const reps = sets.map(s => Number(s.reps)).filter(r => Number.isFinite(r) && r > 0);
+  const durations = sets.map(s => Number(s.duration)).filter(d => Number.isFinite(d) && d > 0);
+
+  let detail = '';
+  if (reps.length) {
+    const min = Math.min(...reps);
+    const max = Math.max(...reps);
+    detail = ` × ${min === max ? min : `${min}-${max}`}`;
+  } else if (durations.length) {
+    const min = Math.min(...durations);
+    const max = Math.max(...durations);
+    detail = ` × ${min === max ? `${min}s` : `${min}-${max}s`}`;
+  }
+  return `${count} ${count === 1 ? 'seria' : 'serii'}${detail}`;
+};
+
+function WorkoutExercisesPreview({ exerciseSeries }: { exerciseSeries: ExerciseSeries[] | undefined }) {
+  if (!exerciseSeries || exerciseSeries.length === 0) {
+    return (
+      <p className="rounded-2xl border border-dashed border-border bg-card/50 p-4 text-center text-sm text-muted-foreground">
+        Ten trening nie ma jeszcze żadnych ćwiczeń.
+      </p>
+    );
+  }
+
+  return (
+    <ol className="max-h-[50vh] space-y-2 overflow-y-auto scrollbar-hide">
+      {exerciseSeries.map((series, i) => {
+        const muscles = series.exercise?.mainMuscleGroups?.map(mg => mg.name).filter(Boolean).join(', ');
+        const summary = summarizeSets(series.sets);
+        const meta = [muscles, summary].filter(Boolean).join(' · ');
+        return (
+          <li key={i} className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-3">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-secondary font-headline text-sm font-bold text-primary">
+              {i + 1}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold">{series.exercise?.name || 'Nieznane ćwiczenie'}</p>
+              <p className="truncate text-xs text-muted-foreground">{meta || 'Ogólnorozwojowe'}</p>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 // --- SELECTION VIEW COMPONENT ---
 function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder: (data: LogFormValues) => void; allExercises: Exercise[] | null }) {
   const { user } = useUser();
+  const supportsGeolocation = typeof navigator !== 'undefined' && 'geolocation' in navigator;
+  const [startRunDialogOpen, setStartRunDialogOpen] = useState(false);
+
+  // Trainer-prepared running programs, offered from the "Rozpocznij bieg" quick-start tile
+  const { data: runningPrograms } = useCollection<RunningProgram>(
+    supportsGeolocation ? 'runningPrograms' : null,
+    { isActive: true }
+  );
 
   // Fetch plans assigned to the athlete
   const { data: assignedPlans, isLoading: assignedPlansLoading } = useCollection<TrainingPlan>(
@@ -1647,6 +1938,25 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
             <ChevronRight className="relative ml-auto h-5 w-5 shrink-0 text-white/70" />
           </button>
 
+          {supportsGeolocation && (
+            <button
+              type="button"
+              onClick={() => setStartRunDialogOpen(true)}
+              className="group relative flex w-full items-center gap-4 overflow-hidden rounded-[1.75rem] border border-border/60 bg-card p-5 text-left shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted active:scale-[0.98]"
+            >
+              <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full bg-sky-500/15 text-sky-600 dark:text-sky-400">
+                <Footprints className="h-6 w-6" />
+              </span>
+              <span className="relative min-w-0">
+                <span className="block text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">Szybki start</span>
+                <span className="mt-0.5 block font-display text-lg font-extrabold uppercase leading-tight">Rozpocznij bieg</span>
+                <span className="block text-xs text-muted-foreground">Nagraj trasę GPS na żywo</span>
+              </span>
+              <ChevronRight className="relative ml-auto h-5 w-5 shrink-0 text-muted-foreground" />
+            </button>
+          )}
+          <StartRunDialog open={startRunDialogOpen} onOpenChange={setStartRunDialogOpen} programs={runningPrograms} />
+
           {/* Workout Templates Section */}
           {workoutTemplates && workoutTemplates.length > 0 && (
             <>
@@ -1670,7 +1980,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h3 className="truncate font-semibold">{template.name}</h3>
+                          <h3 className="line-clamp-2 font-semibold">{template.name}</h3>
                           <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
@@ -1690,11 +2000,12 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Rozpocząć trening?</AlertDialogTitle>
+                        <AlertDialogTitle>{template.name}</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Czy chcesz rozpocząć trening "{template.name}"? Zostaną załadowane wszystkie ćwiczenia z tego szablonu.
+                          {template.exerciseSeries?.length || 0} ćwiczeń · {template.durationMinutes} min. Sprawdź, co Cię czeka, zanim zaczniesz.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
+                      <WorkoutExercisesPreview exerciseSeries={template.exerciseSeries} />
                       <AlertDialogFooter>
                         <AlertDialogCancel>Anuluj</AlertDialogCancel>
                         <AlertDialogAction onClick={() => handleStartWorkout(template)}>
@@ -1729,7 +2040,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
                         <Calendar className="h-6 w-6" />
                       </div>
                       <div className="min-w-0">
-                        <h3 className="truncate font-semibold">{plan.name}</h3>
+                        <h3 className="line-clamp-2 font-semibold">{plan.name}</h3>
                         <p className="text-xs text-muted-foreground">{plan.stages?.length || 0} etapów</p>
                       </div>
                       <ChevronRight className="ml-auto h-5 w-5 shrink-0 text-muted-foreground" />
@@ -1762,15 +2073,34 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
                                         }
                                         // It's a Workout object
                                         return (
-                                          <Card key={dayIndex} className="cursor-pointer hover:bg-secondary/50" onClick={() => handleStartWorkout(day)}>
-                                            <CardContent className="p-3 flex justify-between items-center">
-                                              <div>
-                                                <p className="font-medium text-sm">Dzień {dayIndex + 1}: {day.name}</p>
-                                                <p className="text-xs text-muted-foreground">{day.exerciseSeries?.length || 0} ćwiczeń</p>
-                                              </div>
-                                              <Play className="h-4 w-4 text-primary" />
-                                            </CardContent>
-                                          </Card>
+                                          <AlertDialog key={dayIndex}>
+                                            <AlertDialogTrigger asChild>
+                                              <Card className="cursor-pointer hover:bg-secondary/50">
+                                                <CardContent className="p-3 flex justify-between items-center">
+                                                  <div>
+                                                    <p className="font-medium text-sm">Dzień {dayIndex + 1}: {day.name}</p>
+                                                    <p className="text-xs text-muted-foreground">{day.exerciseSeries?.length || 0} ćwiczeń</p>
+                                                  </div>
+                                                  <Play className="h-4 w-4 text-primary" />
+                                                </CardContent>
+                                              </Card>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                              <AlertDialogHeader>
+                                                <AlertDialogTitle>{day.name}</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                  Dzień {dayIndex + 1} · {day.exerciseSeries?.length || 0} ćwiczeń. Podejrzyj ćwiczenia przed startem.
+                                                </AlertDialogDescription>
+                                              </AlertDialogHeader>
+                                              <WorkoutExercisesPreview exerciseSeries={day.exerciseSeries} />
+                                              <AlertDialogFooter>
+                                                <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleStartWorkout(day)}>
+                                                  Rozpocznij
+                                                </AlertDialogAction>
+                                              </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                          </AlertDialog>
                                         )
                                       })}
                                     </div>
@@ -1801,20 +2131,35 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
           ) : (
             <div className="space-y-2.5">
               {historyLogs.map(log => (
-                <div
-                  key={log.id}
-                  onClick={() => handleRepeatWorkout(log)}
-                  className="flex cursor-pointer items-center gap-3.5 rounded-2xl border border-border/60 bg-card p-3.5 shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted active:scale-[0.99]"
-                >
-                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-volt/15 text-volt">
-                    <RotateCcw className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate font-semibold">{log.workoutName}</h3>
-                    <p className="text-xs text-muted-foreground">{format(new Date(log.endTime as unknown as string | number | Date), 'd MMMM yyyy', { locale: pl })}</p>
-                  </div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-primary">Powtórz</span>
-                </div>
+                <AlertDialog key={log.id}>
+                  <AlertDialogTrigger asChild>
+                    <div className="flex cursor-pointer items-center gap-3.5 rounded-2xl border border-border/60 bg-card p-3.5 shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted active:scale-[0.99]">
+                      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-volt/15 text-volt">
+                        <RotateCcw className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="line-clamp-2 font-semibold">{log.workoutName}</h3>
+                        <p className="text-xs text-muted-foreground">{format(new Date(log.endTime as unknown as string | number | Date), 'd MMMM yyyy', { locale: pl })}</p>
+                      </div>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-primary">Powtórz</span>
+                    </div>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>{log.workoutName}</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {log.exercises?.length || 0} ćwiczeń · {format(new Date(log.endTime as unknown as string | number | Date), 'd MMMM yyyy', { locale: pl })}. Podejrzyj ćwiczenia przed powtórzeniem.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <WorkoutExercisesPreview exerciseSeries={log.exercises} />
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleRepeatWorkout(log)}>
+                        Powtórz trening
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               ))}
             </div>
           )}
@@ -1975,7 +2320,7 @@ export default function LogWorkoutPage() {
 
   if (view === 'active' && builderData) {
     return (
-      <div className="container mx-auto flex h-full justify-center p-4 md:p-8">
+      <div className="container mx-auto flex h-full justify-center p-4 pt-18 md:p-8">
         <div className="flex h-full w-full max-w-lg flex-col">
           <ActiveWorkoutView
             initialWorkout={builderData}
@@ -2009,9 +2354,7 @@ export default function LogWorkoutPage() {
   return (
     <div className="container mx-auto p-4 md:p-8">
       <div className="mb-6">
-        <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-muted-foreground">
-          {format(new Date(), 'EEEE · d MMMM', { locale: pl })}
-        </p>
+
         <h1 className="mt-2 font-display text-3xl font-extrabold uppercase tracking-tight md:text-4xl">
           Trenuj <span className="text-gradient-ember">teraz</span>
         </h1>

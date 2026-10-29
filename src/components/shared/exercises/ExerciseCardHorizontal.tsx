@@ -62,24 +62,36 @@ export function ExerciseCardHorizontal({
       onClick={() => onClick?.(exercise)}
     >
       {/* Image Section */}
-      <div className="relative w-[160px] h-full  sm:w-[80px] flex-shrink-0 bg-muted flex items-center justify-center">
-        {(exercise.mediaUrl || exercise.image) ? (
-          isVideoUrl(exercise.mediaUrl || exercise.image) ? (
-            <div className="relative w-full h-full bg-black flex items-center justify-center">
-              <PlayCircle className="h-8 w-8 text-white opacity-80" />
-            </div>
-          ) : (
-            <Image
-              src={exercise.mediaUrl || exercise.image || ''}
-              alt={exercise.name}
-              fill
-              className="object-cover"
-              sizes="160px"
-            />
-          )
-        ) : (
-          <Dumbbell className="h-8 w-8 text-muted-foreground opacity-20" />
-        )}
+      <div className="relative aspect-square h-full  flex-shrink-0 bg-muted flex items-center justify-center">
+        {/* Na liście pokazujemy obrazek (still) zamiast animacji/video. */}
+        {(() => {
+          const candidates = [exercise.image, exercise.mediaUrl];
+          const thumb = candidates.find((u) => u && !isVideoUrl(u));
+          const video = candidates.find((u) => u && isVideoUrl(u));
+          const src = thumb || video;
+
+          if (src && isVideoUrl(src)) {
+            return (
+              <div className="relative w-full h-full bg-black flex items-center justify-center">
+                <PlayCircle className="h-8 w-8 text-white opacity-80" />
+              </div>
+            );
+          }
+
+          if (src) {
+            return (
+              <Image
+                src={src}
+                alt={exercise.name}
+                fill
+                className="object-cover"
+                sizes="160px"
+              />
+            );
+          }
+
+          return <Dumbbell className="h-8 w-8 text-muted-foreground opacity-20" />;
+        })()}
       </div>
 
       {/* Content Section */}

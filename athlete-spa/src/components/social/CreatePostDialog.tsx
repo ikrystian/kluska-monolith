@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { useUploadThing } from '@/lib/uploadthing';
+import { uploadClientFiles } from '@/lib/upload';
 import { useCreateDoc, useUser } from '@/lib/db-hooks';
 import { useUserProfile } from '@/contexts/UserProfileContext';
 
@@ -40,20 +40,6 @@ export function CreatePostDialog({ open, onOpenChange, onSuccess }: CreatePostDi
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-
-  const { startUpload } = useUploadThing('imageUploader', {
-    onClientUploadComplete: (res) => {
-      console.log('Upload completed:', res);
-    },
-    onUploadError: (error) => {
-      console.error('Upload error:', error);
-      toast({
-        title: 'Upload failed',
-        description: 'Failed to upload image. Please try again.',
-        variant: 'destructive',
-      });
-    },
-  });
 
   const form = useForm<CreatePostFormValues>({
     resolver: zodResolver(createPostSchema),
@@ -106,13 +92,13 @@ export function CreatePostDialog({ open, onOpenChange, onSuccess }: CreatePostDi
 
     try {
       // Upload image first
-      const uploadResult = await startUpload([selectedFile]);
+      const uploadResult = await uploadClientFiles([selectedFile]);
 
-      if (!uploadResult || uploadResult.length === 0) {
+      if (uploadResult.length === 0) {
         throw new Error('Upload failed');
       }
 
-      const imageUrl = uploadResult[0].url.split('/').pop(); // Get file ID from URL
+      const imageUrl = uploadResult[0].url; // Public /upload-data/... path
 
       // Create post
       await createDoc('socialPosts', {

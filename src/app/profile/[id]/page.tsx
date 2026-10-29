@@ -491,9 +491,10 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
         formattedDate: format(new Date(v.date), 'd MMM', { locale: pl }),
     }));
 
-    // Helper to construct proper image URL from UploadThing file ID
+    // Normalise a stored image reference. New uploads store a `/upload-data/...`
+    // path (or an absolute URL); legacy rows stored a bare UploadThing key.
     const getImageUrl = (imageUrl: string) => {
-        if (imageUrl.startsWith('http')) return imageUrl;
+        if (/^(https?:|\/)/.test(imageUrl)) return imageUrl;
         return `https://utfs.io/f/${imageUrl}`;
     };
 

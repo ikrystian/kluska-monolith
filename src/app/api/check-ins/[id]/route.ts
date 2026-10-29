@@ -32,14 +32,13 @@ export async function GET(
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        // Enrich with athlete name
-        const athlete = await User.findById((checkIn as any).athleteId).lean();
-
-        // Populate measurement if exists
-        let measurement = null;
-        if ((checkIn as any).measurementId) {
-            measurement = await BodyMeasurement.findById((checkIn as any).measurementId).lean();
-        }
+        // Enrich with athlete name and populate measurement if exists
+        const [athlete, measurement] = await Promise.all([
+            User.findById((checkIn as any).athleteId).lean(),
+            (checkIn as any).measurementId
+                ? BodyMeasurement.findById((checkIn as any).measurementId).lean()
+                : null,
+        ]);
 
         return NextResponse.json({
             checkIn: {

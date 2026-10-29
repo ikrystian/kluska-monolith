@@ -1,5 +1,6 @@
 // Types for the shared ExercisesListView component
 import { Exercise, MuscleGroup, MuscleGroupName, WorkoutLog } from '@/lib/types';
+import type { ExerciseLibraryFilters } from '@/hooks/useExerciseLibrary';
 
 export type ExercisesRole = 'athlete' | 'trainer' | 'admin';
 
@@ -67,11 +68,11 @@ export interface ExerciseFormData {
 }
 
 export interface ExerciseFiltersProps {
-  searchTerm: string;
-  onSearchChange: (value: string) => void;
-  selectedMuscleGroup: string;
-  onMuscleGroupChange: (value: string) => void;
+  filters: ExerciseLibraryFilters;
+  onChange: (filters: ExerciseLibraryFilters) => void;
   muscleGroupOptions: { label: string; value: string }[];
+  /** Liczba wyników dla bieżących filtrów (przycisk w arkuszu filtrów) */
+  resultCount?: number;
 }
 
 export interface ProgressDialogProps {

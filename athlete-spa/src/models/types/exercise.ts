@@ -6,11 +6,17 @@ export interface MuscleGroup {
   imageUrl?: string;
 }
 
+export interface ExerciseSetupItem {
+  group: string;
+  value: string;
+}
+
 export interface Exercise {
   id: string;
   name: string;
   mainMuscleGroups: MuscleGroup[];
   secondaryMuscleGroups: MuscleGroup[];
+  setup?: ExerciseSetupItem[];
   instructions?: string;
   mediaUrl?: string;
   // Legacy fields kept for backward compatibility

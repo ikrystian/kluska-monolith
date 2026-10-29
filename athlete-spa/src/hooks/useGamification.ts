@@ -1,6 +1,8 @@
 'use client';
 
+import useSWR from 'swr';
 import { apiFetch } from '@/lib/api-client';
+import { jsonFetcher } from '@/lib/db-hooks';
 import { useState, useEffect, useCallback } from 'react';
 
 export interface GamificationStats {
@@ -59,28 +61,9 @@ export interface AchievementWithProgress {
 }
 
 export function useGamificationProfile() {
-  const [stats, setStats] = useState<GamificationStats | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const fetchProfile = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const response = await apiFetch('/api/gamification/profile');
-      if (!response.ok) throw new Error('Failed to fetch profile');
-      const data = await response.json();
-      setStats(data);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
+  const { data, error, isLoading, mutate } = useSWR<GamificationStats>('/api/gamification/profile', jsonFetcher);
+  const stats = data ?? null;
+  const fetchProfile = useCallback(async () => { await mutate(); }, [mutate]);
 
   const checkin = useCallback(async () => {
     const response = await apiFetch('/api/gamification/profile', {
@@ -93,77 +76,37 @@ export function useGamificationProfile() {
       throw new Error('Failed to check in');
     }
 
-    const result = await response.json();
-    fetchProfile();
-    return result;
-  }, [fetchProfile]);
+    // apiFetch already revalidated every cached read after this write.
+    return response.json();
+  }, []);
 
   return {
     stats,
     isLoading,
-    error,
+    error: error instanceof Error ? error : null,
     refreshProfile: fetchProfile,
     checkin,
   };
 }
 
 export function useLeaderboard(limit: number = 10, trainerId?: string) {
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    const fetchLeaderboard = async () => {
-      try {
-        setIsLoading(true);
-        const url = trainerId
-          ? `/api/gamification/leaderboard?limit=${limit}&trainerId=${trainerId}`
-          : `/api/gamification/leaderboard?limit=${limit}`;
-        const response = await apiFetch(url);
-        if (!response.ok) throw new Error('Failed to fetch leaderboard');
-        const data = await response.json();
-        setLeaderboard(data);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error('Unknown error'));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchLeaderboard();
-  }, [limit, trainerId]);
+  const url = trainerId
+    ? `/api/gamification/leaderboard?limit=${limit}&trainerId=${trainerId}`
+    : `/api/gamification/leaderboard?limit=${limit}`;
+  const { data, error, isLoading } = useSWR<LeaderboardEntry[]>(url, jsonFetcher);
+  const leaderboard = data ?? [];
 
   return {
     leaderboard,
     isLoading,
-    error,
+    error: error instanceof Error ? error : null,
   };
 }
 
 export function useRewards() {
-  const [rewards, setRewards] = useState<Reward[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const fetchRewards = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const response = await apiFetch('/api/gamification/rewards');
-      if (!response.ok) throw new Error('Failed to fetch rewards');
-      const data = await response.json();
-      setRewards(data);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchRewards();
-  }, [fetchRewards]);
+  const { data, error, isLoading, mutate } = useSWR<Reward[]>('/api/gamification/rewards', jsonFetcher);
+  const rewards = data ?? [];
+  const fetchRewards = useCallback(async () => { await mutate(); }, [mutate]);
 
   const redeemReward = useCallback(async (rewardId: string) => {
     const response = await apiFetch('/api/gamification/rewards', {
@@ -177,46 +120,25 @@ export function useRewards() {
       throw new Error(errorData.error || 'Failed to redeem reward');
     }
 
-    const result = await response.json();
-    fetchRewards();
-    return result;
-  }, [fetchRewards]);
+    return response.json();
+  }, []);
 
   return {
     rewards,
     isLoading,
-    error,
+    error: error instanceof Error ? error : null,
     redeemReward,
     refreshRewards: fetchRewards,
   };
 }
 
 export function useAchievements(unlockedOnly: boolean = false) {
-  const [achievements, setAchievements] = useState<AchievementWithProgress[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const fetchAchievements = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const url = unlockedOnly
-        ? '/api/gamification/achievements?unlocked=true'
-        : '/api/gamification/achievements';
-      const response = await apiFetch(url);
-      if (!response.ok) throw new Error('Failed to fetch achievements');
-      const data = await response.json();
-      setAchievements(data);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [unlockedOnly]);
-
-  useEffect(() => {
-    fetchAchievements();
-  }, [fetchAchievements]);
+  const url = unlockedOnly
+    ? '/api/gamification/achievements?unlocked=true'
+    : '/api/gamification/achievements';
+  const { data, error, isLoading, mutate } = useSWR<AchievementWithProgress[]>(url, jsonFetcher);
+  const achievements = data ?? [];
+  const fetchAchievements = useCallback(async () => { await mutate(); }, [mutate]);
 
   const checkAchievements = useCallback(async () => {
     const response = await apiFetch('/api/gamification/achievements', {
@@ -227,15 +149,13 @@ export function useAchievements(unlockedOnly: boolean = false) {
       throw new Error('Failed to check achievements');
     }
 
-    const result = await response.json();
-    fetchAchievements();
-    return result;
-  }, [fetchAchievements]);
+    return response.json();
+  }, []);
 
   return {
     achievements,
     isLoading,
-    error,
+    error: error instanceof Error ? error : null,
     checkAchievements,
     refreshAchievements: fetchAchievements,
   };

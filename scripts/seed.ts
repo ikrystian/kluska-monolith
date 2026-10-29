@@ -16,6 +16,7 @@ import { AchievementBadge } from '../src/models/AchievementBadge';
 import { GamificationProfile } from '../src/models/GamificationProfile';
 import { Workout } from '../src/models/Workout';
 import { MuscleGroupName, TrainingLevel, SetType } from '../src/models/types/enums';
+import { buildRunningExercises, buildRunningWorkouts } from './data/running-program';
 
 // Load environment variables
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
@@ -605,7 +606,10 @@ async function seed() {
         instructions: '1. Zrób przysiad i połóż dłonie na ziemi.\n2. Wyrzuć nogi do tyłu do pozycji pompki i opuść klatkę do podłogi.\n3. Wskocz nogami z powrotem i wykonaj wyskok w górę z klśnięciem nad głową.',
         description: 'Intensywne ćwiczenie ogólnorozwojowe i kondycyjne.',
         type: 'reps' as const,
-      }
+      },
+
+      // --- BIEGANIE (przygotowanie do 5 km, 10 km, półmaratonu i maratonu) ---
+      ...buildRunningExercises(getMg),
     ];
 
     const seededExercises = await Exercise.insertMany(
@@ -901,6 +905,9 @@ async function seed() {
           },
         ],
       },
+
+      // Zestawy startowe: 5 km, 10 km, półmaraton, maraton
+      ...buildRunningWorkouts(getEx),
     ];
 
     const seededWorkouts = await Workout.insertMany(workoutsData);

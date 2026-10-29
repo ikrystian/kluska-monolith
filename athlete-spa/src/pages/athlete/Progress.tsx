@@ -1,6 +1,6 @@
 'use client';
 
-import { apiFetch } from '@/lib/api-client';
+import useSWR from 'swr';
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -33,8 +33,8 @@ import {
     Loader2,
     Calendar,
 } from 'lucide-react';
-import { useUser } from '@/lib/db-hooks';
-import { useEffect, useCallback } from 'react';
+import { useUser, jsonFetcher } from '@/lib/db-hooks';
+import { useEffect } from 'react';
 
 interface VolumeTrend {
     date: string;
@@ -139,39 +139,20 @@ const circumferenceLabels: Record<string, string> = {
 export default function ProgressPage() {
     const { user, isUserLoading } = useUser();
     const [period, setPeriod] = useState('30d');
-    const [data, setData] = useState<ProgressData | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const { data: swrData, isLoading } = useSWR<ProgressData>(
+        user?.uid ? `/api/athlete/progress?period=${period}` : null,
+        jsonFetcher
+    );
+    const data = swrData ?? null;
     const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
     const [selectedCircumferences, setSelectedCircumferences] = useState<string[]>(['biceps', 'chest', 'waist']);
 
-    const fetchData = useCallback(async () => {
-        if (!user?.uid) return;
-
-        setIsLoading(true);
-        try {
-            const response = await apiFetch(`/api/athlete/progress?period=${period}`);
-            if (response.ok) {
-                const result = await response.json();
-                setData(result);
-
-                // Select first exercise if none selected
-                if (!selectedExercise && result.estimatedOneRM) {
-                    const exercises = Object.keys(result.estimatedOneRM);
-                    if (exercises.length > 0) {
-                        setSelectedExercise(exercises[0]);
-                    }
-                }
-            }
-        } catch (error) {
-            console.error('Error fetching progress data:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [user?.uid, period, selectedExercise]);
-
+    // Select the first exercise once data is available and nothing is chosen.
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        if (selectedExercise || !data?.estimatedOneRM) return;
+        const exercises = Object.keys(data.estimatedOneRM);
+        if (exercises.length > 0) setSelectedExercise(exercises[0]);
+    }, [data, selectedExercise]);
 
     const volumeChartConfig = {
         volume: {
@@ -649,7 +630,7 @@ export default function ProgressPage() {
                                         {index + 1}
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <div className="truncate font-semibold">{exercise.name}</div>
+                                        <div className="line-clamp-2 font-semibold">{exercise.name}</div>
                                         <div className="text-xs tabular-nums text-muted-foreground">
                                             {exercise.volume.toLocaleString()} kg objętości
                                         </div>

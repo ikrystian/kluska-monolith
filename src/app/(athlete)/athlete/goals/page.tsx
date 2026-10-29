@@ -292,7 +292,7 @@ function AddAchievementForm({ onAchievementAdded }: { onAchievementAdded: () => 
         body: formData,
       });
       const data = await response.json();
-      return `/api/images/${data.fileId}`; // Assuming an endpoint to retrieve images
+      return data.url as string; // Public /upload-data/... path
     });
     return Promise.all(uploadPromises);
   };
