@@ -51,6 +51,8 @@ const RunDetailStravaPage = lazy(() => import('@/pages/athlete/RunDetailStrava')
 const SocialPage = lazy(() => import('@/pages/athlete/Social'));
 const SummaryPage = lazy(() => import('@/pages/athlete/Summary'));
 const TemplatesPage = lazy(() => import('@/pages/athlete/Templates'));
+const TrainersPage = lazy(() => import('@/pages/athlete/Trainers'));
+const TrainerDetailPage = lazy(() => import('@/pages/athlete/TrainerDetail'));
 const WorkoutPlansPage = lazy(() => import('@/pages/athlete/WorkoutPlans'));
 const WorkoutsPage = lazy(() => import('@/pages/athlete/Workouts'));
 const WorkoutCreatePage = lazy(() => import('@/pages/athlete/WorkoutCreate'));
@@ -128,6 +130,8 @@ export default function App() {
           <Route path="running/:sessionId" element={<RunDetailPage />} />
           <Route path="summary" element={<SummaryPage />} />
           <Route path="templates" element={<TemplatesPage />} />
+          <Route path="trainers" element={<TrainersPage />} />
+          <Route path="trainers/:id" element={<TrainerDetailPage />} />
           <Route path="workout-plans" element={<WorkoutPlansPage />} />
 
           <Route path="workouts" element={<WorkoutsPage />} />

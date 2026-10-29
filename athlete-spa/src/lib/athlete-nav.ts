@@ -22,6 +22,7 @@ import {
   TrendingUp,
   Trophy,
   UserCheck,
+  Users,
   UtensilsCrossed,
   Users2,
   type LucideIcon,
@@ -66,11 +67,19 @@ export const athleteNavItems: NavEntry[] = [
     color: 'hsl(var(--chart-1))',
     items: [
       { href: '/athlete/log', label: 'Trenuj teraz', icon: Play, description: 'Rozpocznij sesję treningową', keywords: ['start', 'sesja', 'siłownia'] },
-      { href: '/athlete/workout-plans', label: 'Mój program', icon: Layers, description: 'Program od trenera', keywords: ['plan', 'trener', 'etapy'] },
       { href: '/athlete/workouts', label: 'Szablony', icon: ClipboardList, description: 'Twoje zapisane treningi', keywords: ['treningi', 'workout', 'rutyna'] },
       { href: '/athlete/exercises', label: 'Ćwiczenia', icon: Dumbbell, description: 'Baza ćwiczeń z instrukcjami', keywords: ['atlas', 'technika', 'mięśnie'] },
       { href: '/athlete/running', label: 'Bieganie', icon: Footprints, description: 'Biegi z GPS i Stravy', keywords: ['bieg', 'strava', 'gps', 'trasa', 'wyzwania'] },
       { href: '/athlete/history', label: 'Historia', icon: History, description: 'Ukończone treningi', keywords: ['dziennik', 'log', 'poprzednie'] },
+    ],
+  },
+  {
+    label: 'Trener osobisty',
+    icon: UserCheck,
+    color: 'hsl(var(--volt))',
+    items: [
+      { href: '/athlete/trainers', label: 'Znajdź trenera', icon: Users, description: 'Dostępni trenerzy osobiści', keywords: ['trenerzy', 'coach', 'współpraca', 'personalny'] },
+      { href: '/athlete/workout-plans', label: 'Mój program', icon: Layers, description: 'Program od trenera', keywords: ['plan', 'trener', 'etapy'] },
     ],
   },
   {
@@ -204,6 +213,7 @@ export function isRootPath(pathname: string): boolean {
 /** Titles for screens that aren't nav destinations (details, editors, profile). */
 const EXTRA_TITLES: { match: RegExp; title: string }[] = [
   { match: /^\/athlete\/profile$/, title: 'Profil' },
+  { match: /^\/athlete\/trainers\/[^/]+$/, title: 'Trener' },
   { match: /^\/athlete\/templates$/, title: 'Szablony' },
   { match: /^\/athlete\/gamification$/, title: 'Osiągnięcia' },
   { match: /^\/athlete\/history\/[^/]+$/, title: 'Szczegóły treningu' },
