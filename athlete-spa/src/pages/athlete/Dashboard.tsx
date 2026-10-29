@@ -204,12 +204,6 @@ export default function AthleteDashboardPage() {
     { ownerId: user?.uid, date: { $gte: todayStart.toISOString(), $lte: todayEnd.toISOString() } }
   );
 
-  // This week's planned workouts
-  const { data: plannedWorkouts, isLoading: plannedLoading } = useCollection<PlannedWorkout>(
-    user ? 'plannedWorkouts' : null,
-    { ownerId: user?.uid, date: { $gte: weekStart.toISOString(), $lte: weekEnd.toISOString() } }
-  );
-
   // Assigned workout plans
   const { data: assignedPlans, isLoading: assignedPlansLoading } = useCollection<TrainingPlan>(
     user ? 'workoutPlans' : null,
@@ -228,29 +222,41 @@ export default function AthleteDashboardPage() {
     { ownerId: user?.uid, isActive: true }
   );
 
-  // Habit logs for this week
+  // Habit logs for this week — only the days the dashboard actually reads
+  const weekStartKey = useMemo(() => format(weekStart, 'yyyy-MM-dd'), [weekStart]);
   const { data: habitLogs } = useCollection<HabitLog>(
     user ? 'habitlogs' : null,
-    { ownerId: user?.uid }
+    { ownerId: user?.uid, date: { $gte: weekStartKey } }
   );
 
-  // Upcoming planned workouts (next 7 days)
-  const sevenDaysLater = useMemo(() => {
-    const date = new Date();
-    date.setDate(date.getDate() + 7);
-    return date;
-  }, []);
+  // Planned workouts: one request covering both the current week and the next
+  // 7 days; the two views below are derived from it instead of fetching twice.
+  const plannedRange = useMemo(() => {
+    const now = new Date();
+    const sevenDaysLater = new Date(now);
+    sevenDaysLater.setDate(now.getDate() + 7);
+    return {
+      now,
+      sevenDaysLater,
+      to: new Date(Math.max(weekEnd.getTime(), sevenDaysLater.getTime())).toISOString(),
+    };
+  }, [weekEnd]);
 
-  const todayIso = useMemo(() => new Date().toISOString(), []);
-
-  const { data: upcomingPlannedWorkouts } = useCollection<PlannedWorkout>(
+  const { data: allPlannedWorkouts, isLoading: plannedLoading } = useCollection<PlannedWorkout>(
     user ? 'plannedWorkouts' : null,
-    {
-      ownerId: user?.uid,
-      date: { $gte: todayIso, $lte: sevenDaysLater.toISOString() }
-    },
+    { ownerId: user?.uid, date: { $gte: weekStart.toISOString(), $lte: plannedRange.to } },
     { sort: { date: 1 } }
   );
+
+  const plannedWorkouts = useMemo(() => {
+    if (!allPlannedWorkouts) return allPlannedWorkouts;
+    return allPlannedWorkouts.filter(p => isWithinInterval(new Date(p.date), { start: weekStart, end: weekEnd }));
+  }, [allPlannedWorkouts, weekStart, weekEnd]);
+
+  const upcomingPlannedWorkouts = useMemo(() => {
+    if (!allPlannedWorkouts) return allPlannedWorkouts;
+    return allPlannedWorkouts.filter(p => isWithinInterval(new Date(p.date), { start: plannedRange.now, end: plannedRange.sevenDaysLater }));
+  }, [allPlannedWorkouts, plannedRange]);
 
   // Filter upcoming sessions (next 7 days, not cancelled)
   const upcomingTrainerSessions = useMemo(() => {

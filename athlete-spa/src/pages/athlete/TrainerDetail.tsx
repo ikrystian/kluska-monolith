@@ -31,7 +31,7 @@ const STEPS = [
   ['Trenuj i raportuj', 'Wykonuj treningi, a trener koryguje plan na bieżąco.'],
 ];
 
-const SHELL = 'mx-auto w-full max-w-3xl space-y-6 px-4 pb-28 pt-5 md:px-6 md:pt-8';
+const SHELL = 'mx-auto w-full max-w-3xl space-y-6 px-4 pb-4 pt-20 md:px-6 md:pt-8';
 
 export default function AthleteTrainerDetailPage() {
   const { id } = useParams<{ id: string }>();

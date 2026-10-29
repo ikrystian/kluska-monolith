@@ -97,7 +97,7 @@ export default function WorkoutDetailsPage() {
     const sets = totalSets(workout.exerciseSeries);
 
     return (
-        <div className="mx-auto w-full max-w-3xl space-y-6 px-4 pb-28 pt-5 md:px-6 md:pt-8">
+        <div className="mx-auto w-full max-w-3xl space-y-6 px-4 pb-4 pt-20 md:px-6 md:pt-8">
             {/* Hero */}
             <section className="relative overflow-hidden rounded-[1.75rem] bg-secondary shadow-soft">
                 <div className="relative h-64 md:h-80">
