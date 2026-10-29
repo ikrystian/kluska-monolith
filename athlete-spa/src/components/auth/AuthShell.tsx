@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { PageTransition } from '@/components/motion';
 import { cn } from '@/lib/utils';
 import gymPhoto from '@/assets/auth-gym.jpg';
+import logoMark from '@/assets/logo-mark.png';
 
 const FEATURES: { icon: LucideIcon; title: string; text: string }[] = [
   { icon: Dumbbell, title: 'Treningi', text: 'Plany, serie i progres w jednym miejscu' },
@@ -27,25 +28,23 @@ function GymBackdrop({ className }: { className?: string }) {
 
 function Brand({ light = false }: { light?: boolean }) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="grid place-items-center gap-3">
+      {/* Same dark tile as the launcher icon (assets/logo.png), so the mark
+          reads as the app's icon rather than a loose illustration. */}
       <span
         className={cn(
-          'texture-grain relative grid h-11 w-11 place-items-center rounded-2xl',
-          light ? 'bg-white/15 ring-1 ring-white/25 backdrop-blur' : 'hero-ember shadow-glow',
+          'grid h-36 w-36 shrink-0 place-items-center rounded-2xl bg-[#191814] p-1.5',
+          light ? 'ring-1 ring-white/20' : 'shadow-soft',
         )}
       >
-        <Dumbbell className="h-5 w-5 text-white" />
+        <img src={logoMark} alt="" className="h-full w-full object-contain" decoding="async" />
       </span>
-      <span
-        className={cn(
-          'font-display text-[11px] font-bold uppercase leading-[1.3] tracking-[0.28em]',
-          light ? 'text-white' : 'text-foreground',
-        )}
-      >
-        Leniwa
-        <br />
-        Kluska
-      </span>
+      <div>
+        <h2 className="font-display text-xl text-center font-extrabold uppercase leading-[1.02] tracking-tight text-white">
+          #leniwakluska
+          <span className="block text-gradient-ember">Wracaj częściej.</span>
+        </h2>
+      </div>
     </div>
   );
 }
@@ -100,12 +99,6 @@ export function AuthShell({ mode, title, accent, subtitle, hideTabs, children, f
         </div>
 
         <div className="relative max-w-lg">
-          <p className="font-display text-xs font-bold uppercase tracking-[0.3em] text-white/70">#leniwakluska</p>
-          <h2 className="mt-4 font-display text-5xl font-extrabold uppercase leading-[1.02] tracking-tight text-white xl:text-6xl">
-            Trenuj mądrze.
-            <br />
-            Wracaj częściej.
-          </h2>
 
           <ul className="mt-10 grid grid-cols-2 gap-3">
             {FEATURES.map(({ icon: Icon, title: featureTitle, text }) => (
@@ -128,11 +121,7 @@ export function AuthShell({ mode, title, accent, subtitle, hideTabs, children, f
           <GymBackdrop />
           <div className="relative mx-auto max-w-md">
             <Brand light />
-            <h1 className="mt-8 font-display text-[2.15rem] font-extrabold uppercase leading-[1.04] tracking-tight text-white">
-              {title}
-              <br />
-              <span className="text-gradient-ember">{accent}</span>
-            </h1>
+
           </div>
         </div>
 
