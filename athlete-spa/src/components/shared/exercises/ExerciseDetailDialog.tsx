@@ -99,12 +99,6 @@ function ExerciseMedia({ exercise }: { exercise: Exercise }) {
     );
 }
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
-    return (
-        <h3 className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{children}</h3>
-    );
-}
-
 function ExerciseDetailBody({ exercise }: { exercise: Exercise }) {
     const mainMuscles = getMainMuscleNames(exercise);
     const secondaryMuscles = exercise.secondaryMuscleGroups?.map((mg) => mg.name) ?? [];
@@ -114,60 +108,59 @@ function ExerciseDetailBody({ exercise }: { exercise: Exercise }) {
 
     return (
         <div className="space-y-6">
-            {/* Partie mięśniowe */}
-            {(mainMuscles.length > 0 || secondaryMuscles.length > 0) && (
-                <section>
-                    <SectionTitle>Partie mięśniowe</SectionTitle>
-                    <div className="space-y-2.5">
-                        {mainMuscles.length > 0 && (
-                            <div className="flex flex-wrap items-center gap-2">
-                                <span className="w-20 flex-shrink-0 text-xs text-muted-foreground">Główne</span>
-                                {mainMuscles.map((name) => (
-                                    <span
-                                        key={name}
-                                        className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground"
-                                    >
-                                        <Target className="h-3 w-3" />
-                                        {name}
-                                    </span>
-                                ))}
-                            </div>
-                        )}
-                        {secondaryMuscles.length > 0 && (
-                            <div className="flex flex-wrap items-center gap-2">
-                                <span className="w-20 flex-shrink-0 text-xs text-muted-foreground">Pomocnicze</span>
-                                {secondaryMuscles.map((name) => (
-                                    <span
-                                        key={name}
-                                        className="rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground"
-                                    >
-                                        {name}
-                                    </span>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </section>
-            )}
+            <div className="grid grid-cols-2 items-start gap-4">
+                {/* Partie mięśniowe */}
+                {(mainMuscles.length > 0 || secondaryMuscles.length > 0) && (
+                    <section>
+                        <div className="space-y-2.5">
+                            {mainMuscles.length > 0 && (
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="w-full text-xs text-muted-foreground">Główne</span>
+                                    {mainMuscles.map((name) => (
+                                        <span
+                                            key={name}
+                                            className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground"
+                                        >
+                                            <Target className="h-3 w-3" />
+                                            {name}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                            {secondaryMuscles.length > 0 && (
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="w-full text-xs text-muted-foreground">Pomocnicze</span>
+                                    {secondaryMuscles.map((name) => (
+                                        <span
+                                            key={name}
+                                            className="rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground"
+                                        >
+                                            {name}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </section>
+                )}
 
-            {/* Konfiguracja (pary group/value z bazy) */}
-            {setup.length > 0 && (
-                <section>
-                    <SectionTitle>Konfiguracja</SectionTitle>
-                    <dl className="divide-y divide-border/60 overflow-hidden rounded-2xl border bg-card">
-                        {setup.map((item, idx) => (
-                            <div key={idx} className="flex gap-3 px-4 py-2.5 text-sm">
-                                <dt className="w-28 flex-shrink-0 font-medium text-muted-foreground">{item.group}</dt>
-                                <dd className="min-w-0 flex-1 whitespace-pre-wrap">{item.value}</dd>
-                            </div>
-                        ))}
-                    </dl>
-                </section>
-            )}
+                {/* Konfiguracja (pary group/value z bazy) */}
+                {setup.length > 0 && (
+                    <section>
+                        <dl className="divide-y divide-border/60 overflow-hidden rounded-2xl border bg-card">
+                            {setup.map((item, idx) => (
+                                <div key={idx} className="flex flex-col gap-0.5 px-4 py-2.5 text-sm">
+                                    <dt className="font-medium text-muted-foreground">{item.group}</dt>
+                                    <dd className="min-w-0 whitespace-pre-wrap break-words">{item.value}</dd>
+                                </div>
+                            ))}
+                        </dl>
+                    </section>
+                )}
+            </div>
 
             {/* Instrukcje */}
             <section>
-                <SectionTitle>Instrukcje</SectionTitle>
                 {steps.length > 1 ? (
                     <ol className="space-y-3">
                         {steps.map((step, idx) => (
