@@ -73,7 +73,9 @@ export function ActiveWorkoutWidget() {
       className={cn(
         'fixed inset-x-4 z-40 mx-auto max-w-md animate-in slide-in-from-bottom-4 fade-in duration-300',
         // Clears the bottom bar on phones; on desktop there is no bottom bar.
-        'bottom-[calc(5.5rem+env(safe-area-inset-bottom))] md:inset-x-auto md:bottom-4 md:right-4 md:mx-0 md:w-80'
+        'bottom-[calc(5.5rem+env(safe-area-inset-bottom))] md:inset-x-auto md:bottom-4 md:right-4 md:mx-0 md:w-80',
+        // When the bottom bar tucks away on scroll, slide down into its spot (its bottom offset), in step with it.
+        'transition-transform ease-out max-md:group-data-[chrome=hidden]/chrome:translate-y-[calc(5.5rem_+_env(safe-area-inset-bottom)_-_max(0.75rem,env(safe-area-inset-bottom)))]'
       )}
     >
       <div className="overflow-hidden rounded-[1.5rem] border border-primary/25 bg-background/90 shadow-lifted backdrop-blur-2xl">

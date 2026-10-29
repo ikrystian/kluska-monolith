@@ -171,9 +171,10 @@ function AthleteLayoutContent() {
               <AnimatedOutlet className="h-full" />
             </div>
             <BottomNav />
+            {/* Inside <main> so it follows data-chrome and drops into the bottom nav's place when that hides. */}
+            <ActiveWorkoutWidget />
           </main>
         </div>
-        <ActiveWorkoutWidget />
       </ActiveWorkoutProvider>
     </SidebarProvider>
   );

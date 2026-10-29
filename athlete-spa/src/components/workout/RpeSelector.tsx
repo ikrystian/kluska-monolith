@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { Pencil } from 'lucide-react';
 import { haptic } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
 
@@ -27,7 +29,9 @@ function toneFor(rpe: number): string {
  * which is the difference between progressing and stalling.
  *
  * Presented as chips rather than a numeric field: it is answered right after a
- * set, with shaky hands, and the scale has nine valid values.
+ * set, with shaky hands, and the scale has nine valid values. Once answered it
+ * folds into a single chip, so a list of finished sets stays short; tapping
+ * that chip opens the scale again.
  */
 export function RpeSelector({
   value,
@@ -38,10 +42,14 @@ export function RpeSelector({
   onChange: (value: number | undefined) => void;
   className?: string;
 }) {
+  const [editing, setEditing] = useState(false);
+
   const select = (rpe: number) => {
     haptic('tap');
-    // Tapping the active chip clears it — the field is optional.
-    onChange(value === rpe ? undefined : rpe);
+    // Tapping the active chip clears it — the field is optional — and keeps the scale open.
+    const next = value === rpe ? undefined : rpe;
+    onChange(next);
+    setEditing(next === undefined);
   };
 
   return (
