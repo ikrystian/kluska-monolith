@@ -1,4 +1,5 @@
 import { MuscleGroupName } from '@/models/types/enums';
+import type { DownloadedMedia } from '@/lib/import-exercise-media';
 
 /**
  * Importer ćwiczeń z pliku openGym (opengym-exercises-pl.json) do modelu
@@ -139,6 +140,7 @@ function muscleGroupsFrom(keys: (string | null | undefined)[]): { name: string }
 }
 
 interface ParsedExercise {
+  id: string;
   name: string;
   category: string;
   category_pl: string;
@@ -162,6 +164,7 @@ export function parseOpenGymExercises(raw: unknown): ParsedExercise[] {
     const e = entry as OpenGymExercise;
     const mainKeys = [e.target_muscle, e.main_muscle_group];
     return {
+      id: String(e.id ?? ''),
       name: e.name_pl || e.name,
       category: e.category,
       category_pl: e.category_pl || e.category,
@@ -193,7 +196,10 @@ export interface BuiltExercise {
 }
 
 /** Mapuje pojedyncze ćwiczenie openGym na dokument zgodny z modelem Exercise. */
-export function buildExerciseDoc(ex: ParsedExercise): BuiltExercise {
+export function buildExerciseDoc(
+  ex: ParsedExercise,
+  media?: Partial<DownloadedMedia>
+): BuiltExercise {
   const mainGroups = muscleGroupsFrom(ex.mainMuscleKeys);
   const secondaryKeys = ex.secondaryMuscleKeys.filter(
     (k) => !ex.mainMuscleKeys.includes(k)
@@ -208,6 +214,16 @@ export function buildExerciseDoc(ex: ParsedExercise): BuiltExercise {
 
   const type = inferExerciseType(ex.category, ex.equipment);
 
+  // Lokalne pliki mają pierwszeństwo; oryginalne URL-e są tylko fallbackiem,
+  // gdyby pobranie się nie powiodło.
+  const localImage = media?.imageUrl;
+  const localAnimation = media?.animationUrl;
+  const mediaUrl = localImage || ex.image_url;
+
+  if (localAnimation) {
+    setup.push({ group: 'Animacja', value: localAnimation });
+  }
+
   return {
     name: ex.name,
     mainMuscleGroups: mainGroups,
@@ -216,9 +232,9 @@ export function buildExerciseDoc(ex: ParsedExercise): BuiltExercise {
     setup,
     instructions: ex.description,
     description: ex.description,
-    mediaUrl: ex.image_url,
+    mediaUrl,
     muscleGroup: mainGroups[0]?.name,
-    image: ex.image_url,
+    image: mediaUrl,
     imageHint: ex.name.toLowerCase(),
     ownerId: 'public',
     type,

@@ -6,8 +6,9 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { Exercise } from '@/models';
 import {
   parseOpenGymExercises,
-  buildExerciseDocs,
+  buildExerciseDoc,
 } from '@/lib/import-opengym-exercises';
+import { downloadAllExerciseMedia } from '@/lib/import-exercise-media';
 import type { BuiltExercise } from '@/lib/import-opengym-exercises';
 
 /**
@@ -15,6 +16,9 @@ import type { BuiltExercise } from '@/lib/import-opengym-exercises';
  *
  * Importuje wszystkie ćwiczenia z pliku opengym-exercises-pl.json
  * (biblioteka openGym) zachowując strukturę obecną w bazie (model Exercise).
+ *
+ * Obrazki i animacje są pobierane lokalnie do `upload-data/`, więc w bazie
+ * trzymane są ścieżki `/upload-data/...` zamiast linków do opengym.ch.
  *
  * Plik jest odczytywany bezpośrednio po stronie serwera. Domyślna lokalizacja:
  *  - `OPENGYM_EXERCISES_JSON_PATH` (jeśli ustawiona)
@@ -26,6 +30,7 @@ import type { BuiltExercise } from '@/lib/import-opengym-exercises';
  */
 
 const CHUNK_SIZE = 200;
+const DOWNLOAD_CONCURRENCY = 10;
 
 function normalizePath(p: string): string {
   return path.resolve(p);
@@ -85,30 +90,66 @@ export async function POST(request: NextRequest) {
 
     const rawText = await fs.readFile(filePath, 'utf8');
     const parsed = parseOpenGymExercises(JSON.parse(rawText));
-    const docs = buildExerciseDocs(parsed);
 
-    if (docs.length === 0) {
+    if (parsed.length === 0) {
       return NextResponse.json(
         { error: 'Plik nie zawiera ćwiczeń do zaimportowania.' },
         { status: 400 }
       );
     }
 
-    // Pomiń ćwiczenia, które już istnieją w bazie (idempotentność).
+    // Pomiń duplikaty wewnątrz pliku oraz ćwiczenia już obecne w bazie.
+    const seen = new Set<string>();
+    const candidates: {
+      ex: ReturnType<typeof parseOpenGymExercises>[number];
+      media: { id: string; imageUrl: string; animationUrl: string };
+    }[] = [];
+    for (const ex of parsed) {
+      if (!ex.name) continue;
+      const lower = ex.name.toLowerCase();
+      if (seen.has(lower)) continue;
+      seen.add(lower);
+      candidates.push({ ex, media: { id: ex.id, imageUrl: ex.image_url, animationUrl: ex.animation_url } });
+    }
+
+    const candidateDocs: BuiltExercise[] = candidates.map(c => buildExerciseDoc(c.ex));
+
     const existingNames = await Exercise.distinct('name', {
-      name: { $in: docs.map(d => d.name) },
+      name: { $in: candidateDocs.map(d => d.name) },
     });
     const existingSet = new Set(existingNames.map((n: unknown) => String(n).toLowerCase()));
-    const toInsert = docs.filter(d => !existingSet.has(d.name.toLowerCase()));
 
-    const inserted = toInsert.length > 0 ? await insertInChunks(toInsert) : 0;
-    const skipped = docs.length - inserted;
+    const candidatesToInsert = candidates.filter(
+      (c, i) => !existingSet.has(candidateDocs[i].name.toLowerCase())
+    );
+
+    // Pobierz obrazki i animacje lokalnie (tylko dla ćwiczeń, które wejdą do bazy).
+    const mediaMap = await downloadAllExerciseMedia(
+      candidatesToInsert.map(c => c.media),
+      DOWNLOAD_CONCURRENCY
+    );
+
+    const docsToInsert: BuiltExercise[] = candidatesToInsert.map(c =>
+      buildExerciseDoc(c.ex, mediaMap.get(c.media.id))
+    );
+
+    let externalFallbacks = 0;
+    for (const d of docsToInsert) {
+      if (d.mediaUrl.startsWith('http')) externalFallbacks++;
+      const anim = d.setup.find(s => s.group === 'Animacja' && s.value.startsWith('http'));
+      if (anim) externalFallbacks++;
+    }
+
+    const inserted = docsToInsert.length > 0 ? await insertInChunks(docsToInsert) : 0;
+    const skipped = candidateDocs.length - inserted;
 
     return NextResponse.json({
       success: true,
-      total: docs.length,
+      total: candidateDocs.length,
       inserted,
       skipped,
+      mediaDownloaded: docsToInsert.length - externalFallbacks,
+      mediaExternalFallbacks: externalFallbacks,
       file: filePath,
     });
   } catch (error) {

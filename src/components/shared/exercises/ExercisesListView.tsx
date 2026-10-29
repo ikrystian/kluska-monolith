@@ -234,7 +234,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
 
       toast({
         title: "Sukces!",
-        description: `Zaimportowano ${result.inserted} ćwiczeń. Pominięto ${result.skipped} istniejących (duplikatów).`,
+        description: `Zaimportowano ${result.inserted} ćwiczeń. Pominięto ${result.skipped} istniejących (duplikatów). Media pobrano i zapisano lokalnie.`,
       });
       setImportDialogOpen(false);
       refetchExercises();
@@ -476,7 +476,8 @@ export function ExercisesListView(props: ExercisesListViewProps) {
             <AlertDialogTitle>Importuj ćwiczenia z biblioteki openGym?</AlertDialogTitle>
             <AlertDialogDescription>
               Importuje wszystkie ćwiczenia z pliku <b>opengym-exercises-pl.json</b>
-              do bazy danych, zachowując obecną strukturę ćwiczeń.
+              do bazy danych, zachowując obecną strukturę ćwiczeń. Obrazki i animacje
+              zostaną pobrane na serwer i zapisane lokalnie (zamiast linków do opengym.ch).
               Ćwiczenia, które już istnieją (po nazwie), zostaną pominięte.
               Import może potrwać kilka chwil.
             </AlertDialogDescription>
