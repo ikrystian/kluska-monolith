@@ -34,6 +34,18 @@ export interface IUser extends Document {
   // device, looked up by the device identifier instead of credentials.
   isGuest?: boolean;
   guestDeviceId?: string;
+  // Only accounts created through public registration carry `false` here;
+  // documents without the field (legacy, seeded, guests) are not gated.
+  emailVerified?: boolean;
+  emailVerifiedAt?: Date;
+  emailVerificationTokenHash?: string;
+  emailVerificationExpires?: Date;
+  emailVerificationSentAt?: Date;
+  passwordResetTokenHash?: string;
+  passwordResetExpires?: Date;
+  passwordResetSentAt?: Date;
+  termsAcceptedAt?: Date;
+  termsVersion?: string;
   avatarUrl?: string;
   location?: string;
   socialLinks?: {
@@ -70,6 +82,18 @@ const UserSchema = new Schema<IUser>(
     role: { type: String, enum: ['athlete', 'trainer', 'admin'], required: true },
     isGuest: { type: Boolean, default: false },
     guestDeviceId: { type: String, unique: true, sparse: true },
+    // No defaults on purpose: Mongoose would apply them to existing documents
+    // on read and lock every legacy account out.
+    emailVerified: { type: Boolean },
+    emailVerifiedAt: { type: Date },
+    emailVerificationTokenHash: { type: String, index: { sparse: true } },
+    emailVerificationExpires: { type: Date },
+    emailVerificationSentAt: { type: Date },
+    passwordResetTokenHash: { type: String, index: { sparse: true } },
+    passwordResetExpires: { type: Date },
+    passwordResetSentAt: { type: Date },
+    termsAcceptedAt: { type: Date },
+    termsVersion: { type: String },
     avatarUrl: { type: String },
     location: { type: String },
     socialLinks: {
@@ -137,6 +161,10 @@ const UserSchema = new Schema<IUser>(
         delete ret.password;
         delete ret.stravaAccessToken;
         delete ret.stravaRefreshToken;
+        delete ret.emailVerificationTokenHash;
+        delete ret.emailVerificationExpires;
+        delete ret.passwordResetTokenHash;
+        delete ret.passwordResetExpires;
         return ret;
       },
     },

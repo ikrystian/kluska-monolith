@@ -5,6 +5,8 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { User } from '@/models/User';
 import { env } from '@/lib/env';
 
+export const EMAIL_NOT_VERIFIED = 'EMAIL_NOT_VERIFIED';
+
 export interface VerifiedCredentialsUser {
   id: string;
   email: string;
@@ -31,6 +33,11 @@ export async function verifyCredentials(email: string, password: string): Promis
 
   if (!isPasswordValid) {
     throw new Error('Invalid password');
+  }
+
+  // Checked only after the password so it doesn't reveal unverified accounts.
+  if (user.emailVerified === false) {
+    throw new Error(EMAIL_NOT_VERIFIED);
   }
 
   return {

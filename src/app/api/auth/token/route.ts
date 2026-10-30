@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyCredentials } from '@/lib/auth';
+import { EMAIL_NOT_VERIFIED, verifyCredentials } from '@/lib/auth';
 import { signAthleteToken } from '@/lib/jwt';
 
 /**
@@ -24,6 +24,15 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ token, user });
   } catch (error) {
+    if (error instanceof Error && error.message === EMAIL_NOT_VERIFIED) {
+      return NextResponse.json(
+        {
+          error: 'Konto nie zostało jeszcze aktywowane. Kliknij link aktywacyjny wysłany na Twój adres e-mail.',
+          code: EMAIL_NOT_VERIFIED,
+        },
+        { status: 403 }
+      );
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Invalid credentials' },
       { status: 401 }

@@ -1,0 +1,18 @@
+services:
+  mailpit:
+    image: axllent/mailpit:v1.27
+    container_name: kluska-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI: http://localhost:8025
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+      MP_MAX_MESSAGES: 5000
+    volumes:
+      - mailpit-data:/data
+    command: ["--database", "/data/mailpit.db"]
+
+volumes:
+  mailpit-data:

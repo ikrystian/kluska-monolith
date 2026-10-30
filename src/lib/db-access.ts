@@ -146,6 +146,16 @@ const USER_PROTECTED_FIELDS = [
   'stravaRefreshToken',
   'stravaTokenExpiresAt',
   'stravaAthleteId',
+  'emailVerified',
+  'emailVerifiedAt',
+  'emailVerificationTokenHash',
+  'emailVerificationExpires',
+  'emailVerificationSentAt',
+  'passwordResetTokenHash',
+  'passwordResetExpires',
+  'passwordResetSentAt',
+  'termsAcceptedAt',
+  'termsVersion',
 ];
 
 const policies: Record<string, CollectionPolicy> = {

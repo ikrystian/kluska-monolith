@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { User } from '@/models/User';
+import { EMAIL_RE, MIN_PASSWORD_LENGTH, TERMS_VERSION, issueEmailVerification } from '@/lib/account';
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password, role, guestDeviceId } = await request.json();
-
-
+    const { name, email, password, role, guestDeviceId, acceptTerms } = await request.json();
 
     if (!name || !email || !password || !role) {
       return NextResponse.json(
@@ -15,72 +14,68 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (password.length < 6) {
+    if (acceptTerms !== true) {
       return NextResponse.json(
-        { error: 'Hasło musi mieć co najmniej 6 znaków.' },
+        { error: 'Musisz zaakceptować regulamin, aby założyć konto.' },
+        { status: 400 }
+      );
+    }
+
+    const normalizedEmail = String(email).toLowerCase().trim();
+    if (!EMAIL_RE.test(normalizedEmail)) {
+      return NextResponse.json(
+        { error: 'Podaj poprawny adres e-mail.' },
+        { status: 400 }
+      );
+    }
+
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      return NextResponse.json(
+        { error: `Hasło musi mieć co najmniej ${MIN_PASSWORD_LENGTH} znaków.` },
         { status: 400 }
       );
     }
 
     await connectToDatabase();
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) {
+    // A guest (per-device) account registering keeps its user document — and
+    // with it all data created on that device — instead of starting over.
+    const guestUser = guestDeviceId && role === 'athlete'
+      ? await User.findOne({ guestDeviceId, isGuest: true })
+      : null;
+
+    const existingUser = await User.findOne({ email: normalizedEmail });
+    // The guest re-submitting its own pending e-mail (e.g. after a typo in the
+    // password) is not a conflict.
+    if (existingUser && existingUser._id.toString() !== guestUser?._id.toString()) {
       return NextResponse.json(
         { error: 'Użytkownik z tym adresem e-mail już istnieje.' },
         { status: 400 }
       );
     }
 
-    // A guest (per-device) account registering keeps its user document — and
-    // with it all data created on that device — instead of starting over.
-    if (guestDeviceId && role === 'athlete') {
-      const guestUser = await User.findOne({ guestDeviceId, isGuest: true });
-      if (guestUser) {
-        guestUser.name = name.trim();
-        guestUser.email = email.toLowerCase().trim();
-        guestUser.password = password; // Will be hashed by pre-save middleware
-        guestUser.isGuest = false;
-        // Free the device id so the device can start a fresh guest account later.
-        guestUser.guestDeviceId = undefined;
-        await guestUser.save();
+    const user = guestUser ?? new User({ role });
+    user.name = name.trim();
+    user.email = normalizedEmail;
+    user.password = password; // Will be hashed by pre-save middleware
+    user.termsAcceptedAt = new Date();
+    user.termsVersion = TERMS_VERSION;
 
-        return NextResponse.json(
-          {
-            message: 'Konto zostało utworzone, a dotychczasowe dane zachowane.',
-            user: {
-              id: guestUser._id.toString(),
-              name: guestUser.name,
-              email: guestUser.email,
-              role: guestUser.role,
-            }
-          },
-          { status: 201 }
-        );
-      }
-    }
-
-    // Create user (password hashing is handled in the User model pre-save middleware)
-    const user = new User({
-      name: name.trim(),
-      email: email.toLowerCase().trim(),
-      password, // Will be hashed by pre-save middleware
-      role,
-    });
-
-    await user.save();
-
+    const emailSent = await issueEmailVerification(user);
 
     return NextResponse.json(
       {
-        message: 'Użytkownik został utworzony pomyślnie.',
+        message: emailSent
+          ? 'Konto zostało utworzone. Sprawdź skrzynkę e-mail i kliknij link aktywacyjny.'
+          : 'Konto zostało utworzone, ale nie udało się wysłać e-maila aktywacyjnego. Spróbuj wysłać go ponownie.',
+        requiresVerification: true,
+        emailSent,
         user: {
           id: user._id.toString(),
           name: user.name,
           email: user.email,
           role: user.role,
-        }
+        },
       },
       { status: 201 }
     );
