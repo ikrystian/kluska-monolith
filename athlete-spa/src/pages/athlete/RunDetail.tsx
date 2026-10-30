@@ -1,16 +1,19 @@
 'use client';
 
-import { lazy, Suspense, useMemo } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { ArrowLeft, Footprints, Calendar, Clock, Route, TrendingUp, Mountain } from 'lucide-react';
+import { ArrowLeft, Footprints, Calendar, Clock, Route, TrendingUp, Mountain, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useDoc } from '@/lib/db-hooks';
+import { apiFetch } from '@/lib/api-client';
 import { computeElevationGain, computeRunSplits } from '@/lib/geo';
 import { buildKmSegments, cumulativeDistances, samplesFromPoints, type LatLngTuple, type PaceSample } from '@/lib/run-pace';
 import { useThresholdPace } from '@/hooks/useThresholdPace';
@@ -52,11 +55,39 @@ export default function RunDetailPage() {
 
   const { data: session, isLoading } = useDoc<RunningSession>('runningSessions', sessionId ?? null);
 
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+
   const splits = useMemo(() => (session?.points ? computeRunSplits(session.points) : []), [session?.points]);
   const elevationGain = useMemo(
     () => (session?.points ? computeElevationGain(session.points) : 0),
     [session?.points]
   );
+
+  // Fetched once per run; reopening the dialog reuses the saved summary
+  const handleOpenSummary = async () => {
+    setIsSummaryOpen(true);
+    if (summary || isSummaryLoading) return;
+
+    setIsSummaryLoading(true);
+    setSummaryError(null);
+    try {
+      const response = await apiFetch(`/api/athlete/running/${sessionId}/summary`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ elevationGainM: elevationGain, splits }),
+      });
+      if (!response.ok) throw new Error(`Status ${response.status}`);
+      const data = await response.json();
+      setSummary(data.summary);
+    } catch {
+      setSummaryError('Trener chwilowo nie odpowiada. Spróbuj ponownie za chwilę.');
+    } finally {
+      setIsSummaryLoading(false);
+    }
+  };
 
   // Route cut into kilometres, each coloured by its split pace
   const kmSegments = useMemo(() => {
@@ -134,6 +165,9 @@ export default function RunDetailPage() {
                 <Calendar className="inline h-4 w-4 mr-1" />
                 {format(new Date(session.date), 'EEEE, d MMMM yyyy, HH:mm', { locale: pl })}
               </span>
+              <Button variant="outline" size="sm" className="ml-auto" onClick={handleOpenSummary}>
+                <Sparkles className="mr-2 h-4 w-4" /> Zobacz podsumowanie
+              </Button>
             </div>
 
             {session.notes && <p className="text-sm text-muted-foreground">{session.notes}</p>}
@@ -227,6 +261,32 @@ export default function RunDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={isSummaryOpen} onOpenChange={setIsSummaryOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Podsumowanie biegu</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-start gap-4">
+            <Avatar className="h-16 w-16 shrink-0 ring-4 ring-primary/20">
+              <AvatarFallback className="bg-primary/10 text-3xl">🏋️</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 rounded-2xl rounded-tl-none bg-muted p-4 text-sm leading-relaxed">
+              {isSummaryLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-5/6" />
+                  <Skeleton className="h-4 w-2/3" />
+                </div>
+              ) : summaryError ? (
+                <p className="text-destructive">{summaryError}</p>
+              ) : (
+                <p>{summary}</p>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
