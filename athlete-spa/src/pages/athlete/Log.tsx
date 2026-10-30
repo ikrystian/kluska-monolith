@@ -411,7 +411,7 @@ function ExerciseRail({ statuses, activeIndex, onSelect }: {
 // --- ACTIVE WORKOUT VIEW ---
 type ViewMode = 'list' | 'carousel';
 
-function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLoadingExercises, initialLogId, sourceWorkoutId }: { initialWorkout: LogFormValues; allExercises: Exercise[] | null; onFinishWorkout: () => void; isLoadingExercises: boolean; initialLogId?: string | null; sourceWorkoutId?: string | null }) {
+function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLoadingExercises, initialLogId, sourceWorkoutId, pendingExerciseId }: { initialWorkout: LogFormValues; allExercises: Exercise[] | null; onFinishWorkout: () => void; isLoadingExercises: boolean; initialLogId?: string | null; sourceWorkoutId?: string | null; pendingExerciseId?: string | null }) {
   const [startTime] = useState(initialWorkout.startTime ? new Date(initialWorkout.startTime) : new Date());
   const [workoutLogId, setWorkoutLogId] = useState<string | null>(initialLogId || null);
   const isCreatingWorkoutRef = useRef(false);
@@ -695,6 +695,19 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
       }
     }
   }, [workoutLogId, searchParams, setSearchParams]);
+
+  // Ćwiczenie z kodu QR, gdy trening już trwa: dodaj je raz i zdejmij parametr z adresu.
+  const pendingExerciseHandledRef = useRef(false);
+  useEffect(() => {
+    if (!pendingExerciseId || pendingExerciseHandledRef.current) return;
+    pendingExerciseHandledRef.current = true;
+    handleAddExercise(pendingExerciseId);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.delete('addExercise');
+      return next;
+    }, { replace: true });
+  }, [pendingExerciseId, setSearchParams]);
 
   // Auto-save effect
   useEffect(() => {
@@ -2102,9 +2115,11 @@ export default function LogWorkoutPage() {
     user?.uid ? { athleteId: user.uid, status: 'in-progress' } : undefined
   );
 
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const workoutId = searchParams.get('workoutId');
   const logId = searchParams.get('logId');
+  // Ćwiczenie przyjęte z kodu QR na maszynie (/athlete/exercise/:id → /athlete/log?addExercise=)
+  const pendingExerciseId = searchParams.get('addExercise');
   const { data: preselectedWorkout, isLoading: isLoadingPreselected } = useDoc<Workout>('workouts', workoutId);
   const { toast } = useToast();
 
@@ -2198,6 +2213,34 @@ export default function LogWorkoutPage() {
     }
   }, [workoutId, preselectedWorkout, builderData, view, activeWorkouts, allExercises]);
 
+  // Brak trwającego treningu: przygotuj nowy trening z ćwiczeniem z kodu QR.
+  useEffect(() => {
+    if (isLoadingActive || (activeWorkouts && activeWorkouts.length > 0)) return;
+    if (!pendingExerciseId || workoutId || builderData || view !== 'selection') return;
+
+    handleStartBuilder({
+      workoutName: 'Nowy trening',
+      exerciseSeries: [{
+        exerciseId: pendingExerciseId,
+        sets: [1, 2, 3].map(number => ({
+          number,
+          type: SetType.WorkingSet,
+          reps: 0,
+          weight: 0,
+          restTimeSeconds: 60,
+          completed: false
+        })),
+        tempo: "2-0-2-0"
+      }],
+      level: TrainingLevel.Intermediate
+    });
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.delete('addExercise');
+      return next;
+    }, { replace: true });
+  }, [pendingExerciseId, isLoadingActive, activeWorkouts, workoutId, builderData, view, setSearchParams]);
+
   const handleStartBuilder = (data: LogFormValues) => {
     setBuilderData(data);
     setView('builder');
@@ -2229,6 +2272,7 @@ export default function LogWorkoutPage() {
             isLoadingExercises={exercisesLoading}
             initialLogId={activeLogId}
             sourceWorkoutId={workoutId} // Pass the workout template ID
+            pendingExerciseId={pendingExerciseId}
           />
         </div>
       </div>

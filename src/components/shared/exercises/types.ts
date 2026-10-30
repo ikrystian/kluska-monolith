@@ -32,6 +32,9 @@ export interface ExercisesListViewProps {
   /** Show the sort selector (name / recently edited) - admin feature (default: false) */
   showSort?: boolean;
 
+  /** Show the QR code for the public exercise page in the details - admin feature (default: false) */
+  showQr?: boolean;
+
   /** Custom title */
   title?: string;
 
@@ -121,6 +124,7 @@ export const roleDefaults: Record<ExercisesRole, Partial<ExercisesListViewProps>
     showBulkDelete: true,
     showImport: true,
     showSort: true,
+    showQr: true,
     title: 'Wszystkie Ćwiczenia',
     emptyMessage: 'Brak ćwiczeń spełniających kryteria.',
   },

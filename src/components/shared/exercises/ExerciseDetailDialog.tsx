@@ -13,17 +13,20 @@ import { Badge } from '@/components/ui/badge';
 import { Dumbbell, Repeat, Timer } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getAnimationUrl } from './setup';
+import { ExerciseQrCode } from './ExerciseQrCode';
 
 interface ExerciseDetailDialogProps {
     exercise: Exercise | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    showQr?: boolean;
 }
 
 export function ExerciseDetailDialog({
     exercise,
     open,
     onOpenChange,
+    showQr = false,
 }: ExerciseDetailDialogProps) {
     if (!exercise) return null;
 
@@ -148,6 +151,14 @@ export function ExerciseDetailDialog({
                                 {exercise.instructions || exercise.description || 'Brak instrukcji dla tego ćwiczenia.'}
                             </div>
                         </div>
+
+                        {showQr && (
+                            <ExerciseQrCode
+                                exerciseId={exercise.id}
+                                exerciseName={exercise.name}
+                                isPublic={exercise.ownerId === 'public'}
+                            />
+                        )}
                     </div>
                 </ScrollArea>
             </DialogContent>

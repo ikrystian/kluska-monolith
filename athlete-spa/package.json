@@ -60,6 +60,7 @@
     "date-fns": "^4.4.0",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^14.7.1",
+    "halloween.js": "^1.0.3",
     "html5-qrcode": "^2.3.8",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.64.0",

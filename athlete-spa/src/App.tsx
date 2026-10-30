@@ -9,7 +9,7 @@ import { Toaster } from 'react-hot-toast';
 import { FullScreenFallback } from '@/components/route-fallback';
 import { NativePushBridge } from '@/components/native-push-bridge';
 import { NativeRunBridge } from '@/components/native-run-bridge';
-import { NativeWidgetLinks } from '@/components/native-widget-bridge';
+import { NativeDeepLinks } from '@/components/native-widget-bridge';
 
 import LoginPage from '@/pages/Login';
 import RegisterPage from '@/pages/Register';
@@ -31,6 +31,7 @@ const CalendarPage = lazy(() => import('@/pages/athlete/Calendar'));
 const ChatPage = lazy(() => import('@/pages/athlete/Chat'));
 const CheckInPage = lazy(() => import('@/pages/athlete/CheckIn'));
 const ExercisesPage = lazy(() => import('@/pages/athlete/Exercises'));
+const ExerciseQuickViewPage = lazy(() => import('@/pages/athlete/ExerciseQuickView'));
 const GamificationPage = lazy(() => import('@/pages/athlete/Gamification'));
 const GoalsPage = lazy(() => import('@/pages/athlete/Goals'));
 const HabitsPage = lazy(() => import('@/pages/athlete/Habits'));
@@ -94,7 +95,7 @@ export default function App() {
     <AuthProvider>
       <NativePushBridge />
       <NativeRunBridge />
-      <NativeWidgetLinks />
+      <NativeDeepLinks />
       {/* Safety net for routes rendered outside AthleteLayout (onboarding,
           and anything not covered by the in-layout Suspense boundary). */}
       <Suspense fallback={<FullScreenFallback />}>
@@ -121,6 +122,7 @@ export default function App() {
 
           <Route path="diet" element={<DietPage />} />
           <Route path="exercises" element={<ExercisesPage />} />
+          <Route path="exercise/:exerciseId" element={<ExerciseQuickViewPage />} />
           <Route path="gamification" element={<GamificationPage />} />
           <Route path="goals" element={<GoalsPage />} />
           <Route path="habits" element={<HabitsPage />} />

@@ -43,6 +43,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const showBulkDelete = props.showBulkDelete ?? defaults.showBulkDelete ?? false;
   const showImport = props.showImport ?? defaults.showImport ?? false;
   const showSort = props.showSort ?? defaults.showSort ?? false;
+  const showQr = props.showQr ?? defaults.showQr ?? false;
   const title = props.title ?? defaults.title ?? 'Biblioteka Ćwiczeń';
   const emptyMessage = props.emptyMessage ?? defaults.emptyMessage ?? 'Nie znaleziono żadnych ćwiczeń.';
 
@@ -479,6 +480,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
         exercise={selectedExercise}
         open={isDetailDialogOpen}
         onOpenChange={setDetailDialogOpen}
+        showQr={showQr}
       />
 
       {/* Delete Confirmation Dialog */}

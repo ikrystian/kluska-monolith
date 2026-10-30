@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { App } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import useSWR from 'swr';
 import { addDays, format, isSameDay, startOfDay, subDays } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -36,16 +37,17 @@ function widgetPathFromUrl(url: string): string | null {
 }
 
 /**
- * Opens the screen the widget's buttons point at (the workout, its finish
- * step, the run recorder). Mounted at the app root rather than in the athlete
- * layout so it also works while the athlete sits on a full-screen page such as
- * the run recorder, which renders without the layout.
+ * Opens the screen a `leniwakluska.com://app/...` link points at: the widget's
+ * buttons (the workout, its finish step, the run recorder) and the exercise
+ * links from QR codes on the gym machines. Mounted at the app root rather than
+ * in the athlete layout so it also works while the athlete sits on a
+ * full-screen page such as the run recorder, which renders without the layout.
  */
-export function NativeWidgetLinks() {
+export function NativeDeepLinks() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isLiveWidgetSupported()) return;
+    if (!Capacitor.isNativePlatform()) return;
 
     let cancelled = false;
     const open = (url: string) => {

@@ -1,0 +1,65 @@
+@import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&display=swap');
+
+/* Tokeny "Volt Ember" z athlete-spa (dark-first). Zakres tylko do strony publicznej,
+   dzięki temu komponenty shadcn (bg-card, bg-primary, ...) przyjmują ich wartości. */
+.ember-public {
+  --background: 24 20% 4%;
+  --foreground: 36 40% 96%;
+  --card: 26 15% 8%;
+  --card-foreground: 36 40% 96%;
+  --primary: 18 100% 58%;
+  --primary-foreground: 24 20% 4%;
+  --secondary: 26 12% 13%;
+  --secondary-foreground: 36 40% 96%;
+  --muted: 26 12% 13%;
+  --muted-foreground: 30 10% 64%;
+  --border: 28 14% 15%;
+  --input: 28 14% 15%;
+  --ring: 18 100% 58%;
+  --volt: 74 92% 56%;
+  --volt-foreground: 24 20% 4%;
+  --radius: 1.125rem;
+
+  position: relative;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.ember-public .aurora {
+  position: absolute;
+  inset: -20% -10% auto;
+  height: 420px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 20% 20%, hsl(var(--primary) / 0.35), transparent 55%),
+    radial-gradient(circle at 80% 10%, hsl(var(--volt) / 0.18), transparent 50%);
+  filter: blur(40px);
+}
+
+.ember-public .title-display {
+  font-family: 'Unbounded', var(--font-headline, sans-serif);
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.ember-public .hero-ember {
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.95), hsl(12 90% 38%));
+  color: hsl(var(--primary-foreground));
+}
+
+.ember-public .volt-text {
+  color: hsl(var(--volt));
+}
+
+.ember-public .volt-chip {
+  background: hsl(var(--volt));
+  color: hsl(var(--volt-foreground));
+}
+
+.ember-public .glass {
+  background: hsl(var(--card) / 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid hsl(var(--border) / 0.7);
+}

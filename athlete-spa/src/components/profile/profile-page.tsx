@@ -174,7 +174,7 @@ export function ProfilePage() {
   const avatarSrc = userProfile?.avatarUrl ? resolveMediaUrl(userProfile.avatarUrl) : fallbackAvatar?.imageUrl;
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 pb-28 pt-5 md:px-8 md:pt-8">
+    <div className="mx-auto w-full max-w-5xl px-4 pb-4 pt-20 md:px-8 md:pt-8">
       {user?.isGuest && (
         <div className="mb-5 flex flex-col gap-3 rounded-[1.5rem] border border-amber-500/30 bg-amber-500/10 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">

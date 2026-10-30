@@ -71,6 +71,7 @@
     "npm-check-updates": "^19.3.1",
     "patch-package": "^8.0.1",
     "polyline-encoded": "^0.0.9",
+    "qrcode.react": "^4.2.0",
     "react": "^19.2.3",
     "react-day-picker": "^9.13.0",
     "react-dom": "^19.2.3",

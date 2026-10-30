@@ -41,8 +41,8 @@ function Brand({ light = false }: { light?: boolean }) {
       </span>
       <div>
         <h2 className="font-display text-xl text-center font-extrabold uppercase leading-[1.02] tracking-tight text-white">
-          #leniwakluska
-          <span className="block text-gradient-ember">Wracaj częściej.</span>
+          <span className="block text-gradient-ember text-2xl">#leniwakluska</span>
+          <span >Wracaj częściej.</span>
         </h2>
       </div>
     </div>
@@ -111,7 +111,6 @@ export function AuthShell({ mode, title, accent, subtitle, hideTabs, children, f
           </ul>
         </div>
 
-        <p className="relative text-xs text-white/60">Lightweight, baby! 🏋️</p>
       </aside>
 
       {/* Form column */}
@@ -171,7 +170,7 @@ export const AuthField = forwardRef<HTMLInputElement, AuthFieldProps>(
 
     return (
       <div className="grid gap-2">
-        <Label htmlFor={inputId} className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        <Label htmlFor={inputId} className="hidden text-xs font-bold uppercase tracking-wider text-muted-foreground">
           {label}
         </Label>
         <div className="group relative">
