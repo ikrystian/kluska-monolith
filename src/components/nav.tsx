@@ -29,6 +29,8 @@ import {
   Gauge,
   ClipboardCheck,
   Bell,
+  IdCard,
+  Inbox,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -111,6 +113,8 @@ const trainerNavItems = [
   { href: '/trainer/schedule', icon: CalendarDays, label: 'Harmonogram' },
   { href: '/trainer/chat', icon: MessageSquare, label: 'Czat' },
   { href: '/trainer/social', icon: Users2, label: 'Social' },
+  { href: '/trainer/inquiries', icon: Inbox, label: 'Zapytania' },
+  { href: '/trainer/business-card', icon: IdCard, label: 'Wizytówka' },
   {
     label: 'Trening',
     icon: Dumbbell,
@@ -171,6 +175,13 @@ export function AppNav() {
   // For now, conversations are not implemented in MongoDB
   // This will need to be updated when conversations are migrated
   const totalUnreadCount = 0;
+
+  // Unanswered collaboration inquiries from athletes (trainers only).
+  const { data: pendingInquiries } = useCollection<{ id: string }>(
+    userProfile?.role === 'trainer' && user ? 'trainerRequests' : null,
+    { trainerId: user?.uid, status: 'pending' }
+  );
+  const pendingInquiryCount = pendingInquiries?.length ?? 0;
 
   const handleLogout = async () => {
     await signOut();
@@ -334,6 +345,11 @@ export function AppNav() {
                     {item.href.endsWith('/chat') && totalUnreadCount > 0 && (
                       <Badge className="absolute right-2 top-1/2 -translate-y-1/2 h-5 min-w-[1.25rem] justify-center px-1.5 group-data-[state=collapsed]:right-auto group-data-[state=collapsed]:left-1/2 group-data-[state=collapsed]:-top-1">
                         {totalUnreadCount}
+                      </Badge>
+                    )}
+                    {item.href === '/trainer/inquiries' && pendingInquiryCount > 0 && (
+                      <Badge className="absolute right-2 top-1/2 -translate-y-1/2 h-5 min-w-[1.25rem] justify-center px-1.5 group-data-[state=collapsed]:right-auto group-data-[state=collapsed]:left-1/2 group-data-[state=collapsed]:-top-1">
+                        {pendingInquiryCount}
                       </Badge>
                     )}
                   </Link>

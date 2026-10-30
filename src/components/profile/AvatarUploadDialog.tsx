@@ -21,6 +21,12 @@ interface AvatarUploadDialogProps {
     onOpenChange: (open: boolean) => void;
     onUploadComplete: (url: string) => void;
     currentAvatarUrl?: string;
+    /** Proporcje przycięcia (domyślnie 1 — kwadrat). */
+    aspect?: number;
+    /** Okrągłe przycięcie; domyślnie włączone tylko dla kwadratu (avatar). */
+    circular?: boolean;
+    title?: string;
+    submitLabel?: string;
 }
 
 function centerAspectCrop(
@@ -48,6 +54,10 @@ export function AvatarUploadDialog({
     onOpenChange,
     onUploadComplete,
     currentAvatarUrl,
+    aspect = 1,
+    circular = aspect === 1,
+    title = 'Zmień zdjęcie profilowe',
+    submitLabel = 'Zapisz avatar',
 }: AvatarUploadDialogProps) {
     const { toast } = useToast();
     const [imgSrc, setImgSrc] = useState('');
@@ -78,8 +88,8 @@ export function AvatarUploadDialog({
 
     const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
         const { width, height } = e.currentTarget;
-        setCrop(centerAspectCrop(width, height, 1));
-    }, []);
+        setCrop(centerAspectCrop(width, height, aspect));
+    }, [aspect]);
 
     const getCroppedImg = useCallback(async (): Promise<File | null> => {
         if (!imgRef.current || !completedCrop) return null;
@@ -125,7 +135,7 @@ export function AvatarUploadDialog({
                         resolve(null);
                         return;
                     }
-                    const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+                    const file = new File([blob], 'upload.jpg', { type: 'image/jpeg' });
                     resolve(file);
                 },
                 'image/jpeg',
@@ -154,7 +164,7 @@ export function AvatarUploadDialog({
             handleClose();
             toast({
                 title: 'Sukces!',
-                description: 'Twój avatar został zaktualizowany.',
+                description: 'Zdjęcie zostało zapisane.',
             });
         } catch (error) {
             toast({
@@ -174,7 +184,7 @@ export function AvatarUploadDialog({
         <Dialog open={open} onOpenChange={handleClose}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle className="font-headline">Zmień zdjęcie profilowe</DialogTitle>
+                    <DialogTitle className="font-headline">{title}</DialogTitle>
                     <DialogDescription>
                         Wybierz i przytnij zdjęcie do odpowiedniego rozmiaru.
                     </DialogDescription>
@@ -184,7 +194,8 @@ export function AvatarUploadDialog({
                     {!imgSrc ? (
                         <div className="flex flex-col items-center gap-4">
                             {currentAvatarUrl && (
-                                <div className="relative h-32 w-32 rounded-full overflow-hidden border-2 border-muted">
+                                <div className={`relative overflow-hidden border-2 border-muted ${circular ? 'h-32 w-32 rounded-full' : 'w-full rounded-lg'}`}
+                                    style={circular ? undefined : { aspectRatio: aspect }}>
                                     <img
                                         src={currentAvatarUrl}
                                         alt="Aktualny avatar"
@@ -215,8 +226,8 @@ export function AvatarUploadDialog({
                                     crop={crop}
                                     onChange={(_, percentCrop) => setCrop(percentCrop)}
                                     onComplete={(c) => setCompletedCrop(c)}
-                                    aspect={1}
-                                    circularCrop
+                                    aspect={aspect}
+                                    circularCrop={circular}
                                     className="max-w-full"
                                 >
                                     <img
@@ -254,7 +265,7 @@ export function AvatarUploadDialog({
                     >
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         <Camera className="mr-2 h-4 w-4" />
-                        Zapisz avatar
+                        {submitLabel}
                     </Button>
                 </DialogFooter>
             </DialogContent>

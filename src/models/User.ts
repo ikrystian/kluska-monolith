@@ -4,6 +4,26 @@ import bcrypt from 'bcryptjs';
 export type Gender = 'male' | 'female' | 'other';
 export type TrainingLevelType = 'beginner' | 'intermediate' | 'advanced';
 
+export interface ITrainerCard {
+  published?: boolean;
+  headline?: string;
+  bio?: string;
+  coverImageUrl?: string;
+  specializations?: string[];
+  experienceYears?: number;
+  languages?: string[];
+  cooperationMode?: 'gym' | 'online' | 'both';
+  certifications?: { name: string; year?: number }[];
+  services?: { title: string; description?: string; price?: string; highlighted?: boolean }[];
+  gallery?: string[];
+  testimonials?: { author: string; text: string }[];
+  ctaText?: string;
+  availability?: 'open' | 'limited' | 'closed';
+  responseTime?: 'hour' | 'day' | 'few_days';
+  achievements?: string[];
+  faq?: { question: string; answer: string }[];
+}
+
 export interface IUser extends Document {
   _id: string;
   name: string;
@@ -23,6 +43,7 @@ export interface IUser extends Document {
   };
   trainerId?: string;
   favoriteGymIds?: string[];
+  trainerCard?: ITrainerCard;
   assignedDietPlanId?: string;
   // Onboarding fields
   onboardingCompleted?: boolean;
@@ -58,6 +79,38 @@ const UserSchema = new Schema<IUser>(
     },
     trainerId: { type: String },
     favoriteGymIds: [{ type: String }],
+    trainerCard: {
+      type: new Schema(
+        {
+          published: { type: Boolean, default: false },
+          headline: { type: String, maxlength: 100 },
+          bio: { type: String, maxlength: 1500 },
+          coverImageUrl: { type: String },
+          specializations: [{ type: String, maxlength: 40 }],
+          experienceYears: { type: Number, min: 0, max: 80 },
+          languages: [{ type: String, maxlength: 30 }],
+          cooperationMode: { type: String, enum: ['gym', 'online', 'both'] },
+          certifications: [{ name: { type: String, required: true, maxlength: 120 }, year: { type: Number }, _id: false }],
+          services: [
+            {
+              title: { type: String, required: true, maxlength: 80 },
+              description: { type: String, maxlength: 400 },
+              price: { type: String, maxlength: 60 },
+              highlighted: { type: Boolean, default: false },
+              _id: false,
+            },
+          ],
+          gallery: [{ type: String }],
+          testimonials: [{ author: { type: String, required: true, maxlength: 60 }, text: { type: String, required: true, maxlength: 500 }, _id: false }],
+          ctaText: { type: String, maxlength: 40 },
+          availability: { type: String, enum: ['open', 'limited', 'closed'] },
+          responseTime: { type: String, enum: ['hour', 'day', 'few_days'] },
+          achievements: [{ type: String, maxlength: 80 }],
+          faq: [{ question: { type: String, required: true, maxlength: 140 }, answer: { type: String, required: true, maxlength: 600 }, _id: false }],
+        },
+        { _id: false }
+      ),
+    },
     assignedDietPlanId: { type: String },
     // Onboarding fields
     onboardingCompleted: { type: Boolean, default: false },

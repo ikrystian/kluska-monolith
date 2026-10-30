@@ -89,6 +89,8 @@ export interface TrainerRequest {
   athleteId: string;
   athleteName: string;
   trainerId: string;
+  goal?: string;
+  message?: string;
   status: 'pending' | 'accepted' | 'rejected';
   createdAt: string;
 }
@@ -104,6 +106,8 @@ export interface BodyMeasurement {
     waist?: number;
     hips?: number;
     thigh?: number;
+    calf?: number;
+    neck?: number;
   };
   photoURLs?: string[];
   sharedWithTrainer: boolean;

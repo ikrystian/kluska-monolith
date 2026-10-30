@@ -7,26 +7,59 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { TrainerAvatar } from '@/components/trainers/TrainerAvatar';
+import { resolveMediaUrl } from '@/lib/api-client';
+import { AVAILABILITY, MODE_LABEL, publishedCard } from '@/components/trainers/trainer-meta';
 
 function TrainerCard({ trainer }: { trainer: UserProfile }) {
+  const card = publishedCard(trainer);
+  const cover = resolveMediaUrl(card?.coverImageUrl);
+  const availability = card?.availability ? AVAILABILITY[card.availability] : undefined;
+  const tags = card?.specializations?.slice(0, 2) ?? [];
+
   return (
     <Link
       to={`/athlete/trainers/${trainer.id}`}
-      className="group flex flex-col items-center rounded-[1.75rem] border border-border/60 bg-card p-5 text-center shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.985]"
+      className="group flex flex-col overflow-hidden rounded-[1.75rem] border border-border/60 bg-card shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.985]"
     >
-      <TrainerAvatar trainer={trainer} className="h-20 w-20 text-2xl ring-4 ring-background" />
-      <h2 className="mt-3 line-clamp-1 font-headline text-lg font-bold">{trainer.name}</h2>
-      <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-        <MapPin className="h-3 w-3 shrink-0" />
-        <span className="line-clamp-1">{trainer.location || 'Lokalizacja nie podana'}</span>
-      </p>
-      <span className="mt-3 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
-        Siłownia i online
-      </span>
-      <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-foreground">
-        Zobacz profil
-        <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-      </span>
+      <div className="hero-ember relative h-20 overflow-hidden">
+        {cover && <img src={cover} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />}
+        <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/30" />
+        {availability && (
+          <span className="absolute right-2 top-2 inline-flex items-center gap-1.5 rounded-full bg-black/45 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur-md">
+            <span className={cn('h-1.5 w-1.5 rounded-full', availability.dot)} />
+            {availability.short}
+          </span>
+        )}
+      </div>
+
+      <div className="flex flex-1 flex-col items-center px-4 pb-5 text-center">
+        <TrainerAvatar trainer={trainer} className="-mt-10 h-20 w-20 text-2xl ring-4 ring-card" />
+        <h2 className="mt-2 line-clamp-1 font-headline text-lg font-bold">{trainer.name}</h2>
+        {card?.headline && <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-muted-foreground">{card.headline}</p>}
+        <p className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
+          <MapPin className="h-3 w-3 shrink-0" />
+          <span className="line-clamp-1">{trainer.location || 'Lokalizacja nie podana'}</span>
+        </p>
+
+        <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+          {tags.length > 0 ? (
+            tags.map(t => (
+              <span key={t} className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
+                {t}
+              </span>
+            ))
+          ) : (
+            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
+              {MODE_LABEL[card?.cooperationMode ?? 'both']}
+            </span>
+          )}
+        </div>
+
+        <span className="mt-auto inline-flex items-center gap-1 pt-4 text-xs font-bold text-foreground">
+          Zobacz profil
+          <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+        </span>
+      </div>
     </Link>
   );
 }
@@ -50,8 +83,9 @@ export default function AthleteTrainersPage() {
     return (trainers ?? [])
       .filter(t => t.id !== myTrainer?.id)
       .filter(t => !city || t.location?.trim() === city)
-      .filter(t => !q || t.name.toLowerCase().includes(q) || t.location?.toLowerCase().includes(q))
-      .sort((a, b) => a.name.localeCompare(b.name, 'pl'));
+      .filter(t => !q || t.name.toLowerCase().includes(q) || t.location?.toLowerCase().includes(q) || t.trainerCard?.specializations?.some(s => s.toLowerCase().includes(q)))
+      // Trainers with a published profile come first.
+      .sort((a, b) => Number(!!publishedCard(b)) - Number(!!publishedCard(a)) || a.name.localeCompare(b.name, 'pl'));
   }, [trainers, query, city, myTrainer?.id]);
 
   return (
@@ -89,7 +123,7 @@ export default function AthleteTrainersPage() {
             type="search"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Szukaj po imieniu lub mieście…"
+            placeholder="Szukaj po imieniu, mieście lub specjalizacji…"
             className="h-11 rounded-full border-border/60 bg-card pl-10 shadow-soft"
           />
         </div>

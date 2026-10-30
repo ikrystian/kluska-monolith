@@ -5,6 +5,8 @@ export interface ITrainerRequest {
     athleteId: string;
     athleteName: string;
     trainerId: string;
+    goal?: string;
+    message?: string;
     status: 'pending' | 'accepted' | 'rejected';
     createdAt: Date;
     updatedAt: Date;
@@ -15,6 +17,8 @@ const TrainerRequestSchema = new Schema<ITrainerRequest>(
         athleteId: { type: String, required: true },
         athleteName: { type: String, required: true },
         trainerId: { type: String, required: true },
+        goal: { type: String, maxlength: 60 },
+        message: { type: String, maxlength: 1000 },
         status: { type: String, enum: ['pending', 'accepted', 'rejected'], default: 'pending' },
     },
     {
