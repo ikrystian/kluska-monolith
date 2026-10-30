@@ -6,6 +6,7 @@ import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { MongoDBProvider } from '@/lib/mongodb-provider';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AnimateReveal } from '@/components/animate-reveal';
+import { BASE_OPEN_GRAPH, DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from '@/lib/site-metadata';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -18,10 +19,26 @@ export const viewport: Viewport = {
   ],
 }
 
+const SITE_TITLE = '#leniwakluska - Monitoruj Swój Progres';
+const SITE_DESCRIPTION = 'Śledź swoje postępy na siłowni, planuj treningi i osiągaj swoje cele fitness.';
+
 export const metadata: Metadata = {
-  title: '#leniwakluska - Monitoruj Swój Progres',
-  description: 'Śledź swoje postępy na siłowni, planuj treningi i osiągaj swoje cele fitness.',
+  metadataBase: new URL(SITE_URL),
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
   manifest: "/manifest.json",
+  openGraph: {
+    ...BASE_OPEN_GRAPH,
+    url: '/',
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+  // No title/description here: X falls back to each page's og:title/og:description.
+  twitter: {
+    card: 'summary_large_image',
+    images: [DEFAULT_OG_IMAGE],
+  },
   appleWebApp: {
     statusBarStyle: 'black-translucent',
   },

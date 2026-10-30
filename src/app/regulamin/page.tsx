@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { BASE_OPEN_GRAPH } from '@/lib/site-metadata';
 
 export const metadata = {
   title: 'Regulamin | Kluska',
   description: 'Regulamin korzystania z aplikacji Kluska',
+  openGraph: { ...BASE_OPEN_GRAPH, url: '/regulamin', title: 'Regulamin | Kluska', description: 'Regulamin korzystania z aplikacji Kluska' },
 };
 
 export default function TermsPage() {

@@ -1,10 +1,12 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { BASE_OPEN_GRAPH } from '@/lib/site-metadata';
 
 export const metadata = {
   title: 'Polityka Prywatności | Kluska',
   description: 'Polityka prywatności aplikacji Kluska',
+  openGraph: { ...BASE_OPEN_GRAPH, url: '/polityka-prywatnosci', title: 'Polityka Prywatności | Kluska', description: 'Polityka prywatności aplikacji Kluska' },
 };
 
 export default function PrivacyPolicyPage() {

@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
@@ -72,26 +72,32 @@ function vendorChunk(id: string): string | undefined {
   return undefined;
 }
 
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: vendorChunk,
+export default defineConfig(({ mode }) => {
+  // Open Graph needs absolute URLs; index.html reads this via %VITE_SITE_URL%.
+  const env = loadEnv(mode, __dirname, '');
+  process.env.VITE_SITE_URL = (env.VITE_SITE_URL || 'https://spa.sandbox-ai.pl').replace(/\/$/, '');
+
+  return {
+    plugins: [react(), tailwindcss()],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
       },
     },
-  },
-  server: {
-    port: Number(process.env.PORT) || 5173,
-    host: true,
-  },
-  preview: {
-    port: Number(process.env.PORT) || 5173,
-    host: true,
-  },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: vendorChunk,
+        },
+      },
+    },
+    server: {
+      port: Number(process.env.PORT) || 5173,
+      host: true,
+    },
+    preview: {
+      port: Number(process.env.PORT) || 5173,
+      host: true,
+    },
+  };
 });

@@ -6,6 +6,7 @@ import { getExerciseStats, getPublicExercise, PublicExercise } from '@/lib/exerc
 import { getAnimationUrl, isVideoFileUrl, SETUP_GROUPS, getSetupValue } from '@/components/shared/exercises/setup';
 import { AppDownloadSection, OpenInApp } from './OpenInApp';
 import './exercise-public.css';
+import { BASE_OPEN_GRAPH, DEFAULT_OG_IMAGE } from '@/lib/site-metadata';
 
 // Strona publiczna jest cache'owana, bo odwiedza ją każdy, kto zeskanuje kod z maszyny.
 export const revalidate = 600;
@@ -31,9 +32,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const description =
     exercise.instructions?.slice(0, 155) ?? `Ćwiczenie ${exercise.name} w aplikacji LeniwaKluska.`;
 
+  const title = `${exercise.name} · LeniwaKluska`;
+  const images = exercise.image && !isVideoFileUrl(exercise.image)
+    ? [{ url: exercise.image, alt: exercise.name }]
+    : [DEFAULT_OG_IMAGE];
+
   return {
-    title: `${exercise.name} · LeniwaKluska`,
+    title,
     description,
+    alternates: { canonical: `/exercises/${exercise.id}` },
+    openGraph: {
+      ...BASE_OPEN_GRAPH,
+      type: 'article',
+      url: `/exercises/${exercise.id}`,
+      title,
+      description,
+      images,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images,
+    },
   };
 }
 
