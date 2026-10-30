@@ -22,7 +22,7 @@ import {
 import { useThresholdPace } from '@/hooks/useThresholdPace';
 import { PaceDistribution } from '@/components/running/PaceDistribution';
 
-// Leaflet + its CSS only load when an activity that actually has a route is opened.
+// Mapbox GL + its CSS only load when an activity that actually has a route is opened.
 const RouteMap = lazy(() =>
   import('@/components/running/RouteMap').then((m) => ({ default: m.RouteMap }))
 );

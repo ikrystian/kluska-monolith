@@ -17,7 +17,7 @@ import { useThresholdPace } from '@/hooks/useThresholdPace';
 import { PaceDistribution } from '@/components/running/PaceDistribution';
 import type { RunningSession } from '@/lib/types';
 
-// Leaflet + its CSS only load when a run with a saved route is opened.
+// Mapbox GL + its CSS only load when a run with a saved route is opened.
 const RouteMap = lazy(() =>
   import('@/components/running/RouteMap').then((m) => ({ default: m.RouteMap }))
 );

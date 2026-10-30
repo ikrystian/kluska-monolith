@@ -235,9 +235,9 @@ export default function RunRecordPage() {
 
   return (
     <div className="relative flex h-dvh w-full flex-col overflow-hidden bg-background">
-      {/* isolate: Leaflet's own panes use z-index up to 700 (tiles, markers, popups).
-          Without a stacking context here, those panes escape this wrapper and paint
-          over the z-10 UI below regardless of DOM order. */}
+      {/* isolate: Mapbox's markers and controls carry their own z-index. Without a
+          stacking context here they would paint over the z-10 UI below regardless
+          of DOM order. */}
       <div className="absolute inset-0 isolate">
         <LiveRouteMap points={mapPoints} />
       </div>
