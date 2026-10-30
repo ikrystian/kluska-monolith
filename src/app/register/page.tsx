@@ -13,18 +13,22 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dumbbell } from 'lucide-react';
+import { Dumbbell, MailCheck } from 'lucide-react';
 import Link from 'next/link';
-import { signIn } from 'next-auth/react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useUser, useDoc } from '@/lib/db-hooks';
+import { AuthCard } from '@/components/auth/AuthCard';
+import { ResendVerification } from '@/components/auth/ResendVerification';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'athlete' | 'trainer' | 'admin'>('athlete');
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
   const [uiLoading, setUiLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -35,7 +39,7 @@ export default function RegisterPage() {
     user?.uid || null
   );
 
-  const isLoading = isUserLoading || uiLoading || (user && isProfileLoading);
+  const isLoading = Boolean(isUserLoading || uiLoading || (user && isProfileLoading));
 
   useEffect(() => {
     if (!isUserLoading && user && userProfile) {
@@ -60,13 +64,21 @@ export default function RegisterPage() {
       });
       return;
     }
+    if (!acceptTerms) {
+      toast({
+        title: 'Błąd rejestracji',
+        description: 'Musisz zaakceptować regulamin, aby założyć konto.',
+        variant: 'destructive',
+      });
+      return;
+    }
     setUiLoading(true);
     try {
       // Register user via API
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, role }),
+        body: JSON.stringify({ name, email, password, role, acceptTerms }),
       });
 
       const data = await response.json();
@@ -75,20 +87,7 @@ export default function RegisterPage() {
         throw new Error(data.error || 'Registration failed');
       }
 
-      toast({
-        title: 'Rejestracja udana!',
-        description: 'Witaj w #leniwakluska! Logowanie...',
-      });
-
-      // Auto-login after registration
-      await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      });
-
-      // The useEffect will handle the redirect
-
+      setRegisteredEmail(data.user.email);
     } catch (error: any) {
       let errorMessage = error.message || 'Wystąpił nieznany błąd. Spróbuj ponownie.';
 
@@ -101,6 +100,29 @@ export default function RegisterPage() {
       setUiLoading(false);
     }
   };
+
+  if (registeredEmail) {
+    return (
+      <AuthCard
+        title="Sprawdź skrzynkę"
+        description={
+          <>
+            Wysłaliśmy link aktywacyjny na <strong>{registeredEmail}</strong>. Kliknij go, aby aktywować konto —
+            dopiero wtedy będzie można się zalogować.
+          </>
+        }
+        footer={
+          <Link href="/login" className="text-sm font-semibold text-primary underline-offset-4 hover:underline">
+            Przejdź do logowania
+          </Link>
+        }
+      >
+        <MailCheck className="mx-auto h-12 w-12 text-primary" />
+        <p className="text-center text-sm text-muted-foreground">Nie dotarł? Sprawdź folder spam albo wyślij go ponownie.</p>
+        <ResendVerification defaultEmail={registeredEmail} />
+      </AuthCard>
+    );
+  }
 
   if (isLoading || user) {
     return (
@@ -182,9 +204,29 @@ export default function RegisterPage() {
               </div>
             </RadioGroup>
           </div>
+          <div className="flex items-start gap-2">
+            <Checkbox
+              id="acceptTerms"
+              checked={acceptTerms}
+              onCheckedChange={(checked) => setAcceptTerms(checked === true)}
+              disabled={isLoading}
+              className="mt-0.5"
+            />
+            <Label htmlFor="acceptTerms" className="cursor-pointer text-sm font-normal leading-snug">
+              Akceptuję{' '}
+              <Link href="/regulamin" target="_blank" className="font-semibold text-primary underline-offset-4 hover:underline">
+                regulamin
+              </Link>{' '}
+              i zapoznałem(-am) się z{' '}
+              <Link href="/polityka-prywatnosci" target="_blank" className="font-semibold text-primary underline-offset-4 hover:underline">
+                polityką prywatności
+              </Link>
+              .
+            </Label>
+          </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Button className="w-full h-11 font-bold text-base" onClick={handleRegister} disabled={isLoading}>
+          <Button className="w-full h-11 font-bold text-base" onClick={handleRegister} disabled={isLoading || !acceptTerms}>
             {isLoading ? 'Rejestrowanie...' : 'Zarejestruj się'}
           </Button>
           <p className="text-center text-sm text-muted-foreground">

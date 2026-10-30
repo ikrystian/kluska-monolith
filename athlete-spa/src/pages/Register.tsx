@@ -1,18 +1,20 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Loader2, Lock, Mail, ShieldCheck, User } from 'lucide-react';
+import { ArrowRight, Loader2, Lock, Mail, MailCheck, ShieldCheck, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, ONBOARDING_PENDING_KEY } from '@/contexts/AuthContext';
-import { apiFetch } from '@/lib/api-client';
+import { apiFetch, getApiBaseUrl } from '@/lib/api-client';
 import { getDeviceId } from '@/lib/device-id';
 import { AuthField, AuthShell, PasswordToggle } from '@/components/auth/AuthShell';
+import { ResendVerification } from '@/components/auth/ResendVerification';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD = 6;
 
-type FieldErrors = { name?: string; email?: string; password?: string };
+type FieldErrors = { name?: string; email?: string; password?: string; terms?: string };
 
 /** 0–4 score: length ≥ min, length ≥ 10, mixed case, digit or symbol. */
 function passwordScore(password: string) {
@@ -58,11 +60,12 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
+  const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
   const { toast } = useToast();
-  const { login, user } = useAuth();
+  const { user } = useAuth();
   const isGuestUpgrade = Boolean(user?.isGuest);
 
   // Smart default: gość podał już imię podczas onboardingu — nie każemy wpisywać go drugi raz
@@ -84,6 +87,7 @@ export default function RegisterPage() {
     if (!name.trim()) nextErrors.name = 'Podaj swoje imię.';
     if (!EMAIL_RE.test(email.trim())) nextErrors.email = 'Podaj poprawny adres e-mail.';
     if (password.length < MIN_PASSWORD) nextErrors.password = `Hasło musi mieć co najmniej ${MIN_PASSWORD} znaków.`;
+    if (!acceptTerms) nextErrors.terms = 'Musisz zaakceptować regulamin, aby założyć konto.';
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
 
@@ -96,7 +100,7 @@ export default function RegisterPage() {
       const response = await apiFetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), email: email.trim(), password, role: 'athlete', guestDeviceId }),
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), password, role: 'athlete', guestDeviceId, acceptTerms }),
       });
 
       const data = await response.json();
@@ -111,14 +115,9 @@ export default function RegisterPage() {
         localStorage.setItem(ONBOARDING_PENDING_KEY, '1');
       }
 
-      toast({
-        title: 'Rejestracja udana!',
-        description: 'Witaj w #leniwakluska! Logowanie...',
-      });
-
-      // Auto-login after registration
-      await login(email.trim(), password);
-      navigate(isGuestUpgrade ? '/athlete/dashboard' : '/athlete/onboarding');
+      // No auto-login: the account stays locked until the e-mail is confirmed.
+      // A guest keeps its current device session in the meantime.
+      setRegisteredEmail(data.user.email);
     } catch (error: any) {
       const errorMessage = error.message || 'Wystąpił nieznany błąd. Spróbuj ponownie.';
 
@@ -131,6 +130,40 @@ export default function RegisterPage() {
       setIsLoading(false);
     }
   };
+
+  if (registeredEmail) {
+    return (
+      <AuthShell
+        mode="register"
+        hideTabs
+        title="Sprawdź"
+        accent="skrzynkę"
+        subtitle={`Wysłaliśmy link aktywacyjny na ${registeredEmail}. Kliknij go, aby aktywować konto.`}
+        footer={
+          <p className="text-center text-sm text-muted-foreground">
+            <Link
+              to={isGuestUpgrade ? '/athlete/dashboard' : '/login'}
+              className="font-semibold text-primary underline-offset-4 hover:underline"
+            >
+              {isGuestUpgrade ? 'Wróć do aplikacji' : 'Przejdź do logowania'}
+            </Link>
+          </p>
+        }
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 rounded-2xl bg-[hsl(var(--volt)/0.12)] p-3.5 text-sm">
+            <MailCheck className="mt-0.5 h-4 w-4 shrink-0 text-volt" />
+            <span>
+              {isGuestUpgrade
+                ? 'Do czasu potwierdzenia korzystasz dalej z aplikacji jako gość — Twoje dane są bezpieczne. Po aktywacji zaloguj się nowym kontem.'
+                : 'Logowanie będzie możliwe dopiero po aktywacji konta. Nie widzisz wiadomości? Sprawdź folder spam.'}
+            </span>
+          </div>
+          <ResendVerification email={registeredEmail} />
+        </div>
+      </AuthShell>
+    );
+  }
 
   return (
     <AuthShell
@@ -209,6 +242,44 @@ export default function RegisterPage() {
           hint={<PasswordStrength password={password} />}
           trailing={<PasswordToggle visible={showPassword} onToggle={() => setShowPassword((prev) => !prev)} />}
         />
+
+        <div className="grid gap-2">
+          <div className="flex items-start gap-3">
+            <Checkbox
+              id="acceptTerms"
+              checked={acceptTerms}
+              onCheckedChange={(checked) => {
+                setAcceptTerms(checked === true);
+                clearError('terms');
+              }}
+              disabled={isLoading}
+              aria-invalid={Boolean(errors.terms)}
+              className="mt-0.5"
+            />
+            <label htmlFor="acceptTerms" className="cursor-pointer text-sm leading-snug text-muted-foreground">
+              Akceptuję{' '}
+              <a
+                href={`${getApiBaseUrl()}/regulamin`}
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-primary underline-offset-4 hover:underline"
+              >
+                regulamin
+              </a>{' '}
+              i zapoznałem(-am) się z{' '}
+              <a
+                href={`${getApiBaseUrl()}/polityka-prywatnosci`}
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-primary underline-offset-4 hover:underline"
+              >
+                polityką prywatności
+              </a>
+              .
+            </label>
+          </div>
+          {errors.terms && <p className="text-xs font-medium text-destructive">{errors.terms}</p>}
+        </div>
 
         <Button type="submit" className="h-[3.25rem] w-full rounded-2xl text-base font-bold shadow-glow" disabled={isLoading}>
           {isLoading ? (

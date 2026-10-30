@@ -20,7 +20,9 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = event.notification.data?.url || '/';
+  const rawUrl = event.notification.data?.url || '/';
+  // The SPA uses hash routing; backend payloads send plain paths like /athlete/chat.
+  const targetUrl = rawUrl.startsWith('/') && !rawUrl.startsWith('/#') && rawUrl !== '/' ? `/#${rawUrl}` : rawUrl;
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {

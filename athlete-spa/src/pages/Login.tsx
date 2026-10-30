@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Loader2, Lock, Mail, UserRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { AuthError, useAuth } from '@/contexts/AuthContext';
+import { ResendVerification } from '@/components/auth/ResendVerification';
 import { AuthField, AuthShell, PasswordToggle } from '@/components/auth/AuthShell';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -15,6 +16,7 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isGuestLoading, setIsGuestLoading] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { login, loginAsGuest } = useAuth();
@@ -30,6 +32,7 @@ export default function LoginPage() {
     if (Object.keys(nextErrors).length) return;
 
     setIsLoading(true);
+    setUnverifiedEmail(null);
     try {
       const user = await login(email.trim(), password);
 
@@ -44,6 +47,10 @@ export default function LoginPage() {
 
       navigate('/athlete/dashboard');
     } catch (error: any) {
+      if (error instanceof AuthError && error.code === 'EMAIL_NOT_VERIFIED') {
+        setUnverifiedEmail(email.trim());
+        return;
+      }
       toast({
         title: 'Błąd logowania',
         description: error.message || 'Nieprawidłowy adres e-mail lub hasło.',
@@ -142,6 +149,21 @@ export default function LoginPage() {
             error={errors.password}
             trailing={<PasswordToggle visible={showPassword} onToggle={() => setShowPassword((prev) => !prev)} />}
           />
+          <div className="-mt-1 text-right">
+            <Link to="/forgot-password" className="text-sm font-semibold text-primary underline-offset-4 hover:underline">
+              Nie pamiętasz hasła?
+            </Link>
+          </div>
+
+          {unverifiedEmail && (
+            <div className="space-y-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-3.5 text-sm" role="alert">
+              <p>
+                Konto <strong>{unverifiedEmail}</strong> nie zostało jeszcze aktywowane. Kliknij link aktywacyjny z
+                wiadomości e-mail (sprawdź też spam).
+              </p>
+              <ResendVerification key={unverifiedEmail} email={unverifiedEmail} />
+            </div>
+          )}
 
           <Button type="submit" className="h-[3.25rem] w-full rounded-2xl text-base font-bold shadow-glow" disabled={isBusy}>
             {isLoading ? (

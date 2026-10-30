@@ -13,6 +13,7 @@ import { NativeDeepLinks } from '@/components/native-widget-bridge';
 
 import LoginPage from '@/pages/Login';
 import RegisterPage from '@/pages/Register';
+import ForgotPasswordPage from '@/pages/ForgotPassword';
 
 import AthleteLayout from '@/components/layouts/AthleteLayout';
 import OnboardingLayout from '@/components/layouts/OnboardingLayout';
@@ -104,6 +105,7 @@ export default function App() {
               <Route path="/" element={<Navigate to="/athlete/dashboard" replace />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
               <Route path="/athlete" element={<AthleteLayout />}>
                 <Route element={<OnboardingLayout />}>

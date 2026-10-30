@@ -19,6 +19,7 @@ import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useDoc } from '@/lib/db-hooks';
+import { ResendVerification } from '@/components/auth/ResendVerification';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -26,6 +27,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [uiLoading, setUiLoading] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -35,7 +37,7 @@ export default function LoginPage() {
     user?.uid || null
   );
 
-  const isLoading = isUserLoading || uiLoading || (user && isProfileLoading);
+  const isLoading = Boolean(isUserLoading || uiLoading || (user && isProfileLoading));
 
   useEffect(() => {
     if (!isUserLoading && user && userProfile) {
@@ -61,7 +63,14 @@ export default function LoginPage() {
         redirect: false,
       });
 
-      if (result?.error) {
+      if (result?.error === 'EMAIL_NOT_VERIFIED') {
+        setUnverifiedEmail(email.trim());
+        toast({
+          title: 'Konto nieaktywne',
+          description: 'Kliknij link aktywacyjny wysłany na Twój adres e-mail.',
+          variant: 'destructive',
+        });
+      } else if (result?.error) {
         toast({
           title: 'Błąd logowania',
           description: 'Nieprawidłowy adres e-mail lub hasło.',
@@ -114,7 +123,12 @@ export default function LoginPage() {
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="password" className="font-semibold">Hasło</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password" className="font-semibold">Hasło</Label>
+              <Link href="/forgot-password" className="text-sm text-primary underline-offset-4 hover:underline">
+                Nie pamiętasz hasła?
+              </Link>
+            </div>
             <div className="relative">
               <Input
                 id="password"
@@ -149,6 +163,15 @@ export default function LoginPage() {
               Zapamiętaj mnie
             </Label>
           </div>
+          {unverifiedEmail && (
+            <div className="grid gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+              <p className="text-sm">
+                Konto <strong>{unverifiedEmail}</strong> nie zostało jeszcze aktywowane. Sprawdź skrzynkę (również spam)
+                lub wyślij link ponownie.
+              </p>
+              <ResendVerification key={unverifiedEmail} defaultEmail={unverifiedEmail} />
+            </div>
+          )}
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
           <Button className="w-full h-11 font-bold text-base" onClick={handleLogin} disabled={isLoading}>

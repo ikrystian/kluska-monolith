@@ -4,7 +4,7 @@
   "description": "Treningi, dieta, pomiary i postępy w jednym miejscu.",
   "lang": "pl",
   "dir": "ltr",
-  "start_url": "/athlete/dashboard",
+  "start_url": "/#/athlete/dashboard",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
@@ -35,19 +35,19 @@
     {
       "name": "Rozpocznij trening",
       "short_name": "Trenuj",
-      "url": "/athlete/log",
+      "url": "/#/athlete/log",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Dzienniczek kalorii",
       "short_name": "Kalorie",
-      "url": "/athlete/nutrition",
+      "url": "/#/athlete/nutrition",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Dodaj pomiary",
       "short_name": "Pomiary",
-      "url": "/athlete/measurements",
+      "url": "/#/athlete/measurements",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ]

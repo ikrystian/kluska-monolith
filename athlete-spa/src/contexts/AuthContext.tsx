@@ -63,6 +63,12 @@ function userFromToken(token: string): AuthUser | null {
   };
 }
 
+export class AuthError extends Error {
+  constructor(message: string, public code?: string) {
+    super(message);
+  }
+}
+
 interface AuthContextValue {
   user: AuthUser | null;
   isUserLoading: boolean;
@@ -163,8 +169,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (!response.ok) {
-      const body = await response.json().catch(() => ({}) as { error?: string });
-      throw new Error(body.error || 'Nieprawidłowy adres e-mail lub hasło.');
+      const body = await response.json().catch(() => ({}) as { error?: string; code?: string });
+      throw new AuthError(body.error || 'Nieprawidłowy adres e-mail lub hasło.', body.code);
     }
 
     const { token } = await response.json();

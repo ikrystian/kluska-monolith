@@ -25,7 +25,7 @@ export function useUnsavedChanges(hasChanges: boolean, message?: string) {
                 const confirmed = window.confirm(message || defaultMessage);
                 if (!confirmed) {
                     // Push state back to prevent navigation
-                    window.history.pushState(null, '', pathname);
+                    window.history.pushState(null, '', `#${pathname}`);
                 }
             }
         };
