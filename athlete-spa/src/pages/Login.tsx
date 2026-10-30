@@ -5,7 +5,6 @@ import { ArrowRight, Loader2, Lock, Mail, UserRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthField, AuthShell, PasswordToggle } from '@/components/auth/AuthShell';
-import { HalloweenScene } from '@/components/auth/HalloweenScene';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -73,7 +72,6 @@ export default function LoginPage() {
 
   return (
     <>
-      <HalloweenScene />
       <AuthShell
         mode="login"
         title="Witaj"

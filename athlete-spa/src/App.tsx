@@ -25,6 +25,7 @@ import { RequireRole } from '@/components/role-gate';
 // default landing route, so it is worth keeping eager to avoid a spinner on
 // the very first paint.
 import DashboardPage from '@/pages/athlete/Dashboard';
+import { HalloweenScene } from './components/auth/HalloweenScene';
 
 const DietPage = lazy(() => import('@/pages/athlete/Diet'));
 const CalendarPage = lazy(() => import('@/pages/athlete/Calendar'));
@@ -90,111 +91,113 @@ export default function App() {
         use: [trackActiveKeys],
       }}
     >
-    <CacheInvalidationBinder />
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
-    <AuthProvider>
-      <NativePushBridge />
-      <NativeRunBridge />
-      <NativeDeepLinks />
-      {/* Safety net for routes rendered outside AthleteLayout (onboarding,
+      <CacheInvalidationBinder />
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
+        <AuthProvider>
+          <NativePushBridge />
+          <NativeRunBridge />
+          <NativeDeepLinks />
+          {/* Safety net for routes rendered outside AthleteLayout (onboarding,
           and anything not covered by the in-layout Suspense boundary). */}
-      <Suspense fallback={<FullScreenFallback />}>
-      <Routes>
-        <Route path="/" element={<Navigate to="/athlete/dashboard" replace />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+          <Suspense fallback={<FullScreenFallback />}>
+            <Routes>
+              <Route path="/" element={<Navigate to="/athlete/dashboard" replace />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
 
-        <Route path="/athlete" element={<AthleteLayout />}>
-          <Route element={<OnboardingLayout />}>
-            <Route path="onboarding" element={<OnboardingPage />} />
-          </Route>
+              <Route path="/athlete" element={<AthleteLayout />}>
+                <Route element={<OnboardingLayout />}>
+                  <Route path="onboarding" element={<OnboardingPage />} />
+                </Route>
 
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="calendar" element={<CalendarPage />} />
+                <Route path="dashboard" element={<DashboardPage />} />
+                <Route path="calendar" element={<CalendarPage />} />
 
-          {/* Features tied to a trainer/community need a full account; guests
+                {/* Features tied to a trainer/community need a full account; guests
               (per-device accounts) see an upgrade prompt instead. */}
-          <Route element={<RequireFullAccount />}>
-            <Route path="chat" element={<ChatPage />} />
-            <Route path="check-in" element={<CheckInPage />} />
-            <Route path="social" element={<SocialPage />} />
-          </Route>
+                <Route element={<RequireFullAccount />}>
+                  <Route path="chat" element={<ChatPage />} />
+                  <Route path="check-in" element={<CheckInPage />} />
+                  <Route path="social" element={<SocialPage />} />
+                </Route>
 
-          <Route path="diet" element={<DietPage />} />
-          <Route path="exercises" element={<ExercisesPage />} />
-          <Route path="exercise/:exerciseId" element={<ExerciseQuickViewPage />} />
-          <Route path="gamification" element={<GamificationPage />} />
-          <Route path="goals" element={<GoalsPage />} />
-          <Route path="habits" element={<HabitsPage />} />
-          <Route path="history" element={<HistoryPage />} />
-          <Route path="history/:sessionId" element={<HistoryDetailPage />} />
+                <Route path="diet" element={<DietPage />} />
+                <Route path="exercises" element={<ExercisesPage />} />
+                <Route path="exercise/:exerciseId" element={<ExerciseQuickViewPage />} />
+                <Route path="gamification" element={<GamificationPage />} />
+                <Route path="goals" element={<GoalsPage />} />
+                <Route path="habits" element={<HabitsPage />} />
+                <Route path="history" element={<HistoryPage />} />
+                <Route path="history/:sessionId" element={<HistoryDetailPage />} />
 
-          <Route path="knowledge-zone" element={<KnowledgeZoneLayout />}>
-            <Route index element={<KnowledgeZonePage />} />
-            <Route path="manage" element={<KnowledgeZoneManagePage />} />
-            <Route path=":articleId" element={<KnowledgeZoneArticlePage />} />
-          </Route>
+                <Route path="knowledge-zone" element={<KnowledgeZoneLayout />}>
+                  <Route index element={<KnowledgeZonePage />} />
+                  <Route path="manage" element={<KnowledgeZoneManagePage />} />
+                  <Route path=":articleId" element={<KnowledgeZoneArticlePage />} />
+                </Route>
 
-          <Route path="log" element={<LogPage />} />
-          <Route path="map" element={<MapPage />} />
-          <Route path="nutrition" element={<NutritionPage />} />
-          <Route path="measurements" element={<MeasurementsPage />} />
-          <Route path="profile" element={<ProfilePage />} />
-          <Route path="progress" element={<ProgressPage />} />
-          <Route path="running" element={<RunningPage />} />
-          <Route path="running/record" element={<RunRecordPage />} />
-          <Route path="running/strava/:activityId" element={<RunDetailStravaPage />} />
-          <Route path="running/:sessionId" element={<RunDetailPage />} />
-          <Route path="summary" element={<SummaryPage />} />
-          <Route path="templates" element={<TemplatesPage />} />
-          <Route path="trainers" element={<TrainersPage />} />
-          <Route path="trainers/:id" element={<TrainerDetailPage />} />
+                <Route path="log" element={<LogPage />} />
+                <Route path="map" element={<MapPage />} />
+                <Route path="nutrition" element={<NutritionPage />} />
+                <Route path="measurements" element={<MeasurementsPage />} />
+                <Route path="profile" element={<ProfilePage />} />
+                <Route path="progress" element={<ProgressPage />} />
+                <Route path="running" element={<RunningPage />} />
+                <Route path="running/record" element={<RunRecordPage />} />
+                <Route path="running/strava/:activityId" element={<RunDetailStravaPage />} />
+                <Route path="running/:sessionId" element={<RunDetailPage />} />
+                <Route path="summary" element={<SummaryPage />} />
+                <Route path="templates" element={<TemplatesPage />} />
+                <Route path="trainers" element={<TrainersPage />} />
+                <Route path="trainers/:id" element={<TrainerDetailPage />} />
 
-          <Route element={<RequireRole roles={['trainer']} />}>
-            <Route path="trainer-panel" element={<TrainerPanelPage />} />
-          </Route>
+                <Route element={<RequireRole roles={['trainer']} />}>
+                  <Route path="trainer-panel" element={<TrainerPanelPage />} />
+                </Route>
 
-          <Route path="workout-plans" element={<WorkoutPlansPage />} />
+                <Route path="workout-plans" element={<WorkoutPlansPage />} />
 
-          <Route path="workouts" element={<WorkoutsPage />} />
-          <Route path="workouts/create" element={<WorkoutCreatePage />} />
-          <Route path="workouts/:id" element={<WorkoutDetailPage />} />
-          <Route path="workouts/:id/edit" element={<WorkoutEditPage />} />
-        </Route>
+                <Route path="workouts" element={<WorkoutsPage />} />
+                <Route path="workouts/create" element={<WorkoutCreatePage />} />
+                <Route path="workouts/:id" element={<WorkoutDetailPage />} />
+                <Route path="workouts/:id/edit" element={<WorkoutEditPage />} />
+              </Route>
 
-        <Route path="*" element={<Navigate to="/athlete/dashboard" replace />} />
-      </Routes>
-      </Suspense>
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          duration: 4000,
-          style: {
-            background: 'hsl(var(--background))',
-            color: 'hsl(var(--foreground))',
-            border: '1px solid hsl(var(--border))',
-            borderRadius: '0.9rem',
-            boxShadow: '0 10px 30px rgb(0 0 0 / 0.12)',
-            fontSize: '0.875rem',
-            maxWidth: '92vw',
-          },
-          error: {
-            duration: 5000,
-            iconTheme: {
-              primary: 'hsl(var(--destructive))',
-              secondary: 'hsl(var(--destructive-foreground))',
-            },
-          },
-          success: {
-            iconTheme: {
-              primary: 'hsl(var(--primary))',
-              secondary: 'hsl(var(--primary-foreground))',
-            },
-          },
-        }}
-      />
-    </AuthProvider>
-    </ThemeProvider>
+              <Route path="*" element={<Navigate to="/athlete/dashboard" replace />} />
+            </Routes>
+          </Suspense>
+          <HalloweenScene />
+
+          <Toaster
+            position="top-center"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: 'hsl(var(--background))',
+                color: 'hsl(var(--foreground))',
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '0.9rem',
+                boxShadow: '0 10px 30px rgb(0 0 0 / 0.12)',
+                fontSize: '0.875rem',
+                maxWidth: '92vw',
+              },
+              error: {
+                duration: 5000,
+                iconTheme: {
+                  primary: 'hsl(var(--destructive))',
+                  secondary: 'hsl(var(--destructive-foreground))',
+                },
+              },
+              success: {
+                iconTheme: {
+                  primary: 'hsl(var(--primary))',
+                  secondary: 'hsl(var(--primary-foreground))',
+                },
+              },
+            }}
+          />
+        </AuthProvider>
+      </ThemeProvider>
     </SWRConfig>
   );
 }
