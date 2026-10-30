@@ -1,19 +1,15 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Dumbbell, Loader2, PlusCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ExerciseFilters } from '@/components/shared/exercises/ExerciseFilters';
-import { MUSCLES_WITHOUT_REGION } from '@/components/workout/body-map/muscle-map';
 import { EMPTY_EXERCISE_FILTERS, useExerciseLibrary, visibleExercisesScope } from '@/hooks/useExerciseLibrary';
 import { resolveMediaUrl } from '@/lib/api-client';
 import { useDoc, useUser } from '@/lib/db-hooks';
 import { MuscleGroupName } from '@/lib/types';
 import type { Exercise, UserProfile } from '@/lib/types';
-
-// The figure's path data is sizeable and only needed once the sheet is open.
-const BodyMap = lazy(() => import('@/components/workout/body-map/BodyMap').then(m => ({ default: m.BodyMap })));
 
 const muscleGroupOptions = Object.values(MuscleGroupName).map(name => ({ label: name, value: name }));
 
@@ -52,10 +48,10 @@ function ExerciseRow({ exercise, onPick }: { exercise: Exercise; onPick: (id: st
 }
 
 /**
- * Picker for adding an exercise to the workout. It opens on a body figure
- * instead of a list: nothing is fetched until the athlete picks a body part,
- * then the first page of that part's exercises loads and the rest follows on
- * scroll. Search and filters are the ones of the exercise library screen.
+ * Picker for adding an exercise to the workout. It opens on a list of body
+ * parts instead of a list of exercises: nothing is fetched until the athlete
+ * picks one, then the first page of its exercises loads and the rest follows
+ * on scroll. Search and filters are the ones of the exercise library screen.
  */
 export function AddExerciseSheet({ onAddExercise }: { onAddExercise: (exerciseId: string) => void }) {
   const { user } = useUser();
@@ -157,20 +153,21 @@ export function AddExerciseSheet({ onAddExercise }: { onAddExercise: (exerciseId
         </SheetHeader>
 
         {step === 'body' ? (
-          <div className="flex min-h-0 flex-1 flex-col items-center gap-3 overflow-y-auto">
-            <Suspense fallback={<Skeleton className="h-[min(44vh,26rem)] w-48 rounded-3xl" />}>
-              <BodyMap onSelect={pickMuscle} />
-            </Suspense>
-
-            {/* Groups that have no spot on the figure. */}
-            <div className="flex flex-wrap justify-center gap-2">
-              {MUSCLES_WITHOUT_REGION.map(name => (
-                <Button key={name} type="button" variant="outline" size="sm" className="h-9 rounded-full" onClick={() => pickMuscle(name)}>
-                  {name}
+          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
+            <div className="grid grid-cols-2 gap-2">
+              {muscleGroupOptions.map(option => (
+                <Button
+                  key={option.value}
+                  type="button"
+                  variant="outline"
+                  className="h-12 justify-start rounded-2xl px-4 font-semibold"
+                  onClick={() => pickMuscle(option.value)}
+                >
+                  {option.label}
                 </Button>
               ))}
             </div>
-            <Button type="button" variant="ghost" className="h-10 rounded-full text-muted-foreground" onClick={() => pickMuscle('all')}>
+            <Button type="button" variant="ghost" className="mt-1 h-10 rounded-full text-muted-foreground" onClick={() => pickMuscle('all')}>
               Pokaż wszystkie ćwiczenia
             </Button>
           </div>
