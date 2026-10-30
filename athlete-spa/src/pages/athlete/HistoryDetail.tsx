@@ -16,6 +16,7 @@ import {
   Flame,
   Layers,
   Lightbulb,
+  MapPin,
   Maximize2,
   MessageSquare,
   Play,
@@ -363,6 +364,13 @@ export default function HistoryDetailPage() {
         <h1 className="mt-3 font-headline text-2xl font-black uppercase tracking-tight text-foreground md:text-3xl">
           {workoutLog.workoutName}
         </h1>
+
+        {workoutLog.gymName && (
+          <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+            <MapPin className="h-3.5 w-3.5" />
+            {workoutLog.gymName}
+          </p>
+        )}
 
         {/* Workout Photo */}
         {photoUrl && (

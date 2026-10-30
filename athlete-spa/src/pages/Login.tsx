@@ -36,10 +36,10 @@ export default function LoginPage() {
     try {
       const user = await login(email.trim(), password, rememberMe);
 
-      if (user.role !== 'athlete') {
+      if (user.role === 'admin') {
         toast({
           title: 'Brak dostępu',
-          description: 'Ten panel jest przeznaczony wyłącznie dla kont sportowców.',
+          description: 'Ten panel jest przeznaczony dla kont sportowców i trenerów.',
           variant: 'destructive',
         });
         return;

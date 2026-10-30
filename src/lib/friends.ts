@@ -108,7 +108,8 @@ export async function notifyFriendsOfActivity(userId: string, message: string) {
 export function describeFinishedActivity(collection: string, doc: Record<string, any>): string | null {
   if (collection === 'workoutLogs' && doc.status === 'completed') {
     const duration = doc.duration ? ` (${Math.round(doc.duration)} min)` : '';
-    return `zakończył(a) trening „${doc.workoutName}”${duration}.`;
+    const place = doc.gymName ? ` w ${doc.gymName}` : '';
+    return `zakończył(a) trening „${doc.workoutName}”${duration}${place}.`;
   }
   if (collection === 'runningSessions' && typeof doc.distance === 'number') {
     return `zakończył(a) bieg: ${doc.distance.toFixed(1)} km w ${Math.round(doc.duration ?? 0)} min.`;

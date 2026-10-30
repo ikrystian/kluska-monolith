@@ -52,9 +52,13 @@ function vendorChunk(id: string): string | undefined {
   if (id.includes('recharts') || id.includes('/d3-') || id.includes('victory-vendor') || id.includes('internmap')) {
     return 'vendor-charts';
   }
-  // leaflet — shared by the gym map and the running route map.
+  // leaflet — only the running route maps (RouteMap, LiveRouteMap).
   if (id.includes('leaflet') || id.includes('polyline-encoded')) {
     return 'vendor-maps';
+  }
+  // mapbox-gl — the gym map; large (~1.5 MB), so it never ships with the entry.
+  if (id.includes('mapbox-gl') || id.includes('react-map-gl')) {
+    return 'vendor-mapbox';
   }
   // html5-qrcode — only the barcode scanner.
   if (id.includes('html5-qrcode')) {

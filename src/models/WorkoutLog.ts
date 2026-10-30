@@ -29,6 +29,8 @@ export interface IWorkoutLog extends Document {
   duration?: number; // in minutes
   exercises: IExerciseSeries[];
   photoURL?: string;
+  gymId?: string;
+  gymName?: string;
   status: 'in-progress' | 'completed' | 'cancelled';
   feedback?: string;
   createdAt: Date;
@@ -78,6 +80,8 @@ const WorkoutLogSchema = new Schema<IWorkoutLog>(
     duration: { type: Number },
     exercises: [ExerciseSeriesSchema],
     photoURL: { type: String },
+    gymId: { type: String },
+    gymName: { type: String, maxlength: 120 },
     status: {
       type: String,
       enum: ['in-progress', 'completed', 'cancelled'],

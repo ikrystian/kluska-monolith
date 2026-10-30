@@ -38,6 +38,8 @@ import { useActiveWorkout } from '@/hooks/useActiveWorkout';
 import { useExerciseHistory } from '@/hooks/useExerciseHistory';
 import { useRestTimer } from '@/hooks/useRestTimer';
 import { useWakeLock } from '@/hooks/useWakeLock';
+import { useWorkoutGym } from '@/hooks/useWorkoutGym';
+import { DetectedGym } from '@/components/workout/DetectedGym';
 import { useLiveWidget } from '@/hooks/useLiveWidget';
 import { useWidgetCommands } from '@/hooks/useWidgetCommands';
 import {
@@ -515,6 +517,8 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   const [workoutLogId, setWorkoutLogId] = useState<string | null>(initialLogId || null);
   const isCreatingWorkoutRef = useRef(false);
   const [isFinished, setIsFinished] = useState(false);
+  // Once the finish screen opens, work out which gym this was (on-device; nothing is sent).
+  const workoutGym = useWorkoutGym(isFinished);
   const [isSaving, setIsSaving] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -919,6 +923,9 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
     const endTime = new Date();
     const duration = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
 
+    // Never blocks saving: resolves to null when there's no fix or no gym nearby.
+    const gymMatch = await workoutGym.resolve();
+
     const exercisesWithNames = data.exerciseSeries.map(series => {
       const exerciseDetails = allExercises?.find(ex => ex.id === series.exerciseId);
       const exerciseSnapshot: Exercise = exerciseDetails || {
@@ -944,6 +951,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
       endTime: endTime,
       status: 'completed',
       ...(photoURL && { photoURL }),
+      ...(gymMatch && { gymId: gymMatch.gym.id ?? (gymMatch.gym as { _id?: string })._id, gymName: gymMatch.gym.name }),
     };
 
     try {
@@ -1045,6 +1053,8 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
               <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">czas</p>
             </div>
           </div>
+
+          <DetectedGym status={workoutGym.status} match={workoutGym.match} onDismiss={workoutGym.dismiss} />
 
           <div className="space-y-3 pt-2">
             {photoPreview && (

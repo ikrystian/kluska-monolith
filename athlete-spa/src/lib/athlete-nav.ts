@@ -1,4 +1,5 @@
 import {
+  Award,
   BarChart3,
   BookOpen,
   CalendarDays,
@@ -13,6 +14,7 @@ import {
   IdCard,
   Layers,
   LayoutDashboard,
+  LayoutGrid,
   Map,
   MessageSquare,
   Newspaper,
@@ -27,6 +29,9 @@ import {
   Users2,
 } from '@/components/animated-icons';
 import type { AnimatedIcon } from '@/components/animated-icons';
+import type { UserProfile } from '@/lib/types';
+
+export type NavRole = UserProfile['role'];
 
 export interface NavLeaf {
   href: string;
@@ -36,6 +41,8 @@ export interface NavLeaf {
   description?: string;
   /** Extra words the menu search should match (synonyms, features on the screen). */
   keywords?: string[];
+  /** Roles that get this entry in their menu; everyone when omitted. */
+  roles?: NavRole[];
 }
 
 export interface NavGroup {
@@ -44,6 +51,8 @@ export interface NavGroup {
   /** CSS colour that identifies the group everywhere in the menu. */
   color: string;
   items: NavLeaf[];
+  /** Roles that get this group in their menu; everyone when omitted. */
+  roles?: NavRole[];
 }
 
 export type NavEntry = NavLeaf | NavGroup;
@@ -61,6 +70,15 @@ export function isNavGroup(entry: NavEntry): entry is NavGroup {
  */
 export const athleteNavItems: NavEntry[] = [
   { href: '/athlete/dashboard', icon: LayoutDashboard, label: 'Panel', description: 'Start — Twój dzień w skrócie' },
+  {
+    label: 'Dla trenera',
+    icon: Award,
+    color: 'hsl(var(--primary))',
+    roles: ['trainer'],
+    items: [
+      { href: '/athlete/trainer-panel', label: 'Panel trenera', icon: LayoutGrid, description: 'Podopieczni, plany i sesje', keywords: ['trener', 'podopieczni', 'klienci', 'zarządzanie', 'coach'] },
+    ],
+  },
   {
     label: 'Trening',
     icon: Dumbbell,
@@ -139,6 +157,16 @@ export const athleteNavLeaves: NavLeaf[] = athleteNavItems.flatMap(entry =>
   isNavGroup(entry) ? entry.items : [entry]
 );
 
+/** The menu one role sees: entries restricted to other roles are left out. */
+export function navItemsForRole(role: NavRole | undefined): NavEntry[] {
+  return athleteNavItems.filter(entry => !entry.roles || (role !== undefined && entry.roles.includes(role)));
+}
+
+/** Destinations `role` can reach, flattened. */
+export function navLeavesForRole(role: NavRole | undefined): NavLeaf[] {
+  return navItemsForRole(role).flatMap(entry => (isNavGroup(entry) ? entry.items : [entry]));
+}
+
 export function findNavLeaf(pathname: string): NavLeaf | undefined {
   return athleteNavLeaves.find(leaf => leaf.href === pathname);
 }
@@ -177,11 +205,11 @@ function normalize(text: string): string {
  * Destinations matching every word of `query` against label, description,
  * keywords and group name. Label matches rank first, then keyword matches.
  */
-export function searchNavLeaves(query: string): NavLeaf[] {
+export function searchNavLeaves(query: string, role: NavRole | undefined): NavLeaf[] {
   const words = normalize(query).split(/\s+/).filter(Boolean);
   if (words.length === 0) return [];
 
-  return athleteNavLeaves
+  return navLeavesForRole(role)
     .map(leaf => {
       const label = normalize(leaf.label);
       const haystack = normalize(

@@ -1,5 +1,5 @@
 import { Dumbbell, LogOut, Play, TriangleAlert } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,13 +31,10 @@ import { useUserProfile } from '@/contexts/UserProfileContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { resolveMediaUrl } from '@/lib/api-client';
 import { Badge } from '@/components/ui/badge';
-import { athleteNavItems, isNavGroup, isNavLeafActive, type NavLeaf } from '@/lib/athlete-nav';
+import { isNavGroup, isNavLeafActive, navItemsForRole, type NavLeaf } from '@/lib/athlete-nav';
 
 /** The "start workout" CTA sits above the menu, so the list doesn't repeat it. */
 const CTA_HREF = '/athlete/log';
-
-const topLevelLeaves = athleteNavItems.filter((entry): entry is NavLeaf => !isNavGroup(entry));
-const groups = athleteNavItems.filter(isNavGroup);
 
 const tint = (color: string, pct: number) => `color-mix(in srgb, ${color} ${pct}%, transparent)`;
 
@@ -49,6 +46,10 @@ export function AppNav() {
   const { userProfile } = useUserProfile();
   const { user, logout } = useAuth();
   const [guestLogoutOpen, setGuestLogoutOpen] = useState(false);
+
+  const navItems = useMemo(() => navItemsForRole(userProfile?.role), [userProfile?.role]);
+  const topLevelLeaves = navItems.filter((entry): entry is NavLeaf => !isNavGroup(entry));
+  const groups = navItems.filter(isNavGroup);
 
   // Conversations/unread counts aren't wired up yet (matches the web app).
   const totalUnreadCount = 0;

@@ -59,6 +59,9 @@ export interface WorkoutLog {
   duration?: number;
   exercises: WorkoutExerciseLog[];
   photoURL?: string;
+  /** Gym the workout was done at, detected from the athlete's position when it finished. */
+  gymId?: string;
+  gymName?: string;
   athleteId: string;
   status?: 'in-progress' | 'completed';
   startTime?: string;

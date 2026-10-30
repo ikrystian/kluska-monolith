@@ -27,8 +27,8 @@ function WrongRoleScreen() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-4 text-center">
-      <p className="text-lg font-semibold">Ten panel jest przeznaczony wyłącznie dla kont sportowców.</p>
-      <p className="text-muted-foreground">Zaloguj się na konto sportowca, aby kontynuować.</p>
+      <p className="text-lg font-semibold">Ten panel jest przeznaczony dla kont sportowców i trenerów.</p>
+      <p className="text-muted-foreground">Zaloguj się na konto sportowca lub trenera, aby kontynuować.</p>
       <Button
         onClick={() => {
           logout();
@@ -99,8 +99,9 @@ function AthleteLayoutContent() {
           navigate('/athlete/onboarding');
         }
       }
-      // Non-athlete roles (trainer/admin) have no home in this SPA, so we
-      // just show WrongRoleScreen below instead of redirecting anywhere.
+      // Trainers use the app like athletes (no onboarding wizard). Admins have
+      // no home in this SPA, so we just show WrongRoleScreen below instead of
+      // redirecting anywhere.
     }
   }, [user, userProfile, isLoading, navigate, isOnboardingPage]);
 
@@ -123,7 +124,7 @@ function AthleteLayoutContent() {
     return null;
   }
 
-  if (userProfile?.role !== 'athlete') {
+  if (userProfile?.role !== 'athlete' && userProfile?.role !== 'trainer') {
     return <WrongRoleScreen />;
   }
 
@@ -132,8 +133,8 @@ function AthleteLayoutContent() {
     return <Outlet />;
   }
 
-  // At this point, user is loaded, logged in, and is confirmed to be an athlete.
-  // It is now safe to render the athlete layout and its children.
+  // At this point, user is loaded, logged in, and is confirmed to be an athlete
+  // or a trainer. It is now safe to render the athlete layout and its children.
   return (
     <SidebarProvider>
       <ActiveWorkoutProvider>

@@ -18,6 +18,7 @@ import AthleteLayout from '@/components/layouts/AthleteLayout';
 import OnboardingLayout from '@/components/layouts/OnboardingLayout';
 import KnowledgeZoneLayout from '@/components/layouts/KnowledgeZoneLayout';
 import { RequireFullAccount } from '@/components/guest-gate';
+import { RequireRole } from '@/components/role-gate';
 
 // Each page is its own chunk: the athlete only downloads and parses the screen
 // they actually open, instead of the whole app up front. Dashboard is the
@@ -54,6 +55,7 @@ const SummaryPage = lazy(() => import('@/pages/athlete/Summary'));
 const TemplatesPage = lazy(() => import('@/pages/athlete/Templates'));
 const TrainersPage = lazy(() => import('@/pages/athlete/Trainers'));
 const TrainerDetailPage = lazy(() => import('@/pages/athlete/TrainerDetail'));
+const TrainerPanelPage = lazy(() => import('@/pages/athlete/TrainerPanel'));
 const WorkoutPlansPage = lazy(() => import('@/pages/athlete/WorkoutPlans'));
 const WorkoutsPage = lazy(() => import('@/pages/athlete/Workouts'));
 const WorkoutCreatePage = lazy(() => import('@/pages/athlete/WorkoutCreate'));
@@ -145,6 +147,11 @@ export default function App() {
           <Route path="templates" element={<TemplatesPage />} />
           <Route path="trainers" element={<TrainersPage />} />
           <Route path="trainers/:id" element={<TrainerDetailPage />} />
+
+          <Route element={<RequireRole roles={['trainer']} />}>
+            <Route path="trainer-panel" element={<TrainerPanelPage />} />
+          </Route>
+
           <Route path="workout-plans" element={<WorkoutPlansPage />} />
 
           <Route path="workouts" element={<WorkoutsPage />} />

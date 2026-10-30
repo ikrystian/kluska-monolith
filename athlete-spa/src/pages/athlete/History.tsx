@@ -36,7 +36,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, Footprints } from 'lucide-react';
+import { Loader2, MapPin, Trash2, Footprints } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion, listItemMotion } from '@/components/motion';
 
@@ -243,6 +243,12 @@ export default function HistoryPage() {
                           <div className="text-left">
                             <p className="font-semibold">{log.workoutName}</p>
                             <p className="text-sm text-muted-foreground">{format(new Date(log.endTime), 'd MMMM yyyy', { locale: pl })}</p>
+                            {log.gymName && (
+                              <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                                <MapPin className="h-3 w-3 shrink-0" />
+                                <span className="line-clamp-1">{log.gymName}</span>
+                              </p>
+                            )}
                           </div>
                           <div className="hidden text-right md:block">
                             <p className="font-semibold">{log.duration} min</p>

@@ -24,13 +24,15 @@ export default function OnboardingLayout() {
     if (!isLoading) {
       if (!user) {
         navigate('/login');
-      } else if (userProfile?.onboardingCompleted || !onboardingPending) {
-        // Already set up, or not coming from an entry point that onboards —
-        // send them to the dashboard.
+      } else if (
+        (userProfile && userProfile.role !== 'athlete') ||
+        userProfile?.onboardingCompleted ||
+        !onboardingPending
+      ) {
+        // Trainers aren't onboarded; otherwise already set up, or not coming
+        // from an entry point that onboards — send them to the dashboard.
         navigate('/athlete/dashboard');
       }
-      // Non-athlete roles have no home in this SPA; the parent AthleteLayout
-      // already handles showing them the "wrong role" screen instead.
     }
   }, [user, userProfile, isLoading, onboardingPending, navigate]);
 

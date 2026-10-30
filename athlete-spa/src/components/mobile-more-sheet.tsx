@@ -18,18 +18,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import { resolveMediaUrl } from '@/lib/api-client';
 import { placeholderImages } from '@/lib/placeholder-images';
 import {
-  athleteNavItems,
-  athleteNavLeaves,
   findNavGroup,
   isNavGroup,
   isNavLeafActive,
+  navItemsForRole,
+  navLeavesForRole,
   searchNavLeaves,
   type NavGroup,
   type NavLeaf,
 } from '@/lib/athlete-nav';
 import { useRecentRoutes } from '@/hooks/useRecentRoutes';
 import { haptic } from '@/lib/haptics';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -37,8 +37,6 @@ function getInitials(name: string | null | undefined) {
   if (!name) return 'U';
   return name.split(' ').map(n => n[0]).join('').toUpperCase();
 }
-
-const groups = athleteNavItems.filter(isNavGroup);
 
 const NEUTRAL = 'hsl(var(--muted-foreground))';
 const tint = (color: string, pct: number) => `color-mix(in srgb, ${color} ${pct}%, transparent)`;
@@ -165,6 +163,9 @@ export function MobileMoreSheet({ open, onOpenChange }: { open: boolean; onOpenC
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const reduceMotion = useReducedMotion();
 
+  const role = userProfile?.role;
+  const groups = useMemo(() => navItemsForRole(role).filter(isNavGroup), [role]);
+
   // Every opening starts from the section overview, not the last search or section.
   useEffect(() => {
     if (open) {
@@ -184,10 +185,10 @@ export function MobileMoreSheet({ open, onOpenChange }: { open: boolean; onOpenC
   const close = () => onOpenChange(false);
 
   const recentLeaves = recentRoutes
-    .map(href => athleteNavLeaves.find(leaf => leaf.href === href))
+    .map(href => navLeavesForRole(role).find(leaf => leaf.href === href))
     .filter((leaf): leaf is NavLeaf => Boolean(leaf));
 
-  const results = query.trim() ? searchNavLeaves(query) : null;
+  const results = query.trim() ? searchNavLeaves(query, role) : null;
 
   const handleLogout = () => {
     haptic('impact');
