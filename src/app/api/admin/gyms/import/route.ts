@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { Gym } from '@/models';
+import { createGymLogoResolver } from '@/lib/gym-logo';
 import https from 'https';
 
 interface SerperPlace {
@@ -23,20 +24,7 @@ export async function POST(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
 
-        // Check for admin role
-        /* 
-        // Assuming the user object in session has role. Adjust based on actual session structure.
-        if (!session || (session.user as any).role !== 'admin') {
-           return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-        */
-        // For now, let's stick to basic session check as in other routes if specific role check isn't strictly enforced everywhere yet
-        // or if the session type definition is tricky. But typically admin routes should check role.
-        // Given the task, I will include the session check but comment out strict role check if I am unsure of the type authentication
-        // Actually, looking at other files (AdminUsersPage), it seems role is important.
-        // Let's assume basic auth for now to avoid compilation errors if types are not perfect.
-
-        if (!session) {
+        if (!session || session.user.role !== 'admin') {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -101,8 +89,14 @@ export async function POST(request: NextRequest) {
         const places: SerperPlace[] = responseData.places;
         const addedGyms = [];
         let duplicateCount = 0;
+        let backfilledLogos = 0;
 
-        for (const place of places) {
+        // Serper nie zwraca logo — szukamy go na stronach siłowni. To najwolniejszy
+        // krok, więc startuje równolegle dla wszystkich miejsc naraz.
+        const resolveLogo = createGymLogoResolver();
+        const logos = places.map(place => resolveLogo(place.website));
+
+        for (const [index, place] of places.entries()) {
             // Check for duplicates: either by CID (if present) or by name + address match
             const query: any = {};
             const conditions = [];
@@ -124,6 +118,7 @@ export async function POST(request: NextRequest) {
             }
 
             const existing = await Gym.findOne(query);
+            const logoUrl = await logos[index];
 
             if (!existing) {
                 const newGym = new Gym({
@@ -137,12 +132,19 @@ export async function POST(request: NextRequest) {
                     ratingCount: place.ratingCount,
                     phoneNumber: place.phoneNumber,
                     website: place.website,
-                    cid: place.cid
+                    cid: place.cid,
+                    logoUrl: logoUrl ?? undefined
                 });
                 await newGym.save();
                 addedGyms.push(newGym);
             } else {
                 duplicateCount++;
+                // Siłownia zaimportowana, zanim zapisywaliśmy logo: uzupełniamy tylko to pole.
+                if (!existing.logoUrl && logoUrl) {
+                    existing.logoUrl = logoUrl;
+                    await existing.save();
+                    backfilledLogos++;
+                }
             }
         }
 
@@ -151,7 +153,12 @@ export async function POST(request: NextRequest) {
             count: addedGyms.length,
             duplicatesSkipped: duplicateCount,
             totalFound: places.length,
-            message: `Dodano ${addedGyms.length} nowych siłowni. Pominięto ${duplicateCount} duplikatów.`
+            withLogo: addedGyms.filter(gym => gym.logoUrl).length,
+            logosBackfilled: backfilledLogos,
+            message:
+                `Dodano ${addedGyms.length} nowych siłowni (z logo: ${addedGyms.filter(gym => gym.logoUrl).length}). ` +
+                `Pominięto ${duplicateCount} duplikatów` +
+                (backfilledLogos > 0 ? `, w ${backfilledLogos} z nich uzupełniono logo.` : '.')
         });
 
     } catch (error) {

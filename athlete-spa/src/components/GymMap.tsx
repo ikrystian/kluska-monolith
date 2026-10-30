@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { GymFavorites } from '@/components/gyms/GymFavorites';
+import { GymLogo } from '@/components/gyms/GymLogo';
 import { useGymPoints, type GymPoint } from '@/hooks/useGymPoints';
 import { useDoc, useUser } from '@/lib/db-hooks';
 import { gymId, type Coords } from '@/lib/gym-geo';
@@ -35,6 +36,8 @@ const COLORS = {
 const POLAND = { longitude: 19.4, latitude: 52.1, zoom: 5.2 };
 const SOURCE_ID = 'gyms';
 const INTERACTIVE_LAYERS = ['clusters', 'gym-points'];
+/** A map this dense with logos is unreadable anyway; the rest keep their dots. */
+const MAX_LOGO_MARKERS = 60;
 
 interface GymProperties {
   id: string;
@@ -70,6 +73,7 @@ function GymCard({ gym, distance, onClose }: { gym: GymPoint; distance?: number;
   return (
     <div className="max-h-[55%] space-y-3 overflow-y-auto rounded-[1.75rem] border border-border/60 bg-card/95 p-4 shadow-lifted backdrop-blur-xl">
       <div className="flex items-start gap-3">
+        {gym.logoUrl && <GymLogo url={gym.logoUrl} className="h-12 w-12 rounded-2xl border border-border/60" />}
         <div className="min-w-0 flex-1">
           <h2 className="font-headline text-xl font-bold leading-tight">{gym.name}</h2>
           <p className="mt-1 flex items-start gap-1.5 text-sm text-muted-foreground">
@@ -147,9 +151,7 @@ function NearbyList({ items, onPick, onClose }: { items: { gym: GymPoint; distan
         {items.map(({ gym, distance }) => (
           <li key={gymId(gym)}>
             <button type="button" onClick={() => onPick(gym)} className="flex w-full items-center gap-3 py-2.5 text-left active:opacity-70">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-                <MapPin className="h-4 w-4" />
-              </span>
+              <GymLogo url={gym.logoUrl} className="h-9 w-9 rounded-xl" />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-bold">{gym.name}</span>
                 <span className="block truncate text-xs text-muted-foreground">{gym.address}</span>
@@ -179,11 +181,14 @@ export default function GymMap() {
   const [userPos, setUserPos] = useState<Coords | null>(null);
   const [locating, setLocating] = useState(false);
   const [hovering, setHovering] = useState(false);
+  // Gyms with a logo that are currently drawn as single points (not inside a cluster).
+  const [logoMarkers, setLogoMarkers] = useState<GymPoint[]>([]);
 
   const theme = resolvedTheme === 'light' ? 'light' : 'dark';
   const colors = COLORS[theme];
   const favoriteIds = useMemo(() => new Set(me?.favoriteGymIds ?? []), [me?.favoriteGymIds]);
   const selected = useMemo(() => points.find(p => gymId(p) === selectedId) ?? null, [points, selectedId]);
+  const pointsById = useMemo(() => new Map(points.map(p => [gymId(p), p])), [points]);
 
   const geojson = useMemo<FeatureCollection<Point, GymProperties>>(
     () => ({
@@ -211,6 +216,25 @@ export default function GymMap() {
       { padding: 60, maxZoom: 11, duration: 0 }
     );
   }, [mapReady, points]);
+
+  // Logos replace the dots of the gyms that have one. Which gyms are single
+  // points depends on zoom and clustering, so ask the map what it drew.
+  const refreshLogoMarkers = useCallback(() => {
+    const map = mapRef.current;
+    if (!map?.getLayer('gym-points')) return;
+
+    const next: GymPoint[] = [];
+    const seen = new Set<string>();
+    for (const feature of map.queryRenderedFeatures({ layers: ['gym-points'] })) {
+      const id = feature.properties?.id as string | undefined;
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      const gym = pointsById.get(id);
+      if (gym?.logoUrl) next.push(gym);
+      if (next.length >= MAX_LOGO_MARKERS) break;
+    }
+    setLogoMarkers(prev => (prev.length === next.length && prev.every((gym, i) => gym === next[i]) ? prev : next));
+  }, [pointsById]);
 
   const select = useCallback((gym: GymPoint) => {
     setSelectedId(gymId(gym));
@@ -342,6 +366,7 @@ export default function GymMap() {
         onLoad={() => setMapReady(true)}
         onClick={onMapClick}
         onMouseMove={e => setHovering(!!e.features?.length)}
+        onIdle={refreshLogoMarkers}
         attributionControl
       >
         <Source id={SOURCE_ID} type="geojson" data={geojson} cluster clusterMaxZoom={13} clusterRadius={50}>
@@ -350,6 +375,35 @@ export default function GymMap() {
           <Layer {...layers.halo} />
           <Layer {...layers.dots} />
         </Source>
+
+        {logoMarkers.map(gym => {
+          const id = gymId(gym);
+          const isSelected = id === selectedId;
+          return (
+            <Marker
+              key={id}
+              longitude={gym.lng}
+              latitude={gym.lat}
+              anchor="center"
+              style={{ zIndex: isSelected ? 2 : 1 }}
+              onClick={e => {
+                // Keep the map's own click handler from deselecting what was just picked.
+                e.originalEvent.stopPropagation();
+                select(gym);
+              }}
+            >
+              <GymLogo
+                url={gym.logoUrl}
+                fallback="none"
+                className={cn(
+                  'h-9 w-9 cursor-pointer rounded-full border-2 shadow-lifted transition-transform',
+                  favoriteIds.has(id) ? 'border-[hsl(var(--volt))]' : 'border-white',
+                  isSelected && 'scale-125 ring-2 ring-primary'
+                )}
+              />
+            </Marker>
+          );
+        })}
 
         {userPos && (
           <Marker longitude={userPos.lng} latitude={userPos.lat} anchor="center">
@@ -379,7 +433,7 @@ export default function GymMap() {
             {matches.map(gym => (
               <li key={gymId(gym)} className="border-b border-border/60 last:border-0">
                 <button type="button" onClick={() => select(gym)} className="flex w-full items-center gap-3 px-4 py-2.5 text-left active:bg-secondary/60">
-                  <MapPin className="h-4 w-4 shrink-0 text-primary" />
+                  <GymLogo url={gym.logoUrl} className="h-8 w-8 rounded-lg" />
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-bold">{gym.name}</span>
                     <span className="block truncate text-xs text-muted-foreground">{gym.address}</span>

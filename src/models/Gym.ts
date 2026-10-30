@@ -15,6 +15,8 @@ export interface IGym extends Document {
   phoneNumber?: string;
   website?: string;
   cid?: string;
+  /** Ścieżka lokalnego pliku logo (`/upload-data/...`) albo adres zewnętrzny. */
+  logoUrl?: string;
   photoUrls?: string[];
   createdAt: Date;
   updatedAt: Date;
@@ -35,6 +37,7 @@ const GymSchema = new Schema<IGym>(
     phoneNumber: { type: String },
     website: { type: String },
     cid: { type: String, unique: true, sparse: true },
+    logoUrl: { type: String },
     photoUrls: [{ type: String }],
   },
   {

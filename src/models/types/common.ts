@@ -128,6 +128,8 @@ export interface Gym {
   phoneNumber?: string;
   website?: string;
   cid?: string;
+  /** Logo siłowni: ścieżka lokalna (`/upload-data/...`) albo adres zewnętrzny. */
+  logoUrl?: string;
   photoUrls?: string[];
 }
 
