@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { PlusCircle, Trash2, Save, Loader2, Dumbbell, Search, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, ChevronDown, ChevronUp, Clock, LayoutList, RotateCcw, CheckCircle2, Check, Circle, Timer, AlertCircle, Minus, Plus, X, Camera, Image as ImageIcon, Footprints } from 'lucide-react';
+import { PlusCircle, Trash2, Save, Loader2, Dumbbell, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, ChevronDown, ChevronUp, Clock, LayoutList, RotateCcw, CheckCircle2, Check, Circle, Timer, AlertCircle, Minus, Plus, X, Camera, Image as ImageIcon, Footprints } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,7 @@ import { StartRunDialog } from '@/components/running/StartRunDialog';
 import { useCollection, useUser, useDoc } from '@/lib/db-hooks';
 import { useActiveWorkout } from '@/hooks/useActiveWorkout';
 import { useExerciseHistory } from '@/hooks/useExerciseHistory';
+import { visibleExercisesScope } from '@/hooks/useExerciseLibrary';
 import { useRestTimer } from '@/hooks/useRestTimer';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { useWorkoutGym } from '@/hooks/useWorkoutGym';
@@ -54,6 +55,7 @@ import { PlateCalculator } from '@/components/workout/PlateCalculator';
 import { RpeSelector } from '@/components/workout/RpeSelector';
 import { ExerciseHistoryBadge } from '@/components/workout/ExerciseProgressIndicator';
 import { SpotifyWidget } from '@/components/workout/SpotifyWidget';
+import { AddExerciseSheet } from '@/components/workout/AddExerciseSheet';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -236,109 +238,6 @@ const logSchema = z.object({
 type LogFormValues = z.infer<typeof logSchema>;
 
 
-// --- ADD EXERCISE SHEET ---
-function AddExerciseSheet({ allExercises, onAddExercise }: { allExercises: Exercise[] | null; onAddExercise: (exerciseId: string) => void }) {
-  const [open, setOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const filteredExercises = useMemo(() => {
-    if (!allExercises) return [];
-    return allExercises.filter(ex =>
-      ex.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ex.mainMuscleGroups?.some(mg => mg.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
-  }, [allExercises, searchTerm]);
-
-  // Sections by muscle group; an exercise with several main muscle groups
-  // shows up under each of them, so it's findable whichever part you browse.
-  const groupedExercises = useMemo(() => {
-    const groups = new Map<string, Exercise[]>();
-    for (const ex of filteredExercises) {
-      const names = ex.mainMuscleGroups?.length
-        ? ex.mainMuscleGroups.map(mg => mg.name)
-        : ['Ogólnorozwojowe'];
-      for (const name of names) {
-        const list = groups.get(name);
-        if (list) {
-          list.push(ex);
-        } else {
-          groups.set(name, [ex]);
-        }
-      }
-    }
-    return [...groups.entries()]
-      .sort(([a], [b]) => a.localeCompare(b, 'pl'))
-      .map(([name, exercises]) => ({
-        name,
-        exercises: [...exercises].sort((a, b) => a.name.localeCompare(b.name, 'pl')),
-      }));
-  }, [filteredExercises]);
-
-  const handleSelectExercise = (exerciseId: string) => {
-    onAddExercise(exerciseId);
-    setOpen(false);
-    setSearchTerm('');
-  };
-
-  return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button size="icon" className="hero-ember h-12 w-12 rounded-full text-white shadow-glow transition-transform hover:opacity-95 active:scale-90">
-          <PlusCircle className="h-6 w-6" />
-          <span className="absolute bottom-0 text-xs">Dodaj kolejne ćwiczenie</span>
-
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-[2rem]">
-        <SheetHeader>
-          <SheetTitle className="font-headline">Wybierz ćwiczenie</SheetTitle>
-          <SheetDescription>Znajdź i dodaj ćwiczenie do swojego treningu.</SheetDescription>
-        </SheetHeader>
-        <div className="py-4">
-          <div className="relative mb-4">
-            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Szukaj ćwiczenia..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="rounded-full pl-11"
-            />
-          </div>
-          <ScrollArea className="h-[60vh]">
-            <div className="space-y-2">
-              {groupedExercises.map(group => (
-                <div key={group.name}>
-                  <p className="sticky top-0 z-10 -mx-1 bg-background/95 px-1 py-2 text-xs font-bold uppercase tracking-[0.14em] text-primary backdrop-blur-sm">
-                    {group.name}
-                    <span className="ml-2 font-semibold text-muted-foreground">{group.exercises.length}</span>
-                  </p>
-                  <div className="space-y-2">
-                    {group.exercises.map(ex => (
-                      <div
-                        key={ex.id}
-                        onClick={() => handleSelectExercise(ex.id)}
-                        className="flex cursor-pointer items-center justify-between rounded-2xl border border-border/60 bg-card p-3.5 transition-all hover:border-primary/30 active:scale-[0.99]"
-                      >
-                        <div className="min-w-0">
-                          <p className=" font-semibold">{ex.name}</p>
-
-                        </div>
-                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary text-primary">
-                          <PlusCircle className="h-5 w-5" />
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
-}
-
 // --- WORKOUT BUILDER VIEW ---
 // Allows the user to prepare the workout before starting the timer
 function WorkoutBuilderView({ initialData, onStart, onCancel, allExercises, isLoadingExercises }: { initialData: LogFormValues; onStart: (data: LogFormValues) => void; onCancel: () => void; allExercises: Exercise[] | null; isLoadingExercises: boolean }) {
@@ -441,7 +340,7 @@ function WorkoutBuilderView({ initialData, onStart, onCancel, allExercises, isLo
           </div>
 
           <div className="glass fixed inset-x-4 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-lg items-center gap-3 rounded-[2rem] p-3 md:absolute md:inset-x-0 md:bottom-4 md:rounded-2xl">
-            <AddExerciseSheet allExercises={allExercises} onAddExercise={handleAddExercise} />
+            <AddExerciseSheet onAddExercise={handleAddExercise} />
             <Button type="submit" className="h-12 flex-1 text-base font-bold shadow-glow">
               <Play className="mr-2 h-4 w-4 fill-current" /> Rozpocznij trening
             </Button>
@@ -1306,10 +1205,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
                 </Button>
 
                 <div className="-mt-8">
-                  <AddExerciseSheet
-                    allExercises={allExercises}
-                    onAddExercise={handleAddExercise}
-                  />
+                  <AddExerciseSheet onAddExercise={handleAddExercise} />
                 </div>
 
                 <Button
@@ -2197,13 +2093,7 @@ export default function LogWorkoutPage() {
   // Fetch exercises (public, user's own, and trainer's + legacy exercises with no owner)
   const { data: allExercises, isLoading: exercisesLoading } = useCollection<Exercise>(
     'exercises',
-    user?.uid ? {
-      $or: [
-        { ownerId: { $in: ownerIds } },
-        { ownerId: { $exists: false } },
-        { ownerId: null }
-      ]
-    } : undefined
+    user?.uid ? visibleExercisesScope(ownerIds) : undefined
   );
 
   // Check for active workout

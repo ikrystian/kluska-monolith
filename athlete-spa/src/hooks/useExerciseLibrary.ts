@@ -50,9 +50,28 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/** Buduje filtr Mongo na podstawie pól dokumentu ćwiczenia. */
-export function buildExerciseFilter(filters: ExerciseLibraryFilters): Record<string, unknown> {
+/**
+ * Ćwiczenia widoczne dla sportowca: publiczne, własne i trenera (`ownerIds`)
+ * oraz starsze rekordy bez właściciela. API zwraca całą bibliotekę, więc
+ * ekran, który ma pokazać tylko te, zawęża zapytanie tym warunkiem.
+ */
+export function visibleExercisesScope(ownerIds: string[]): Record<string, unknown> {
+  return {
+    $or: [{ ownerId: { $in: ownerIds } }, { ownerId: { $exists: false } }, { ownerId: null }],
+  };
+}
+
+/**
+ * Buduje filtr Mongo na podstawie pól dokumentu ćwiczenia. `scope` to dodatkowy
+ * warunek łączony z filtrami (np. `visibleExercisesScope`).
+ */
+export function buildExerciseFilter(
+  filters: ExerciseLibraryFilters,
+  scope?: Record<string, unknown>
+): Record<string, unknown> {
   const conds: Record<string, unknown>[] = [];
+
+  if (scope && Object.keys(scope).length > 0) conds.push(scope);
 
   const term = filters.search.trim();
   if (term) {
@@ -136,15 +155,18 @@ export interface ExerciseLibraryResult {
 }
 
 /**
- * `enabled=false` odracza wszystkie zapytania (np. przed zalogowaniem).
+ * `enabled=false` odracza wszystkie zapytania (np. przed zalogowaniem albo
+ * zanim użytkownik wybierze partię). `scope` musi być stabilną referencją
+ * (useMemo) — zmienia klucz zapytania.
  */
 export function useExerciseLibrary(
   filters: ExerciseLibraryFilters,
-  enabled = true
+  enabled = true,
+  scope?: Record<string, unknown>
 ): ExerciseLibraryResult {
   const query = useMemo(
-    () => (enabled ? buildExerciseFilter(filters) : null),
-    [filters, enabled]
+    () => (enabled ? buildExerciseFilter(filters, scope) : null),
+    [filters, enabled, scope]
   );
   const queryJson = useMemo(() => (query ? JSON.stringify(query) : ''), [query]);
 

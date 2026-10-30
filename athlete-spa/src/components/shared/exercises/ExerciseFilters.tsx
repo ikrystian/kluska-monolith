@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,9 +37,27 @@ const SHEET_GROUPS: { key: SheetFilterKey; label: string; options: { value: stri
   { key: 'equipment', label: SETUP_GROUPS.equipment, options: toOptions(SETUP_SUGGESTIONS.equipment) },
 ];
 
-function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function Chip({
+  active,
+  onClick,
+  children,
+  revealWhenActive = false,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  /** W przewijanym rzędzie: aktywny chip (np. wybrany z zewnątrz) ma być widoczny. */
+  revealWhenActive?: boolean;
+}) {
+  const ref = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (active && revealWhenActive) ref.current?.scrollIntoView({ inline: 'center', block: 'nearest' });
+  }, [active, revealWhenActive]);
+
   return (
     <button
+      ref={ref}
       type="button"
       aria-pressed={active}
       onClick={onClick}
@@ -118,6 +136,7 @@ export function ExerciseFilters({ filters, onChange, muscleGroupOptions, resultC
             key={option.value}
             active={filters.muscleGroup === option.value}
             onClick={() => set({ muscleGroup: option.value })}
+            revealWhenActive
           >
             {option.label}
           </Chip>
