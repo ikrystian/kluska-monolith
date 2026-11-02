@@ -57,6 +57,16 @@ export function isBrowserNotificationSupported(): boolean {
   return typeof window !== 'undefined' && 'Notification' in window;
 }
 
+const REST_SOUND_KEY = 'athlete-spa:rest-sound-enabled';
+
+/** Whether the rest timer plays its sound once the rest after a completed set is over. */
+export function isRestSoundEnabled(): boolean {
+  return readBool(REST_SOUND_KEY, true);
+}
+export function setRestSoundEnabled(next: boolean): void {
+  writeBool(REST_SOUND_KEY, next);
+}
+
 const SPOTIFY_WIDGET_KEY = 'athlete-spa:spotify-widget-enabled';
 
 export function isSpotifyWidgetEnabled(): boolean {

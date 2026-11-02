@@ -50,6 +50,8 @@ export * from './SpotifyAccount';
 export * from './PushSubscription';
 // Challenge models
 export * from './Challenge';
+// Global app settings
+export * from './AppSettings';
 
 // Export enums from types (no conflicts)
 export { MuscleGroupName, TrainingLevel, SetType } from './types/enums';

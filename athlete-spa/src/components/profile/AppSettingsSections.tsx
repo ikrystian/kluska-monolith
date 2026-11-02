@@ -3,7 +3,7 @@ import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import { Camera as CameraPlugin } from '@capacitor/camera';
 import { useTheme } from 'next-themes';
-import { Bell, CalendarClock, Camera, MapPin, Monitor, Moon, Palette, Sun, TrendingUp, Vibrate } from 'lucide-react';
+import { Bell, CalendarClock, Camera, MapPin, Monitor, Moon, Palette, Sun, TrendingUp, Vibrate, Volume2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -12,10 +12,12 @@ import {
   isBrowserNotificationSupported,
   isLocationSharingEnabled,
   isPushNotificationsEnabled,
+  isRestSoundEnabled,
   isWeeklySummaryEnabled,
   isWorkoutRemindersEnabled,
   setLocationSharingEnabled,
   setPushNotificationsEnabled,
+  setRestSoundEnabled,
   setWeeklySummaryEnabled,
   setWorkoutRemindersEnabled,
 } from '@/lib/app-permissions';
@@ -38,6 +40,7 @@ const THEME_OPTIONS = [
 const C = {
   theme: 'hsl(var(--chart-4))',
   haptics: 'hsl(var(--primary))',
+  sound: 'hsl(var(--chart-2))',
   location: '#0EA5E9',
   camera: '#8B5CF6',
   notify: 'hsl(var(--chart-5))',
@@ -86,6 +89,7 @@ export function AppSettingsSections() {
   const hapticsSupported = useMemo(() => isHapticsSupported(), []);
   const pushSupported = useMemo(() => isNativePushSupported() || isBrowserNotificationSupported(), []);
   const [hapticsOn, setHapticsOn] = useState(() => isHapticsEnabled());
+  const [restSoundOn, setRestSoundOn] = useState(() => isRestSoundEnabled());
   const [locationSharingOn, setLocationSharingOn] = useState(() => isLocationSharingEnabled());
   const [isRequestingLocation, setIsRequestingLocation] = useState(false);
   const [cameraOn, setCameraOn] = useState(false);
@@ -277,6 +281,23 @@ export function AppSettingsSections() {
     <>
       <SettingsGroup title="Aplikacja">
         <ThemePicker />
+        <SettingsRow
+          icon={Volume2}
+          color={C.sound}
+          htmlFor="rest-sound"
+          title="Dźwięk"
+          description="Sygnał na koniec przerwy po ukończonej serii."
+          control={
+            <Switch
+              id="rest-sound"
+              checked={restSoundOn}
+              onCheckedChange={(checked) => {
+                setRestSoundEnabled(checked);
+                setRestSoundOn(checked);
+              }}
+            />
+          }
+        />
         {hapticsSupported && (
           <SettingsRow
             icon={Vibrate}

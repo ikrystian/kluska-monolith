@@ -215,6 +215,7 @@ export default function AdminUsersPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Użytkownik</TableHead>
+                <TableHead>ID</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Rola</TableHead>
                 <TableHead className="text-right">Akcje</TableHead>
@@ -225,6 +226,7 @@ export default function AdminUsersPage() {
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
                     <TableCell><Skeleton className="h-10 w-48" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-40" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                     <TableCell className="text-right"><Skeleton className="h-9 w-24 ml-auto" /></TableCell>
@@ -242,6 +244,7 @@ export default function AdminUsersPage() {
                         <span className="font-medium">{user.name}</span>
                       </div>
                     </TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">{user.id}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
                       <Badge variant={getRoleVariant(user.role)}>
@@ -268,7 +271,7 @@ export default function AdminUsersPage() {
                   </TableRow>
                 ))) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="py-12 text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
                     {currentUserProfile?.role !== 'admin'
                       ? 'Brak uprawnień do wyświetlania użytkowników.'
                       : 'Brak użytkowników w systemie.'}

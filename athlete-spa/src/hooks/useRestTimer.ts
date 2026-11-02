@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useId } from 'react';
 import { haptic } from '@/lib/haptics';
 import { cancelCue, playCue, preloadCue, scheduleCue } from '@/lib/cue-audio';
+import { isRestSoundEnabled } from '@/lib/app-permissions';
 
 interface UseRestTimerReturn {
   timeRemaining: number;
@@ -70,6 +71,7 @@ export function useRestTimer(onComplete?: () => void): UseRestTimerReturn {
   }, []);
 
   const playCompletionSound = useCallback(() => {
+    if (!isRestSoundEnabled()) return;
     // A no-op when the native schedule already played this countdown's cue.
     playCue(COMPLETION_SOUND, cueIdRef.current ?? undefined);
     cueIdRef.current = null;
@@ -141,7 +143,7 @@ export function useRestTimer(onComplete?: () => void): UseRestTimerReturn {
   // WebView is frozen in the background. Every deadline is its own cue, so
   // pausing or adding time cancels the old one and schedules afresh.
   useEffect(() => {
-    if (deadline === null) return;
+    if (deadline === null || !isRestSoundEnabled()) return;
     const id = `rest-${instanceId}-${deadline}`;
     if (!scheduleCue(id, COMPLETION_SOUND, deadline)) return;
     cueIdRef.current = id;

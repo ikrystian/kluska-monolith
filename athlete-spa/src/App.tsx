@@ -27,6 +27,7 @@ import { RequireRole } from '@/components/role-gate';
 // the very first paint.
 import DashboardPage from '@/pages/athlete/Dashboard';
 import { HalloweenScene } from './components/auth/HalloweenScene';
+import { useHalloween } from '@/hooks/useHalloween';
 
 const DietPage = lazy(() => import('@/pages/athlete/Diet'));
 const CalendarPage = lazy(() => import('@/pages/athlete/Calendar'));
@@ -77,6 +78,11 @@ function CacheInvalidationBinder() {
     return () => bindCacheInvalidation(null);
   }, [mutate, cache]);
   return null;
+}
+
+/** Seasonal overlay; a component of its own because the SWR hook needs the provider above it. */
+function HalloweenOverlay() {
+  return useHalloween() ? <HalloweenScene /> : null;
 }
 
 export default function App() {
@@ -168,7 +174,7 @@ export default function App() {
               <Route path="*" element={<Navigate to="/athlete/dashboard" replace />} />
             </Routes>
           </Suspense>
-          <HalloweenScene />
+          <HalloweenOverlay />
 
           <Toaster
             position="top-center"
