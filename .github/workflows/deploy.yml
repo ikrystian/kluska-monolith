@@ -1,0 +1,49 @@
+name: Deploy on push to main
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate commits payload
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_COMMITS: ${{ toJson(github.event.commits) }}
+        run: |
+          echo "Creating commits.json with commit URLs..."
+          python3 -c '
+          import json, os
+
+          commits_raw = os.environ.get("GITHUB_COMMITS", "[]")
+          try:
+              commits = json.loads(commits_raw)
+          except Exception:
+              commits = []
+
+          commit_urls = [c.get("url") for c in commits if c.get("url")]
+
+          payload = {
+          "projectId": "cmrn46qvy0006jlzq9j9j9sfa",
+              "repository": os.environ.get("GITHUB_REPOSITORY", ""),
+              "branch": os.environ.get("GITHUB_REF_NAME", ""),
+              "pusher": os.environ.get("GITHUB_ACTOR", ""),
+              "commits": commit_urls,
+          }
+
+          with open("commits.json", "w") as f:
+              json.dump(payload, f, indent=2)
+          '
+          cat commits.json
+
+      - name: Send webhook with commits
+        run: |
+          curl -X POST "https://nexus.sandbox-ai.pl/api/webhook-commit" \
+            -H "Content-Type: application/json" \
+            --data @commits.json
