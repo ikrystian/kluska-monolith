@@ -10,12 +10,15 @@ import {
   Loader2,
   Plus,
   Send,
+  Target,
   Trash2,
   Users,
   Waves,
   type LucideIcon,
 } from 'lucide-react';
+import { pl } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { apiFetch } from '@/lib/api-client';
@@ -25,9 +28,11 @@ import { cn } from '@/lib/utils';
 import {
   SOCIAL_KEYS,
   useFriends,
+  useFriendGoals,
   useFriendsActivity,
   useFriendStatuses,
   type FriendActivityItem,
+  type FriendGoalPost,
   type FriendStatusPost,
   type SocialUserSummary,
 } from '@/lib/friends';
@@ -39,7 +44,8 @@ const STRAVA_COLOR = '#FC4C02';
 
 type FeedEntry =
   | { kind: 'activity'; key: string; date: string; item: FriendActivityItem }
-  | { kind: 'status'; key: string; date: string; status: FriendStatusPost };
+  | { kind: 'status'; key: string; date: string; status: FriendStatusPost }
+  | { kind: 'goal'; key: string; date: string; goal: FriendGoalPost };
 
 interface FriendsFeedProps {
   onProfileClick: (userId: string) => void;
@@ -52,6 +58,8 @@ export function FriendsFeed({ onProfileClick, onOpenPeople }: FriendsFeedProps) 
     useFriendsActivity();
   const { data: statuses, isLoading: statusesLoading, error: statusesError, mutate: refetchStatuses } =
     useFriendStatuses();
+  // Goals only enrich the feed, so a failed request (e.g. a backend without the endpoint yet) just leaves them out.
+  const { data: goals, isLoading: goalsLoading, mutate: refetchGoals } = useFriendGoals();
 
   const friends = friendsData?.friends ?? [];
   const incoming = friendsData?.incoming ?? [];
@@ -68,6 +76,7 @@ export function FriendsFeed({ onProfileClick, onOpenPeople }: FriendsFeedProps) 
         date: status.createdAt,
         status,
       })),
+      ...(goals ?? []).map(goal => ({ kind: 'goal' as const, key: `goal-${goal.id}`, date: goal.createdAt, goal })),
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     const groups: { day: string; label: string; entries: FeedEntry[] }[] = [];
@@ -78,9 +87,9 @@ export function FriendsFeed({ onProfileClick, onOpenPeople }: FriendsFeedProps) 
       else groups.push({ day, label: dayLabel(entry.date), entries: [entry] });
     }
     return groups;
-  }, [activity, statuses]);
+  }, [activity, statuses, goals]);
 
-  const isFeedLoading = (activityLoading && !activity) || (statusesLoading && !statuses);
+  const isFeedLoading = (activityLoading && !activity) || (statusesLoading && !statuses) || (goalsLoading && !goals);
   const hasError = activityError || statusesError;
 
   return (
@@ -129,6 +138,7 @@ export function FriendsFeed({ onProfileClick, onOpenPeople }: FriendsFeedProps) 
               onClick={() => {
                 void refetchActivity();
                 void refetchStatuses();
+                void refetchGoals();
               }}
             >
               Spróbuj ponownie
@@ -146,7 +156,7 @@ export function FriendsFeed({ onProfileClick, onOpenPeople }: FriendsFeedProps) 
           <EmptyCard
             icon={Users}
             title="Trenuj w towarzystwie"
-            text="Dodaj znajomych, aby widzieć tutaj ich treningi, biegi i statusy."
+            text="Dodaj znajomych, aby widzieć tutaj ich treningi, biegi, cele i statusy."
             action={
               <Button size="sm" className="rounded-full" onClick={onOpenPeople}>
                 Znajdź znajomych
@@ -164,13 +174,16 @@ export function FriendsFeed({ onProfileClick, onOpenPeople }: FriendsFeedProps) 
                 {group.label}
               </h3>
               <ul className="space-y-3">
-                {group.entries.map(entry =>
-                  entry.kind === 'activity' ? (
-                    <ActivityCard key={entry.key} item={entry.item} onProfileClick={onProfileClick} />
-                  ) : (
-                    <StatusCard key={entry.key} status={entry.status} onProfileClick={onProfileClick} />
-                  )
-                )}
+                {group.entries.map(entry => {
+                  switch (entry.kind) {
+                    case 'activity':
+                      return <ActivityCard key={entry.key} item={entry.item} onProfileClick={onProfileClick} />;
+                    case 'goal':
+                      return <GoalCard key={entry.key} goal={entry.goal} onProfileClick={onProfileClick} />;
+                    case 'status':
+                      return <StatusCard key={entry.key} status={entry.status} onProfileClick={onProfileClick} />;
+                  }
+                })}
               </ul>
             </section>
           ))}
@@ -392,6 +405,55 @@ function ActivityCard({ item, onProfileClick }: { item: FriendActivityItem; onPr
           ))}
         </dl>
       )}
+    </li>
+  );
+}
+
+function GoalCard({ goal, onProfileClick }: { goal: FriendGoalPost; onProfileClick: (userId: string) => void }) {
+  const progress = goal.target > 0 ? Math.min((goal.current / goal.target) * 100, 100) : 0;
+  const completed = progress >= 100;
+  const color = completed ? 'hsl(var(--volt))' : 'hsl(var(--chart-4))';
+  const stats = [
+    { label: 'Postęp', value: `${goal.current.toLocaleString('pl-PL')} / ${goal.target.toLocaleString('pl-PL')} ${goal.unit}` },
+    ...(goal.deadline ? [{ label: 'Termin', value: format(new Date(goal.deadline), 'd MMM yyyy', { locale: pl }) }] : []),
+  ];
+
+  return (
+    <li className="overflow-hidden rounded-[1.75rem] border border-border/60 bg-card shadow-soft">
+      <div className="p-4 pb-3">
+        <CardHeader
+          user={goal.author}
+          date={goal.createdAt}
+          onProfileClick={onProfileClick}
+          badge={goal.author.location ? ` · ${goal.author.location}` : undefined}
+          trailing={
+            <span
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
+              style={{ backgroundColor: `color-mix(in srgb, ${color} 15%, transparent)`, color }}
+            >
+              <Target className="h-[18px] w-[18px]" />
+            </span>
+          }
+        />
+        <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color }}>
+          {completed ? 'Cel osiągnięty' : 'Nowy cel'}
+        </p>
+        <h4 className="mt-0.5 font-headline text-lg font-bold leading-snug tracking-tight">{goal.title}</h4>
+        <Progress value={progress} className="mt-3 h-2" aria-label={`${goal.title}: ${Math.round(progress)}% ukończono`} />
+      </div>
+      <dl
+        className={cn(
+          'grid divide-x divide-border/60 border-t border-border/60 bg-secondary/30',
+          stats.length === 2 ? 'grid-cols-2' : 'grid-cols-1'
+        )}
+      >
+        {stats.map(s => (
+          <div key={s.label} className="px-4 py-3">
+            <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{s.label}</dt>
+            <dd className="mt-0.5 truncate font-headline text-lg font-extrabold tabular-nums">{s.value}</dd>
+          </div>
+        ))}
+      </dl>
     </li>
   );
 }

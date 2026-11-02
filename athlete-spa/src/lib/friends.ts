@@ -55,11 +55,25 @@ export interface FriendStatusPost {
   author: SocialUserSummary;
 }
 
+/** A goal set by the caller or a friend, shown in the friends feed. */
+export interface FriendGoalPost {
+  id: string;
+  ownerId: string;
+  title: string;
+  target: number;
+  current: number;
+  unit: string;
+  deadline?: string;
+  createdAt: string;
+  author: SocialUserSummary;
+}
+
 export const SOCIAL_KEYS = {
   athletes: '/api/social/athletes',
   friends: '/api/social/friends',
   activity: '/api/social/friends/activity',
   statuses: '/api/social/statuses',
+  goals: '/api/social/goals',
 } as const;
 
 export function useAthletes(enabled = true) {
@@ -76,6 +90,10 @@ export function useFriendsActivity(enabled = true) {
 
 export function useFriendStatuses(enabled = true) {
   return useSWR<FriendStatusPost[]>(enabled ? SOCIAL_KEYS.statuses : null, swrFetcher);
+}
+
+export function useFriendGoals(enabled = true) {
+  return useSWR<FriendGoalPost[]>(enabled ? SOCIAL_KEYS.goals : null, swrFetcher);
 }
 
 /** Invite / accept / remove, revalidating every friend-dependent list afterwards. */
