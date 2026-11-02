@@ -4,5 +4,7 @@
     <string name="title_activity_main">Athlete SPA</string>
     <string name="package_name">com.athlete.spa</string>
     <string name="custom_url_scheme">com.athlete.spa</string>
+    <!-- Facebook App ID of the Meta app registered for this app. Instagram asks for it when sharing to Stories (InstagramShare plugin); leave empty to omit it. -->
+    <string name="instagram_source_application"></string>
     <string name="widget_description">Trening lub bieg w toku z odliczaniem przerwy, a poza nim ostatnie 7 dni, seria dni i najbliższy zaplanowany trening.</string>
 </resources>

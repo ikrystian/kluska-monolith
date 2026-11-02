@@ -19,7 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import type { Goal, Achievement } from '@/lib/types';
-import { PlusCircle, Target, Calendar as CalendarIcon, Loader2, Trophy, Upload, MoreVertical, Edit, Trash2, Medal, Sparkles } from 'lucide-react';
+import { PlusCircle, Target, Calendar as CalendarIcon, Loader2, Trophy, Upload, MoreVertical, Edit, Trash2, Medal, Sparkles, Share2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -45,7 +45,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   Form,
@@ -68,6 +67,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAchievements, useGamificationProfile } from '@/hooks/useGamification';
 import { AchievementsGrid, GamificationStatsCard, AchievementNotification, useAchievementNotifications } from '@/components/gamification';
 import { AnimatePresence, motion, cardItemMotion } from '@/components/motion';
+import { ImageCropDialog, STORY_ASPECT } from '@/components/shared/ImageCropDialog';
+import { ShareGoalDialog } from '@/components/goals/ShareGoalDialog';
 import { Award } from 'lucide-react';
 
 // --- SCHEMAS ---
@@ -257,6 +258,8 @@ function AddAchievementForm({ onAchievementAdded }: { onAchievementAdded: () => 
   const { toast } = useToast();
   const { createDoc, isLoading } = useCreateDoc();
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  /** Picked photos waiting to be cropped; the first one is being cropped now. */
+  const [cropQueue, setCropQueue] = useState<File[]>([]);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<AchievementFormValues>({
@@ -275,13 +278,19 @@ function AddAchievementForm({ onAchievementAdded }: { onAchievementAdded: () => 
   });
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-      const newPreviews = files.map(file => URL.createObjectURL(file));
-      setPhotoPreviews(prev => [...prev, ...newPreviews]);
-      files.forEach(file => append(file));
-    }
+    const files = Array.from(e.target.files ?? []);
+    if (files.length > 0) setCropQueue(prev => [...prev, ...files]);
+    // Reset so picking the same file again still fires onChange.
+    e.target.value = '';
   };
+
+  const handleCropConfirm = (cropped: File) => {
+    setPhotoPreviews(prev => [...prev, URL.createObjectURL(cropped)]);
+    append(cropped);
+    setCropQueue(prev => prev.slice(1));
+  };
+
+  const handleCropCancel = () => setCropQueue(prev => prev.slice(1));
 
   const uploadPhotos = async (photos: File[]): Promise<string[]> => {
     if (!user) return [];
@@ -342,6 +351,19 @@ function AddAchievementForm({ onAchievementAdded }: { onAchievementAdded: () => 
   }
 
   return (
+    <>
+    <ImageCropDialog
+      file={cropQueue[0] ?? null}
+      aspect={STORY_ASPECT}
+      title="Przytnij zdjęcie"
+      description={
+        cropQueue.length > 1
+          ? `Format 9:16 jak w relacji na Instagramie. Kolejne zdjęcia w kolejce: ${cropQueue.length - 1}.`
+          : 'Format 9:16 jak w relacji na Instagramie. Przesuń i zmień ramkę, aby wybrać kadr.'
+      }
+      onCancel={handleCropCancel}
+      onConfirm={handleCropConfirm}
+    />
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <DialogHeader>
@@ -408,12 +430,12 @@ function AddAchievementForm({ onAchievementAdded }: { onAchievementAdded: () => 
           <div className="space-y-2">
             <FormLabel>Zdjęcia (opcjonalnie)</FormLabel>
             {photoPreviews.length > 0 && (
-              <Carousel className="w-full max-w-xs mx-auto">
+              <Carousel className="w-full max-w-[11rem] mx-auto">
                 <CarouselContent>
                   {photoPreviews.map((src, index) => (
                     <CarouselItem key={index}>
                       <div className="p-1">
-                        <div className="relative aspect-video w-full">
+                        <div className="relative aspect-[9/16] w-full">
                           <img src={src} alt={`Podgląd zdjęcia ${index + 1}`} className="absolute inset-0 w-full h-full rounded-md object-cover" />
                           <Button
                             type="button"
@@ -455,6 +477,7 @@ function AddAchievementForm({ onAchievementAdded }: { onAchievementAdded: () => 
         </DialogFooter>
       </form>
     </Form>
+    </>
   );
 }
 
@@ -596,6 +619,7 @@ export default function GoalsAndAchievementsPage() {
   const [isAchievementDialogOpen, setAchievementDialogOpen] = useState(false);
   const [goalToConvert, setGoalToConvert] = useState<Goal | null>(null);
   const [goalToDelete, setGoalToDelete] = useState<Goal | null>(null);
+  const [goalToShare, setGoalToShare] = useState<Goal | null>(null);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const { user } = useUser();
   const { toast } = useToast();
@@ -687,7 +711,10 @@ export default function GoalsAndAchievementsPage() {
   };
 
   return (
-    <AlertDialog>
+    // Controlled by goalToDelete rather than an AlertDialogTrigger inside the
+    // goal's dropdown: opening a dialog from a menu item that Radix keeps open
+    // leaves the two fighting over focus and pointer events.
+    <AlertDialog open={!!goalToDelete} onOpenChange={(open) => { if (!open && !isDeleting) setGoalToDelete(null); }}>
       {/* Achievement unlock notification */}
       <AchievementNotification
         achievement={currentNotification}
@@ -731,7 +758,7 @@ export default function GoalsAndAchievementsPage() {
                                 Termin: {format(new Date(goal.deadline), 'd MMM yyyy', { locale: pl })}
                               </CardDescription>
                             </div>
-                            <DropdownMenu>
+                            <DropdownMenu modal={false}>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2">
                                   <MoreVertical className="h-4 w-4" />
@@ -742,12 +769,14 @@ export default function GoalsAndAchievementsPage() {
                                   <Edit className="mr-2 h-4 w-4" />
                                   <span>Edytuj</span>
                                 </DropdownMenuItem>
-                                <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} onClick={() => setGoalToDelete(goal)}>
-                                    <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-                                    <span className="text-destructive">Usuń</span>
-                                  </DropdownMenuItem>
-                                </AlertDialogTrigger>
+                                <DropdownMenuItem onSelect={() => setGoalToShare(goal)}>
+                                  <Share2 className="mr-2 h-4 w-4" />
+                                  <span>Udostępnij</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => setGoalToDelete(goal)}>
+                                  <Trash2 className="mr-2 h-4 w-4 text-destructive" />
+                                  <span className="text-destructive">Usuń</span>
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
@@ -884,8 +913,9 @@ export default function GoalsAndAchievementsPage() {
                     <CarouselContent>
                       {achievement.photoURLs?.map((url, index) => (
                         <CarouselItem key={index}>
-                          <div className="relative w-full aspect-4/3">
-                            <img src={resolveMediaUrl(url)} alt={`${achievement.title} ${index + 1}`} className="absolute inset-0 w-full h-full object-cover" />
+                          <div className="relative w-full aspect-4/3 bg-secondary">
+                            {/* contain: photos are cropped to 9:16, so cover would cut the chosen frame again */}
+                            <img src={resolveMediaUrl(url)} alt={`${achievement.title} ${index + 1}`} className="absolute inset-0 w-full h-full object-contain" />
                           </div>
                         </CarouselItem>
                       ))}
@@ -923,6 +953,8 @@ export default function GoalsAndAchievementsPage() {
           </DialogContent>
         </Dialog>
 
+        <ShareGoalDialog goal={goalToShare} onClose={() => setGoalToShare(null)} />
+
         <Dialog open={!!goalToConvert} onOpenChange={() => setGoalToConvert(null)}>
           <DialogContent>
             {goalToConvert && <ConvertGoalToAchievementForm goal={goalToConvert} onConverted={handleGoalConverted} />}
@@ -937,8 +969,16 @@ export default function GoalsAndAchievementsPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setGoalToDelete(null)}>Anuluj</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteGoal} className="bg-destructive hover:bg-destructive/90">Usuń</AlertDialogAction>
+            <AlertDialogCancel disabled={isDeleting}>Anuluj</AlertDialogCancel>
+            {/* preventDefault keeps the dialog open until the request finishes, so a failure is visible in place. */}
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); void handleDeleteGoal(); }}
+              disabled={isDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Usuń
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </div>

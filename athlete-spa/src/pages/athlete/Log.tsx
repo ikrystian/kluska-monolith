@@ -1239,7 +1239,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 16 }}
-                    className="glass fixed inset-x-4 bottom-[calc(8rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-lg items-center gap-3 rounded-full px-4 py-2.5 md:absolute md:inset-x-0 md:bottom-24"
+                    className="fixed inset-x-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-lg items-center gap-3 rounded-full px-4 py-2.5 md:absolute md:inset-x-0 md:bottom-24"
                   >
                     <Timer className="h-4 w-4 shrink-0 text-volt" />
                     <span className="shrink-0 font-headline text-sm font-bold tabular-nums">
@@ -1444,7 +1444,12 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
             <Label className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">✓</Label>
           </div>
           <AnimatePresence initial={false}>
-            {fields.map((setField, setIndex) => {
+            {/* Newest set on top: only the display order is reversed, setIndex stays
+            the real position so numbering, validation and saved order are unchanged. */}
+            {fields
+              .map((setField, setIndex) => ({ setField, setIndex }))
+              .reverse()
+              .map(({ setField, setIndex }) => {
               const isCompleted = watch(`exerciseSeries.${index}.sets.${setIndex}.completed`);
               const sets = watch(`exerciseSeries.${index}.sets`);
               // Find the first uncompleted set to mark as active

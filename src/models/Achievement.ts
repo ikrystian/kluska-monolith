@@ -12,7 +12,8 @@ export interface IAchievement {
 const AchievementSchema = new Schema<IAchievement>(
     {
         title: { type: String, required: true },
-        description: { type: String, required: true },
+        // Optional in the UI, which sends '' when left blank — `required` rejects empty strings.
+        description: { type: String, default: '' },
         date: { type: Date, required: true },
         photoURLs: [{ type: String }],
         ownerId: { type: String, required: true },

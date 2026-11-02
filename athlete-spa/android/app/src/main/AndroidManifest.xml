@@ -68,6 +68,11 @@
         </provider>
     </application>
 
+    <!-- Android 11+ hides other apps unless declared: needed to detect Instagram before sharing to it (InstagramShare plugin) -->
+    <queries>
+        <package android:name="com.instagram.android" />
+    </queries>
+
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
