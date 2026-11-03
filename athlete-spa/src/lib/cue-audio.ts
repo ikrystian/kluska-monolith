@@ -15,17 +15,20 @@ import { Capacitor, registerPlugin } from '@capacitor/core';
  *
  * `src` is either an absolute URL or a path into the bundled web app
  * (e.g. `/ronnie_lightweight-baby.mp3`).
+ *
+ * A cue can also be a vibration (`*VibrationCue`), scheduled the same way, for
+ * athletes who prefer to feel the rest end rather than hear it.
  */
 
 interface CueAudioPlugin {
   /** With an id, a cue that already played (from its schedule or an earlier call) is not repeated. */
-  play(options: { src: string; id?: string }): Promise<void>;
+  play(options: { src?: string; id?: string; vibrate?: boolean }): Promise<void>;
   /**
    * Plays at `at` (epoch ms) even with the app in the background. `foreground`
    * runs a foreground service to keep the process alive — pass false when
    * another one (the run recorder) already does.
    */
-  schedule(options: { id: string; src: string; at: number; foreground?: boolean }): Promise<void>;
+  schedule(options: { id: string; src?: string; at: number; foreground?: boolean; vibrate?: boolean }): Promise<void>;
   cancel(options: { id: string }): Promise<void>;
   /** Downloads a remote cue ahead of time so it plays instantly and offline. */
   preload(options: { src: string }): Promise<void>;
@@ -79,6 +82,34 @@ export function scheduleCue(id: string, src: string, at: number, options: { fore
   if (!NATIVE) return false;
   void CueAudio.schedule({ id, src, at, foreground: options.foreground ?? true }).catch(error =>
     console.warn('Could not schedule cue:', error)
+  );
+  return true;
+}
+
+/** Off/on ms, mirrors VIBRATION_PATTERN in CuePlayer.java (navigator.vibrate starts with "on"). */
+const REST_VIBRATION = [500, 200, 500, 200, 900];
+
+export function playVibrationCue(id?: string): void {
+  if (NATIVE) {
+    void CueAudio.play({ id, vibrate: true }).catch(error => console.warn('Could not vibrate:', error));
+    return;
+  }
+  if (id) {
+    if (webPlayedIds.has(id)) return;
+    webPlayedIds.add(id);
+  }
+  try {
+    navigator.vibrate?.(REST_VIBRATION);
+  } catch {
+    // Some WebViews throw when vibration is blocked by policy.
+  }
+}
+
+/** Like `scheduleCue`, but vibrates at `at` instead of playing a sound. */
+export function scheduleVibrationCue(id: string, at: number, options: { foreground?: boolean } = {}): boolean {
+  if (!NATIVE) return false;
+  void CueAudio.schedule({ id, at, vibrate: true, foreground: options.foreground ?? true }).catch(error =>
+    console.warn('Could not schedule vibration:', error)
   );
   return true;
 }

@@ -11,6 +11,10 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.PowerManager;
+import android.os.VibrationAttributes;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import android.os.VibratorManager;
 import android.util.Log;
 
 import java.io.File;
@@ -43,6 +47,9 @@ import java.util.concurrent.Executors;
  * already keeps the process alive, CueAudioService runs in the foreground so
  * the OS doesn't freeze the cached process. Playback requests transient focus
  * with ducking, so other music dips under the cue and comes back after.
+ *
+ * A cue can be a vibration instead of a sound, for athletes who'd rather feel
+ * the rest end than hear it; it is scheduled and kept alive the same way.
  */
 public final class CuePlayer {
 
@@ -53,6 +60,8 @@ public final class CuePlayer {
     private static final long KEEP_ALIVE_LINGER_MS = 2_000;
     private static final long WAKE_LOCK_MARGIN_MS = 30_000;
     private static final long MAX_WAKE_LOCK_MS = 4 * 60 * 60 * 1000L;
+    /** Off/on ms: three long pulses, hard to miss with the phone in a pocket. Mirrors REST_VIBRATION in cue-audio.ts. */
+    private static final long[] VIBRATION_PATTERN = {0, 500, 200, 500, 200, 900};
 
     private static CuePlayer instance;
 
@@ -62,13 +71,11 @@ public final class CuePlayer {
     }
 
     private static final class Scheduled {
-        final String src;
         final long at;
         final boolean foreground;
         final Runnable runnable;
 
-        Scheduled(String src, long at, boolean foreground, Runnable runnable) {
-            this.src = src;
+        Scheduled(long at, boolean foreground, Runnable runnable) {
             this.at = at;
             this.foreground = foreground;
             this.runnable = runnable;
@@ -104,21 +111,22 @@ public final class CuePlayer {
 
     // ---- Public API (main thread) ----
 
-    public void schedule(String id, String src, long at, boolean foreground) {
+    /** With {@code vibrate} the cue vibrates instead of playing {@code src}, which may then be null. */
+    public void schedule(String id, String src, long at, boolean foreground, boolean vibrate) {
         cancelInternal(id);
         played.remove(id);
         long delay = at - System.currentTimeMillis();
         if (delay <= 0) {
-            play(id, src);
+            play(id, src, vibrate);
             return;
         }
         Runnable runnable = () -> {
             scheduled.remove(id);
-            play(id, src);
+            play(id, src, vibrate);
         };
-        scheduled.put(id, new Scheduled(src, at, foreground, runnable));
+        scheduled.put(id, new Scheduled(at, foreground, runnable));
         handler.postDelayed(runnable, delay);
-        preload(src);
+        if (!vibrate) preload(src);
         applyKeepAlive();
     }
 
@@ -127,13 +135,14 @@ public final class CuePlayer {
     }
 
     /** Plays now. With an id, a cue that already played (e.g. from its schedule) is not repeated. */
-    public void play(String id, String src) {
+    public void play(String id, String src, boolean vibrate) {
         if (id != null) {
             if (played.contains(id)) return;
             cancelInternal(id);
             markPlayed(id);
         }
-        startPlayback(src);
+        if (vibrate) vibrate();
+        else startPlayback(src);
     }
 
     public void preload(String src) {
@@ -294,6 +303,35 @@ public final class CuePlayer {
         } else {
             audioManager.abandonAudioFocus(null);
         }
+    }
+
+    // ---- Vibration ----
+
+    private void vibrate() {
+        Vibrator vibrator;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            VibratorManager manager = (VibratorManager) context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE);
+            vibrator = manager.getDefaultVibrator();
+        } else {
+            vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+        }
+        if (vibrator == null || !vibrator.hasVibrator()) return;
+
+        // Alarm usage: Android drops other vibrations from an app that isn't
+        // in the foreground, and the rest usually ends with the screen locked.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            vibrator.vibrate(
+                VibrationEffect.createWaveform(VIBRATION_PATTERN, -1),
+                VibrationAttributes.createForUsage(VibrationAttributes.USAGE_ALARM));
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(
+                VibrationEffect.createWaveform(VIBRATION_PATTERN, -1),
+                new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).build());
+        } else {
+            vibrator.vibrate(VIBRATION_PATTERN, -1);
+        }
+        // Keep the CPU up until the pattern has played out.
+        scheduleKeepAliveUpdate();
     }
 
     // ---- Remote file cache ----

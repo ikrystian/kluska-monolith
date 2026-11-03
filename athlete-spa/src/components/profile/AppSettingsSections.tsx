@@ -3,7 +3,7 @@ import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import { Camera as CameraPlugin } from '@capacitor/camera';
 import { useTheme } from 'next-themes';
-import { Bell, CalendarClock, Camera, MapPin, Monitor, Moon, Palette, Sun, TrendingUp, Vibrate, Volume2 } from 'lucide-react';
+import { Bell, CalendarClock, Camera, MapPin, Monitor, Moon, Palette, Sun, TimerOff, TrendingUp, Vibrate, Volume2, VolumeX, type LucideIcon } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -12,12 +12,13 @@ import {
   isBrowserNotificationSupported,
   isLocationSharingEnabled,
   isPushNotificationsEnabled,
-  isRestSoundEnabled,
+  getRestCue,
   isWeeklySummaryEnabled,
   isWorkoutRemindersEnabled,
   setLocationSharingEnabled,
   setPushNotificationsEnabled,
-  setRestSoundEnabled,
+  setRestCue,
+  type RestCue,
   setWeeklySummaryEnabled,
   setWorkoutRemindersEnabled,
 } from '@/lib/app-permissions';
@@ -29,6 +30,7 @@ import {
   unsubscribeFromNativePush,
   unsubscribeFromPush,
 } from '@/lib/push';
+import { isNativeCueAudioAvailable, playVibrationCue } from '@/lib/cue-audio';
 import { SettingsGroup, SettingsRow, tint } from './profile-ui';
 
 const THEME_OPTIONS = [
@@ -46,29 +48,55 @@ const C = {
   notify: 'hsl(var(--chart-5))',
 };
 
-function ThemePicker() {
-  const { theme, setTheme } = useTheme();
+/** A settings row whose control is a segmented choice between a few options. */
+function ChoicePicker<T extends string>({
+  icon: RowIcon,
+  color,
+  title,
+  description,
+  ariaLabel,
+  options,
+  value,
+  onChange,
+}: {
+  icon: LucideIcon;
+  color: string;
+  title: string;
+  description?: string;
+  ariaLabel: string;
+  options: readonly { id: T; label: string; icon: LucideIcon }[];
+  value: T;
+  onChange: (next: T) => void;
+}) {
   return (
     <div className="px-4 py-3.5">
       <div className="mb-3 flex items-center gap-3">
         <span
           className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
-          style={{ backgroundColor: tint(C.theme, 15), color: C.theme }}
+          style={{ backgroundColor: tint(color, 15), color }}
         >
-          <Palette className="h-[18px] w-[18px]" />
+          <RowIcon className="h-[18px] w-[18px]" />
         </span>
-        <p className="text-sm font-semibold">Motyw</p>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold">{title}</p>
+          {description && <p className="text-xs text-muted-foreground">{description}</p>}
+        </div>
       </div>
-      <div role="radiogroup" aria-label="Motyw aplikacji" className="grid grid-cols-3 gap-1 rounded-full bg-secondary/70 p-1">
-        {THEME_OPTIONS.map(({ id, label, icon: Icon }) => {
-          const active = (theme ?? 'system') === id;
+      <div
+        role="radiogroup"
+        aria-label={ariaLabel}
+        className="grid gap-1 rounded-full bg-secondary/70 p-1"
+        style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
+      >
+        {options.map(({ id, label, icon: Icon }) => {
+          const active = value === id;
           return (
             <button
               key={id}
               type="button"
               role="radio"
               aria-checked={active}
-              onClick={() => setTheme(id)}
+              onClick={() => onChange(id)}
               className={cn(
                 'flex h-9 items-center justify-center gap-1.5 rounded-full text-xs font-semibold transition-all',
                 active ? 'bg-card text-foreground shadow-soft' : 'text-muted-foreground hover:text-foreground'
@@ -84,12 +112,35 @@ function ThemePicker() {
   );
 }
 
+function ThemePicker() {
+  const { theme, setTheme } = useTheme();
+  return (
+    <ChoicePicker
+      icon={Palette}
+      color={C.theme}
+      title="Motyw"
+      ariaLabel="Motyw aplikacji"
+      options={THEME_OPTIONS}
+      value={(theme ?? 'system') as (typeof THEME_OPTIONS)[number]['id']}
+      onChange={setTheme}
+    />
+  );
+}
+
+const REST_CUE_OPTIONS = [
+  { id: 'sound', label: 'Dźwięk', icon: Volume2 },
+  { id: 'vibration', label: 'Wibracje', icon: Vibrate },
+  { id: 'none', label: 'Brak', icon: VolumeX },
+] as const satisfies readonly { id: RestCue; label: string; icon: LucideIcon }[];
+
 export function AppSettingsSections() {
   const { toast } = useToast();
   const hapticsSupported = useMemo(() => isHapticsSupported(), []);
   const pushSupported = useMemo(() => isNativePushSupported() || isBrowserNotificationSupported(), []);
   const [hapticsOn, setHapticsOn] = useState(() => isHapticsEnabled());
-  const [restSoundOn, setRestSoundOn] = useState(() => isRestSoundEnabled());
+  const [restCue, setRestCueState] = useState<RestCue>(() => getRestCue());
+  // Natively the rest-over vibration doesn't go through navigator.vibrate.
+  const restVibrationSupported = useMemo(() => hapticsSupported || isNativeCueAudioAvailable(), [hapticsSupported]);
   const [locationSharingOn, setLocationSharingOn] = useState(() => isLocationSharingEnabled());
   const [isRequestingLocation, setIsRequestingLocation] = useState(false);
   const [cameraOn, setCameraOn] = useState(false);
@@ -281,22 +332,20 @@ export function AppSettingsSections() {
     <>
       <SettingsGroup title="Aplikacja">
         <ThemePicker />
-        <SettingsRow
-          icon={Volume2}
+        <ChoicePicker
+          icon={TimerOff}
           color={C.sound}
-          htmlFor="rest-sound"
-          title="Dźwięk"
-          description="Sygnał na koniec przerwy po ukończonej serii."
-          control={
-            <Switch
-              id="rest-sound"
-              checked={restSoundOn}
-              onCheckedChange={(checked) => {
-                setRestSoundEnabled(checked);
-                setRestSoundOn(checked);
-              }}
-            />
-          }
+          title="Koniec przerwy"
+          description="Sygnał po odpoczynku między seriami."
+          ariaLabel="Sygnał końca przerwy"
+          options={REST_CUE_OPTIONS.filter((o) => o.id !== 'vibration' || restVibrationSupported)}
+          value={restCue}
+          onChange={(next) => {
+            setRestCue(next);
+            setRestCueState(next);
+            // Let the athlete feel what they picked.
+            if (next === 'vibration') playVibrationCue();
+          }}
         />
         {hapticsSupported && (
           <SettingsRow

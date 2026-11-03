@@ -16,13 +16,14 @@ public class CueAudioPlugin extends Plugin {
     @PluginMethod
     public void play(PluginCall call) {
         String src = call.getString("src");
-        if (src == null) {
+        boolean vibrate = call.getBoolean("vibrate", false);
+        if (src == null && !vibrate) {
             call.reject("src is required");
             return;
         }
         String id = call.getString("id");
         getActivity().runOnUiThread(() -> {
-            player().play(id, src);
+            player().play(id, src, vibrate);
             call.resolve();
         });
     }
@@ -33,13 +34,14 @@ public class CueAudioPlugin extends Plugin {
         String src = call.getString("src");
         // Epoch ms arrives as a Long, which getDouble() rejects; optDouble takes any Number.
         double at = call.getData().optDouble("at", Double.NaN);
-        if (id == null || src == null || Double.isNaN(at)) {
-            call.reject("id, src and at are required");
+        boolean vibrate = call.getBoolean("vibrate", false);
+        if (id == null || (src == null && !vibrate) || Double.isNaN(at)) {
+            call.reject("id, src (or vibrate) and at are required");
             return;
         }
         boolean foreground = call.getBoolean("foreground", true);
         getActivity().runOnUiThread(() -> {
-            player().schedule(id, src, (long) at, foreground);
+            player().schedule(id, src, (long) at, foreground, vibrate);
             call.resolve();
         });
     }

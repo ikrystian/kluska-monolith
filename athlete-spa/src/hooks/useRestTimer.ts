@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef, useId } from 'react';
 import { haptic } from '@/lib/haptics';
-import { cancelCue, playCue, preloadCue, scheduleCue } from '@/lib/cue-audio';
-import { isRestSoundEnabled } from '@/lib/app-permissions';
+import { cancelCue, playCue, playVibrationCue, preloadCue, scheduleCue, scheduleVibrationCue } from '@/lib/cue-audio';
+import { getRestCue } from '@/lib/app-permissions';
 
 interface UseRestTimerReturn {
   timeRemaining: number;
@@ -51,6 +51,8 @@ function secondsUntil(deadline: number): number {
  * The same goes for the completion sound: on Android it is scheduled natively
  * for the deadline (lib/cue-audio.ts), so it plays — over Spotify, ducking it —
  * with the app minimised, instead of when the athlete next opens the app.
+ * The athlete can pick a vibration instead of the sound (getRestCue), which is
+ * scheduled the same way.
  */
 export function useRestTimer(onComplete?: () => void): UseRestTimerReturn {
   const [state, setState] = useState<TimerState>(IDLE);
@@ -70,11 +72,18 @@ export function useRestTimer(onComplete?: () => void): UseRestTimerReturn {
     preloadCue(COMPLETION_SOUND);
   }, []);
 
-  const playCompletionSound = useCallback(() => {
-    if (!isRestSoundEnabled()) return;
+  const playCompletionCue = useCallback(() => {
+    const cue = getRestCue();
     // A no-op when the native schedule already played this countdown's cue.
-    playCue(COMPLETION_SOUND, cueIdRef.current ?? undefined);
+    const id = cueIdRef.current ?? undefined;
     cueIdRef.current = null;
+    if (cue === 'vibration') {
+      playVibrationCue(id);
+      return;
+    }
+    if (cue === 'sound') playCue(COMPLETION_SOUND, id);
+    // The sound is easy to miss in a loud gym, so a short buzz backs it up.
+    haptic('success');
   }, []);
 
   /** Fires the completion side effects exactly once per countdown. */
@@ -83,11 +92,9 @@ export function useRestTimer(onComplete?: () => void): UseRestTimerReturn {
     completedRef.current = true;
     setState(prev => ({ ...prev, deadline: null, pausedRemaining: null, isComplete: true }));
     setTimeRemaining(0);
-    playCompletionSound();
-    // The sound is easy to miss in a loud gym, so vibration backs it up.
-    haptic('success');
+    playCompletionCue();
     onCompleteRef.current?.();
-  }, [playCompletionSound]);
+  }, [playCompletionCue]);
 
   const start = useCallback((duration: number) => {
     completedRef.current = false;
@@ -139,13 +146,17 @@ export function useRestTimer(onComplete?: () => void): UseRestTimerReturn {
   // value from lagging when a tick lands just after a second boundary.
   const { deadline } = state;
 
-  // Hand the sound to the native scheduler, which fires even when this
+  // Hand the cue to the native scheduler, which fires even when this
   // WebView is frozen in the background. Every deadline is its own cue, so
   // pausing or adding time cancels the old one and schedules afresh.
   useEffect(() => {
-    if (deadline === null || !isRestSoundEnabled()) return;
+    if (deadline === null) return;
+    const cue = getRestCue();
+    if (cue === 'none') return;
     const id = `rest-${instanceId}-${deadline}`;
-    if (!scheduleCue(id, COMPLETION_SOUND, deadline)) return;
+    const scheduled =
+      cue === 'vibration' ? scheduleVibrationCue(id, deadline) : scheduleCue(id, COMPLETION_SOUND, deadline);
+    if (!scheduled) return;
     cueIdRef.current = id;
     return () => {
       // Past the deadline the cue is due or already played — leave it alone.

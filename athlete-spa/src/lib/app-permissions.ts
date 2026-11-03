@@ -57,14 +57,25 @@ export function isBrowserNotificationSupported(): boolean {
   return typeof window !== 'undefined' && 'Notification' in window;
 }
 
-const REST_SOUND_KEY = 'athlete-spa:rest-sound-enabled';
+const REST_CUE_KEY = 'athlete-spa:rest-cue';
+/** Before the vibration option the setting was a plain sound on/off switch. */
+const LEGACY_REST_SOUND_KEY = 'athlete-spa:rest-sound-enabled';
 
-/** Whether the rest timer plays its sound once the rest after a completed set is over. */
-export function isRestSoundEnabled(): boolean {
-  return readBool(REST_SOUND_KEY, true);
+/** How the rest timer signals that the rest after a completed set is over. */
+export type RestCue = 'sound' | 'vibration' | 'none';
+
+export function getRestCue(): RestCue {
+  if (typeof window === 'undefined') return 'sound';
+  const raw = window.localStorage.getItem(REST_CUE_KEY);
+  if (raw === 'sound' || raw === 'vibration' || raw === 'none') return raw;
+  return readBool(LEGACY_REST_SOUND_KEY, true) ? 'sound' : 'none';
 }
-export function setRestSoundEnabled(next: boolean): void {
-  writeBool(REST_SOUND_KEY, next);
+export function setRestCue(next: RestCue): void {
+  try {
+    window.localStorage.setItem(REST_CUE_KEY, next);
+  } catch {
+    // Private mode / storage full — nothing else to fall back on here.
+  }
 }
 
 const SPOTIFY_WIDGET_KEY = 'athlete-spa:spotify-widget-enabled';
