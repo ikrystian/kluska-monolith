@@ -60,6 +60,23 @@ export async function GET(request: NextRequest) {
     }
 }
 
+// Like the back button in Spotify's own apps: past this point "previous"
+// restarts the current track instead of going to the one before.
+const RESTART_THRESHOLD_MS = 5000;
+
+/**
+ * Spotify's Web API `previous` always skips back a track, so the restart is
+ * decided here from the live position (the widget's own poll can be seconds old).
+ */
+async function shouldRestartTrack(accessToken: string): Promise<boolean> {
+    const response = await fetch('https://api.spotify.com/v1/me/player', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (response.status !== 200) return false;
+    const state: SpotifyPlaybackState = await response.json();
+    return Boolean(state.item) && (state.progress_ms ?? 0) > RESTART_THRESHOLD_MS;
+}
+
 // POST - play/pause/next/previous on the athlete's active device
 export async function POST(request: NextRequest) {
     try {
@@ -81,10 +98,13 @@ export async function POST(request: NextRequest) {
             previous: { path: 'previous', method: 'POST' },
         };
 
-        const endpoint = endpoints[action];
+        let endpoint = endpoints[action];
         if (!endpoint) {
             return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
         }
+
+        const restarted = action === 'previous' && (await shouldRestartTrack(accessToken));
+        if (restarted) endpoint = { path: 'seek?position_ms=0', method: 'PUT' };
 
         const response = await fetch(`https://api.spotify.com/v1/me/player/${endpoint.path}`, {
             method: endpoint.method,
@@ -101,7 +121,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Failed to control playback' }, { status: 502 });
         }
 
-        return NextResponse.json({ success: true });
+        // `restarted` tells the widget the track stays the same, so there is no new one to wait for.
+        return NextResponse.json({ success: true, restarted });
     } catch (error) {
         console.error('Error controlling Spotify playback:', error);
         return NextResponse.json({ error: 'Failed to control playback' }, { status: 500 });

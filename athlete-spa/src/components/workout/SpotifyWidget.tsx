@@ -86,12 +86,15 @@ export function SpotifyWidget({ className }: { className?: string }) {
       setState((prev) => (prev ? { ...prev, isPlaying: action === 'play' } : prev));
     }
     const isSkip = action === 'next' || action === 'previous';
-    if (isSkip) {
-      skippedFromRef.current = trackKey(state?.track ?? null) ?? '';
+    const fromTrack = trackKey(state?.track ?? null) ?? '';
+    const startTrackLoading = () => {
+      skippedFromRef.current = fromTrack;
       clearTimeout(loadingTimeoutRef.current);
       loadingTimeoutRef.current = setTimeout(stopTrackLoading, SKIP_LOADING_TIMEOUT_MS);
       setIsTrackLoading(true);
-    }
+    };
+    // "Previous" may only restart the song, which the backend decides — wait for its answer.
+    if (action === 'next') startTrackLoading();
     try {
       const response = await apiFetch('/api/spotify/player', {
         method: 'POST',
@@ -100,8 +103,15 @@ export function SpotifyWidget({ className }: { className?: string }) {
       });
       setNoActiveDevice(response.status === 404);
       if (isSkip) {
-        if (response.ok) SKIP_REFETCH_DELAYS_MS.forEach((delay) => setTimeout(() => fetchState(), delay));
-        else stopTrackLoading();
+        if (response.ok) {
+          // More than 5 s into a song "previous" restarts it instead (backend
+          // decides) — the track stays, so there is no new one to wait for.
+          const restarted = Boolean((await response.json().catch(() => null))?.restarted);
+          if (action === 'previous' && !restarted) startTrackLoading();
+          SKIP_REFETCH_DELAYS_MS.forEach((delay) => setTimeout(() => fetchState(), delay));
+        } else {
+          stopTrackLoading();
+        }
       }
     } catch {
       if (isSkip) stopTrackLoading();
@@ -153,7 +163,7 @@ export function SpotifyWidget({ className }: { className?: string }) {
           whileTap={{ scale: 0.8 }}
           whileHover={{ scale: 1.08 }}
           transition={{ type: 'spring', stiffness: 500, damping: 18 }}
-          aria-label="Poprzedni utwór"
+          aria-label="Poprzedni utwór lub od początku"
           onClick={() => sendAction('previous')}
           className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
         >

@@ -1428,6 +1428,35 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
+          {/* Adding a set stays at the top, above the table: new sets appear
+          right under it (newest first), so it never drifts out of reach. */}
+          <div className="flex items-center gap-2 pb-1">
+            <Button type="button" variant="outline" size="sm" id="add-series-button" className="h-10 flex-1 border-dashed" onClick={handleAddSet}>
+              <PlusCircle className="mr-2 h-4 w-4" /> Dodaj serię
+            </Button>
+            {fields.length > 0 && (
+              <div className="flex h-10 shrink-0 items-center gap-0.5 rounded-lg border border-border/60 bg-secondary/30 px-1" aria-label="Przerwa między seriami">
+                <Timer className="ml-1 h-3.5 w-3.5 text-muted-foreground" />
+                <button
+                  type="button"
+                  aria-label="Skróć przerwę o 15 sekund"
+                  onClick={() => handleRestChange(-15)}
+                  className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors active:bg-secondary"
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                </button>
+                <span className="min-w-[2.75rem] text-center text-xs font-bold tabular-nums">{restSeconds} s</span>
+                <button
+                  type="button"
+                  aria-label="Wydłuż przerwę o 15 sekund"
+                  onClick={() => handleRestChange(15)}
+                  className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors active:bg-secondary"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
           {/* Column labels - spans mirror the set rows below */}
           <div className="grid grid-cols-12 items-center gap-1.5 px-1 text-center">
             <Label className="col-span-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Seria</Label>
@@ -1651,33 +1680,6 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
               )
             })}
           </AnimatePresence>
-          <div className="flex items-center gap-2 pt-1">
-            <Button type="button" variant="outline" size="sm" id="add-series-button" className="h-10 flex-1 border-dashed" onClick={handleAddSet}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Dodaj serię
-            </Button>
-            {fields.length > 0 && (
-              <div className="flex h-10 shrink-0 items-center gap-0.5 rounded-lg border border-border/60 bg-secondary/30 px-1" aria-label="Przerwa między seriami">
-                <Timer className="ml-1 h-3.5 w-3.5 text-muted-foreground" />
-                <button
-                  type="button"
-                  aria-label="Skróć przerwę o 15 sekund"
-                  onClick={() => handleRestChange(-15)}
-                  className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors active:bg-secondary"
-                >
-                  <Minus className="h-3.5 w-3.5" />
-                </button>
-                <span className="min-w-[2.75rem] text-center text-xs font-bold tabular-nums">{restSeconds} s</span>
-                <button
-                  type="button"
-                  aria-label="Wydłuż przerwę o 15 sekund"
-                  onClick={() => handleRestChange(15)}
-                  className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors active:bg-secondary"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       </CardContent>
     </Card>
