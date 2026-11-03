@@ -426,7 +426,7 @@ export function ExerciseFormDialog({
               {/* Setup details (zapisywane w `setup`) */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {([
-                  { name: 'bodyPart', label: SETUP_GROUPS.bodyPart, placeholder: 'np. uda', suggestions: SETUP_SUGGESTIONS.bodyPart },
+                  { name: 'bodyPart', label: SETUP_GROUPS.bodyPart, placeholder: 'np. Uda', suggestions: SETUP_SUGGESTIONS.bodyPart },
                   { name: 'equipment', label: SETUP_GROUPS.equipment, placeholder: 'np. hantle', suggestions: SETUP_SUGGESTIONS.equipment },
                   { name: 'category', label: SETUP_GROUPS.category, placeholder: 'np. siłowe', suggestions: SETUP_SUGGESTIONS.category },
                 ] as const).map(({ name, label, placeholder, suggestions }) => (

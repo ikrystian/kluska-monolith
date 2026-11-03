@@ -66,6 +66,22 @@ const MUSCLE_TO_GROUP: Record<string, MuscleGroupName> = {
   wrists: MuscleGroupName.Forearms,
 };
 
+// openGym body_part -> wartość grupy setup "Część ciała". Tam, gdzie część ciała
+// pokrywa się z partią mięśniową, używana jest ta sama nazwa co w enumie.
+const BODY_PART_TO_PL: Record<string, string> = {
+  'upper legs': 'Uda',
+  waist: MuscleGroupName.Core,
+  back: MuscleGroupName.Back,
+  shoulders: MuscleGroupName.Shoulders,
+  'upper arms': 'Ramiona',
+  chest: MuscleGroupName.Chest,
+  'full body': MuscleGroupName.FullBody,
+  'lower legs': MuscleGroupName.Calves,
+  'lower arms': MuscleGroupName.Forearms,
+  cardio: 'Cardio',
+  neck: 'Szyja',
+};
+
 const WEIGHT_EQUIPMENT = new Set([
   'assisted',
   'barbell',
@@ -170,7 +186,7 @@ export function parseOpenGymExercises(raw: unknown): ParsedExercise[] {
       name: e.name || e.name_pl,
       category: e.category,
       category_pl: e.category_pl || e.category,
-      body_part_pl: e.body_part_pl || e.body_part,
+      body_part_pl: BODY_PART_TO_PL[e.body_part] || e.body_part_pl || e.body_part,
       equipment: e.equipment,
       equipment_pl: e.equipment_pl || e.equipment,
       image_url: e.image_url,

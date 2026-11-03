@@ -1,3 +1,5 @@
+import { MuscleGroupName } from '@/lib/types';
+
 /**
  * Grupy wpisów `setup` ćwiczenia — tak zapisuje je import openGym
  * (zgodnie z `src/components/shared/exercises/setup.ts` w monolicie).
@@ -11,9 +13,11 @@ export const SETUP_GROUPS = {
 
 /** Wartości występujące w rekordach w bazie — używane jako opcje filtrów. */
 export const SETUP_SUGGESTIONS = {
+  // Tam, gdzie część ciała pokrywa się z partią mięśniową, nazwa jest ta sama co w `MuscleGroupName`.
   bodyPart: [
-    'uda', 'talia', 'plecy', 'barki', 'ramiona', 'klatka piersiowa', 'całe ciało',
-    'podudzia', 'przedramiona', 'cardio', 'szyja',
+    'Uda', MuscleGroupName.Core, MuscleGroupName.Back, MuscleGroupName.Shoulders, 'Ramiona',
+    MuscleGroupName.Chest, MuscleGroupName.FullBody, MuscleGroupName.Calves, MuscleGroupName.Forearms,
+    'Cardio', 'Szyja',
   ],
   equipment: [
     'masa ciała', 'hantle', 'wyciąg', 'guma oporowa', 'sztanga', 'maszyna dźwigniowa',
