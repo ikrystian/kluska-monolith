@@ -48,7 +48,7 @@ function splitSteps(text: string): string[] {
         .filter(Boolean);
 }
 
-function ExerciseMedia({ exercise }: { exercise: Exercise }) {
+export function ExerciseMedia({ exercise }: { exercise: Exercise }) {
     // Animacja (z importu openGym) ma pierwszeństwo nad obrazkiem w szczegółach.
     const animationUrl = getAnimationUrl(exercise);
     const mediaUrl = resolveMediaUrl(animationUrl || exercise.mediaUrl || exercise.image || '');
@@ -99,7 +99,7 @@ function ExerciseMedia({ exercise }: { exercise: Exercise }) {
     );
 }
 
-function ExerciseDetailBody({ exercise }: { exercise: Exercise }) {
+export function ExerciseDetailBody({ exercise }: { exercise: Exercise }) {
     const mainMuscles = getMainMuscleNames(exercise);
     const secondaryMuscles = exercise.secondaryMuscleGroups?.map((mg) => mg.name) ?? [];
     const setup = exercise.setup?.filter((item) => item.group !== 'Animacja' && item.group && item.value) ?? [];

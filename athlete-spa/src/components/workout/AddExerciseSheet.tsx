@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Dumbbell, Loader2, PlusCircle } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Dumbbell, Loader2, PlusCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ExerciseFilters } from '@/components/shared/exercises/ExerciseFilters';
+import { ExercisePreviewPager } from '@/components/workout/ExercisePreviewPager';
 import { EMPTY_EXERCISE_FILTERS, useExerciseLibrary, visibleExercisesScope } from '@/hooks/useExerciseLibrary';
 import { resolveMediaUrl } from '@/lib/api-client';
 import { useDoc, useUser } from '@/lib/db-hooks';
@@ -15,12 +16,13 @@ const muscleGroupOptions = Object.values(MuscleGroupName).map(name => ({ label: 
 
 type Step = 'body' | 'results';
 
-function ExerciseRow({ exercise, onPick }: { exercise: Exercise; onPick: (id: string) => void }) {
+function ExerciseRow({ exercise, onOpen }: { exercise: Exercise; onOpen: () => void }) {
   const mediaUrl = resolveMediaUrl(exercise.mediaUrl);
   return (
     <button
       type="button"
-      onClick={() => onPick(exercise.id)}
+      data-exercise-id={exercise.id}
+      onClick={onOpen}
       className="flex w-full items-center gap-3 rounded-2xl border border-border/60 bg-card p-2.5 text-left transition-all hover:border-primary/30 active:scale-[0.99]"
     >
       {mediaUrl ? (
@@ -40,9 +42,7 @@ function ExerciseRow({ exercise, onPick }: { exercise: Exercise; onPick: (id: st
           ))}
         </span>
       </span>
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary text-primary">
-        <PlusCircle className="h-5 w-5" />
-      </span>
+      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
     </button>
   );
 }
@@ -52,6 +52,7 @@ function ExerciseRow({ exercise, onPick }: { exercise: Exercise; onPick: (id: st
  * parts instead of a list of exercises: nothing is fetched until the athlete
  * picks one, then the first page of its exercises loads and the rest follows
  * on scroll. Search and filters are the ones of the exercise library screen.
+ * Tapping a result opens its details first; it is added from there.
  */
 export function AddExerciseSheet({ onAddExercise }: { onAddExercise: (exerciseId: string) => void }) {
   const { user } = useUser();
@@ -61,6 +62,7 @@ export function AddExerciseSheet({ onAddExercise }: { onAddExercise: (exerciseId
   const [step, setStep] = useState<Step>('body');
   const [filters, setFilters] = useState(EMPTY_EXERCISE_FILTERS);
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Same visibility as the workout page itself, so every exercise picked here
@@ -86,6 +88,7 @@ export function AddExerciseSheet({ onAddExercise }: { onAddExercise: (exerciseId
 
   const reset = () => {
     setStep('body');
+    setPreviewIndex(null);
     setFilters(EMPTY_EXERCISE_FILTERS);
     setDebouncedSearch('');
   };
@@ -104,6 +107,18 @@ export function AddExerciseSheet({ onAddExercise }: { onAddExercise: (exerciseId
     onAddExercise(exerciseId);
     handleOpenChange(false);
   };
+
+  // Back on the list, keep the last previewed exercise in sight.
+  const closePreview = () => {
+    const id = previewIndex !== null ? exercises[previewIndex]?.id : undefined;
+    setPreviewIndex(null);
+    if (id) scrollRef.current?.querySelector(`[data-exercise-id="${id}"]`)?.scrollIntoView({ block: 'nearest' });
+  };
+
+  // Paging through the preview pulls in the next page before reaching its end.
+  useEffect(() => {
+    if (previewIndex !== null && previewIndex >= exercises.length - 3 && hasMore && !isLoadingMore) loadMore();
+  }, [previewIndex, exercises.length, hasMore, isLoadingMore, loadMore]);
 
   // Infinite scroll: near the bottom of the list, bring in the next page.
   const handleScroll = useCallback(() => {
@@ -130,7 +145,16 @@ export function AddExerciseSheet({ onAddExercise }: { onAddExercise: (exerciseId
           <span className="absolute bottom-0 text-xs">Dodaj kolejne ćwiczenie</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="flex h-[85vh] flex-col gap-3 rounded-t-[2rem] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+      <SheetContent
+        side="bottom"
+        className="flex h-[85vh] flex-col gap-3 rounded-t-[2rem] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
+        onEscapeKeyDown={(e) => {
+          // Escape (and Android back) leaves the preview before the sheet.
+          if (previewIndex === null) return;
+          e.preventDefault();
+          closePreview();
+        }}
+      >
         <SheetHeader className="text-left">
           <div className="flex items-center gap-2">
             {step === 'results' && (
@@ -197,8 +221,8 @@ export function AddExerciseSheet({ onAddExercise }: { onAddExercise: (exerciseId
                 </div>
               ) : (
                 <>
-                  {exercises.map(exercise => (
-                    <ExerciseRow key={exercise.id} exercise={exercise} onPick={pickExercise} />
+                  {exercises.map((exercise, index) => (
+                    <ExerciseRow key={exercise.id} exercise={exercise} onOpen={() => setPreviewIndex(index)} />
                   ))}
                   {isLoadingMore && (
                     <div className="flex justify-center py-3">
@@ -209,6 +233,18 @@ export function AddExerciseSheet({ onAddExercise }: { onAddExercise: (exerciseId
               )}
             </div>
           </>
+        )}
+
+        {step === 'results' && previewIndex !== null && (
+          <ExercisePreviewPager
+            exercises={exercises}
+            index={previewIndex}
+            onIndexChange={setPreviewIndex}
+            onAdd={pickExercise}
+            onClose={closePreview}
+            totalCount={totalFiltered}
+            isLoadingMore={isLoadingMore}
+          />
         )}
       </SheetContent>
     </Sheet>
