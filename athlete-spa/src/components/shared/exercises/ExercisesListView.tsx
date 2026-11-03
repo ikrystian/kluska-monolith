@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { useState, useEffect, useMemo } from 'react';
 import { Exercise, MuscleGroupName } from '@/lib/types';
 import { useUser, useUpdateDoc, useDeleteDoc, useCreateDoc } from '@/lib/db-hooks';
 import { EMPTY_EXERCISE_FILTERS, useExerciseLibrary } from '@/hooks/useExerciseLibrary';
-import { cn } from '@/lib/utils';
+import { useFavoriteExercises } from '@/hooks/useFavoriteExercises';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,66 +17,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, PlusCircle, Dumbbell, Loader2, Trash2, LoaderCircle, LayoutGrid, List } from 'lucide-react';
+import { Plus, PlusCircle, Dumbbell, Loader2, Trash2 } from 'lucide-react';
 
-import { ExerciseCardHorizontal } from './ExerciseCardHorizontal';
-import { ExerciseCardGrid } from './ExerciseCardGrid';
 import { ExerciseFilters } from './ExerciseFilters';
 import { ExerciseFormDialog } from './ExerciseForm';
 import { ProgressDialog } from './ProgressDialog';
 import { ExerciseDetailDialog } from './ExerciseDetailDialog';
+import { ExerciseResults, ViewModeToggle, useExerciseViewMode } from './ExerciseResults';
 import { ExercisesListViewProps, ExerciseFormData, roleDefaults } from './types';
-
-type ViewMode = 'list' | 'grid';
-
-const VIEW_MODE_STORAGE_KEY = 'exercises:view-mode';
-const LIST_ROW_HEIGHT = 96; // 88px karta + 8px odstęp
-const GRID_GAP = 12;
-
-function readViewMode(): ViewMode {
-  try {
-    return localStorage.getItem(VIEW_MODE_STORAGE_KEY) === 'grid' ? 'grid' : 'list';
-  } catch {
-    return 'list';
-  }
-}
-
-/** Liczba kolumn gridu wg szerokości kontenera (nie viewportu – działa też w panelach). */
-function getGridColumns(width: number): number {
-  if (width >= 1200) return 5;
-  if (width >= 900) return 4;
-  if (width >= 600) return 3;
-  return 2;
-}
-
-function ViewModeToggle({ value, onChange }: { value: ViewMode; onChange: (mode: ViewMode) => void }) {
-  const options: { mode: ViewMode; icon: typeof List; label: string }[] = [
-    { mode: 'list', icon: List, label: 'Widok listy' },
-    { mode: 'grid', icon: LayoutGrid, label: 'Widok siatki' },
-  ];
-  return (
-    <div className="flex h-10 items-center rounded-full border bg-card p-1">
-      {options.map(({ mode, icon: Icon, label }) => (
-        <button
-          key={mode}
-          type="button"
-          aria-pressed={value === mode}
-          aria-label={label}
-          title={label}
-          onClick={() => onChange(mode)}
-          className={cn(
-            'flex h-8 w-8 items-center justify-center rounded-full transition-colors',
-            value === mode ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
-          )}
-        >
-          <Icon className="h-4 w-4" />
-        </button>
-      ))}
-    </div>
-  );
-}
 
 export function ExercisesListView(props: ExercisesListViewProps) {
   const { role } = props;
@@ -108,16 +56,10 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const [isBulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
-  const [viewMode, setViewModeState] = useState<ViewMode>(readViewMode);
-
-  const setViewMode = (mode: ViewMode) => {
-    setViewModeState(mode);
-    try {
-      localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode);
-    } catch {
-      // brak dostępu do storage – tryb działa tylko w tej sesji
-    }
-  };
+  const [viewMode, setViewMode] = useExerciseViewMode();
+  // Ulubione są osobiste — tylko sportowiec ma je na liście (trener/admin zarządza bazą).
+  const { favoriteIds, favoriteSet, toggleFavorite } = useFavoriteExercises();
+  const showFavorites = role === 'athlete';
 
   // Wyszukiwanie trafia do serwera dopiero po chwili bez pisania.
   useEffect(() => {
@@ -139,7 +81,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     queryKey,
     loadMore,
     refetch: refetchExercises,
-  } = useExerciseLibrary(libraryFilters, !!user?.uid);
+  } = useExerciseLibrary(libraryFilters, !!user?.uid, undefined, showFavorites ? favoriteIds : undefined);
 
   const allExercises = exercises;
   const filteredExercises = exercises;
@@ -288,76 +230,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
     }
   };
 
-  // Kontener scrolla: mierzymy jego szerokość, żeby dobrać liczbę kolumn gridu.
-  const parentRef = useRef<HTMLDivElement | null>(null);
-  const resizeObserverRef = useRef<ResizeObserver | null>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
-  const setScrollContainer = useCallback((el: HTMLDivElement | null) => {
-    resizeObserverRef.current?.disconnect();
-    parentRef.current = el;
-    if (!el) return;
-    setContainerWidth(el.clientWidth);
-    resizeObserverRef.current = new ResizeObserver(([entry]) => setContainerWidth(entry.contentRect.width));
-    resizeObserverRef.current.observe(el);
-  }, []);
-
-  // Wirtualizujemy wiersze; w gridzie wiersz zawiera `columns` kart.
-  const columns = viewMode === 'grid' ? getGridColumns(containerWidth) : 1;
-  const rowCount = Math.ceil(filteredExercises.length / columns);
-  const rowVirtualizer = useVirtualizer({
-    count: rowCount,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => {
-      if (viewMode === 'list') return LIST_ROW_HEIGHT;
-      const colWidth = containerWidth ? (containerWidth - GRID_GAP * (columns - 1)) / columns : 180;
-      return colWidth * 0.75 + 76 + GRID_GAP; // media 4:3 + treść + odstęp
-    },
-    overscan: viewMode === 'grid' ? 3 : 5,
-    getItemKey: (index) => `${viewMode}-${columns}-${filteredExercises[index * columns]?.id ?? index}`,
-  });
-
-  useEffect(() => {
-    rowVirtualizer.measure();
-  }, [rowVirtualizer, viewMode, columns]);
-
-  // Infinite scroll: gdy pasek dochodzi do dołu kontenera, dołóż kolejną stronę.
-  const handleScroll = useCallback(() => {
-    const el = parentRef.current;
-    if (!el) return;
-    const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 400;
-    if (nearBottom && hasMore && !isLoadingMore) loadMore();
-  }, [hasMore, isLoadingMore, loadMore]);
-
-  // Nowe wyszukiwanie/filtry zaczynają od góry listy.
-  useEffect(() => {
-    parentRef.current?.scrollTo({ top: 0 });
-  }, [queryKey]);
-
-  // Gdy treść nie wypełnia kontenera (np. szeroki grid), scroll nie nastąpi – dociągnij od razu.
-  useEffect(() => {
-    handleScroll();
-  }, [handleScroll, filteredExercises.length, viewMode, columns]);
-
-  const renderCard = (exercise: Exercise) => {
-    const CardComponent = viewMode === 'grid' ? ExerciseCardGrid : ExerciseCardHorizontal;
-    return (
-      <CardComponent
-        key={exercise.id}
-        exercise={exercise}
-        userId={user?.uid}
-        canEdit={canEdit}
-        canDelete={canDelete}
-        showProgress={showProgress}
-        showOwnerBadge={showOwnerBadge}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onShowProgress={handleShowProgress}
-        onClick={handleShowDetail}
-        allowNonOwnerEdit={role === 'admin'}
-        allowNonOwnerDelete={role === 'admin'}
-      />
-    );
-  };
+  const handleToggleFavorite = (exercise: Exercise) => void toggleFavorite(exercise.id);
 
   const countLabel = isLoading
     ? 'Ładowanie…'
@@ -401,113 +274,49 @@ export function ExercisesListView(props: ExercisesListViewProps) {
         />
       </div>
 
-      {isLoading ? (
-        viewMode === 'grid' ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {Array.from({ length: 10 }).map((_, index) => (
-              <div key={index} className="overflow-hidden rounded-2xl border bg-card">
-                <Skeleton className="aspect-[4/3] w-full rounded-none" />
-                <div className="space-y-2 p-3">
-                  <Skeleton className="h-4 w-4/5" />
-                  <Skeleton className="h-3 w-1/2" />
-                </div>
+      <ExerciseResults
+        exercises={filteredExercises}
+        viewMode={viewMode}
+        isLoading={isLoading}
+        isLoadingMore={isLoadingMore}
+        error={error}
+        hasMore={hasMore}
+        loadMore={loadMore}
+        queryKey={queryKey}
+        onRetry={refetchExercises}
+        getCardProps={(exercise) => ({
+          userId: user?.uid,
+          canEdit,
+          canDelete,
+          showProgress,
+          showOwnerBadge,
+          onEdit: handleEdit,
+          onDelete: handleDelete,
+          onShowProgress: handleShowProgress,
+          onClick: handleShowDetail,
+          allowNonOwnerEdit: role === 'admin',
+          allowNonOwnerDelete: role === 'admin',
+          isFavorite: favoriteSet.has(exercise.id),
+          onToggleFavorite: showFavorites ? handleToggleFavorite : undefined,
+        })}
+        empty={
+          <Card className="flex flex-col items-center justify-center rounded-3xl border-dashed py-16">
+            <CardContent className="text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                <Dumbbell className="h-8 w-8 text-primary" />
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {Array.from({ length: 8 }).map((_, index) => (
-              <div key={index} className="flex h-[88px] items-center gap-3 rounded-2xl border bg-card p-2">
-                <Skeleton className="aspect-square h-full flex-shrink-0 rounded-xl" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-3 w-1/2" />
-                  <Skeleton className="h-3 w-16 rounded-full" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )
-      ) : error ? (
-        <Card className="flex flex-col items-center justify-center rounded-3xl border-dashed py-20">
-          <CardContent className="text-center">
-            <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="font-headline text-xl font-semibold mb-2">Błąd ładowania</h3>
-            <p className="text-muted-foreground mb-4">{error.message || 'Nie udało się pobrać ćwiczeń.'}</p>
-          </CardContent>
-        </Card>
-      ) : filteredExercises.length > 0 ? (
-        <div
-          ref={setScrollContainer}
-          onScroll={handleScroll}
-          className="flex-1 overflow-auto min-h-0"
-          style={{ contain: 'strict' }}
-          id="exercise-full-list"
-        >
-          <div
-            style={{
-              height: `${rowVirtualizer.getTotalSize()}px`,
-              width: '100%',
-              position: 'relative',
-            }}
-          >
-            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-              const rowItems = filteredExercises.slice(
-                virtualRow.index * columns,
-                virtualRow.index * columns + columns,
-              );
-              return (
-                <div
-                  key={virtualRow.key}
-                  data-index={virtualRow.index}
-                  ref={rowVirtualizer.measureElement}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    transform: `translateY(${virtualRow.start}px)`,
-                  }}
-                  className={viewMode === 'grid' ? 'pb-3' : 'pb-2'}
-                >
-                  {viewMode === 'grid' ? (
-                    <div
-                      className="grid"
-                      style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`, gap: GRID_GAP }}
-                    >
-                      {rowItems.map(renderCard)}
-                    </div>
-                  ) : (
-                    rowItems.map(renderCard)
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          {isLoadingMore && (
-            <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
-              <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-              Ładowanie kolejnych ćwiczeń…
-            </div>
-          )}
-        </div>
-      ) : (
-        <Card className="flex flex-col items-center justify-center rounded-3xl border-dashed py-16">
-          <CardContent className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-              <Dumbbell className="h-8 w-8 text-primary" />
-            </div>
-            <h3 className="font-headline text-xl font-semibold mb-2">Brak ćwiczeń</h3>
-            <p className="mx-auto mb-4 max-w-sm text-sm text-muted-foreground">{emptyMessage}</p>
-            {canCreate && (
-              <Button variant="outline" className="rounded-full" onClick={handleCreate}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Dodaj Ćwiczenie
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      )}
+              <h3 className="font-headline text-xl font-semibold mb-2">Brak ćwiczeń</h3>
+              <p className="mx-auto mb-4 max-w-sm text-sm text-muted-foreground">{emptyMessage}</p>
+              {canCreate && (
+                <Button variant="outline" className="rounded-full" onClick={handleCreate}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Dodaj Ćwiczenie
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        }
+      />
 
       {/* Form Dialog */}
       <ExerciseFormDialog
@@ -540,6 +349,8 @@ export function ExercisesListView(props: ExercisesListViewProps) {
         onOpenChange={setDetailDialogOpen}
         onShowProgress={showProgress ? handleDetailProgress : undefined}
         onEdit={selectedExercise && canEditExercise(selectedExercise) ? handleDetailEdit : undefined}
+        isFavorite={!!selectedExercise && favoriteSet.has(selectedExercise.id)}
+        onToggleFavorite={showFavorites ? handleToggleFavorite : undefined}
       />
 
       {/* Delete Confirmation Dialog */}

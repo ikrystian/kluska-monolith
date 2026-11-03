@@ -55,6 +55,8 @@ export interface IUser extends Document {
   };
   trainerId?: string;
   favoriteGymIds?: string[];
+  /** Exercises the athlete starred; listed first in the exercise library and picker. */
+  favoriteExerciseIds?: string[];
   trainerCard?: ITrainerCard;
   assignedDietPlanId?: string;
   // Onboarding fields
@@ -103,6 +105,7 @@ const UserSchema = new Schema<IUser>(
     },
     trainerId: { type: String },
     favoriteGymIds: [{ type: String }],
+    favoriteExerciseIds: [{ type: String }],
     trainerCard: {
       type: new Schema(
         {

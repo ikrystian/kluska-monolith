@@ -5,6 +5,7 @@ import { ExerciseCardProps } from './types';
 import {
   ExerciseActionsMenu,
   ExerciseThumb,
+  FavoriteButton,
   exerciseTypeMeta,
   getMainMuscleNames,
   getOwnerLabel,
@@ -23,6 +24,8 @@ export function ExerciseCardGrid({
   onDelete,
   onShowProgress,
   onClick,
+  isFavorite = false,
+  onToggleFavorite,
 }: ExerciseCardProps) {
   const isOwner = exercise.ownerId === userId;
   const canEditThis = canEdit && (isOwner || allowNonOwnerEdit);
@@ -51,7 +54,15 @@ export function ExerciseCardGrid({
           </span>
         )}
 
-        <div className="absolute right-1.5 top-1.5">
+        <div className="absolute right-1.5 top-1.5 flex flex-col gap-1">
+          {onToggleFavorite && (
+            <FavoriteButton
+              active={isFavorite}
+              onToggle={() => onToggleFavorite(exercise)}
+              className="glass h-7 w-7 hover:bg-background/80"
+              iconClassName="h-3.5 w-3.5"
+            />
+          )}
           <ExerciseActionsMenu
             exercise={exercise}
             canEdit={canEditThis}

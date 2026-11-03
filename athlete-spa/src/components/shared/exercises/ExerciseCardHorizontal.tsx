@@ -7,6 +7,7 @@ import { ExerciseCardProps } from './types';
 import {
   ExerciseActionsMenu,
   ExerciseThumb,
+  FavoriteButton,
   exerciseTypeMeta,
   getMainMuscleNames,
   getOwnerLabel,
@@ -25,6 +26,8 @@ export function ExerciseCardHorizontal({
   onDelete,
   onShowProgress,
   onClick,
+  isFavorite = false,
+  onToggleFavorite,
 }: ExerciseCardProps) {
   const isOwner = exercise.ownerId === userId;
   const canEditThis = canEdit && (isOwner || allowNonOwnerEdit);
@@ -68,6 +71,7 @@ export function ExerciseCardHorizontal({
 
       {/* Akcje */}
       <div className="flex flex-shrink-0 items-center">
+        {onToggleFavorite && <FavoriteButton active={isFavorite} onToggle={() => onToggleFavorite(exercise)} />}
         <ExerciseActionsMenu
           exercise={exercise}
           canEdit={canEditThis}

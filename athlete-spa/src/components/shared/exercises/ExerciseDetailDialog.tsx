@@ -11,8 +11,8 @@ import {
 } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Dumbbell, Edit, LineChart as ChartIcon, Target } from 'lucide-react';
-import { exerciseTypeMeta, getMainMuscleNames, isVideoUrl } from './ExerciseCardParts';
+import { Copy, Dumbbell, Edit, LineChart as ChartIcon, Target } from 'lucide-react';
+import { FavoriteButton, exerciseTypeMeta, getMainMuscleNames, isVideoUrl, useCopyExerciseId } from './ExerciseCardParts';
 
 interface ExerciseDetailDialogProps {
     exercise: Exercise | null;
@@ -22,6 +22,9 @@ interface ExerciseDetailDialogProps {
     onShowProgress?: (exercise: Exercise) => void;
     /** Pokazuje przycisk "Edytuj" w stopce */
     onEdit?: (exercise: Exercise) => void;
+    /** Pokazuje gwiazdkę ulubionych przy nazwie */
+    isFavorite?: boolean;
+    onToggleFavorite?: (exercise: Exercise) => void;
 }
 
 /**
@@ -100,6 +103,7 @@ export function ExerciseMedia({ exercise }: { exercise: Exercise }) {
 }
 
 export function ExerciseDetailBody({ exercise }: { exercise: Exercise }) {
+    const copyId = useCopyExerciseId();
     const mainMuscles = getMainMuscleNames(exercise);
     const secondaryMuscles = exercise.secondaryMuscleGroups?.map((mg) => mg.name) ?? [];
     const setup = exercise.setup?.filter((item) => item.group !== 'Animacja' && item.group && item.value) ?? [];
@@ -178,6 +182,16 @@ export function ExerciseDetailBody({ exercise }: { exercise: Exercise }) {
                     </p>
                 )}
             </section>
+
+            {/* ID — do wyszukiwania i przekazywania konkretnego ćwiczenia */}
+            <section className="flex items-center gap-2 rounded-2xl border bg-card py-1.5 pl-4 pr-1.5 text-xs">
+                <span className="font-medium text-muted-foreground">ID</span>
+                <code className="min-w-0 flex-1 select-all truncate font-mono">{exercise.id}</code>
+                <Button type="button" variant="ghost" size="sm" className="h-8 rounded-full" onClick={() => void copyId(exercise)}>
+                    <Copy className="mr-1.5 h-3.5 w-3.5" />
+                    Kopiuj
+                </Button>
+            </section>
         </div>
     );
 }
@@ -188,6 +202,8 @@ export function ExerciseDetailDialog({
     onOpenChange,
     onShowProgress,
     onEdit,
+    isFavorite = false,
+    onToggleFavorite,
 }: ExerciseDetailDialogProps) {
     const isMobile = useIsMobile();
 
@@ -204,7 +220,17 @@ export function ExerciseDetailDialog({
                     {typeMeta.label}
                 </span>
             )}
-            <Title className="font-headline text-2xl font-bold leading-tight">{exercise.name}</Title>
+            <div className="flex items-start justify-between gap-2">
+                <Title className="font-headline text-2xl font-bold leading-tight">{exercise.name}</Title>
+                {onToggleFavorite && (
+                    <FavoriteButton
+                        active={isFavorite}
+                        onToggle={() => onToggleFavorite(exercise)}
+                        className="-mr-2 h-10 w-10"
+                        iconClassName="h-5 w-5"
+                    />
+                )}
+            </div>
             <Description className="sr-only">Szczegółowe informacje o ćwiczeniu</Description>
         </div>
     );

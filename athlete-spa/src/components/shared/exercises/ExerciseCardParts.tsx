@@ -3,6 +3,8 @@
 import { Exercise } from '@/lib/types';
 import { resolveMediaUrl } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
+import { copyToClipboard } from '@/lib/clipboard';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -19,6 +21,8 @@ import {
   PlayCircle,
   Repeat,
   Timer,
+  Star,
+  Copy,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -70,6 +74,46 @@ export function ExerciseThumb({ exercise, iconClassName }: { exercise: Exercise;
   );
 }
 
+/** Kopiuje ID ćwiczenia i potwierdza to toastem. */
+export function useCopyExerciseId() {
+  const { toast } = useToast();
+  return async (exercise: Exercise) => {
+    const ok = await copyToClipboard(exercise.id);
+    toast(ok ? { title: 'Skopiowano ID ćwiczenia', description: exercise.id } : { title: 'Nie udało się skopiować ID', variant: 'destructive' });
+  };
+}
+
+/** Gwiazdka ulubionych; nie otwiera karty, na której leży. */
+export function FavoriteButton({
+  active,
+  onToggle,
+  className,
+  iconClassName,
+}: {
+  active: boolean;
+  onToggle: () => void;
+  className?: string;
+  iconClassName?: string;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      aria-pressed={active}
+      aria-label={active ? 'Usuń z ulubionych' : 'Dodaj do ulubionych'}
+      title={active ? 'Usuń z ulubionych' : 'Dodaj do ulubionych'}
+      className={cn('h-8 w-8 flex-shrink-0 rounded-full', className)}
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggle();
+      }}
+    >
+      <Star className={cn('h-4 w-4', active ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground', iconClassName)} />
+    </Button>
+  );
+}
+
 interface ExerciseActionsMenuProps {
   exercise: Exercise;
   canEdit: boolean;
@@ -91,7 +135,7 @@ export function ExerciseActionsMenu({
   onShowProgress,
   triggerClassName,
 }: ExerciseActionsMenuProps) {
-  if (!canEdit && !canDelete && !showProgress) return null;
+  const copyId = useCopyExerciseId();
 
   return (
     <div onClick={(e) => e.stopPropagation()}>
@@ -103,6 +147,10 @@ export function ExerciseActionsMenu({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => void copyId(exercise)}>
+            <Copy className="mr-2 h-4 w-4" />
+            <span>Kopiuj ID</span>
+          </DropdownMenuItem>
           {showProgress && (
             <DropdownMenuItem onClick={() => onShowProgress(exercise)}>
               <ChartIcon className="mr-2 h-4 w-4" />

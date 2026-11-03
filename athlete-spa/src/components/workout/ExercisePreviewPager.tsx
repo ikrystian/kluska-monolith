@@ -3,7 +3,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, PlusCircle } from 'lucid
 import { Button } from '@/components/ui/button';
 import { AnimatePresence, motion } from '@/components/motion';
 import { ExerciseDetailBody, ExerciseMedia } from '@/components/shared/exercises/ExerciseDetailDialog';
-import { exerciseTypeMeta } from '@/components/shared/exercises/ExerciseCardParts';
+import { FavoriteButton, exerciseTypeMeta } from '@/components/shared/exercises/ExerciseCardParts';
 import { haptic } from '@/lib/haptics';
 import type { Exercise } from '@/lib/types';
 
@@ -26,6 +26,8 @@ interface ExercisePreviewPagerProps {
   /** Total matching the filters, which may exceed the pages loaded so far. */
   totalCount?: number;
   isLoadingMore?: boolean;
+  isFavorite?: (exerciseId: string) => boolean;
+  onToggleFavorite?: (exerciseId: string) => void;
 }
 
 /**
@@ -41,6 +43,8 @@ export function ExercisePreviewPager({
   onClose,
   totalCount,
   isLoadingMore,
+  isFavorite,
+  onToggleFavorite,
 }: ExercisePreviewPagerProps) {
   const [direction, setDirection] = useState(0);
   const exercise = exercises[index];
@@ -77,6 +81,14 @@ export function ExercisePreviewPager({
         <span className="flex-1 text-center text-sm tabular-nums text-muted-foreground">
           {index + 1} / {Math.max(totalCount ?? 0, exercises.length)}
         </span>
+        {onToggleFavorite && (
+          <FavoriteButton
+            active={isFavorite?.(exercise.id) ?? false}
+            onToggle={() => onToggleFavorite(exercise.id)}
+            className="h-10 w-10"
+            iconClassName="h-5 w-5"
+          />
+        )}
         <Button type="button" variant="ghost" size="icon" className="h-10 w-10 shrink-0" aria-label="Poprzednie ćwiczenie" disabled={!hasPrev} onClick={() => go(-1)}>
           <ChevronLeft className="h-5 w-5" />
         </Button>

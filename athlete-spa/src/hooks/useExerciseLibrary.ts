@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import useSWRInfinite from 'swr/infinite';
 import useSWR from 'swr';
 import { apiFetch } from '@/lib/api-client';
@@ -14,7 +14,9 @@ import { SETUP_GROUPS } from '@/components/shared/exercises/setup';
  *   w parametrze `query` Mongo do `/api/db/exercises`, więc filtruje serwer,
  *   nie klient,
  * - zwraca też liczby: wszystkich ćwiczeń (`totalAll`) i przefiltrowanych
- *   (`totalFiltered`).
+ *   (`totalFiltered`),
+ * - ulubione (`favoriteIds`) pasujące do filtrów idą osobnym zapytaniem na
+ *   początek listy, a z kolejnych stron są pomijane.
  */
 
 export const EXERCISE_PAGE_SIZE = 30;
@@ -45,6 +47,9 @@ export function countExtraFilters(filters: ExerciseLibraryFilters): number {
 }
 
 const isSet = (value: string) => Boolean(value) && value !== 'all';
+
+/** Wpisane w wyszukiwarkę ID dokumentu (ObjectId) — szukamy wtedy też po `_id`. */
+const OBJECT_ID = /^[a-f0-9]{24}$/i;
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -85,6 +90,7 @@ export function buildExerciseFilter(
         { 'mainMuscleGroups.name': rx },
         { 'secondaryMuscleGroups.name': rx },
         { setup: { $elemMatch: { group: { $ne: SETUP_GROUPS.animation }, value: rx } } },
+        ...(OBJECT_ID.test(term) ? [{ _id: term }] : []),
       ],
     });
   }
@@ -141,6 +147,7 @@ function collectionUrl(query: Record<string, unknown>, params: Record<string, st
 }
 
 export interface ExerciseLibraryResult {
+  /** Ulubione (alfabetycznie), potem reszta w kolejności stron. */
   exercises: Exercise[];
   isLoading: boolean;
   isLoadingMore: boolean;
@@ -162,7 +169,8 @@ export interface ExerciseLibraryResult {
 export function useExerciseLibrary(
   filters: ExerciseLibraryFilters,
   enabled = true,
-  scope?: Record<string, unknown>
+  scope?: Record<string, unknown>,
+  favoriteIds: string[] = []
 ): ExerciseLibraryResult {
   const query = useMemo(
     () => (enabled ? buildExerciseFilter(filters, scope) : null),
@@ -185,10 +193,37 @@ export function useExerciseLibrary(
     pageFetcher
   );
 
-  const exercises = useMemo(
+  const pagedExercises = useMemo(
     () => (data ? ([] as Exercise[]).concat(...data.map((p) => p.data ?? [])) : []),
     [data]
   );
+
+  // Ulubione pasujące do filtrów — zwykle kilka-kilkanaście, więc bez stronicowania.
+  // Klucz od posortowanych ID: kolejność oznaczania nie wywołuje nowego zapytania.
+  const favoriteKey = useMemo(() => {
+    if (!query || favoriteIds.length === 0) return null;
+    const ids = [...favoriteIds].sort();
+    return collectionUrl({ $and: [query, { _id: { $in: ids } }] });
+  }, [query, favoriteIds]);
+  const { data: favoritePage } = useSWR<ExercisePage>(favoriteKey, pageFetcher);
+  // Zmiana samych ulubionych (nie filtrów) zostawia poprzedni wynik do czasu nowego,
+  // żeby gwiazdka nie powodowała mignięcia listy.
+  const lastFavoritesRef = useRef<{ queryJson: string; data: Exercise[] }>({ queryJson: '', data: [] });
+  if (favoritePage) lastFavoritesRef.current = { queryJson, data: favoritePage.data ?? [] };
+  const favoriteDocs =
+    favoriteKey && lastFavoritesRef.current.queryJson === queryJson ? lastFavoritesRef.current.data : [];
+
+  const exercises = useMemo(() => {
+    const favoriteSet = new Set(favoriteIds);
+    if (favoriteSet.size === 0) return pagedExercises;
+    // Świeżo oznaczone mogą jeszcze nie wrócić z zapytania o ulubione — bierzemy je z już pobranych stron.
+    const favorites = new Map<string, Exercise>();
+    for (const ex of [...favoriteDocs, ...pagedExercises]) {
+      if (favoriteSet.has(ex.id) && !favorites.has(ex.id)) favorites.set(ex.id, ex);
+    }
+    const sortedFavorites = [...favorites.values()].sort((a, b) => a.name.localeCompare(b.name, 'pl'));
+    return [...sortedFavorites, ...pagedExercises.filter((ex) => !favoriteSet.has(ex.id))];
+  }, [pagedExercises, favoriteDocs, favoriteIds]);
 
   const hasMore = useMemo(() => {
     if (!query || !data) return false;

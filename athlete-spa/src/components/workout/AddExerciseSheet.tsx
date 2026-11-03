@@ -1,69 +1,47 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ChevronRight, Dumbbell, Loader2, PlusCircle } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Dumbbell, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Skeleton } from '@/components/ui/skeleton';
 import { ExerciseFilters } from '@/components/shared/exercises/ExerciseFilters';
+import {
+  ExerciseResults,
+  type ExerciseResultsHandle,
+  ViewModeToggle,
+  useExerciseViewMode,
+} from '@/components/shared/exercises/ExerciseResults';
 import { ExercisePreviewPager } from '@/components/workout/ExercisePreviewPager';
 import { EMPTY_EXERCISE_FILTERS, useExerciseLibrary, visibleExercisesScope } from '@/hooks/useExerciseLibrary';
-import { resolveMediaUrl } from '@/lib/api-client';
+import { useFavoriteExercises } from '@/hooks/useFavoriteExercises';
 import { useDoc, useUser } from '@/lib/db-hooks';
 import { MuscleGroupName } from '@/lib/types';
 import type { Exercise, UserProfile } from '@/lib/types';
 
 const muscleGroupOptions = Object.values(MuscleGroupName).map(name => ({ label: name, value: name }));
 
-type Step = 'body' | 'results';
-
-function ExerciseRow({ exercise, onOpen }: { exercise: Exercise; onOpen: () => void }) {
-  const mediaUrl = resolveMediaUrl(exercise.mediaUrl);
-  return (
-    <button
-      type="button"
-      data-exercise-id={exercise.id}
-      onClick={onOpen}
-      className="flex w-full items-center gap-3 rounded-2xl border border-border/60 bg-card p-2.5 text-left transition-all hover:border-primary/30 active:scale-[0.99]"
-    >
-      {mediaUrl ? (
-        <img src={mediaUrl} alt="" loading="lazy" className="h-12 w-12 shrink-0 rounded-xl object-cover" />
-      ) : (
-        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-secondary/60">
-          <Dumbbell className="h-5 w-5 text-muted-foreground" />
-        </span>
-      )}
-      <span className="min-w-0 flex-1">
-        <span className="block truncate font-semibold">{exercise.name}</span>
-        <span className="mt-0.5 flex flex-wrap gap-1">
-          {exercise.mainMuscleGroups?.slice(0, 2).map(mg => (
-            <Badge key={mg.name} variant="secondary" className="h-4 px-1 py-0 text-[10px]">
-              {mg.name}
-            </Badge>
-          ))}
-        </span>
-      </span>
-      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
-    </button>
-  );
-}
+const noop = () => undefined;
 
 /**
- * Picker for adding an exercise to the workout. It opens on a list of body
- * parts instead of a list of exercises: nothing is fetched until the athlete
- * picks one, then the first page of its exercises loads and the rest follows
- * on scroll. Search and filters are the ones of the exercise library screen.
- * Tapping a result opens its details first; it is added from there.
+ * Picker for adding an exercise to the workout. It looks and filters like the
+ * exercise library screen (same cards, list/grid toggle, favourites first),
+ * loading 30 exercises at a time as the list scrolls. Tapping a result opens
+ * its details first; it is added from there.
  */
 export function AddExerciseSheet({ onAddExercise }: { onAddExercise: (exerciseId: string) => void }) {
   const { user } = useUser();
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>('users', user?.uid || null);
+  const { favoriteIds, favoriteSet, toggleFavorite } = useFavoriteExercises();
 
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState<Step>('body');
   const [filters, setFilters] = useState(EMPTY_EXERCISE_FILTERS);
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [viewMode, setViewMode] = useExerciseViewMode();
+  /**
+   * The order the preview pages through, fixed when it opens: starring an
+   * exercise moves it to the top of the list, which must not shift the page
+   * the athlete is on. Pages loaded meanwhile are appended.
+   */
+  const [preview, setPreview] = useState<{ list: Exercise[]; index: number } | null>(null);
+  const resultsRef = useRef<ExerciseResultsHandle>(null);
 
   // Same visibility as the workout page itself, so every exercise picked here
   // is one the page can resolve back by its id.
@@ -84,23 +62,15 @@ export function AddExerciseSheet({ onAddExercise }: { onAddExercise: (exerciseId
   const libraryFilters = useMemo(() => ({ ...filters, search: debouncedSearch }), [filters, debouncedSearch]);
 
   const { exercises, isLoading, isLoadingMore, error, hasMore, totalFiltered, queryKey, loadMore, refetch } =
-    useExerciseLibrary(libraryFilters, open && step === 'results' && !!user?.uid && !isProfileLoading, scope);
-
-  const reset = () => {
-    setStep('body');
-    setPreviewIndex(null);
-    setFilters(EMPTY_EXERCISE_FILTERS);
-    setDebouncedSearch('');
-  };
+    useExerciseLibrary(libraryFilters, open && !!user?.uid && !isProfileLoading, scope, favoriteIds);
 
   const handleOpenChange = (next: boolean) => {
     setOpen(next);
-    if (!next) reset();
-  };
-
-  const pickMuscle = (muscle: MuscleGroupName | 'all') => {
-    setFilters(current => ({ ...current, muscleGroup: muscle }));
-    setStep('results');
+    if (!next) {
+      setFilters(EMPTY_EXERCISE_FILTERS);
+      setDebouncedSearch('');
+      setPreview(null);
+    }
   };
 
   const pickExercise = (exerciseId: string) => {
@@ -110,32 +80,26 @@ export function AddExerciseSheet({ onAddExercise }: { onAddExercise: (exerciseId
 
   // Back on the list, keep the last previewed exercise in sight.
   const closePreview = () => {
-    const id = previewIndex !== null ? exercises[previewIndex]?.id : undefined;
-    setPreviewIndex(null);
-    if (id) scrollRef.current?.querySelector(`[data-exercise-id="${id}"]`)?.scrollIntoView({ block: 'nearest' });
+    const id = preview?.list[preview.index]?.id;
+    setPreview(null);
+    if (id) resultsRef.current?.scrollToExercise(id);
   };
+
+  useEffect(() => {
+    setPreview(current => {
+      if (!current) return current;
+      const known = new Set(current.list.map(ex => ex.id));
+      const added = exercises.filter(ex => !known.has(ex.id));
+      return added.length ? { ...current, list: [...current.list, ...added] } : current;
+    });
+  }, [exercises]);
 
   // Paging through the preview pulls in the next page before reaching its end.
   useEffect(() => {
-    if (previewIndex !== null && previewIndex >= exercises.length - 3 && hasMore && !isLoadingMore) loadMore();
-  }, [previewIndex, exercises.length, hasMore, isLoadingMore, loadMore]);
+    if (preview && preview.index >= preview.list.length - 3 && hasMore && !isLoadingMore) loadMore();
+  }, [preview, hasMore, isLoadingMore, loadMore]);
 
-  // Infinite scroll: near the bottom of the list, bring in the next page.
-  const handleScroll = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 300 && hasMore && !isLoadingMore) loadMore();
-  }, [hasMore, isLoadingMore, loadMore]);
-
-  // New search or filters start from the top of the list.
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: 0 });
-  }, [queryKey]);
-
-  // A page that doesn't fill the container never scrolls — fetch the next one right away.
-  useEffect(() => {
-    handleScroll();
-  }, [handleScroll, exercises.length]);
+  const handleToggleFavorite = (exercise: Exercise) => void toggleFavorite(exercise.id);
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
@@ -150,100 +114,72 @@ export function AddExerciseSheet({ onAddExercise }: { onAddExercise: (exerciseId
         className="flex h-[85vh] flex-col gap-3 rounded-t-[2rem] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
         onEscapeKeyDown={(e) => {
           // Escape (and Android back) leaves the preview before the sheet.
-          if (previewIndex === null) return;
+          if (!preview) return;
           e.preventDefault();
           closePreview();
         }}
       >
         <SheetHeader className="text-left">
-          <div className="flex items-center gap-2">
-            {step === 'results' && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="-ml-2 h-9 w-9 shrink-0"
-                aria-label="Wróć do wyboru partii ciała"
-                onClick={() => setStep('body')}
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            )}
-            <SheetTitle className="font-headline">Wybierz ćwiczenie</SheetTitle>
+          {/* Right padding keeps the toggle clear of the sheet's close button. */}
+          <div className="flex items-end justify-between gap-3 pr-8">
+            <div className="min-w-0">
+              <SheetTitle className="font-headline">Wybierz ćwiczenie</SheetTitle>
+              <SheetDescription>Ulubione są na górze listy.</SheetDescription>
+            </div>
+            <ViewModeToggle value={viewMode} onChange={setViewMode} />
           </div>
-          <SheetDescription>
-            {step === 'body' ? 'Zacznij od partii ciała, którą chcesz trenować.' : 'Znajdź i dodaj ćwiczenie do swojego treningu.'}
-          </SheetDescription>
         </SheetHeader>
 
-        {step === 'body' ? (
-          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
-            <div className="grid grid-cols-2 gap-2">
-              {muscleGroupOptions.map(option => (
-                <Button
-                  key={option.value}
-                  type="button"
-                  variant="outline"
-                  className="h-12 justify-start rounded-2xl px-4 font-semibold"
-                  onClick={() => pickMuscle(option.value)}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </div>
-            <Button type="button" variant="ghost" className="mt-1 h-10 rounded-full text-muted-foreground" onClick={() => pickMuscle('all')}>
-              Pokaż wszystkie ćwiczenia
-            </Button>
-          </div>
-        ) : (
-          <>
-            <ExerciseFilters
-              filters={filters}
-              onChange={setFilters}
-              muscleGroupOptions={muscleGroupOptions}
-              resultCount={isLoading ? undefined : totalFiltered}
-            />
+        <ExerciseFilters
+          filters={filters}
+          onChange={setFilters}
+          muscleGroupOptions={muscleGroupOptions}
+          resultCount={isLoading ? undefined : totalFiltered}
+        />
 
-            <div ref={scrollRef} onScroll={handleScroll} className="min-h-0 flex-1 space-y-2 overflow-y-auto">
-              {isLoading ? (
-                Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-[4.25rem] w-full rounded-2xl" />)
-              ) : error ? (
-                <div className="flex flex-col items-center gap-3 p-8 text-center text-muted-foreground">
-                  <p className="text-sm">Nie udało się pobrać ćwiczeń.</p>
-                  <Button type="button" variant="outline" size="sm" onClick={refetch}>
-                    Spróbuj ponownie
-                  </Button>
-                </div>
-              ) : exercises.length === 0 ? (
-                <div className="flex flex-col items-center gap-2 p-8 text-center text-muted-foreground">
-                  <Dumbbell className="h-6 w-6" />
-                  <p className="text-sm">Brak wyników — zmień filtry lub wyszukiwanie.</p>
-                </div>
-              ) : (
-                <>
-                  {exercises.map((exercise, index) => (
-                    <ExerciseRow key={exercise.id} exercise={exercise} onOpen={() => setPreviewIndex(index)} />
-                  ))}
-                  {isLoadingMore && (
-                    <div className="flex justify-center py-3">
-                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                    </div>
-                  )}
-                </>
-              )}
+        <ExerciseResults
+          ref={resultsRef}
+          exercises={exercises}
+          viewMode={viewMode}
+          isLoading={isLoading}
+          isLoadingMore={isLoadingMore}
+          error={error}
+          hasMore={hasMore}
+          loadMore={loadMore}
+          queryKey={queryKey}
+          onRetry={refetch}
+          getCardProps={(exercise, index) => ({
+            userId: user?.uid,
+            canEdit: false,
+            canDelete: false,
+            showProgress: false,
+            showOwnerBadge: false,
+            onEdit: noop,
+            onDelete: noop,
+            onShowProgress: noop,
+            onClick: () => setPreview({ list: exercises, index }),
+            isFavorite: favoriteSet.has(exercise.id),
+            onToggleFavorite: handleToggleFavorite,
+          })}
+          empty={
+            <div className="flex flex-col items-center gap-2 p-8 text-center text-muted-foreground">
+              <Dumbbell className="h-6 w-6" />
+              <p className="text-sm">Brak wyników — zmień filtry lub wyszukiwanie.</p>
             </div>
-          </>
-        )}
+          }
+        />
 
-        {step === 'results' && previewIndex !== null && (
+        {preview && (
           <ExercisePreviewPager
-            exercises={exercises}
-            index={previewIndex}
-            onIndexChange={setPreviewIndex}
+            exercises={preview.list}
+            index={preview.index}
+            onIndexChange={(index) => setPreview(current => current && { ...current, index })}
             onAdd={pickExercise}
             onClose={closePreview}
             totalCount={totalFiltered}
             isLoadingMore={isLoadingMore}
+            isFavorite={(id) => favoriteSet.has(id)}
+            onToggleFavorite={(id) => void toggleFavorite(id)}
           />
         )}
       </SheetContent>

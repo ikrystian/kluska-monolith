@@ -48,6 +48,8 @@ export interface UserProfile {
   };
   trainerId?: string;
   favoriteGymIds?: string[];
+  /** Exercises the athlete starred; listed first in the exercise library and picker. */
+  favoriteExerciseIds?: string[];
   /** Marketing profile shown to athletes on the trainer's detail page. */
   trainerCard?: TrainerCard;
   // Onboarding fields

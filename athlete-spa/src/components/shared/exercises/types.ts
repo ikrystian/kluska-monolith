@@ -46,6 +46,9 @@ export interface ExerciseCardProps {
   onDelete: (exercise: Exercise) => void;
   onShowProgress: (exercise: Exercise) => void;
   onClick?: (exercise: Exercise) => void;
+  /** Pokazuje gwiazdkę ulubionych, gdy podane */
+  isFavorite?: boolean;
+  onToggleFavorite?: (exercise: Exercise) => void;
 }
 
 export interface ExerciseFormProps {
