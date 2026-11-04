@@ -131,7 +131,7 @@ export default function RunDetailPage() {
 
   if (!session) {
     return (
-      <div className="container mx-auto p-4 text-center">
+      <div className="page text-center">
         <h2 className="text-xl font-semibold">Nie znaleziono biegu</h2>
         <p className="text-muted-foreground">Nie można załadować szczegółów tego biegu.</p>
       </div>

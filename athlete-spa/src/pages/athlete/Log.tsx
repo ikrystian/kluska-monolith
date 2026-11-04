@@ -1899,7 +1899,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
           <button
             type="button"
             onClick={() => setStartRunDialogOpen(true)}
-            className="flex h-[6.5rem] flex-col justify-between rounded-2xl bg-run p-3.5 text-left text-black transition-transform active:scale-[0.97]"
+            className="flex h-[6.5rem] flex-col justify-between rounded-2xl bg-run p-3.5 text-left text-primary-foreground transition-transform active:scale-[0.97]"
           >
             <Footprints className="h-6 w-6" />
             <span>

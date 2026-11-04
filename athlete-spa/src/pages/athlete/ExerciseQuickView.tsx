@@ -31,7 +31,7 @@ export default function ExerciseQuickViewPage() {
 
   if (isLoadingExercise || isLoadingWorkout) {
     return (
-      <div className="container mx-auto max-w-lg space-y-4 p-4">
+      <div className="page space-y-4">
         <Skeleton className="aspect-[4/3] w-full rounded-2xl" />
         <Skeleton className="h-8 w-3/4" />
         <Skeleton className="h-24 w-full rounded-2xl" />
@@ -41,7 +41,7 @@ export default function ExerciseQuickViewPage() {
 
   if (!exercise) {
     return (
-      <div className="container mx-auto max-w-lg space-y-4 p-4 text-center">
+      <div className="page space-y-4 text-center">
         <p className="text-muted-foreground">Nie znaleziono tego ćwiczenia.</p>
         <Button variant="outline" onClick={() => navigate('/athlete/exercises')}>
           Biblioteka ćwiczeń

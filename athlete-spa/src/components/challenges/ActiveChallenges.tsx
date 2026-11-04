@@ -252,7 +252,7 @@ export function ActiveChallenges() {
                                             <div>
                                                 <div className="flex justify-between text-sm mb-1">
                                                     <span className="font-medium">Ty</span>
-                                                    <span>{myProgress.toFixed(1)} / {challenge.targetKm} km</span>
+                                                    <span>{myProgress.toLocaleString('pl-PL', { maximumFractionDigits: 1 })} / {challenge.targetKm} km</span>
                                                 </div>
                                                 <Progress
                                                     value={myPercentage}
@@ -264,7 +264,7 @@ export function ActiveChallenges() {
                                             <div>
                                                 <div className="flex justify-between text-sm mb-1">
                                                     <span className="font-medium">{opponentName}</span>
-                                                    <span>{opponentProgress.toFixed(1)} / {challenge.targetKm} km</span>
+                                                    <span>{opponentProgress.toLocaleString('pl-PL', { maximumFractionDigits: 1 })} / {challenge.targetKm} km</span>
                                                 </div>
                                                 <Progress
                                                     value={opponentPercentage}

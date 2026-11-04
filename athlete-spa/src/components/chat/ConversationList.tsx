@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Trash2, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Conversation } from '@/lib/chat/types';
-import { placeholderImages } from '@/lib/placeholder-images';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -42,13 +41,10 @@ export function ConversationList({
     const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : '?';
 
     return (
-        <aside className={cn(
-            "flex flex-col border-r border-border/60 h-full bg-card",
-            selectedId && "hidden"
-        )}>
-            {header && <header className="p-4 border-b border-border/60">{header}</header>}
-            <ScrollArea className="flex-1">
-                <div className="space-y-1 p-2">
+        <aside className={cn("flex h-full flex-col", selectedId && "hidden")}>
+            {header && <header className="px-4 pb-2 pt-1">{header}</header>}
+            <ScrollArea className="min-h-0 flex-1">
+                <div className="space-y-1 px-2">
                     {conversations?.map(convo => {
                         const otherParticipantName = userRole === 'trainer' ? convo.athleteName : convo.trainerName;
                         const hasUnread = (convo.unreadCount?.[currentUserId] || 0) > 0;
@@ -64,8 +60,7 @@ export function ConversationList({
                                 >
                                     <div className="flex items-center gap-3">
                                         <div className="relative shrink-0">
-                                            <Avatar className="h-11 w-11 ring-2 ring-border/60">
-                                                <AvatarImage src={placeholderImages.find(p => p.id === 'avatar-male')?.imageUrl} />
+                                            <Avatar className="h-11 w-11">
                                                 <AvatarFallback>{getInitials(otherParticipantName)}</AvatarFallback>
                                             </Avatar>
                                             {hasUnread && (
@@ -74,7 +69,7 @@ export function ConversationList({
                                         </div>
                                         <div className="flex-1 overflow-hidden">
                                             <div className="flex justify-between items-center mb-0.5">
-                                                <p className={cn("font-semibold truncate", hasUnread && "text-primary")}>
+                                                <p className="truncate font-semibold">
                                                     {otherParticipantName}
                                                 </p>
                                             </div>
@@ -90,10 +85,11 @@ export function ConversationList({
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            aria-label="Usuń rozmowę"
+                                            className="absolute right-1 top-1/2 h-9 w-9 -translate-y-1/2 text-muted-foreground"
                                             onClick={(e) => e.stopPropagation()}
                                         >
-                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                            <Trash2 className="h-4 w-4" />
                                         </Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
@@ -106,7 +102,7 @@ export function ConversationList({
                                         <AlertDialogFooter>
                                             <AlertDialogCancel>Anuluj</AlertDialogCancel>
                                             <AlertDialogAction
-                                                className="bg-destructive hover:bg-destructive/90"
+                                                className="bg-destructive text-destructive-foreground"
                                                 onClick={() => onDelete(convo)}
                                             >
                                                 Usuń

@@ -4,8 +4,8 @@ import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import { placeholderImages } from '@/lib/placeholder-images';
+import { ChevronLeft, Loader2 } from 'lucide-react';
+import { resolveMediaUrl } from '@/lib/api-client';
 
 interface ChatViewProps {
     conversation: Conversation;
@@ -31,18 +31,18 @@ export function ChatView({
     }
 
     return (
-        <div className="flex flex-col h-full bg-background">
-            <header className="flex items-center gap-3 p-4 border-b border-border/60 bg-card/60 backdrop-blur-sm">
-                <Button variant="ghost" size="icon" className="-ml-1 shrink-0" onClick={onBack}>
-                    <ArrowLeft className="h-5 w-5" />
+        <div data-immersive className="flex h-full flex-col bg-background">
+            <header className="flex shrink-0 items-center gap-2.5 border-b border-border/60 px-2 py-2">
+                <Button variant="ghost" size="icon" className="shrink-0" onClick={onBack} aria-label="Wróć do listy rozmów">
+                    <ChevronLeft className="h-6 w-6" />
                 </Button>
-                <Avatar className="h-10 w-10 ring-2 ring-primary/20">
-                    <AvatarImage src={placeholderImages.find(p => p.id === 'avatar-male')?.imageUrl} />
+                <Avatar className="h-9 w-9">
+                    <AvatarImage src={resolveMediaUrl(otherParticipant?.avatarUrl)} alt="" />
                     <AvatarFallback>{otherParticipant?.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">
-                    <h2 className="line-clamp-2 font-semibold leading-tight">{otherParticipant?.name}</h2>
-                    <p className="text-xs text-muted-foreground capitalize">{otherParticipant?.role}</p>
+                    <h2 className="truncate text-[15px] font-semibold leading-tight">{otherParticipant?.name}</h2>
+                    <p className="text-xs text-muted-foreground">{otherParticipant?.role === 'trainer' ? 'Trener' : 'Sportowiec'}</p>
                 </div>
             </header>
 

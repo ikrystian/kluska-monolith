@@ -157,7 +157,7 @@ export function QuickAddSheet({ open, onOpenChange }: { open: boolean; onOpenCha
               onClick={() => go(hasActiveWorkout ? `/athlete/log?logId=${activeWorkout?.id}` : '/athlete/log')}
             />
             <PrimaryTile
-              className="bg-run text-black"
+              className="bg-run text-primary-foreground"
               icon={Footprints}
               title="Bieg"
               hint="Trasa z GPS"

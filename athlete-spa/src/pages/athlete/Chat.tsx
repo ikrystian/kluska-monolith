@@ -119,7 +119,7 @@ export default function AthleteChatPage() {
                     </div>
                 }
             />
-            <main className={`${!selectedConversationId ? 'hidden ' : ''}`}>
+            <main className={`h-full ${!selectedConversationId ? 'hidden' : ''}`}>
                 {selectedConversationId && selectedConversation ? (
                     <ChatView
                         conversation={selectedConversation}

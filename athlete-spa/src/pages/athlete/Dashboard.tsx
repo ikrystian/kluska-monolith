@@ -13,7 +13,7 @@ import { BigNumber, SectionHeader } from '@/components/ui/section';
 import { cn } from '@/lib/utils';
 import { jsonFetcher, useCollection, useDoc, useUser } from '@/lib/db-hooks';
 import type { WorkoutLog, Goal, BodyMeasurement, RunningSession, StravaActivity, PlannedWorkout, UserProfile, TrainingPlan } from '@/lib/types';
-import { Target, Weight, Calendar as CalendarIcon, Dumbbell, Award, User, CheckSquare, Check, GripVertical, Eye, EyeOff, RotateCcw, LayoutGrid, Trophy, SlidersHorizontal, Users, Activity, UtensilsCrossed, type AnimatedIcon } from '@/components/animated-icons';
+import { Target, Weight, ClipboardCheck, Calendar as CalendarIcon, Dumbbell, Award, User, CheckSquare, Check, GripVertical, Eye, EyeOff, RotateCcw, LayoutGrid, Trophy, SlidersHorizontal, Users, Activity, UtensilsCrossed, type AnimatedIcon } from '@/components/animated-icons';
 import { ChevronRight } from 'lucide-react';
 import type { TrainingSessionData } from '@/components/schedule/SessionDetailsDialog';
 import { ActiveChallenges } from '@/components/challenges/ActiveChallenges';
@@ -186,6 +186,13 @@ export default function AthleteDashboardPage() {
     user ? `/api/athlete/nutrition/diary?date=${todayISO()}` : null,
     jsonFetcher
   );
+
+  // Weekly report waiting for the trainer (full accounts only)
+  const { data: checkInData } = useSWR<{ checkIns: { id: string; status: string }[] }>(
+    user && !user.isGuest ? '/api/check-ins' : null,
+    jsonFetcher
+  );
+  const pendingCheckIn = checkInData?.checkIns?.some(checkIn => checkIn.status === 'pending');
 
   // Assigned workout plans
   const { data: assignedPlans } = useCollection<TrainingPlan>(
@@ -430,7 +437,7 @@ export default function AthleteDashboardPage() {
             <Link key={workout.id} to={`/athlete/history/${workout.id}`} className="row-tap flex items-center gap-3 px-3.5 py-3">
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[15px] font-semibold leading-tight">{workout.workoutName}</span>
-                <span className="block truncate text-xs capitalize text-muted-foreground">
+                <span className="block truncate text-xs text-muted-foreground first-letter:uppercase">
                   {format(new Date(workout.endTime), 'EEEE, d MMM', { locale: pl })}
                   {workout.duration ? ` · ${workout.duration} min` : ''}
                 </span>
@@ -520,6 +527,19 @@ export default function AthleteDashboardPage() {
         doneToday={doneToday}
         lastWorkout={recentWorkouts?.[0]}
       />
+
+      {pendingCheckIn && (
+        <Link to="/athlete/check-in" className="row-tap flex items-center gap-3 rounded-2xl bg-card px-3.5 py-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-secondary text-social">
+            <ClipboardCheck className="h-5 w-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[15px] font-semibold leading-tight">Check-in czeka na Ciebie</span>
+            <span className="block truncate text-xs text-muted-foreground">Dwie minuty, a trener wie, jak idzie</span>
+          </span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+        </Link>
+      )}
 
       {layout
         .filter(s => s.visible)

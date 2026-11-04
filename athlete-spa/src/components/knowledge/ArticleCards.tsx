@@ -112,9 +112,6 @@ export function ArticleRow({ article, href, color, isRead }: ArticleCardProps) {
           {article.category || 'Bez kategorii'}
         </span>
         <h3 className="line-clamp-2 font-headline text-base font-bold leading-snug">{article.title}</h3>
-        <div className="hidden">
-          <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{excerpt(article.content)}</p>
-        </div>
         <ReadingMeta article={article} isRead={isRead} className="mt-auto pt-2 text-muted-foreground" />
       </div>
     </Link>

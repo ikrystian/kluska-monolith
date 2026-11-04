@@ -252,7 +252,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
                 className="h-10 rounded-full"
               >
                 <Trash2 className="h-4 w-4" />
-                <span className="hidden">Usuń wszystkie ({allExercises.length})</span>
+                <span className="sr-only">Usuń wszystkie ({allExercises.length})</span>
               </Button>
             )}
             {canCreate && (

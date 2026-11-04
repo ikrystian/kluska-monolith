@@ -277,7 +277,7 @@ export default function HistoryDetailPage() {
 
   if (!workoutLog) {
     return (
-      <div className="mx-auto w-full max-w-3xl px-4 py-24 text-center">
+      <div className="page py-24 text-center">
         <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-secondary">
           <Dumbbell className="h-8 w-8 text-muted-foreground" />
         </span>
@@ -711,7 +711,7 @@ export default function HistoryDetailPage() {
             className="h-12 gap-2 rounded-xl text-sm font-medium border-border/70"
           >
             <Copy className="h-4 w-4" />
-            <span className="hidden">Zapisz jako szablon</span>
+            <span className="sr-only">Zapisz jako szablon</span>
             <span >Szablon</span>
           </Button>
         </div>

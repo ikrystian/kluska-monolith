@@ -159,6 +159,17 @@
   margin-inline: auto;
 }
 
+/* Ekran pełnoekranowy (rozmowa na czacie): chowa nagłówek i pasek, sam ma swoje. */
+main:has([data-immersive]) > header,
+main:has([data-immersive]) > #bottom-nav {
+  display: none;
+}
+
+main:has([data-immersive]) > #outlet {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: 0;
+}
+
 /* Zawartość ekranu: #outlet rezerwuje miejsce na nagłówek i pasek, tu tylko margines. */
 .page {
   width: 100%;

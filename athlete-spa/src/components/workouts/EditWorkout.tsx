@@ -289,7 +289,7 @@ export function EditWorkout({ workoutId, onSuccess, redirectPath }: EditWorkoutP
 
     if (workoutLoading || exercisesLoading) {
         return (
-            <div className="space-y-8 max-w-4xl mx-auto">
+            <div className="space-y-4">
                 <Card>
                     <CardHeader>
                         <Skeleton className="h-6 w-48" />
@@ -316,7 +316,7 @@ export function EditWorkout({ workoutId, onSuccess, redirectPath }: EditWorkoutP
     }
 
     return (
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8 max-w-4xl mx-auto pb-20">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 pb-20">
             <Card>
                 <CardHeader>
                     <CardTitle>Szczegóły Treningu</CardTitle>
@@ -407,8 +407,8 @@ export function EditWorkout({ workoutId, onSuccess, redirectPath }: EditWorkoutP
                 </div>
             </div>
 
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t flex justify-end container mx-auto z-10">
-                <Button type="submit" size="lg" disabled={isUpdating}>
+            <div className="app-column fixed inset-x-0 bottom-[var(--app-bottom)] z-30 border-t border-border/70 bg-background/95 p-3 backdrop-blur-xl">
+                <Button type="submit" disabled={isUpdating} className="w-full">
                     {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Zapisz Zmiany
                 </Button>
@@ -674,32 +674,13 @@ function ExerciseSeriesItem({
                                 </div>
 
                                 <div className="space-y-2">
-                                    <div className="hidden grid-cols-12 gap-2 items-center text-center">
-                                        <Label className="col-span-1 text-[11px] text-muted-foreground">#</Label>
-                                        <Label className="col-span-2 text-[11px] text-muted-foreground">Typ</Label>
-                                        {exerciseType === 'weight' ? (
-                                            <>
-                                                <Label className="col-span-2 text-[11px] text-muted-foreground">
-                                                    {weightUnit === 'kg' ? 'kg' : 'RPE'}
-                                                </Label>
-                                                <Label className="col-span-2 text-[11px] text-muted-foreground">Powt.</Label>
-                                            </>
-                                        ) : exerciseType === 'reps' ? (
-                                            <Label className="col-span-4 text-[11px] text-muted-foreground">Powtórzenia</Label>
-                                        ) : (
-                                            <Label className="col-span-4 text-[11px] text-muted-foreground">Czas (sek.)</Label>
-                                        )}
-                                        <Label className="col-span-3 text-[11px] text-muted-foreground">Przerwa</Label>
-                                        <Label className="col-span-2 text-[11px] text-muted-foreground">Akcje</Label>
-                                    </div>
-
                                     <AnimatePresence initial={false}>
                                     {setFields.map((setField: any, setIndex: number) => (
                                         <motion.div key={setField.id} {...listItemMotion}>
                                         <div className="grid grid-cols-2 gap-2 items-center border rounded-md p-2 bg-muted/20">
                                             <div className="col-span-2 flex justify-between items-center text-sm font-mono text-muted-foreground mb-2">
                                                 <span className="text-xs font-bold">Seria {setIndex + 1}</span>
-                                                <span className="hidden">{setIndex + 1}</span>
+                                                <span className="sr-only">{setIndex + 1}</span>
                                                 <div className="flex gap-1">
                                                     <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDuplicateSet(setIndex)}>
                                                         <Copy className="h-3 w-3" />
@@ -796,14 +777,6 @@ function ExerciseSeriesItem({
                                                 </div>
                                             </div>
 
-                                            <div className="hidden col-span-2 gap-1 justify-center">
-                                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleDuplicateSet(setIndex)} title="Duplikuj serię">
-                                                    <Copy className="h-3 w-3" />
-                                                </Button>
-                                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleRemoveSet(setIndex)} title="Usuń serię">
-                                                    <Trash2 className="h-3 w-3" />
-                                                </Button>
-                                            </div>
                                         </div>
                                         </motion.div>
                                     ))}

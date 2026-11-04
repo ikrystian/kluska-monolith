@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { TrainerAvatar } from '@/components/trainers/TrainerAvatar';
 import { TrainerGallery } from '@/components/trainers/TrainerGallery';
 import { TrainerInquirySheet } from '@/components/trainers/TrainerInquirySheet';
-import { ContactActions, ContactCard } from '@/components/trainers/TrainerContact';
+import { ContactActions } from '@/components/trainers/TrainerContact';
 import {
   AboutSection,
   Achievements,
@@ -26,7 +26,7 @@ import {
 } from '@/components/trainers/TrainerProfileSections';
 import { AVAILABILITY, MODE_LABEL, RESPONSE_LABEL, plural, publishedCard } from '@/components/trainers/trainer-meta';
 
-const SHELL = 'page';
+const SHELL = 'page pb-24';
 
 interface Fact {
   value: string;
@@ -94,7 +94,7 @@ export default function AthleteTrainerDetailPage() {
 
   if (!trainer || trainer.role !== 'trainer') {
     return (
-      <div className="mx-auto w-full max-w-3xl px-4 py-20 text-center">
+      <div className="page py-20 text-center">
         <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-secondary">
           <Users className="h-6 w-6 text-muted-foreground" />
         </span>
@@ -259,20 +259,17 @@ export default function AthleteTrainerDetailPage() {
           )}
         </div>
 
-        <aside className="hidden">
-          <ContactCard {...contact} />
-        </aside>
       </div>
 
       {/* Floating call to action (mobile) */}
       <div
         className={cn(
-          'fixed inset-x-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 mx-auto max-w-md transition-all duration-300 group-data-[chrome=hidden]/chrome:bottom-[calc(1rem+env(safe-area-inset-bottom))]',
+          'app-column fixed inset-x-0 bottom-[var(--app-bottom)] z-30 px-3 pb-2 transition-all duration-300',
           showStickyCta ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'
         )}
         inert={!showStickyCta}
       >
-        <div className="rounded-full bg-background/80 p-1.5 backdrop-blur-xl">
+        <div className="rounded-2xl bg-popover p-1.5">
           <ContactActions {...contact} compact />
         </div>
       </div>

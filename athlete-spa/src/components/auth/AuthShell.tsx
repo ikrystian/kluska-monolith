@@ -115,7 +115,7 @@ export const AuthField = forwardRef<HTMLInputElement, AuthFieldProps>(
 
     return (
       <div className="grid gap-2">
-        <Label htmlFor={inputId} className="hidden text-xs font-semibold text-muted-foreground">
+        <Label htmlFor={inputId} className="sr-only">
           {label}
         </Label>
         <div className="group relative">

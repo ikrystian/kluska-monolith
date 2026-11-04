@@ -88,7 +88,7 @@ const HeroStat = ({
     {isLoading ? (
       <Skeleton className="mt-2 h-8 w-16 bg-primary-foreground/20" />
     ) : (
-      <p className="mt-1.5 truncate font-display text-[1.65rem] font-bold leading-none tabular-nums">
+      <p className="mt-1.5 truncate font-display text-2xl font-bold leading-none tabular-nums">
         <CountUp value={value} digits={digits} />
         {unit && <span className="ml-1 text-xs font-bold text-primary-foreground/75">{unit}</span>}
       </p>

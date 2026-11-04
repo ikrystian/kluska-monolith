@@ -20,7 +20,7 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
     };
 
     return (
-        <footer className="border-t border-border/60 bg-card/60 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm">
+        <footer className="shrink-0 border-t border-border/60 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
             <form onSubmit={handleSubmit} className="flex items-center gap-2">
                 <Input
                     value={message}
@@ -28,12 +28,12 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
                     placeholder="Napisz wiadomość..."
                     autoComplete="off"
                     disabled={isLoading}
-                    className="h-11 rounded-full bg-background px-4"
+                    className="h-11"
                 />
                 <Button
                     type="submit"
                     size="icon"
-                    className="h-11 w-11 shrink-0 rounded-full"
+                    className="shrink-0"
                     disabled={!message.trim() || isLoading}
                 >
                     <Send className="h-4 w-4" />

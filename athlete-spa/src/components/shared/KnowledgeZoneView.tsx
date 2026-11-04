@@ -103,7 +103,7 @@ export function KnowledgeZoneView({
           <Button asChild size="sm" variant="outline" className="shrink-0 gap-1.5">
             <Link to={manageHref}>
               <Pencil className="h-4 w-4" />
-              <span className="hidden">Zarządzaj</span>
+              <span className="sr-only">Zarządzaj</span>
             </Link>
           </Button>
         )}

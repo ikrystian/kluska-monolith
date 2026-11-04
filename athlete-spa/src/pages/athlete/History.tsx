@@ -177,11 +177,7 @@ export default function HistoryPage() {
     <AlertDialog>
       <div className="page">
         <Card>
-          <CardHeader>
-            <CardTitle className="font-headline">Twój Dziennik</CardTitle>
-            <CardDescription>Szczegółowy zapis wszystkich Twoich ukończonych treningów.</CardDescription>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-1">
             <Accordion type="single" collapsible className="w-full">
               {isHistoryLoading ? (
                 Array.from({ length: 3 }).map((_, i) => (
@@ -208,14 +204,6 @@ export default function HistoryPage() {
                                   {item.title}
                                 </p>
                                 <p className="text-sm text-muted-foreground">{format(item.date, 'd MMMM yyyy', { locale: pl })}</p>
-                              </div>
-                              <div className="hidden text-right">
-                                <p className="font-semibold">{item.durationMin.toFixed(0)} min</p>
-                                <p className="text-sm text-muted-foreground">Czas trwania</p>
-                              </div>
-                              <div className="hidden text-right">
-                                <p className="font-semibold">{formatRunPace(item.avgPace)}</p>
-                                <p className="text-sm text-muted-foreground">Tempo</p>
                               </div>
                               <div className="text-right">
                                 <p className="font-semibold">{item.distanceKm.toFixed(2)} km</p>
@@ -248,14 +236,6 @@ export default function HistoryPage() {
                                 <span className="line-clamp-1">{log.gymName}</span>
                               </p>
                             )}
-                          </div>
-                          <div className="hidden text-right">
-                            <p className="font-semibold">{log.duration} min</p>
-                            <p className="text-sm text-muted-foreground">Czas trwania</p>
-                          </div>
-                          <div className="hidden text-right">
-                            <p className="font-semibold">{log.exercises.length}</p>
-                            <p className="text-sm text-muted-foreground">Ćwiczenia</p>
                           </div>
                           <div className="text-right">
                             <p className="font-semibold">{totalVolume.toLocaleString('pl-PL')} kg</p>

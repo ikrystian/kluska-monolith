@@ -220,7 +220,7 @@ export default function RunningPage() {
         <button
           type="button"
           onClick={openPrimary}
-          className="group flex min-w-0 items-center justify-between gap-3 rounded-2xl bg-run p-4 text-left text-black transition-transform active:scale-[0.98]"
+          className="group flex min-w-0 items-center justify-between gap-3 rounded-2xl bg-run p-4 text-left text-primary-foreground transition-transform active:scale-[0.98]"
         >
           <span className="min-w-0">
             <span className="block text-[13px] font-semibold opacity-75">
@@ -230,7 +230,7 @@ export default function RunningPage() {
               {supportsGeolocation ? 'Biegnij' : 'Dodaj bieg'}
             </span>
           </span>
-          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-black text-run">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-primary-foreground text-run">
             {supportsGeolocation ? <Play className="h-5 w-5 fill-current" /> : <Plus className="h-5 w-5" />}
           </span>
         </button>
@@ -278,7 +278,7 @@ export default function RunningPage() {
                     {formatKm(program.targetDistanceKm, program.targetDistanceKm % 1 ? 1 : 0)}
                     <span className="ml-1 font-body text-sm font-semibold text-muted-foreground">km</span>
                   </span>
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-run text-black">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-run text-primary-foreground">
                     <Play className="h-4 w-4 fill-current" />
                   </span>
                 </div>

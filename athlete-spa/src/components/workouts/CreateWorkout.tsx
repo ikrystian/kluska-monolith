@@ -391,7 +391,7 @@ export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
                 // The mobile keyboard "Enter/Go" must not publish a half-finished workout.
                 if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') e.preventDefault();
             }}
-            className="mx-auto max-w-2xl space-y-4"
+            className="space-y-4"
         >
             {(!!draft || !!lastAutoSave) && (
                 <div className="flex items-center justify-between gap-2 rounded-xl border border-dashed bg-muted/40 px-3 py-1.5">

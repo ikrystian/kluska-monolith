@@ -81,7 +81,7 @@ export default function WorkoutDetailsPage() {
 
     if (!workout) {
         return (
-            <div className="mx-auto w-full max-w-3xl px-4 py-20 text-center">
+            <div className="page py-20 text-center">
                 <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-secondary">
                     <Dumbbell className="h-6 w-6 text-muted-foreground" />
                 </span>
