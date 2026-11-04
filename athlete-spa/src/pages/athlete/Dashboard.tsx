@@ -518,7 +518,7 @@ export default function AthleteDashboardPage() {
   }
 
   return (
-    <div className="page stagger-rise space-y-4">
+    <div className="page space-y-4">
       <WeekStrip days={weekDays} doneCount={doneThisWeek.length} target={weeklyTarget} streak={gamification?.streaks.workout} />
 
       <TodayHero

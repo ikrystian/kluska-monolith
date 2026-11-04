@@ -19,20 +19,20 @@ export const SHARE_SIZES: Record<ShareFormat, { width: number; height: number }>
 
 type ShareableGoal = Pick<Goal, 'title' | 'current' | 'target' | 'unit' | 'deadline'>;
 
-// Dark "Volt Ember" theme tokens (see globals.css) as plain colours, since the
+// Dark "Sztanga" theme tokens (see globals.css) as plain colours, since the
 // canvas can't read CSS variables.
 const COLORS = {
-  background: '#0c0a08',
-  text: '#f8f5f0',
-  muted: '#aaa49e',
-  ember: '#ff6929',
-  amber: '#ffb020',
-  volt: '#c6f628',
+  background: '#0E0F11',
+  text: '#F4F1E9',
+  muted: '#A0A6AE',
+  ember: '#FF5B26',
+  amber: '#F6C344',
+  volt: '#C2F03A',
 };
 
-const FONT_DISPLAY = 'Unbounded, "Space Grotesk", sans-serif';
-const FONT_HEADLINE = '"Space Grotesk", Inter, sans-serif';
-const FONT_BODY = 'Inter, sans-serif';
+const FONT_DISPLAY = '"Barlow Condensed", "Figtree Variable", sans-serif';
+const FONT_HEADLINE = '"Figtree Variable", sans-serif';
+const FONT_BODY = '"Figtree Variable", sans-serif';
 
 interface Layout {
   brandY: number;
@@ -54,8 +54,8 @@ const LAYOUTS: Record<ShareFormat, Layout> = {
     brandY: 300,
     labelY: 400,
     titleY: 450,
-    titleSize: 68,
-    titleLineHeight: 82,
+    titleSize: 96,
+    titleLineHeight: 100,
     titleMaxLines: 3,
     ringY: 1030,
     ringRadius: 250,
@@ -68,8 +68,8 @@ const LAYOUTS: Record<ShareFormat, Layout> = {
     brandY: 110,
     labelY: 190,
     titleY: 235,
-    titleSize: 56,
-    titleLineHeight: 68,
+    titleSize: 80,
+    titleLineHeight: 84,
     titleMaxLines: 3,
     ringY: 770,
     ringRadius: 190,
@@ -91,9 +91,8 @@ async function ensureFonts() {
   if (!document.fonts) return;
   try {
     await Promise.all([
-      document.fonts.load('800 64px Unbounded'),
-      document.fonts.load('700 40px "Space Grotesk"'),
-      document.fonts.load('600 32px Inter'),
+      document.fonts.load('800 64px "Barlow Condensed"'),
+      document.fonts.load('700 40px "Figtree Variable"'),
     ]);
   } catch {
     // Offline or blocked: the fallback fonts in the stacks above are used.
@@ -152,18 +151,6 @@ function daysLabel(days: number): string {
 function drawBackground(ctx: CanvasRenderingContext2D, width: number, height: number) {
   ctx.fillStyle = COLORS.background;
   ctx.fillRect(0, 0, width, height);
-
-  const ember = ctx.createRadialGradient(width * 0.95, height * 0.08, 0, width * 0.95, height * 0.08, width * 1.05);
-  ember.addColorStop(0, 'rgba(255, 105, 41, 0.42)');
-  ember.addColorStop(1, 'rgba(255, 105, 41, 0)');
-  ctx.fillStyle = ember;
-  ctx.fillRect(0, 0, width, height);
-
-  const volt = ctx.createRadialGradient(width * 0.05, height * 0.95, 0, width * 0.05, height * 0.95, width * 0.95);
-  volt.addColorStop(0, 'rgba(198, 246, 40, 0.16)');
-  volt.addColorStop(1, 'rgba(198, 246, 40, 0)');
-  ctx.fillStyle = volt;
-  ctx.fillRect(0, 0, width, height);
 }
 
 function drawRing(
@@ -185,16 +172,7 @@ function drawRing(
 
   if (progress <= 0) return;
 
-  const gradient = ctx.createLinearGradient(cx - radius, cy + radius, cx + radius, cy - radius);
-  if (completed) {
-    gradient.addColorStop(0, COLORS.volt);
-    gradient.addColorStop(1, COLORS.volt);
-  } else {
-    gradient.addColorStop(0, COLORS.ember);
-    gradient.addColorStop(0.55, COLORS.amber);
-    gradient.addColorStop(1, COLORS.volt);
-  }
-  ctx.strokeStyle = gradient;
+  ctx.strokeStyle = completed ? COLORS.volt : COLORS.ember;
   ctx.beginPath();
   ctx.arc(cx, cy, radius, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress);
   ctx.stroke();
@@ -246,7 +224,7 @@ export async function renderGoalShareImage(goal: ShareableGoal, shareFormat: Sha
 
   const percentText = `${Math.round(progress * 100)}%`;
   ctx.fillStyle = COLORS.text;
-  setFittedFont(ctx, percentText, 800, FONT_DISPLAY, layout.ringRadius * 1.3, Math.round(layout.ringRadius * 0.62), 40);
+  setFittedFont(ctx, percentText, 800, FONT_DISPLAY, layout.ringRadius * 1.3, Math.round(layout.ringRadius * 0.86), 40);
   ctx.fillText(percentText, cx, layout.ringY + layout.ringRadius * 0.2);
 
   ctx.fillStyle = COLORS.muted;
