@@ -45,7 +45,7 @@ export function GamificationStatsCard({ stats, isLoading }: GamificationStatsCar
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-yellow-500" />
+            <Trophy className="h-5 w-5 text-food" />
             Gamifikacja
           </span>
           <Badge variant="secondary" className="text-lg">
@@ -55,20 +55,20 @@ export function GamificationStatsCard({ stats, isLoading }: GamificationStatsCar
       </CardHeader>
       <CardContent className="space-y-6">
         {/* FitCoins Balance */}
-        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-lg">
+        <div className="flex items-center justify-between p-4 bg-secondary rounded-xl">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-yellow-500/20 rounded-full">
-              <Coins className="h-6 w-6 text-yellow-500" />
+            <div className="p-2 bg-food/20 rounded-full">
+              <Coins className="h-6 w-6 text-food" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">FitCoins</p>
-              <p className="text-2xl font-bold">{stats.currentFitCoins.toLocaleString()}</p>
+              <p className="text-2xl font-bold">{stats.currentFitCoins.toLocaleString('pl-PL')}</p>
             </div>
           </div>
           <div className="text-right">
             <p className="text-sm text-muted-foreground">Łącznie zdobyte</p>
             <p className="text-lg font-semibold text-muted-foreground">
-              {stats.totalPointsEarned.toLocaleString()}
+              {stats.totalPointsEarned.toLocaleString('pl-PL')}
             </p>
           </div>
         </div>
@@ -86,21 +86,21 @@ export function GamificationStatsCard({ stats, isLoading }: GamificationStatsCar
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center p-3 bg-muted/50 rounded-lg">
             <div className="flex items-center justify-center gap-1 mb-1">
-              <Flame className="h-4 w-4 text-orange-500" />
+              <Flame className="h-4 w-4 text-primary" />
               <span className="text-xl font-bold">{stats.streaks.workout}</span>
             </div>
             <p className="text-xs text-muted-foreground">Treningi</p>
           </div>
           <div className="text-center p-3 bg-muted/50 rounded-lg">
             <div className="flex items-center justify-center gap-1 mb-1">
-              <Target className="h-4 w-4 text-green-500" />
+              <Target className="h-4 w-4 text-volt" />
               <span className="text-xl font-bold">{stats.streaks.goals}</span>
             </div>
             <p className="text-xs text-muted-foreground">Cele</p>
           </div>
           <div className="text-center p-3 bg-muted/50 rounded-lg">
             <div className="flex items-center justify-center gap-1 mb-1">
-              <TrendingUp className="h-4 w-4 text-blue-500" />
+              <TrendingUp className="h-4 w-4 text-run" />
               <span className="text-xl font-bold">{stats.streaks.checkins}</span>
             </div>
             <p className="text-xs text-muted-foreground">Check-iny</p>
@@ -109,8 +109,8 @@ export function GamificationStatsCard({ stats, isLoading }: GamificationStatsCar
 
         {/* Streak at stake — utrata pass boli bardziej niż cieszy ich wydłużanie */}
         {stats.streaks.workout >= 2 && (
-          <div className="flex items-center gap-2 rounded-lg border border-orange-500/20 bg-orange-500/10 p-3 text-sm">
-            <Flame className="h-4 w-4 shrink-0 text-orange-500" />
+          <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/10 p-3 text-sm">
+            <Flame className="h-4 w-4 shrink-0 text-primary" />
             <p>
               <span className="font-semibold">{stats.streaks.workout} dni passy treningowej.</span>{' '}
               Jeden pominięty dzień i licznik wraca do zera.

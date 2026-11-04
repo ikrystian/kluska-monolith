@@ -22,7 +22,7 @@ function RunRow({ run }: { run: RunActivity }) {
           <p className="truncate text-sm font-semibold">{runTitle(run)}</p>
           {run.source === 'strava' && (
             <span
-              className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+              className="shrink-0 rounded-full px-1.5 py-0.5 text-xs font-semibold"
               style={{ backgroundColor: `${STRAVA_COLOR}1a`, color: STRAVA_COLOR }}
             >
               Strava
@@ -104,12 +104,12 @@ export function RunHistoryList({ runs }: { runs: RunActivity[] }) {
       {groups.map(group => (
         <section key={group.label}>
           <div className="mb-2 flex items-baseline justify-between px-4">
-            <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{group.label}</h3>
+            <h3 className="text-xs font-semibold text-muted-foreground">{group.label}</h3>
             <span className="text-xs font-semibold tabular-nums text-muted-foreground">
               {formatKm(monthTotals.get(group.label) ?? 0, 1)} km
             </span>
           </div>
-          <div className="divide-y divide-border/60 overflow-hidden rounded-[1.5rem] border border-border/60 bg-card shadow-soft">
+          <div className="divide-y divide-border/60 overflow-hidden rounded-2xl bg-card">
             {group.runs.map(run => (
               <RunRow key={`${run.source}-${run.id}`} run={run} />
             ))}
@@ -117,7 +117,7 @@ export function RunHistoryList({ runs }: { runs: RunActivity[] }) {
         </section>
       ))}
       {runs.length > limit && (
-        <Button variant="outline" className="w-full rounded-full" onClick={() => setLimit(l => l + PAGE_SIZE)}>
+        <Button variant="outline" className="w-full" onClick={() => setLimit(l => l + PAGE_SIZE)}>
           Pokaż starsze ({runs.length - limit})
         </Button>
       )}

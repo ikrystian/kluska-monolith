@@ -34,7 +34,7 @@ export function UnsavedChangesDialog({
                         Masz niezapisane zmiany w formularzu. Co chcesz zrobić?
                     </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                <AlertDialogFooter className="flex-col gap-2">
                     <AlertDialogCancel onClick={onCancel}>Wróć do edycji</AlertDialogCancel>
                     <Button variant="secondary" onClick={onSaveDraft}>
                         <Save className="h-4 w-4 mr-2" />

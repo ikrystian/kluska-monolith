@@ -31,7 +31,7 @@ export function ResendVerification({ email }: { email: string }) {
   };
 
   return (
-    <Button type="button" variant="outline" className="h-12 w-full rounded-2xl" onClick={resend} disabled={isSending}>
+    <Button type="button" variant="outline" className="h-12 w-full" onClick={resend} disabled={isSending}>
       {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <MailCheck className="h-4 w-4" />}
       Wyślij link aktywacyjny ponownie
     </Button>

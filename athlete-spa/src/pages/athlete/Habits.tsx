@@ -873,24 +873,15 @@ export default function HabitsPage() {
                 </DialogContent>
             </Dialog>
 
-            <div className="container mx-auto p-4 md:p-6 pt-18 lg:p-8 max-w-4xl">
+            <div className="page">
                 {/* --- Header --- */}
-                <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0">
-                        <h1 className="font-headline text-2xl sm:text-3xl font-bold flex items-center gap-2">
-                            <CheckSquare className="h-6 w-6 sm:h-8 sm:w-8 text-primary shrink-0" />
-                            <span className="truncate">Nawyki</span>
-                        </h1>
-                        <p className="text-muted-foreground text-sm sm:text-base mt-1">
-                            Śledź swoje codzienne nawyki
-                        </p>
-                    </div>
+                <div className="mb-4">
                     <Button
                         onClick={() => {
                             setEditingHabit(null);
                             setHabitDialogOpen(true);
                         }}
-                        className="w-full sm:w-auto shrink-0"
+                        className="w-full shrink-0"
                     >
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Dodaj Nawyk
@@ -901,23 +892,23 @@ export default function HabitsPage() {
                 {habits && habits.length > 0 && (
                     <Card className="mb-6">
                         <CardContent className="p-4">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                            <div className="flex flex-col gap-4">
                                 <div className="flex items-center gap-3">
                                     <div
-                                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0"
+                                        className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
                                         style={{ backgroundColor: 'hsl(var(--primary) / 0.1)' }}
                                     >
-                                        <Flame className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                                        <Flame className="h-5 w-5 text-primary" />
                                     </div>
                                     <div>
-                                        <p className="text-xs sm:text-sm text-muted-foreground">
+                                        <p className="text-xs text-muted-foreground">
                                             Wykonanie w tym tygodniu
                                         </p>
-                                        <p className="text-xl sm:text-2xl font-bold">{stats.completionRate}%</p>
+                                        <p className="text-xl font-bold">{stats.completionRate}%</p>
                                     </div>
                                 </div>
-                                <div className="flex-1 w-full sm:max-w-xs">
-                                    <Progress value={stats.completionRate} className="h-2 sm:h-3" />
+                                <div className="flex-1 w-full">
+                                    <Progress value={stats.completionRate} className="h-2" />
                                     <p className="text-xs text-muted-foreground mt-1 text-right">
                                         {stats.totalCompleted} / {stats.totalPossible} wykonanych
                                     </p>
@@ -953,16 +944,16 @@ export default function HabitsPage() {
 
                     {/* Navigation */}
                     <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1 sm:gap-2 flex-1 justify-center min-w-0">
+                        <div className="flex items-center gap-1 flex-1 justify-center min-w-0">
                             <Button
                                 variant="outline"
                                 size="icon"
                                 onClick={viewMode === 'week' ? goToPreviousWeek : goToPreviousMonth}
-                                className="h-8 w-8 sm:h-9 sm:w-9 shrink-0"
+                                className="h-8 w-8 shrink-0"
                             >
                                 <ChevronLeft className="h-4 w-4" />
                             </Button>
-                            <span className="font-medium text-xs sm:text-sm text-center truncate px-1">
+                            <span className="font-medium text-xs text-center truncate px-1">
                                 {viewMode === 'week'
                                     ? `${format(weekDates[0], 'd MMM', { locale: pl })} – ${format(weekDates[6], 'd MMM', { locale: pl })}`
                                     : format(currentMonthStart, 'LLLL yyyy', { locale: pl })
@@ -972,7 +963,7 @@ export default function HabitsPage() {
                                 variant="outline"
                                 size="icon"
                                 onClick={viewMode === 'week' ? goToNextWeek : goToNextMonth}
-                                className="h-8 w-8 sm:h-9 sm:w-9 shrink-0"
+                                className="h-8 w-8 shrink-0"
                             >
                                 <ChevronRight className="h-4 w-4" />
                             </Button>
@@ -982,7 +973,7 @@ export default function HabitsPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={viewMode === 'week' ? goToCurrentWeek : goToCurrentMonth}
-                                className="shrink-0 text-xs sm:text-sm px-2 sm:px-3"
+                                className="shrink-0 text-xs px-2"
                             >
                                 Dziś
                             </Button>
@@ -1013,7 +1004,7 @@ export default function HabitsPage() {
                         {viewMode === 'week' && (
                             <>
                                 {/* Mobile View - Card Layout */}
-                                <div className="block md:hidden space-y-3">
+                                <div className="block space-y-3">
                                     <AnimatePresence initial={false}>
                                         {habits.map((habit) => (
                                             <motion.div key={habit.id} {...listItemMotion}>
@@ -1061,7 +1052,7 @@ export default function HabitsPage() {
                                                                 return (
                                                                     <div key={dateStr} className="flex flex-col items-center gap-1">
                                                                         <span className={cn(
-                                                                            "text-[10px] font-medium uppercase",
+                                                                            "text-xs font-medium",
                                                                             isToday ? "text-primary" : "text-muted-foreground"
                                                                         )}>
                                                                             {format(date, 'EEEEEE', { locale: pl })}
@@ -1101,7 +1092,7 @@ export default function HabitsPage() {
                                 </div>
 
                                 {/* Desktop View - Grid Layout */}
-                                <Card className="hidden md:block">
+                                <Card className="hidden">
                                     <CardHeader className="pb-2 px-4">
                                         <div className="grid grid-cols-[minmax(150px,1fr)_repeat(7,48px)] gap-2 text-center items-end">
                                             <div></div>
@@ -1262,7 +1253,7 @@ export default function HabitsPage() {
                                                             )}
                                                         >
                                                             <span className={cn(
-                                                                'text-[10px] w-5 h-5 flex items-center justify-center rounded-full mb-0.5',
+                                                                'text-[11px] w-5 h-5 flex items-center justify-center rounded-full mb-0.5',
                                                                 isToday && 'bg-primary text-primary-foreground font-bold'
                                                             )}>
                                                                 {format(date, 'd')}
@@ -1273,14 +1264,14 @@ export default function HabitsPage() {
                                                                     onCheckedChange={() => toggleHabitCompletion(habit.id, dateStr)}
                                                                     disabled={isFuture}
                                                                     className={cn(
-                                                                        'h-5 w-5 sm:h-6 sm:w-6 rounded transition-all',
+                                                                        'h-5 w-5 rounded transition-all',
                                                                         isCompleted && 'border-transparent data-[state=checked]:border-transparent',
                                                                         isFuture && 'opacity-40'
                                                                     )}
                                                                     style={isCompleted ? { backgroundColor: habit.color || '#10b981', borderColor: habit.color || '#10b981' } : undefined}
                                                                 />
                                                             ) : (
-                                                                <div className="h-5 w-5 sm:h-6 sm:w-6" />
+                                                                <div className="h-5 w-5" />
                                                             )}
                                                         </div>
                                                     );

@@ -65,7 +65,7 @@ export function ViewModeToggle({ value, onChange }: { value: ExerciseViewMode; o
           onClick={() => onChange(mode)}
           className={cn(
             'flex h-8 w-8 items-center justify-center rounded-full transition-colors',
-            value === mode ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+            value === mode ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
           )}
         >
           <Icon className="h-4 w-4" />
@@ -172,7 +172,7 @@ export const ExerciseResults = forwardRef<ExerciseResultsHandle, ExerciseResults
 
   if (isLoading) {
     return viewMode === 'grid' ? (
-      <div className="grid min-h-0 flex-1 grid-cols-2 content-start gap-3 overflow-hidden sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+      <div className="grid min-h-0 flex-1 grid-cols-2 content-start gap-3 overflow-hidden">
         {Array.from({ length: 10 }).map((_, index) => (
           <div key={index} className="overflow-hidden rounded-2xl border bg-card">
             <Skeleton className="aspect-[4/3] w-full rounded-none" />
@@ -201,13 +201,13 @@ export const ExerciseResults = forwardRef<ExerciseResultsHandle, ExerciseResults
 
   if (error) {
     return (
-      <Card className="flex flex-col items-center justify-center rounded-3xl border-dashed py-20">
+      <Card className="flex flex-col items-center justify-center rounded-2xl border-dashed py-20">
         <CardContent className="text-center">
           <Dumbbell className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
           <h3 className="mb-2 font-headline text-xl font-semibold">Błąd ładowania</h3>
           <p className="mb-4 text-muted-foreground">{error.message || 'Nie udało się pobrać ćwiczeń.'}</p>
           {onRetry && (
-            <Button type="button" variant="outline" className="rounded-full" onClick={onRetry}>
+            <Button type="button" variant="outline"  onClick={onRetry}>
               Spróbuj ponownie
             </Button>
           )}

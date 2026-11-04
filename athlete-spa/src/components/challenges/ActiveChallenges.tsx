@@ -93,11 +93,11 @@ export function ActiveChallenges() {
 
     if (isLoading) {
         return (
-            <Card className="border-purple-500/30 bg-purple-500/5 mb-6">
+            <Card>
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2">
-                        <Footprints className="h-5 w-5 text-purple-500" />
-                        Wyzwania Biegowe
+                        <Footprints className="h-5 w-5 text-run" />
+                        Wyzwania biegowe
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -115,15 +115,15 @@ export function ActiveChallenges() {
     }
 
     return (
-        <Card className="border-purple-500/30 bg-purple-500/5  mb-6">
+        <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-500/20">
-                        <Footprints className="h-5 w-5 text-purple-500" />
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-secondary text-run">
+                        <Footprints className="h-5 w-5" />
                     </div>
                     <div>
-                        <CardTitle className="font-headline">Wyzwania Biegowe</CardTitle>
-                        <CardDescription>Twoje aktywne wyzwania i zaproszenia</CardDescription>
+                        <CardTitle>Wyzwania biegowe</CardTitle>
+                        <CardDescription>Aktywne i zaproszenia</CardDescription>
                     </div>
                 </div>
             </CardHeader>
@@ -135,7 +135,7 @@ export function ActiveChallenges() {
                         {pendingChallenges.map((challenge) => (
                             <div
                                 key={challenge.id}
-                                className="p-4 rounded-lg border border-yellow-500/30 bg-yellow-500/10"
+                                className="rounded-xl bg-secondary/60 p-3"
                             >
                                 <div className="flex items-center justify-between mb-3">
                                     <div className="flex items-center gap-3">
@@ -148,7 +148,7 @@ export function ActiveChallenges() {
                                             <p className="text-sm text-muted-foreground">zaprasza Cię do wyzwania</p>
                                         </div>
                                     </div>
-                                    <Badge variant="outline" className="bg-yellow-500/20 border-yellow-500/30">
+                                    <Badge variant="outline" className="border-food/40 text-food">
                                         Oczekuje
                                     </Badge>
                                 </div>
@@ -215,8 +215,7 @@ export function ActiveChallenges() {
                             return (
                                 <div
                                     key={challenge.id}
-                                    className={`p-4 rounded-lg border ${isEnded ? 'border-muted bg-muted/30' : 'border-purple-500/20 hover:bg-purple-500/5'
-                                        } transition-colors`}
+                                    className={`rounded-xl bg-secondary/60 p-3 ${isEnded ? 'opacity-70' : ''}`}
                                 >
                                     <div className="flex items-center justify-between mb-3">
                                         <div className="flex items-center gap-3">
@@ -232,7 +231,7 @@ export function ActiveChallenges() {
                                             </div>
                                         </div>
                                         {isPending ? (
-                                            <Badge variant="outline" className="bg-blue-500/20 border-blue-500/30">
+                                            <Badge variant="outline" className="border-run/40 text-run">
                                                 Wysłane
                                             </Badge>
                                         ) : isEnded ? (
@@ -240,7 +239,7 @@ export function ActiveChallenges() {
                                                 Zakończone
                                             </Badge>
                                         ) : (
-                                            <Badge className="bg-green-500">
+                                            <Badge variant="secondary">
                                                 <Clock className="h-3 w-3 mr-1" />
                                                 {daysLeft} dni
                                             </Badge>
@@ -257,7 +256,7 @@ export function ActiveChallenges() {
                                                 </div>
                                                 <Progress
                                                     value={myPercentage}
-                                                    className="h-2 [&>div]:bg-purple-500"
+                                                    className="h-2 [&>div]:bg-run"
                                                 />
                                             </div>
 
@@ -269,13 +268,13 @@ export function ActiveChallenges() {
                                                 </div>
                                                 <Progress
                                                     value={opponentPercentage}
-                                                    className="h-2 [&>div]:bg-orange-500"
+                                                    className="h-2 [&>div]:bg-muted-foreground"
                                                 />
                                             </div>
 
                                             {isEnded && challenge.winnerId && (
                                                 <div className="flex items-center justify-center gap-2 pt-2 text-sm">
-                                                    <Trophy className="h-4 w-4 text-yellow-500" />
+                                                    <Trophy className="h-4 w-4 text-food" />
                                                     <span className="font-medium">
                                                         {challenge.winnerId === user?.uid ? 'Wygrałeś!' : `Wygrał ${opponentName}`}
                                                     </span>
@@ -307,7 +306,7 @@ export function ActiveChallenges() {
                             return (
                                 <div
                                     key={challenge.id}
-                                    className="p-4 rounded-lg border border-muted bg-muted/30 opacity-80 hover:opacity-100 transition-opacity"
+                                    className="rounded-xl bg-secondary/40 p-3"
                                 >
                                     <div className="flex items-center justify-between mb-3">
                                         <div className="flex items-center gap-3">
@@ -322,7 +321,7 @@ export function ActiveChallenges() {
                                                 </p>
                                             </div>
                                         </div>
-                                        <Badge variant="outline" className={isWinner ? "bg-yellow-500/10 text-yellow-600 border-yellow-500/30" : "bg-muted text-muted-foreground"}>
+                                        <Badge variant="outline" className={isWinner ? "bg-food/10 text-food border-food/30" : "bg-muted text-muted-foreground"}>
                                             {isWinner ? (
                                                 <>
                                                     <Trophy className="h-3 w-3 mr-1" />

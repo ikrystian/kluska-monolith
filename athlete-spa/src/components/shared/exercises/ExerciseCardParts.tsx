@@ -49,7 +49,7 @@ export function ExerciseThumb({ exercise, iconClassName }: { exercise: Exercise;
 
   if (!url) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-secondary">
+      <div className="absolute inset-0 flex items-center justify-center bg-secondary">
         <Dumbbell className={cn('h-8 w-8 text-muted-foreground/30', iconClassName)} />
       </div>
     );
@@ -109,7 +109,7 @@ export function FavoriteButton({
         onToggle();
       }}
     >
-      <Star className={cn('h-4 w-4', active ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground', iconClassName)} />
+      <Star className={cn('h-4 w-4', active ? 'fill-food text-food' : 'text-muted-foreground', iconClassName)} />
     </Button>
   );
 }

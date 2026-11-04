@@ -22,8 +22,8 @@ export function ContactActions({ trainerId, isMine, pending, card, onInquire, co
 
   if (isMine) {
     return (
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Button asChild className={cn(height, 'flex-1 rounded-full text-base')}>
+      <div className="flex flex-col gap-2">
+        <Button asChild className={cn(height, 'flex-1 text-base')}>
           <Link to={chat}>
             <MessageSquare className="mr-2 h-4 w-4" /> Napisz do trenera
           </Link>
@@ -32,7 +32,7 @@ export function ContactActions({ trainerId, isMine, pending, card, onInquire, co
           <Button asChild variant="outline" className={cn(height, 'flex-1 rounded-full')}>
             <Link to="/athlete/workout-plans">
               <Layers className="mr-2 h-4 w-4" /> Mój program
-              <ArrowRight className="ml-auto h-4 w-4 sm:ml-2" />
+              <ArrowRight className="ml-auto h-4 w-4" />
             </Link>
           </Button>
         )}
@@ -46,17 +46,17 @@ export function ContactActions({ trainerId, isMine, pending, card, onInquire, co
   return (
     <div className="flex gap-2">
       <Button
-        className={cn(height, 'min-w-0 flex-1 rounded-full text-base shadow-glow')}
+        className={cn(height, 'min-w-0 flex-1 rounded-full text-base')}
         disabled={pending}
         onClick={onInquire}
       >
         {pending ? <CheckCircle2 className="mr-2 h-4 w-4 shrink-0" /> : <Send className="mr-2 h-4 w-4 shrink-0" />}
         <span className="truncate">{label}</span>
       </Button>
-      <Button asChild variant="outline" className={cn(height, 'shrink-0 rounded-full px-4')} aria-label="Napisz na czacie">
+      <Button asChild variant="outline" className={cn(height, 'shrink-0 px-4')} aria-label="Napisz na czacie">
         <Link to={chat}>
           <MessageSquare className="h-4 w-4" />
-          <span className={cn('ml-2', pending ? '' : 'hidden sm:inline')}>Czat</span>
+          <span className={cn('ml-2', pending ? '' : 'hidden')}>Czat</span>
         </Link>
       </Button>
     </div>
@@ -71,8 +71,8 @@ export function ContactCard(props: ContactState) {
   const availability = card?.availability ? AVAILABILITY[card.availability] : undefined;
 
   return (
-    <div className="rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-lifted">
-      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">
+    <div className="rounded-2xl bg-card p-5">
+      <p className="text-xs font-semibold text-primary">
         {isMine ? 'Twój trener' : 'Rozpocznij współpracę'}
       </p>
 

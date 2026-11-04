@@ -29,15 +29,15 @@ function getRarityIcon(rarity: string) {
 function getRarityColor(rarity: string) {
   switch (rarity) {
     case 'common':
-      return 'bg-gray-500 text-white';
+      return 'bg-secondary text-secondary-foreground';
     case 'rare':
-      return 'bg-blue-500 text-white';
+      return 'bg-run text-black';
     case 'epic':
-      return 'bg-purple-500 text-white';
+      return 'bg-social text-black';
     case 'legendary':
-      return 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white';
+      return 'bg-food text-black';
     default:
-      return 'bg-gray-500 text-white';
+      return 'bg-secondary text-secondary-foreground';
   }
 }
 
@@ -74,7 +74,7 @@ function getCategoryLabel(category: string) {
 export function AchievementsGrid({ achievements, isLoading }: AchievementsGridProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <Card key={i} className="animate-pulse">
             <CardHeader>
@@ -112,7 +112,7 @@ export function AchievementsGrid({ achievements, isLoading }: AchievementsGridPr
   });
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 gap-4">
       {sortedAchievements.map(({ achievement, unlocked, progress, progressMax }) => {
         const progressPercent = progressMax > 0 ? (progress / progressMax) * 100 : 0;
 
@@ -170,14 +170,14 @@ export function AchievementsGrid({ achievements, isLoading }: AchievementsGridPr
               {achievement.pointsReward > 0 && (
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Nagroda:</span>
-                  <span className="font-medium text-yellow-600">
+                  <span className="font-medium text-food">
                     +{achievement.pointsReward} pkt
                   </span>
                 </div>
               )}
 
               {unlocked && (
-                <div className="flex items-center gap-1 text-xs text-green-600">
+                <div className="flex items-center gap-1 text-xs text-volt">
                   <Trophy className="h-3 w-3" />
                   <span>Odblokowane!</span>
                 </div>

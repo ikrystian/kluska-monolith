@@ -122,7 +122,7 @@ export function ExerciseFilters({ filters, onChange, muscleGroupOptions, resultC
         >
           <SlidersHorizontal className="h-4 w-4" />
           {extraCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-background bg-foreground px-1 text-[10px] font-bold text-background">
+            <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-background bg-foreground px-1 text-[11px] font-bold text-background">
               {extraCount}
             </span>
           )}
@@ -130,7 +130,7 @@ export function ExerciseFilters({ filters, onChange, muscleGroupOptions, resultC
       </div>
 
       {/* Partie mięśniowe jako przewijane chipy */}
-      <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:overflow-visible md:px-0">
+      <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
         {chips.map((option) => (
           <Chip
             key={option.value}
@@ -164,7 +164,7 @@ export function ExerciseFilters({ filters, onChange, muscleGroupOptions, resultC
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent
           side="bottom"
-          className="mx-auto flex max-h-[85vh] w-full max-w-lg flex-col gap-0 rounded-t-[2rem] px-0 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-5"
+          className="mx-auto flex max-h-[85vh] w-full max-w-lg flex-col gap-0 rounded-t-3xl px-0 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-5"
         >
           <SheetHeader className="mb-2 px-5 text-left">
             <SheetTitle className="font-headline text-xl">Filtry</SheetTitle>
@@ -174,7 +174,7 @@ export function ExerciseFilters({ filters, onChange, muscleGroupOptions, resultC
           <div className="flex-1 space-y-5 overflow-y-auto px-5 py-3">
             {SHEET_GROUPS.map(({ key, label, options }) => (
               <section key={key} className="space-y-2">
-                <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{label}</h3>
+                <h3 className="text-xs font-semibold text-muted-foreground">{label}</h3>
                 <div className="flex flex-wrap gap-2">
                   {options.map((option) => (
                     <Chip
@@ -207,7 +207,7 @@ export function ExerciseFilters({ filters, onChange, muscleGroupOptions, resultC
             >
               Wyczyść
             </Button>
-            <Button type="button" className="h-11 flex-[2] rounded-full" onClick={() => setSheetOpen(false)}>
+            <Button type="button" className="h-11 flex-[2]" onClick={() => setSheetOpen(false)}>
               {resultCount === undefined ? 'Pokaż wyniki' : `Pokaż ${resultCount} ćwiczeń`}
             </Button>
           </div>

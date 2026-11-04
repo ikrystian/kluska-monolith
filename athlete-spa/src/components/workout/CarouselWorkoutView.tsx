@@ -382,7 +382,7 @@ export function CarouselWorkoutView({
             <span className="text-sm font-bold text-primary tabular-nums">
               {completedSets}/{totalSets}
             </span>
-            <p className="text-[10px] text-muted-foreground leading-tight">serii</p>
+            <p className="text-[11px] text-muted-foreground leading-tight">serii</p>
           </div>
         </div>
         <Progress value={totalSets > 0 ? (completedSets / totalSets) * 100 : 0} className="h-1.5 mt-2" />
@@ -489,7 +489,7 @@ export function CarouselWorkoutView({
                   index === currentSlideIndex
                     ? 'bg-primary w-5'
                     : isSetCompleted
-                      ? 'bg-green-500 w-1.5'
+                      ? 'bg-volt w-1.5'
                       : slide.type === 'set-info'
                         ? 'bg-primary/30 w-1.5'
                         : 'bg-muted w-1.5'

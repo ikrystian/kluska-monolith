@@ -1,139 +1,93 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Play, CalendarDays, Menu } from '@/components/animated-icons';
+import { Dumbbell, House, Plus, Users, type LucideIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { MobileMoreSheet } from '@/components/mobile-more-sheet';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { QuickAddSheet } from '@/components/quick-add-sheet';
+import { useUserProfile } from '@/contexts/UserProfileContext';
+import { resolveMediaUrl } from '@/lib/api-client';
 import { haptic } from '@/lib/haptics';
+import { cn } from '@/lib/utils';
+
+function TabLink({ href, label, icon: Icon, isActive, children }: { href: string; label: string; icon?: LucideIcon; isActive: boolean; children?: React.ReactNode }) {
+  return (
+    <Link
+      to={href}
+      onClick={() => haptic('tap')}
+      aria-label={label}
+      aria-current={isActive ? 'page' : undefined}
+      className={cn(
+        'relative flex h-full flex-col items-center justify-center gap-1 transition-colors active:opacity-70',
+        isActive ? 'text-foreground' : 'text-muted-foreground'
+      )}
+    >
+      {isActive && (
+        <motion.span
+          layoutId="tab-indicator"
+          transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+          className="absolute inset-x-5 top-0 h-0.5 rounded-b-full bg-primary"
+        />
+      )}
+      {Icon ? <Icon className="h-[22px] w-[22px]" strokeWidth={isActive ? 2.4 : 2} /> : children}
+      <span className={cn('text-[11px] leading-none', isActive ? 'font-semibold' : 'font-medium')}>{label}</span>
+    </Link>
+  );
+}
 
 export function BottomNav() {
-    const { pathname, search } = useLocation();
-    const [moreOpen, setMoreOpen] = useState(false);
+  const { pathname, search } = useLocation();
+  const { userProfile } = useUserProfile();
+  const [addOpen, setAddOpen] = useState(false);
 
-    // During an active workout session (/athlete/log?logId=...) the nav is
-    // hidden so it doesn't cover the workout controls.
-    const isActiveWorkoutSession = pathname === '/athlete/log' && new URLSearchParams(search).has('logId');
-    if (isActiveWorkoutSession) {
-        return null;
-    }
+  // During an active workout session (/athlete/log?logId=...) the nav is
+  // hidden so it doesn't cover the workout controls.
+  const isActiveWorkoutSession = pathname === '/athlete/log' && new URLSearchParams(search).has('logId');
+  if (isActiveWorkoutSession) {
+    return null;
+  }
 
-    const items = [
-        { href: '/athlete/social', icon: LayoutDashboard, label: 'Wall' },
-        { href: '/athlete/dashboard', icon: LayoutDashboard, label: 'Panel' },
-        { href: '/athlete/log', icon: Play, label: 'Trenuj', primary: true },
+  const youActive = pathname === '/athlete/you' || pathname === '/athlete/profile';
 
-        { href: '/athlete/calendar', icon: CalendarDays, label: 'Kalendarz' },
-    ];
+  return (
+    <>
+      <nav
+        id="bottom-nav"
+        className="app-column fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl"
+      >
+        <div className="grid h-[var(--tabbar-h)] grid-cols-5">
+          <TabLink href="/athlete/dashboard" label="Dziś" icon={House} isActive={pathname === '/athlete/dashboard'} />
+          <TabLink href="/athlete/log" label="Trening" icon={Dumbbell} isActive={pathname.startsWith('/athlete/log')} />
 
-    return (
-        <>
-            <nav
-                id="bottom-nav"
-                className="fixed inset-x-4 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 mx-auto block max-w-md transition-transform duration-300 ease-out group-data-[chrome=hidden]/chrome:translate-y-[calc(100%+1.5rem+env(safe-area-inset-bottom))] rounded-[2rem] border border-foreground/10 bg-background/75 shadow-lifted backdrop-blur-2xl md:hidden"
+          {/* Quick add sits on the bar like a plate on the sleeve. */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                haptic('impact');
+                setAddOpen(true);
+              }}
+              aria-label="Dodaj"
+              aria-expanded={addOpen}
+              className="absolute left-1/2 top-0 grid h-[3.25rem] w-[3.25rem] -translate-x-1/2 -translate-y-3 place-items-center rounded-full bg-primary text-primary-foreground ring-4 ring-background transition-transform active:scale-90"
             >
-                <div className="flex h-[4.25rem] items-center justify-between px-2">
-                    {items.map((item) => {
-                        const isActive = pathname === item.href || (item.href !== '/athlete/dashboard' && pathname.startsWith(item.href));
-                        const Icon = item.icon;
+              <span aria-hidden className="absolute inset-[5px] rounded-full border border-black/15 dark:border-black/20" />
+              <Plus className={cn('h-6 w-6 transition-transform duration-200', addOpen && 'rotate-45')} strokeWidth={2.6} />
+            </button>
+          </div>
 
-                        if (item.primary) {
-                            return (
-                                <Link
-                                    key={item.href}
-                                    to={item.href}
-                                    aria-label={item.label}
-                                    className="pressable-sm group relative flex flex-col items-center"
-                                >
-                                    <span
-                                        aria-hidden
-                                        className="animate-pulse-subtle absolute top-1 h-14 w-14 rounded-full bg-primary/50 blur-xl transition-opacity group-active:opacity-40"
-                                    />
-                                    <span
-                                        className={cn(
-                                            "relative flex h-[3.75rem] w-[3.75rem] items-center justify-center rounded-full hero-ember text-white shadow-glow ring-4 ring-background transition-transform duration-200 group-active:scale-90",
-                                            isActive && "ring-primary/40"
-                                        )}
-                                    >
-                                        <Icon className="h-6 w-6 fill-current drop-shadow-sm" />
-                                    </span>
-                                    <span className="mt-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-primary">
-                                        {item.label}
-                                    </span>
-                                </Link>
-                            );
-                        }
+          <TabLink href="/athlete/social" label="Ekipa" icon={Users} isActive={pathname.startsWith('/athlete/social')} />
+          <TabLink href="/athlete/you" label="Ty" isActive={youActive}>
+            <Avatar className={cn('h-[22px] w-[22px]', youActive && 'ring-2 ring-foreground ring-offset-1 ring-offset-background')}>
+              {userProfile?.avatarUrl && <AvatarImage src={resolveMediaUrl(userProfile.avatarUrl)} alt="" />}
+              <AvatarFallback className="bg-secondary text-[10px] font-semibold">
+                {userProfile?.name?.[0]?.toUpperCase() ?? 'T'}
+              </AvatarFallback>
+            </Avatar>
+          </TabLink>
+        </div>
+      </nav>
 
-                        return (
-                            <Link
-                                key={item.href}
-                                to={item.href}
-                                aria-label={item.label}
-                                className="pressable relative flex h-full min-w-[3.5rem] flex-col items-center justify-center gap-1"
-                            >
-                                <span
-                                    className={cn(
-                                        "relative flex h-8 w-[3.25rem] items-center justify-center rounded-full transition-colors duration-300",
-                                        isActive
-                                            ? "text-primary"
-                                            : "text-muted-foreground active:scale-90"
-                                    )}
-                                >
-                                    {isActive && (
-                                        <motion.span
-                                            layoutId="bottom-nav-pill"
-                                            transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                                            className="absolute inset-0 rounded-full bg-secondary shadow-soft"
-                                        />
-                                    )}
-                                    <Icon className={cn("relative z-10 h-5 w-5 transition-transform duration-300", isActive && "-translate-y-px scale-110")} strokeWidth={isActive ? 2.4 : 2} />
-                                </span>
-                                <span
-                                    className={cn(
-                                        "text-[9px] uppercase tracking-[0.14em] leading-none transition-colors duration-300",
-                                        isActive ? "font-bold text-foreground" : "font-semibold text-muted-foreground/80"
-                                    )}
-                                >
-                                    {item.label}
-                                </span>
-                            </Link>
-                        );
-                    })}
-
-                    <button
-                        type="button"
-                        onClick={() => { haptic('tap'); setMoreOpen(true); }}
-                        aria-label="Otwórz menu"
-                        aria-expanded={moreOpen}
-                        className="pressable relative flex h-full min-w-[3.5rem] flex-col items-center justify-center gap-1"
-                    >
-                        <span
-                            className={cn(
-                                "relative flex h-8 w-[3.25rem] items-center justify-center rounded-full transition-colors duration-300 active:scale-90",
-                                moreOpen ? "text-primary" : "text-muted-foreground"
-                            )}
-                        >
-                            {moreOpen && (
-                                <motion.span
-                                    layoutId="bottom-nav-pill"
-                                    transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                                    className="absolute inset-0 rounded-full bg-secondary shadow-soft"
-                                />
-                            )}
-                            <Menu className="relative z-10 h-5 w-5" strokeWidth={2} />
-                        </span>
-                        <span
-                            className={cn(
-                                "text-[9px] uppercase tracking-[0.14em] leading-none transition-colors duration-300",
-                                moreOpen ? "font-bold text-foreground" : "font-semibold text-muted-foreground/80"
-                            )}
-                        >
-                            MENU
-                        </span>
-                    </button>
-                </div>
-            </nav>
-
-            <MobileMoreSheet open={moreOpen} onOpenChange={setMoreOpen} />
-        </>
-    );
+      <QuickAddSheet open={addOpen} onOpenChange={setAddOpen} />
+    </>
+  );
 }

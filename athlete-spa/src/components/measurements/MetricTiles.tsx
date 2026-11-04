@@ -20,8 +20,8 @@ export function MetricTiles({ measurements, selected, onSelect }: MetricTilesPro
 
   return (
     <section aria-label="Obwody">
-      <h2 className="mb-2 px-1 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Obwody</h2>
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4">
+      <h2 className="mb-2 px-1 text-xs font-semibold text-muted-foreground">Obwody</h2>
+      <div className="grid grid-cols-2 gap-2.5">
         {tiles.map(({ metric, latest, delta }) => {
           const active = selected === metric.key;
           const Icon = delta === null || delta === 0 ? Minus : delta > 0 ? ArrowUpRight : ArrowDownRight;
@@ -32,12 +32,12 @@ export function MetricTiles({ measurements, selected, onSelect }: MetricTilesPro
               onClick={() => onSelect(metric.key)}
               aria-pressed={active}
               className={cn(
-                'rounded-[1.4rem] border bg-card p-4 text-left shadow-soft transition-all active:scale-[0.97]',
+                'rounded-[1.4rem] border bg-card p-4 text-left transition-all active:scale-[0.97]',
                 active ? 'border-primary ring-2 ring-primary/30' : 'border-border/60 hover:border-border'
               )}
             >
-              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{metric.label}</p>
-              <p className="mt-1 font-headline text-2xl font-bold tabular-nums leading-none">
+              <p className="text-xs font-semibold text-muted-foreground">{metric.label}</p>
+              <p className="mt-1 font-display text-3xl font-bold tabular-nums leading-none">
                 {latest!.toFixed(1)}
                 <span className="ml-1 text-sm font-medium text-muted-foreground">{metric.unit}</span>
               </p>

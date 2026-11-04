@@ -28,7 +28,7 @@ export function Section({ eyebrow, title, children }: { eyebrow: string; title: 
   return (
     <Reveal>
       <section>
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">{eyebrow}</p>
+        <p className="text-xs font-semibold text-primary">{eyebrow}</p>
         <h2 className="mt-1 font-headline text-2xl font-bold tracking-tight">{title}</h2>
         <div className="mt-4">{children}</div>
       </section>
@@ -37,7 +37,7 @@ export function Section({ eyebrow, title, children }: { eyebrow: string; title: 
 }
 
 const SCROLLER =
-  '-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] md:-mx-6 md:px-6 [&::-webkit-scrollbar]:hidden';
+  '-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
 
 /** Short, scannable accomplishments right under the header. */
 export function Achievements({ items }: { items: string[] }) {
@@ -87,10 +87,10 @@ export function AboutSection({ bio, specializations }: { bio?: string; specializ
       )}
       {!!specializations?.length && (
         <div className={cn(bio && 'mt-5')}>
-          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Specjalizacje</p>
+          <p className="mb-2 text-xs font-semibold text-muted-foreground">Specjalizacje</p>
           <ul className="flex flex-wrap gap-2">
             {specializations.map(s => (
-              <li key={s} className="rounded-full border border-border/70 bg-card px-3.5 py-1.5 text-sm font-semibold shadow-soft">
+              <li key={s} className="rounded-full bg-card px-3.5 py-1.5 text-sm font-semibold">
                 {s}
               </li>
             ))}
@@ -112,22 +112,22 @@ export function ServicesSection({
 }) {
   return (
     <Section eyebrow="Współpraca" title="Oferta i pakiety">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3">
         {services.map(s => (
           <article
             key={s.title}
             className={cn(
-              'relative flex flex-col rounded-[1.5rem] border bg-card p-5 shadow-soft',
-              s.highlighted ? 'border-primary/60 ring-1 ring-primary/30 shadow-glow' : 'border-border/60'
+              'relative flex flex-col rounded-2xl border bg-card p-5',
+              s.highlighted ? 'border-primary/60 ring-1 ring-primary/30' : 'border-border/60'
             )}
           >
             {s.highlighted && (
-              <span className="absolute -top-2.5 left-5 rounded-full bg-primary px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">
+              <span className="absolute -top-2.5 left-5 rounded-full bg-primary px-3 py-0.5 text-xs font-semibold text-primary-foreground">
                 Polecany
               </span>
             )}
             <h3 className="font-headline text-lg font-bold leading-tight">{s.title}</h3>
-            {s.price && <p className="mt-1.5 font-display text-xl font-extrabold text-primary">{s.price}</p>}
+            {s.price && <p className="mt-1.5 font-display text-3xl font-bold text-primary">{s.price}</p>}
             {s.description && <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">{s.description}</p>}
             {canInquire && (
               <button
@@ -148,11 +148,11 @@ export function ServicesSection({
 export function CertificationsSection({ items }: { items: NonNullable<TrainerCard['certifications']> }) {
   return (
     <Section eyebrow="Kwalifikacje" title="Certyfikaty i uprawnienia">
-      <ul className="grid gap-2 sm:grid-cols-2">
+      <ul className="grid gap-2">
         {items.map(c => (
           <li
             key={`${c.name}-${c.year ?? ''}`}
-            className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-3.5 shadow-soft"
+            className="flex items-center gap-3 rounded-2xl bg-card p-3.5"
           >
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
               <Award className="h-5 w-5" />
@@ -161,7 +161,7 @@ export function CertificationsSection({ items }: { items: NonNullable<TrainerCar
               <span className="block text-sm font-bold leading-snug">{c.name}</span>
               {c.year && <span className="text-xs text-muted-foreground">{c.year}</span>}
             </span>
-            <BadgeCheck className="h-4 w-4 shrink-0 text-emerald-500" aria-hidden />
+            <BadgeCheck className="h-4 w-4 shrink-0 text-volt" aria-hidden />
           </li>
         ))}
       </ul>
@@ -176,7 +176,7 @@ export function TestimonialsSection({ items }: { items: NonNullable<TrainerCard[
         {items.map(t => (
           <li
             key={`${t.author}-${t.text.slice(0, 24)}`}
-            className="flex w-[17rem] shrink-0 snap-start flex-col rounded-[1.5rem] border border-border/60 bg-card p-5 shadow-soft sm:w-80"
+            className="flex w-[17rem] shrink-0 snap-start flex-col rounded-2xl bg-card p-5"
           >
             <Quote className="h-6 w-6 text-primary/70" />
             <blockquote className="mt-3 flex-1 text-sm leading-relaxed">{t.text}</blockquote>
@@ -199,7 +199,7 @@ export function FaqSection({ items }: { items: NonNullable<TrainerCard['faq']> }
       <Accordion
         type="single"
         collapsible
-        className="divide-y divide-border/60 overflow-hidden rounded-[1.5rem] border border-border/60 bg-card px-4 shadow-soft"
+        className="divide-y divide-border/60 overflow-hidden rounded-2xl bg-card px-4"
       >
         {items.map((f, i) => (
           <AccordionItem key={f.question} value={`faq-${i}`} className="border-0">
@@ -225,8 +225,8 @@ export function HowItWorks() {
     <Section eyebrow="Jak to działa" title="Od zapytania do pierwszego treningu">
       <ol className="space-y-2.5">
         {STEPS.map(([title, text], i) => (
-          <li key={title} className="flex items-start gap-4 rounded-[1.25rem] border border-border/60 bg-card p-4 shadow-soft">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 font-display text-sm font-extrabold text-primary">
+          <li key={title} className="flex items-start gap-4 rounded-2xl bg-card p-4">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 font-display text-lg font-bold text-primary">
               {i + 1}
             </span>
             <div>
@@ -261,7 +261,7 @@ export function SocialLinks({ links }: { links: UserProfile['socialLinks'] }) {
             href={links![key]}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2.5 rounded-full border border-border/60 bg-card py-2 pl-2 pr-4 shadow-soft transition-colors hover:bg-secondary/50 active:scale-[0.98]"
+            className="flex items-center gap-2.5 rounded-full bg-card py-2 pl-2 pr-4 transition-colors hover:bg-secondary/50 active:scale-[0.98]"
           >
             <span className="grid h-8 w-8 place-items-center rounded-full" style={{ backgroundColor: tint(color, 15), color }}>
               <Icon className="h-4 w-4" />

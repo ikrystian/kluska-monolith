@@ -26,13 +26,13 @@ interface RewardsGridProps {
 function getTierColor(tier: string) {
   switch (tier) {
     case 'bronze':
-      return 'bg-amber-700 text-white';
+      return 'bg-food text-black';
     case 'silver':
-      return 'bg-gray-400 text-white';
+      return 'bg-secondary text-secondary-foreground';
     case 'gold':
-      return 'bg-yellow-500 text-white';
+      return 'bg-food text-black';
     case 'platinum':
-      return 'bg-gradient-to-r from-purple-500 to-pink-500 text-white';
+      return 'bg-social text-black';
     default:
       return 'bg-muted';
   }
@@ -97,7 +97,7 @@ export function RewardsGrid({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <Card key={i} className="animate-pulse">
             <CardHeader>
@@ -141,14 +141,14 @@ export function RewardsGrid({
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         {rewards.map((reward) => {
           const canAfford = currentBalance >= reward.fitCoinCost;
 
           return (
             <Card
               key={reward.id}
-              className={`transition-all ${!canAfford ? 'opacity-60' : 'hover:shadow-lg'}`}
+              className={`transition-all ${!canAfford ? 'opacity-60' : ''}`}
             >
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
@@ -169,8 +169,8 @@ export function RewardsGrid({
               </CardContent>
               <CardFooter className="flex items-center justify-between">
                 <div className="flex items-center gap-1 font-semibold">
-                  <Coins className="h-4 w-4 text-yellow-500" />
-                  <span>{reward.fitCoinCost.toLocaleString()}</span>
+                  <Coins className="h-4 w-4 text-food" />
+                  <span>{reward.fitCoinCost.toLocaleString('pl-PL')}</span>
                 </div>
                 <Button
                   size="sm"
@@ -209,15 +209,15 @@ export function RewardsGrid({
               <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                 <span>Koszt:</span>
                 <div className="flex items-center gap-1 font-bold">
-                  <Coins className="h-4 w-4 text-yellow-500" />
-                  <span>{selectedReward.fitCoinCost.toLocaleString()}</span>
+                  <Coins className="h-4 w-4 text-food" />
+                  <span>{selectedReward.fitCoinCost.toLocaleString('pl-PL')}</span>
                 </div>
               </div>
               <div className="flex items-center justify-between p-3 mt-2">
                 <span>Twoje saldo po transakcji:</span>
                 <div className="flex items-center gap-1 font-bold">
-                  <Coins className="h-4 w-4 text-yellow-500" />
-                  <span>{(currentBalance - selectedReward.fitCoinCost).toLocaleString()}</span>
+                  <Coins className="h-4 w-4 text-food" />
+                  <span>{(currentBalance - selectedReward.fitCoinCost).toLocaleString('pl-PL')}</span>
                 </div>
               </div>
             </div>

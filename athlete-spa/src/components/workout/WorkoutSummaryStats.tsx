@@ -133,10 +133,10 @@ export function WorkoutSummaryStats({
     <div className={cn("space-y-4", className)}>
       {/* New Records Section */}
       {newRecords.length > 0 && (
-        <Card className="border-yellow-500/50 bg-gradient-to-br from-yellow-500/10 to-orange-500/10">
+        <Card className="border-food/50 bg-gradient-to-br from-food/10 to-primary/10">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Trophy className="h-5 w-5 text-yellow-500" />
+              <Trophy className="h-5 w-5 text-food" />
               Nowe Rekordy Osobiste!
             </CardTitle>
           </CardHeader>
@@ -145,16 +145,16 @@ export function WorkoutSummaryStats({
               {newRecords.map((record, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-2 rounded-lg bg-yellow-500/10"
+                  className="flex items-center justify-between p-2 rounded-lg bg-food/10"
                 >
                   <div className="flex items-center gap-2">
-                    {record.type === 'max_weight' && <Dumbbell className="h-4 w-4 text-yellow-600" />}
-                    {record.type === 'max_reps' && <Repeat className="h-4 w-4 text-yellow-600" />}
-                    {record.type === 'max_duration' && <Timer className="h-4 w-4 text-yellow-600" />}
+                    {record.type === 'max_weight' && <Dumbbell className="h-4 w-4 text-food" />}
+                    {record.type === 'max_reps' && <Repeat className="h-4 w-4 text-food" />}
+                    {record.type === 'max_duration' && <Timer className="h-4 w-4 text-food" />}
                     <span className="font-medium">{record.exerciseName}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700">
+                    <Badge variant="secondary" className="bg-food/20 text-food">
                       {record.type === 'max_weight' && `${record.value} kg`}
                       {record.type === 'max_reps' && `${record.value} powt.`}
                       {record.type === 'max_duration' && `${record.value} sek.`}
@@ -173,7 +173,7 @@ export function WorkoutSummaryStats({
       )}
 
       {/* Main Stats Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <Card className="bg-secondary/30">
           <CardContent className="p-4 text-center">
             <Clock className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
@@ -208,7 +208,7 @@ export function WorkoutSummaryStats({
       </div>
 
       {/* Volume and Reps Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3">
         {stats.totalVolume > 0 && (
           <Card className="bg-secondary/30">
             <CardContent className="p-4">
@@ -217,7 +217,7 @@ export function WorkoutSummaryStats({
                   <Activity className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.totalVolume.toLocaleString()} kg</p>
+                  <p className="text-2xl font-bold">{stats.totalVolume.toLocaleString('pl-PL')} kg</p>
                   <p className="text-xs text-muted-foreground">Całkowita objętość</p>
                 </div>
               </div>
@@ -263,7 +263,7 @@ export function WorkoutSummaryStats({
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Flame className="h-5 w-5 text-orange-500" />
+              <Flame className="h-5 w-5 text-primary" />
               Najlepsze wyniki w tym treningu
             </CardTitle>
           </CardHeader>

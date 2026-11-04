@@ -136,7 +136,7 @@ export function SpotifyWidget({ className }: { className?: string }) {
   }
 
   return (
-    <div className={cn('flex items-center gap-3 rounded-xl border bg-card px-3 py-2 shadow-soft toAnimate', className)}>
+    <div className={cn('flex items-center gap-3 rounded-xl border bg-card px-3 py-2 toAnimate', className)}>
       {isTrackLoading ? (
         <Skeleton className="h-9 w-9 shrink-0" />
       ) : state.track.albumArt ? (

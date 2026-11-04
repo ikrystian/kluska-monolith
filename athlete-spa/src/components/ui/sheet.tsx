@@ -21,7 +21,7 @@ const SheetOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SheetPrimitive.Overlay
     className={cn(
-      "fixed inset-0 z-50 bg-black/80",
+      "fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
       className
     )}
     {...props}
@@ -31,18 +31,19 @@ const SheetOverlay = React.forwardRef<
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName
 
 const sheetVariants = cva(
-  "fixed z-50 gap-4 bg-background p-6 shadow-lg",
+  "fixed z-50 gap-4 bg-popover p-5 data-[state=open]:animate-in data-[state=open]:duration-300 data-[state=open]:ease-out data-[state=closed]:animate-out data-[state=closed]:duration-200 data-[state=closed]:ease-in",
   {
     variants: {
       side: {
-        top: "inset-x-0 top-0 border-b",
-        bottom: "inset-x-0 bottom-0 border-t",
-        left: "inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm",
-        right: "inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm",
+        top: "inset-x-0 top-0 mx-auto max-w-[480px] rounded-b-3xl data-[state=open]:slide-in-from-top data-[state=closed]:slide-out-to-top",
+        bottom:
+          "inset-x-0 bottom-0 mx-auto max-h-[92dvh] max-w-[480px] overflow-y-auto overscroll-contain rounded-t-3xl pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-7 data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom",
+        left: "inset-y-0 left-0 h-full w-3/4 data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-left",
+        right: "inset-y-0 right-0 h-full w-3/4 data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-right",
       },
     },
     defaultVariants: {
-      side: "right",
+      side: "bottom",
     },
   }
 )
@@ -54,7 +55,7 @@ interface SheetContentProps
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
->(({ side = "right", className, children, ...props }, ref) => (
+>(({ side = "bottom", className, children, ...props }, ref) => (
   <SheetPortal>
     <SheetOverlay />
     <SheetPrimitive.Content
@@ -62,10 +63,13 @@ const SheetContent = React.forwardRef<
       className={cn(sheetVariants({ side }), className)}
       {...props}
     >
+      {side === "bottom" && (
+        <span aria-hidden className="absolute left-1/2 top-2.5 h-1 w-9 -translate-x-1/2 rounded-full bg-foreground/20" />
+      )}
       {children}
-      <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-[opacity,transform] hover:opacity-100 active:scale-90 active:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+      <SheetPrimitive.Close className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-secondary text-muted-foreground transition-transform active:scale-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none">
         <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
+        <span className="sr-only">Zamknij</span>
       </SheetPrimitive.Close>
     </SheetPrimitive.Content>
   </SheetPortal>
@@ -78,7 +82,7 @@ const SheetHeader = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col space-y-2 text-center sm:text-left",
+      "flex flex-col space-y-1 pr-10 text-left",
       className
     )}
     {...props}
@@ -92,7 +96,7 @@ const SheetFooter = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 space-y-2",
+      "flex flex-col gap-2",
       className
     )}
     {...props}
@@ -106,7 +110,7 @@ const SheetTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SheetPrimitive.Title
     ref={ref}
-    className={cn("text-lg font-semibold text-foreground", className)}
+    className={cn("text-xl font-bold leading-tight text-foreground", className)}
     {...props}
   />
 ))

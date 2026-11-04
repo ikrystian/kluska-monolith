@@ -63,7 +63,7 @@ export function SetTypeModal({ value, onChange, disabled, compact = false, rende
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent >
         <DialogHeader>
           <DialogTitle>Wybierz typ serii</DialogTitle>
           <DialogDescription>

@@ -2,13 +2,13 @@
 
 import { apiFetch } from '@/lib/api-client';
 import { lazy, Suspense, useState, useEffect, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Activity, Calendar, Clock, Route, TrendingUp, Heart, Mountain, Zap, Trophy, User } from 'lucide-react';
+import { Activity, Calendar, Clock, Route, TrendingUp, Heart, Mountain, Zap, Trophy, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import * as polyline from 'polyline-encoded';
@@ -94,7 +94,6 @@ function formatTime(seconds: number) {
  * shareable URL and back-navigation instead of modal state.
  */
 export default function RunDetailStravaPage() {
-  const navigate = useNavigate();
   const { activityId } = useParams();
   const [activity, setActivity] = useState<StravaDetailedActivity | null>(null);
   const [streams, setStreams] = useState<StravaStreams | null>(null);
@@ -162,15 +161,8 @@ export default function RunDetailStravaPage() {
     activity?.average_speed ? 1000 / activity.average_speed / 1.15 : 300
   );
 
-  const backButton = (
-    <Button onClick={() => navigate('/athlete/running')} variant="ghost" className="mb-4">
-      <ArrowLeft className="mr-2 h-4 w-4" /> Wróć do biegów
-    </Button>
-  );
-
   return (
-    <div className="container mx-auto max-w-4xl p-4 md:p-8">
-      {backButton}
+    <div className="page">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -216,7 +208,7 @@ export default function RunDetailStravaPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="rounded-lg border p-4">
                   <div className="flex items-center gap-2 text-muted-foreground mb-1">
                     <Route className="h-4 w-4" />
@@ -253,10 +245,10 @@ export default function RunDetailStravaPage() {
               {(activity.average_heartrate || activity.calories || activity.max_speed) && (
                 <>
                   <Separator />
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     {activity.average_heartrate && (
                       <div className="flex items-center gap-3">
-                        <Heart className="h-5 w-5 text-red-500" />
+                        <Heart className="h-5 w-5 text-destructive" />
                         <div>
                           <p className="text-xs text-muted-foreground">Puls średni</p>
                           <p className="font-semibold">{Math.round(activity.average_heartrate)} bpm</p>
@@ -266,7 +258,7 @@ export default function RunDetailStravaPage() {
 
                     {activity.max_heartrate && (
                       <div className="flex items-center gap-3">
-                        <Heart className="h-5 w-5 text-red-600" />
+                        <Heart className="h-5 w-5 text-destructive" />
                         <div>
                           <p className="text-xs text-muted-foreground">Puls maks.</p>
                           <p className="font-semibold">{Math.round(activity.max_heartrate)} bpm</p>
@@ -276,7 +268,7 @@ export default function RunDetailStravaPage() {
 
                     {activity.calories && (
                       <div className="flex items-center gap-3">
-                        <Zap className="h-5 w-5 text-orange-500" />
+                        <Zap className="h-5 w-5 text-primary" />
                         <div>
                           <p className="text-xs text-muted-foreground">Kalorie</p>
                           <p className="font-semibold">{activity.calories} kcal</p>
@@ -286,7 +278,7 @@ export default function RunDetailStravaPage() {
 
                     {activity.max_speed && (
                       <div className="flex items-center gap-3">
-                        <TrendingUp className="h-5 w-5 text-green-500" />
+                        <TrendingUp className="h-5 w-5 text-volt" />
                         <div>
                           <p className="text-xs text-muted-foreground">Maks. tempo</p>
                           <p className="font-semibold">{formatPace(activity.max_speed)}</p>
@@ -296,7 +288,7 @@ export default function RunDetailStravaPage() {
 
                     {activity.average_cadence && (
                       <div className="flex items-center gap-3">
-                        <Activity className="h-5 w-5 text-blue-500" />
+                        <Activity className="h-5 w-5 text-run" />
                         <div>
                           <p className="text-xs text-muted-foreground">Kadencja</p>
                           <p className="font-semibold">{Math.round(activity.average_cadence)} spm</p>
@@ -313,7 +305,7 @@ export default function RunDetailStravaPage() {
                   <div className="flex gap-6">
                     {activity.kudos_count !== undefined && activity.kudos_count > 0 && (
                       <div className="flex items-center gap-2">
-                        <Trophy className="h-4 w-4 text-yellow-500" />
+                        <Trophy className="h-4 w-4 text-food" />
                         <span className="text-sm">{activity.kudos_count} polubień</span>
                       </div>
                     )}
@@ -361,7 +353,7 @@ export default function RunDetailStravaPage() {
                             <span>{formatTime(split.elapsed_time)}</span>
                             <span className="text-muted-foreground">{formatPace(split.average_speed)}</span>
                             {split.average_heartrate && (
-                              <span className="text-red-500">{Math.round(split.average_heartrate)} bpm</span>
+                              <span className="text-destructive">{Math.round(split.average_heartrate)} bpm</span>
                             )}
                           </div>
                         </div>

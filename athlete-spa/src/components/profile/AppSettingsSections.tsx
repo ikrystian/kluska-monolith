@@ -99,7 +99,7 @@ function ChoicePicker<T extends string>({
               onClick={() => onChange(id)}
               className={cn(
                 'flex h-9 items-center justify-center gap-1.5 rounded-full text-xs font-semibold transition-all',
-                active ? 'bg-card text-foreground shadow-soft' : 'text-muted-foreground hover:text-foreground'
+                active ? 'bg-card text-foreground' : 'text-muted-foreground hover:text-foreground'
               )}
             >
               <Icon className="h-3.5 w-3.5" />

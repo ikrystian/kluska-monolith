@@ -171,7 +171,7 @@ export function AddMeasurementSheet({ open, onOpenChange, ownerId, measurements,
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="mx-auto max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-[2rem] px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5"
+        className="mx-auto max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-3xl px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5"
       >
         <SheetHeader className="mb-5 text-left">
           <SheetTitle className="font-headline text-2xl font-bold">Nowy pomiar</SheetTitle>
@@ -181,7 +181,7 @@ export function AddMeasurementSheet({ open, onOpenChange, ownerId, measurements,
         <div className="space-y-6">
           {/* Weight */}
           <div>
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Waga</p>
+            <p className="mb-2 text-xs font-semibold text-muted-foreground">Waga</p>
             <div className="flex items-center gap-3">
               <Button type="button" variant="outline" size="icon" className="h-12 w-12 shrink-0 rounded-full" aria-label="Zmniejsz wagę o 0,1 kg" onClick={() => nudgeWeight(-0.1)}>
                 <Minus className="h-5 w-5" />
@@ -193,7 +193,7 @@ export function AddMeasurementSheet({ open, onOpenChange, ownerId, measurements,
                   onChange={e => setWeight(e.target.value)}
                   placeholder={latestWeight ? latestWeight.toFixed(1) : '0.0'}
                   aria-label="Waga w kilogramach"
-                  className="h-16 rounded-2xl pr-12 text-center font-display text-3xl font-extrabold tabular-nums"
+                  className="h-16 rounded-2xl pr-12 text-center font-display text-5xl font-bold tabular-nums"
                 />
                 <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">kg</span>
               </div>
@@ -205,7 +205,7 @@ export function AddMeasurementSheet({ open, onOpenChange, ownerId, measurements,
 
           {/* Circumferences */}
           <div>
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Obwody (cm)</p>
+            <p className="mb-2 text-xs font-semibold text-muted-foreground">Obwody (cm)</p>
             <div className="grid grid-cols-2 gap-3">{PRIMARY.map(field)}</div>
             <button
               type="button"
@@ -220,7 +220,7 @@ export function AddMeasurementSheet({ open, onOpenChange, ownerId, measurements,
 
           {/* Photos */}
           <div>
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Zdjęcia sylwetki</p>
+            <p className="mb-2 text-xs font-semibold text-muted-foreground">Zdjęcia sylwetki</p>
             <div className="grid grid-cols-4 gap-2">
               {photos.map((p, i) => (
                 <div key={p.url} className="relative aspect-[3/4] overflow-hidden rounded-xl border border-border/60">
@@ -287,7 +287,7 @@ export function AddMeasurementSheet({ open, onOpenChange, ownerId, measurements,
             </p>
           )}
 
-          <Button className="h-12 w-full rounded-full text-base" onClick={submit} disabled={saving}>
+          <Button className="h-12 w-full text-base" onClick={submit} disabled={saving}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Zapisz pomiar
           </Button>

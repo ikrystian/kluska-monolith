@@ -1,5 +1,6 @@
 'use client';
 
+import { differenceInCalendarDays } from 'date-fns';
 import { ArrowUp, ArrowDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -44,7 +45,7 @@ export function ExerciseProgressIndicator({
         if (!showDiff) {
             // Just show previous value as hint
             return (
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-[11px] text-muted-foreground">
                     poprz: {previous}{unit}
                 </span>
             );
@@ -52,21 +53,21 @@ export function ExerciseProgressIndicator({
 
         if (diff > 0) {
             return (
-                <span className="flex items-center gap-0.5 text-[10px] font-medium text-green-600">
+                <span className="flex items-center gap-0.5 text-[11px] font-medium text-volt">
                     <ArrowUp className="h-3 w-3" />
                     +{diff}{unit}
                 </span>
             );
         } else if (diff < 0) {
             return (
-                <span className="flex items-center gap-0.5 text-[10px] font-medium text-red-500">
+                <span className="flex items-center gap-0.5 text-[11px] font-medium text-destructive">
                     <ArrowDown className="h-3 w-3" />
                     {diff}{unit}
                 </span>
             );
         } else {
             return (
-                <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground">
                     <Minus className="h-3 w-3" />
                     {previous}{unit}
                 </span>
@@ -96,7 +97,7 @@ export function ExerciseProgressIndicator({
 
     // Default mode: show previous values with diff
     return (
-        <div className="flex gap-3 text-[10px]">
+        <div className="flex gap-3 text-[11px]">
             {exerciseType === 'weight' && (
                 <>
                     {previousWeight !== undefined && (
@@ -134,7 +135,7 @@ export interface ExerciseHistoryBadgeProps {
  * Badge showing when this exercise was last performed
  */
 export function ExerciseHistoryBadge({ lastWorkoutDate, lastWorkoutName }: ExerciseHistoryBadgeProps) {
-    const daysAgo = Math.floor((Date.now() - lastWorkoutDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysAgo = differenceInCalendarDays(new Date(), lastWorkoutDate);
 
     let timeText: string;
     if (daysAgo === 0) {
@@ -152,8 +153,6 @@ export function ExerciseHistoryBadge({ lastWorkoutDate, lastWorkoutName }: Exerc
     }
 
     return (
-        <span className="text-[10px] text-muted-foreground bg-secondary/50 px-1.5 py-0.5 rounded">
-            Ostatnio: {timeText}
-        </span>
+        <span>Ostatnio {timeText}</span>
     );
 }

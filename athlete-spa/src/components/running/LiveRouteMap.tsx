@@ -121,7 +121,7 @@ export function LiveRouteMap({ points, className = '' }: LiveRouteMapProps) {
 
         {last && (
           <Marker longitude={last.lng} latitude={last.lat} anchor="center">
-            <div className="h-3.5 w-3.5 rounded-full border-2 border-white bg-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.25)]" />
+            <div className="h-3.5 w-3.5 rounded-full border-2 border-white bg-run shadow-[0_0_0_4px_rgba(59,130,246,0.25)]" />
           </Marker>
         )}
       </MapGL>

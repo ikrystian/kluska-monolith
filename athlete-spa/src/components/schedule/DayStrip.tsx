@@ -110,17 +110,17 @@ export function DayStrip({
     return (
         <div className={className}>
             <div className="mb-3 flex items-center justify-between px-1">
-                <p className="font-headline text-lg font-bold capitalize">
+                <p className="text-[15px] font-semibold capitalize">
                     {format(visibleMonth, 'LLLL yyyy', { locale: pl })}
                 </p>
-                <Button variant="outline" size="sm" onClick={handleTodayClick}>
+                <Button variant="secondary" size="sm" className="h-9 px-3" onClick={handleTodayClick}>
                     Dziś
                 </Button>
             </div>
             <div
                 ref={containerRef}
                 onScroll={handleScroll}
-                className="no-scrollbar flex snap-x gap-2 overflow-x-auto pb-1"
+                className="no-scrollbar flex snap-x gap-1 overflow-x-auto"
             >
                 {days.map(day => {
                     const key = format(day, 'yyyy-MM-dd');
@@ -129,10 +129,10 @@ export function DayStrip({
                     const isFirstOfMonth = day.getDate() === 1;
 
                     return (
-                        <div key={key} className="flex shrink-0 items-stretch gap-2">
+                        <div key={key} className="flex shrink-0 items-stretch gap-1">
                             {isFirstOfMonth && (
                                 <div className="flex items-center">
-                                    <span className="[writing-mode:vertical-rl] rotate-180 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                    <span className="[writing-mode:vertical-rl] rotate-180 text-xs font-semibold text-muted-foreground">
                                         {format(day, 'LLL', { locale: pl })}
                                     </span>
                                 </div>
@@ -142,20 +142,15 @@ export function DayStrip({
                                 data-date={key}
                                 onClick={() => onDateSelect(day)}
                                 className={cn(
-                                    'flex w-12 shrink-0 snap-center flex-col items-center gap-1 rounded-2xl border py-2 transition-colors',
-                                    isSelected
-                                        ? 'border-primary bg-primary text-primary-foreground shadow'
-                                        : 'border-border/60 bg-card active:bg-accent',
-                                    !isSelected && isToday(day) && 'border-primary text-primary'
+                                    'flex w-11 shrink-0 snap-center flex-col items-center gap-1 rounded-xl py-2 transition-colors',
+                                    isSelected ? 'bg-foreground text-background' : 'active:bg-secondary',
+                                    !isSelected && isToday(day) && 'text-primary'
                                 )}
                             >
-                                <span className={cn(
-                                    'text-[10px] font-medium uppercase',
-                                    isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'
-                                )}>
+                                <span className={cn('text-xs font-medium', isSelected ? 'opacity-70' : 'text-muted-foreground')}>
                                     {format(day, 'EEEEEE', { locale: pl })}
                                 </span>
-                                <span className="text-base font-bold leading-none">
+                                <span className="font-display text-[1.625rem] font-bold leading-none tabular-nums">
                                     {format(day, 'd')}
                                 </span>
                                 <span className="flex h-1.5 items-center gap-0.5">

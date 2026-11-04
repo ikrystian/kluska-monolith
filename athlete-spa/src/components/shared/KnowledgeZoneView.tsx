@@ -92,28 +92,24 @@ export function KnowledgeZoneView({
   const colorOf = (article: Article) => categoryColor(article.category || UNCATEGORIZED, orderedCategories);
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 pb-28 pt-5 md:px-6 md:pt-8">
+    <div className="page">
       <header className="mb-5 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Wiedza od trenerów</p>
-          <h1 className="font-headline text-3xl font-bold tracking-tight md:text-4xl">Strefa Wiedzy</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {isLoading
-              ? 'Ładowanie artykułów…'
-              : `${pluralizeArticles(articles?.length ?? 0)}${readCount > 0 ? ` · przeczytane: ${readCount}` : ''}`}
-          </p>
-        </div>
+        <p className="text-sm text-muted-foreground">
+          {isLoading
+            ? 'Ładowanie artykułów…'
+            : `${pluralizeArticles(articles?.length ?? 0)}${readCount > 0 ? ` · przeczytane: ${readCount}` : ''}`}
+        </p>
         {canManage && (
-          <Button asChild size="sm" variant="outline" className="shrink-0 gap-1.5 rounded-full">
+          <Button asChild size="sm" variant="outline" className="shrink-0 gap-1.5">
             <Link to={manageHref}>
               <Pencil className="h-4 w-4" />
-              <span className="hidden sm:inline">Zarządzaj</span>
+              <span className="hidden">Zarządzaj</span>
             </Link>
           </Button>
         )}
       </header>
 
-      <div className="sticky top-[env(safe-area-inset-top)] z-20 -mx-4 mb-5 space-y-3 bg-background/85 px-4 py-2 backdrop-blur-md md:top-16 md:-mx-6 md:px-6">
+      <div className="sticky top-[env(safe-area-inset-top)] z-20 -mx-4 mb-5 space-y-3 bg-background/85 px-4 py-2 backdrop-blur-md">
         <div className="relative">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -122,7 +118,7 @@ export function KnowledgeZoneView({
             onChange={e => setQuery(e.target.value)}
             placeholder="Szukaj artykułów…"
             aria-label="Szukaj artykułów"
-            className="h-11 rounded-full border-border/60 bg-card pl-10 pr-10 shadow-soft [&::-webkit-search-cancel-button]:hidden"
+            className="h-11 rounded-full border-border/60 bg-card pl-10 pr-10 [&::-webkit-search-cancel-button]:hidden"
           />
           {query && (
             <button
@@ -137,7 +133,7 @@ export function KnowledgeZoneView({
         </div>
 
         {(isLoading || chips.length > 1) && (
-          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:-mx-6 md:px-6 [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="Kategorie">
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="Kategorie">
             {isLoading
               ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-9 w-24 shrink-0 rounded-full" />)
               : [ALL, ...chips].map(name => {
@@ -176,17 +172,17 @@ export function KnowledgeZoneView({
           icon={BookOpen}
           text="Nie udało się załadować artykułów."
           action={
-            <Button size="sm" variant="outline" className="mt-4 rounded-full" onClick={() => refetch()}>
+            <Button size="sm" variant="outline" className="mt-4" onClick={() => refetch()}>
               Spróbuj ponownie
             </Button>
           }
         />
       ) : isLoading ? (
         <div className="space-y-4">
-          <Skeleton className="aspect-[4/5] w-full rounded-[1.75rem] sm:aspect-[16/9]" />
-          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+          <Skeleton className="aspect-[4/5] w-full rounded-2xl" />
+          <div className="grid gap-3">
             {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-[7.5rem] rounded-[1.5rem] sm:h-72" />
+              <Skeleton key={i} className="h-[7.5rem] rounded-2xl" />
             ))}
           </div>
         </div>
@@ -223,10 +219,10 @@ export function KnowledgeZoneView({
 
           {listArticles.length > 0 && (
             <section>
-              <h2 className="mb-3 px-1 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              <h2 className="mb-3 px-1 text-xs font-semibold text-muted-foreground">
                 {isSearching ? `Wyniki · ${listArticles.length}` : 'Więcej artykułów'}
               </h2>
-              <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+              <div className="grid gap-3">
                 {listArticles.map(article => (
                   <ArticleRow
                     key={article.id}
@@ -263,7 +259,7 @@ function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-[1.75rem] border border-dashed border-border bg-card/50 p-8 text-center">
+    <div className="rounded-2xl border border-dashed border-border bg-card/50 p-8 text-center">
       <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-secondary text-primary">
         <Icon className="h-7 w-7" />
       </span>

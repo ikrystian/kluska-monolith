@@ -82,15 +82,15 @@ export function BirthDateStep({ value, onChange, onNext, onPrev, canProceed }: B
         transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
         className="relative mb-8"
       >
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-xl">
-          <Calendar className="w-10 h-10 text-white" />
+        <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center">
+          <Calendar className="w-10 h-10 text-primary-foreground" />
         </div>
         <motion.div
           animate={{ y: [0, -5, 0] }}
           transition={{ duration: 2, repeat: Infinity }}
           className="absolute -top-2 -right-2"
         >
-          <Cake className="w-8 h-8 text-pink-400" />
+          <Cake className="w-8 h-8 text-social" />
         </motion.div>
       </motion.div>
 
@@ -210,7 +210,7 @@ export function BirthDateStep({ value, onChange, onNext, onPrev, canProceed }: B
         <Button
           onClick={onNext}
           disabled={!canProceed}
-          className="flex-1 h-12 rounded-xl bg-gradient-to-r from-primary to-primary/80"
+          className="flex-1 h-12 rounded-xl bg-primary"
         >
           Dalej
           <ArrowRight className="w-4 h-4 ml-2" />

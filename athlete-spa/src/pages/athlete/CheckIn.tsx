@@ -254,7 +254,7 @@ function CheckInForm({
                 <div className="space-y-6 py-4">
                     {/* Section 1: Ratings */}
                     <div className="space-y-4">
-                        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Oceny</h3>
+                        <h3 className="text-sm font-semibold text-muted-foreground">Oceny</h3>
 
                         {/* Training Rating */}
                         <div className="space-y-3">
@@ -316,7 +316,7 @@ function CheckInForm({
 
                     {/* Section 2: Measurements */}
                     <div className="space-y-4 border-t pt-4">
-                        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                        <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
                             <Weight className="h-4 w-4" />
                             Pomiary Ciała (opcjonalne)
                         </h3>
@@ -434,7 +434,7 @@ function CheckInForm({
 
                     {/* Section 3: Issues and Notes */}
                     <div className="space-y-4 border-t pt-4">
-                        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Dodatkowe informacje</h3>
+                        <h3 className="text-sm font-semibold text-muted-foreground">Dodatkowe informacje</h3>
 
                         {/* Issues Toggle */}
                         <div className="space-y-3">
@@ -498,9 +498,9 @@ function CompletedCheckInCard({
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
     const getRatingColor = (rating: number) => {
-        if (rating >= 8) return 'text-green-600 dark:text-green-400';
-        if (rating >= 5) return 'text-yellow-600 dark:text-yellow-400';
-        return 'text-red-600 dark:text-red-400';
+        if (rating >= 8) return 'text-volt';
+        if (rating >= 5) return 'text-food';
+        return 'text-destructive';
     };
 
     const handleDelete = async () => {
@@ -563,12 +563,12 @@ function CompletedCheckInCard({
                     </div>
 
                     {checkIn.responses.hadIssues && (
-                        <div className="rounded-md border border-orange-200 bg-orange-50 p-3 dark:bg-orange-950/20 dark:border-orange-900">
+                        <div className="rounded-md border border-primary/30 bg-primary/10 p-3">
                             <div className="flex items-center gap-2 mb-1">
-                                <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                                <p className="text-sm font-medium text-orange-800 dark:text-orange-300">Zgłoszone problemy:</p>
+                                <AlertTriangle className="h-4 w-4 text-primary" />
+                                <p className="text-sm font-medium text-primary">Zgłoszone problemy:</p>
                             </div>
-                            <p className="text-sm text-orange-700 dark:text-orange-200">
+                            <p className="text-sm text-primary">
                                 {checkIn.responses.issuesDescription || 'Brak opisu'}
                             </p>
                         </div>
@@ -585,13 +585,13 @@ function CompletedCheckInCard({
 
             {/* Display Measurements */}
             {checkIn.measurements && (
-                <div className="rounded-md border border-purple-200 bg-purple-50 p-3 dark:bg-purple-950/20 dark:border-purple-900">
+                <div className="rounded-md border border-social/30 bg-social/10 p-3">
                     <div className="flex items-center gap-2 mb-3">
-                        <Weight className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                        <p className="text-sm font-medium text-purple-800 dark:text-purple-300">Pomiary ciała:</p>
+                        <Weight className="h-4 w-4 text-social" />
+                        <p className="text-sm font-medium text-social">Pomiary ciała:</p>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                         {checkIn.measurements.weight && (
                             <div className="text-center p-2 rounded-lg bg-background">
                                 <p className="text-xs text-muted-foreground mb-1">Waga</p>
@@ -656,12 +656,12 @@ function CompletedCheckInCard({
             )}
 
             {checkIn.trainerNotes && (
-                <div className="rounded-md border border-blue-200 bg-blue-50 p-3 dark:bg-blue-950/20 dark:border-blue-900">
+                <div className="rounded-md border border-run/30 bg-run/10 p-3">
                     <div className="flex items-center gap-2 mb-1">
-                        <Star className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                        <p className="text-sm font-medium text-blue-800 dark:text-blue-300">Komentarz trenera:</p>
+                        <Star className="h-4 w-4 text-run" />
+                        <p className="text-sm font-medium text-run">Komentarz trenera:</p>
                     </div>
-                    <p className="text-sm text-blue-700 dark:text-blue-200">{checkIn.trainerNotes}</p>
+                    <p className="text-sm text-run">{checkIn.trainerNotes}</p>
                 </div>
             )}
 
@@ -764,7 +764,7 @@ export default function AthleteCheckInPage() {
 
     if (error) {
         return (
-            <div className="container mx-auto p-4 md:p-8">
+            <div className="page">
                 <Card className="border-destructive">
                     <CardContent className="pt-6 text-center">
                         <AlertTriangle className="mx-auto h-12 w-12 text-destructive mb-4" />
@@ -776,20 +776,13 @@ export default function AthleteCheckInPage() {
     }
 
     return (
-        <div className="container mx-auto p-4 md:p-8">
-            <div className="mb-6">
-                <h1 className="font-headline text-3xl font-bold">Tygodniowe Check-iny</h1>
-                <p className="text-muted-foreground">
-                    Wypełniaj tygodniowe raporty dla swojego trenera
-                </p>
-            </div>
-
+        <div className="page">
             {/* Pending Check-ins */}
             {pendingCheckIns.length > 0 && (
-                <Card className="mb-6 border-blue-200 bg-blue-50/50 dark:bg-blue-950/30 dark:border-blue-800/50">
+                <Card className="mb-6 border-run/30 bg-run/10">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <Clock className="h-5 w-5 text-blue-500 dark:text-blue-400" />
+                            <Clock className="h-5 w-5 text-run" />
                             Do wypełnienia
                         </CardTitle>
                         <CardDescription>
@@ -825,7 +818,7 @@ export default function AthleteCheckInPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                        <ClipboardCheck className="h-5 w-5 text-green-500 dark:text-green-400" />
+                        <ClipboardCheck className="h-5 w-5 text-volt" />
                         Historia Check-inów
                     </CardTitle>
                     <CardDescription>
@@ -847,8 +840,8 @@ export default function AthleteCheckInPage() {
                                         <div className="flex items-center justify-between w-full pr-4">
                                             <div className="flex items-center gap-3">
                                                 <div className={`p-2 rounded-full ${checkIn.status === 'reviewed'
-                                                    ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
-                                                    : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                                                    ? 'bg-volt/10 text-volt'
+                                                    : 'bg-run/10 text-run'
                                                     }`}>
                                                     <CheckCircle className="h-4 w-4" />
                                                 </div>
@@ -867,8 +860,8 @@ export default function AthleteCheckInPage() {
                                                 variant="secondary"
                                                 className={
                                                     checkIn.status === 'reviewed'
-                                                        ? 'bg-green-500 text-white'
-                                                        : 'bg-blue-500 text-white'
+                                                        ? 'bg-volt text-volt-foreground'
+                                                        : 'bg-run text-black'
                                                 }
                                             >
                                                 {checkIn.status === 'reviewed' ? 'Przejrzany' : 'Wysłany'}

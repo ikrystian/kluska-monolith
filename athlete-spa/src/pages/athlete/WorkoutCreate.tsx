@@ -2,10 +2,6 @@ import { CreateWorkoutPageLayout } from '@/components/shared/CreateWorkoutPageLa
 
 export default function AthleteCreateWorkoutPage() {
     return (
-        <CreateWorkoutPageLayout
-            backHref="/athlete/workouts"
-            redirectPath="/athlete/workouts"
-            description="Skomponuj swój własny plan treningowy."
-        />
+        <CreateWorkoutPageLayout redirectPath="/athlete/workouts" />
     );
 }

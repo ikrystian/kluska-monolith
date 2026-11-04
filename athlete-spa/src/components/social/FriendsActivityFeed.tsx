@@ -73,7 +73,7 @@ function timeAgo(date: string): string {
 export function FriendActivityRow({ item }: { item: FriendActivityItem }) {
   const { icon: Icon, label, meta } = describe(item);
   return (
-    <li className="flex items-start gap-3 rounded-2xl border border-border/60 bg-card p-3 shadow-soft">
+    <li className="flex items-start gap-3 rounded-2xl bg-card p-3">
       <div className="relative shrink-0">
         <SocialAvatar user={item.user} />
         <span className="absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full border-2 border-card bg-secondary text-primary">
@@ -83,7 +83,7 @@ export function FriendActivityRow({ item }: { item: FriendActivityItem }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-2">
           <p className="truncate text-sm font-semibold">{socialName(item.user)}</p>
-          <span className="shrink-0 text-[11px] text-muted-foreground">{timeAgo(item.date)}</span>
+          <span className="shrink-0 text-xs text-muted-foreground">{timeAgo(item.date)}</span>
         </div>
         <p className={item.type === 'status' ? 'line-clamp-2 text-sm' : 'truncate text-sm'}>{label}</p>
         {meta.length > 0 && <p className="text-xs tabular-nums text-muted-foreground">{meta.join(' · ')}</p>}
@@ -112,7 +112,7 @@ export function FriendsActivityFeed({ limit = 5 }: { limit?: number }) {
 
   if (!activity || activity.length === 0) {
     return (
-      <div className="rounded-[1.75rem] border border-dashed border-border bg-card/50 p-6 text-center">
+      <div className="rounded-2xl border border-dashed border-border bg-card/50 p-6 text-center">
         <span className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-secondary text-primary">
           <UserPlus className="h-6 w-6" />
         </span>
@@ -135,7 +135,7 @@ export function FriendsActivityFeed({ limit = 5 }: { limit?: number }) {
   }
 
   return (
-    <ul className="grid gap-2.5 md:grid-cols-2">
+    <ul className="grid gap-2.5">
       {activity.slice(0, limit).map(item => (
         <FriendActivityRow key={`${item.type}-${item.id}`} item={item} />
       ))}

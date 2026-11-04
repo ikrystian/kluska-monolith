@@ -143,7 +143,7 @@ export function CreatePostDialog({ open, onOpenChange, onSuccess }: CreatePostDi
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent >
         <DialogHeader>
           <DialogTitle>Create New Post</DialogTitle>
           <DialogDescription>

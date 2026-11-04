@@ -8,8 +8,8 @@ interface ChatLayoutProps {
 
 export function ChatLayout({ children, className }: ChatLayoutProps) {
     return (
-        <div className={cn("container mx-auto p-0 md:p-8 h-[calc(100vh-theme(spacing.30))] md:h-auto", className)}>
-            <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 border border-border/60 md:rounded-2xl h-full overflow-hidden bg-card shadow-none md:shadow-soft">
+        <div className={cn("container mx-auto p-0 h-[calc(100vh-theme(spacing.30))]", className)}>
+            <div className="grid grid-cols-1 border border-border/60 h-full overflow-hidden bg-card shadow-none">
                 {children}
             </div>
         </div>

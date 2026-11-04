@@ -52,7 +52,7 @@ const distanceBetween = (a: Coords, b: Coords) => haversine({ ...a, at: 0 }, { .
 
 function NoToken() {
   return (
-    <div className="grid h-full place-items-center rounded-[2rem] border border-dashed border-border/80 p-8 text-center">
+    <div className="grid h-full place-items-center rounded-2xl border border-dashed border-border/80 p-8 text-center">
       <div className="max-w-sm">
         <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-secondary">
           <MapPinOff className="h-6 w-6 text-muted-foreground" />
@@ -71,7 +71,7 @@ function GymCard({ gym, distance, onClose }: { gym: GymPoint; distance?: number;
   const directions = `https://www.google.com/maps/dir/?api=1&destination=${gym.lat},${gym.lng}`;
 
   return (
-    <div className="max-h-[55%] space-y-3 overflow-y-auto rounded-[1.75rem] border border-border/60 bg-card/95 p-4 shadow-lifted backdrop-blur-xl">
+    <div className="max-h-[55%] space-y-3 overflow-y-auto rounded-2xl border border-border/60 bg-card/95 p-4 backdrop-blur-xl">
       <div className="flex items-start gap-3">
         {gym.logoUrl && <GymLogo url={gym.logoUrl} className="h-12 w-12 rounded-2xl border border-border/60" />}
         <div className="min-w-0 flex-1">
@@ -94,7 +94,7 @@ function GymCard({ gym, distance, onClose }: { gym: GymPoint; distance?: number;
       <div className="flex flex-wrap items-center gap-2 text-sm">
         {gym.rating ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 font-semibold">
-            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+            <Star className="h-3.5 w-3.5 fill-food text-food" />
             {gym.rating}
             {gym.ratingCount ? <span className="font-normal text-muted-foreground">({gym.ratingCount})</span> : null}
           </span>
@@ -107,7 +107,7 @@ function GymCard({ gym, distance, onClose }: { gym: GymPoint; distance?: number;
       </div>
 
       <div className="flex gap-2">
-        <Button asChild className="h-11 flex-1 rounded-full">
+        <Button asChild className="h-11 flex-1">
           <a href={directions} target="_blank" rel="noopener noreferrer">
             <Navigation className="mr-2 h-4 w-4" /> Nawiguj
           </a>
@@ -135,7 +135,7 @@ function GymCard({ gym, distance, onClose }: { gym: GymPoint; distance?: number;
 
 function NearbyList({ items, onPick, onClose }: { items: { gym: GymPoint; distance: number }[]; onPick: (g: GymPoint) => void; onClose: () => void }) {
   return (
-    <div className="max-h-[55%] overflow-y-auto rounded-[1.75rem] border border-border/60 bg-card/95 p-4 shadow-lifted backdrop-blur-xl">
+    <div className="max-h-[55%] overflow-y-auto rounded-2xl border border-border/60 bg-card/95 p-4 backdrop-blur-xl">
       <div className="mb-2 flex items-center justify-between">
         <h2 className="font-headline text-lg font-bold">Najbliższe siłownie</h2>
         <button
@@ -354,7 +354,7 @@ export default function GymMap() {
   const selectedDistance = selected && userPos ? distanceBetween(userPos, selected) : undefined;
 
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-[2rem] border border-border/60 bg-card shadow-soft">
+    <div className="relative h-full w-full overflow-hidden rounded-2xl bg-card">
       <MapGL
         ref={mapRef}
         mapboxAccessToken={TOKEN}
@@ -396,7 +396,7 @@ export default function GymMap() {
                 url={gym.logoUrl}
                 fallback="none"
                 className={cn(
-                  'h-9 w-9 cursor-pointer rounded-full border-2 shadow-lifted transition-transform',
+                  'h-9 w-9 cursor-pointer rounded-full border-2 transition-transform',
                   favoriteIds.has(id) ? 'border-[hsl(var(--volt))]' : 'border-white',
                   isSelected && 'scale-125 ring-2 ring-primary'
                 )}
@@ -408,8 +408,8 @@ export default function GymMap() {
         {userPos && (
           <Marker longitude={userPos.lng} latitude={userPos.lat} anchor="center">
             <span className="relative flex h-4 w-4">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-60" />
-              <span className="relative inline-flex h-4 w-4 rounded-full border-2 border-white bg-sky-500 shadow" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-run opacity-60" />
+              <span className="relative inline-flex h-4 w-4 rounded-full border-2 border-white bg-run shadow" />
             </span>
           </Marker>
         )}
@@ -425,11 +425,11 @@ export default function GymMap() {
             onChange={e => setQuery(e.target.value)}
             placeholder={isLoading ? 'Wczytuję siłownie…' : `Szukaj wśród ${points.length} siłowni`}
             aria-label="Szukaj siłowni"
-            className="h-11 rounded-full border-border/60 bg-card/95 pl-10 shadow-lifted backdrop-blur-xl"
+            className="h-11 rounded-full border-border/60 bg-card/95 pl-10 backdrop-blur-xl"
           />
         </div>
         {matches.length > 0 && (
-          <ul className="mt-2 overflow-hidden rounded-2xl border border-border/60 bg-card/95 shadow-lifted backdrop-blur-xl">
+          <ul className="mt-2 overflow-hidden rounded-2xl border border-border/60 bg-card/95 backdrop-blur-xl">
             {matches.map(gym => (
               <li key={gymId(gym)} className="border-b border-border/60 last:border-0">
                 <button type="button" onClick={() => select(gym)} className="flex w-full items-center gap-3 px-4 py-2.5 text-left active:bg-secondary/60">
@@ -444,7 +444,7 @@ export default function GymMap() {
           </ul>
         )}
         {query.trim() && matches.length === 0 && !isLoading && (
-          <p className="mt-2 rounded-2xl border border-border/60 bg-card/95 px-4 py-3 text-sm text-muted-foreground shadow-lifted backdrop-blur-xl">
+          <p className="mt-2 rounded-2xl border border-border/60 bg-card/95 px-4 py-3 text-sm text-muted-foreground backdrop-blur-xl">
             Nie znaleziono siłowni.
           </p>
         )}
@@ -457,7 +457,7 @@ export default function GymMap() {
         onClick={locate}
         disabled={locating}
         aria-label="Pokaż siłownie blisko mnie"
-        className={cn('absolute right-3 z-10 h-12 w-12 rounded-full shadow-glow transition-[bottom]', selected || showNearby ? 'bottom-[calc(55%+0.75rem)]' : 'bottom-10')}
+        className={cn('absolute right-3 z-10 h-12 w-12 rounded-full transition-[bottom]', selected || showNearby ? 'bottom-[calc(55%+0.75rem)]' : 'bottom-10')}
       >
         {locating ? <Loader2 className="h-5 w-5 animate-spin" /> : <LocateFixed className="h-5 w-5" />}
       </Button>

@@ -100,7 +100,7 @@ export function PaceDistribution({ samples, thresholdSecPerKm, thresholdSource, 
       <div className="flex h-44 items-end gap-2 rounded-lg border p-3 pb-0" role="img" aria-label="Czas w strefach tempa">
         {buckets.map(({ zone, pct }) => (
           <div key={zone.id} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
-            <span className="text-[11px] font-semibold tabular-nums">{Math.round(pct)}%</span>
+            <span className="text-xs font-semibold tabular-nums">{Math.round(pct)}%</span>
             <div
               className="w-full max-w-12 rounded-t-md transition-[height] duration-500"
               style={{ height: `${(pct / maxPct) * 75}%`, minHeight: pct > 0 ? 3 : 0, backgroundColor: zone.color }}
@@ -110,7 +110,7 @@ export function PaceDistribution({ samples, thresholdSecPerKm, thresholdSource, 
       </div>
       <div className="flex gap-2 px-3 pt-1.5">
         {buckets.map(({ zone }, i) => (
-          <span key={zone.id} className="flex-1 text-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+          <span key={zone.id} className="flex-1 text-center text-xs font-semibold text-muted-foreground">
             Z{i + 1}
           </span>
         ))}
@@ -124,7 +124,7 @@ export function PaceDistribution({ samples, thresholdSecPerKm, thresholdSource, 
             <span className="min-w-0 flex-1 truncate font-medium">
               Z{i + 1} {zone.name}
             </span>
-            <span className="hidden text-xs text-muted-foreground tabular-nums sm:inline">
+            <span className="hidden text-xs text-muted-foreground tabular-nums">
               {zoneRangeLabel(zone, thresholdSecPerKm)}/km
             </span>
             <span className="w-14 text-right tabular-nums">{formatDuration(seconds)}</span>

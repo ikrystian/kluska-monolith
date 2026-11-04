@@ -175,8 +175,7 @@ export default function HistoryPage() {
 
   return (
     <AlertDialog>
-      <div className="container mx-auto p-4 md:p-8">
-        <h1 className="mb-6 font-headline text-3xl font-bold">Historia Treningów</h1>
+      <div className="page">
         <Card>
           <CardHeader>
             <CardTitle className="font-headline">Twój Dziennik</CardTitle>
@@ -205,16 +204,16 @@ export default function HistoryPage() {
                             <div className="flex w-full items-center justify-between pr-4">
                               <div className="text-left">
                                 <p className="flex items-center gap-1.5 font-semibold">
-                                  <Footprints className="h-4 w-4 shrink-0 text-sky-500" />
+                                  <Footprints className="h-4 w-4 shrink-0 text-run" />
                                   {item.title}
                                 </p>
                                 <p className="text-sm text-muted-foreground">{format(item.date, 'd MMMM yyyy', { locale: pl })}</p>
                               </div>
-                              <div className="hidden text-right md:block">
+                              <div className="hidden text-right">
                                 <p className="font-semibold">{item.durationMin.toFixed(0)} min</p>
                                 <p className="text-sm text-muted-foreground">Czas trwania</p>
                               </div>
-                              <div className="hidden text-right lg:block">
+                              <div className="hidden text-right">
                                 <p className="font-semibold">{formatRunPace(item.avgPace)}</p>
                                 <p className="text-sm text-muted-foreground">Tempo</p>
                               </div>
@@ -250,16 +249,16 @@ export default function HistoryPage() {
                               </p>
                             )}
                           </div>
-                          <div className="hidden text-right md:block">
+                          <div className="hidden text-right">
                             <p className="font-semibold">{log.duration} min</p>
                             <p className="text-sm text-muted-foreground">Czas trwania</p>
                           </div>
-                          <div className="hidden text-right lg:block">
+                          <div className="hidden text-right">
                             <p className="font-semibold">{log.exercises.length}</p>
                             <p className="text-sm text-muted-foreground">Ćwiczenia</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold">{totalVolume.toLocaleString()} kg</p>
+                            <p className="font-semibold">{totalVolume.toLocaleString('pl-PL')} kg</p>
                             <p className="text-sm text-muted-foreground">Objętość</p>
                           </div>
                         </div>

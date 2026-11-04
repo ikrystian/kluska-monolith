@@ -63,13 +63,13 @@ export function isNavGroup(entry: NavEntry): entry is NavGroup {
 
 /**
  * Single source of truth for the athlete section's navigation, shared by the
- * desktop sidebar, the mobile "more" sheet and the header's screen title.
+ * "Ty" tab and the header's screen title.
  *
- * Group colours come from the CVD-validated chart tokens, in an order that
- * keeps the two warm hues (ember, amber) apart.
+ * Group colours are the domain tokens, so a section reads the same here as on
+ * the screens behind it: training is ember, running blue, food amber, habits green.
  */
 export const athleteNavItems: NavEntry[] = [
-  { href: '/athlete/dashboard', icon: LayoutDashboard, label: 'Panel', description: 'Start — Twój dzień w skrócie' },
+  { href: '/athlete/dashboard', icon: LayoutDashboard, label: 'Dziś', description: 'Twój dzień w skrócie' },
   {
     label: 'Dla trenera',
     icon: Award,
@@ -82,7 +82,7 @@ export const athleteNavItems: NavEntry[] = [
   {
     label: 'Trening',
     icon: Dumbbell,
-    color: 'hsl(var(--chart-1))',
+    color: 'hsl(var(--primary))',
     items: [
       { href: '/athlete/log', label: 'Trenuj teraz', icon: Play, description: 'Rozpocznij sesję treningową', keywords: ['start', 'sesja', 'siłownia'] },
       { href: '/athlete/workouts', label: 'Szablony', icon: ClipboardList, description: 'Twoje zapisane treningi', keywords: ['treningi', 'workout', 'rutyna'] },
@@ -94,7 +94,7 @@ export const athleteNavItems: NavEntry[] = [
   {
     label: 'Trener osobisty',
     icon: UserCheck,
-    color: 'hsl(var(--volt))',
+    color: 'hsl(var(--social))',
     items: [
       { href: '/athlete/trainers', label: 'Znajdź trenera', icon: Users, description: 'Dostępni trenerzy osobiści', keywords: ['trenerzy', 'coach', 'współpraca', 'personalny'] },
       { href: '/athlete/workout-plans', label: 'Mój program', icon: Layers, description: 'Program od trenera', keywords: ['plan', 'trener', 'etapy'] },
@@ -103,7 +103,7 @@ export const athleteNavItems: NavEntry[] = [
   {
     label: 'Postępy',
     icon: TrendingUp,
-    color: 'hsl(var(--chart-3))',
+    color: 'hsl(var(--primary))',
     items: [
       { href: '/athlete/summary', label: 'Podsumowanie', icon: IdCard, description: 'Kilometry, tony, treningi', keywords: ['wizytówka', 'statystyki', 'profil', 'czołgi', 'równik'] },
       { href: '/athlete/progress', label: 'Wykresy', icon: BarChart3, description: 'Objętość, 1RM i waga w czasie', keywords: ['postępy', 'progres', 'siła', 'objętość'] },
@@ -114,7 +114,7 @@ export const athleteNavItems: NavEntry[] = [
   {
     label: 'Plan',
     icon: CalendarDays,
-    color: 'hsl(var(--chart-2))',
+    color: 'hsl(var(--volt))',
     items: [
       { href: '/athlete/calendar', label: 'Kalendarz', icon: CalendarDays, description: 'Zaplanowane treningi i sesje', keywords: ['dziennik', 'terminarz', 'harmonogram'] },
       { href: '/athlete/habits', label: 'Nawyki', icon: CheckSquare, description: 'Codzienne nawyki i serie', keywords: ['rutyna', 'woda', 'sen', 'codziennie'] },
@@ -124,7 +124,7 @@ export const athleteNavItems: NavEntry[] = [
   {
     label: 'Dieta',
     icon: UtensilsCrossed,
-    color: 'hsl(var(--chart-5))',
+    color: 'hsl(var(--food))',
     items: [
       { href: '/athlete/nutrition', label: 'Kalorie', icon: NotebookPen, description: 'Dziennik posiłków i makro', keywords: ['jedzenie', 'posiłki', 'makro', 'kcal', 'białko'] },
       { href: '/athlete/diet', label: 'Plan diety', icon: UtensilsCrossed, description: 'Jadłospis od trenera', keywords: ['jadłospis', 'przepisy', 'menu'] },
@@ -133,7 +133,7 @@ export const athleteNavItems: NavEntry[] = [
   {
     label: 'Społeczność',
     icon: Users2,
-    color: 'hsl(var(--chart-4))',
+    color: 'hsl(var(--social))',
     items: [
       { href: '/athlete/chat', label: 'Czat', icon: MessageSquare, description: 'Rozmowy z trenerem', keywords: ['wiadomości', 'trener', 'rozmowa'] },
       { href: '/athlete/social', label: 'Aktywność znajomych', icon: Newspaper, description: 'Treningi, biegi i statusy', keywords: ['social', 'feed', 'znajomi', 'tablica'] },
@@ -230,9 +230,16 @@ export function searchNavLeaves(query: string, role: NavRole | undefined): NavLe
 
 /**
  * Screens the bottom bar reaches directly. They anchor the app, so the header
- * greets rather than offering a way back — there is nothing above them.
+ * shows their big title rather than a way back — there is nothing above them.
  */
-export const ROOT_PATHS = ['/athlete/dashboard', '/athlete/calendar', '/athlete/log', '/athlete/chat'];
+export const ROOT_TITLES: Record<string, string> = {
+  '/athlete/dashboard': 'Dziś',
+  '/athlete/log': 'Trening',
+  '/athlete/social': 'Ekipa',
+  '/athlete/you': 'Ty',
+};
+
+export const ROOT_PATHS = Object.keys(ROOT_TITLES);
 
 export function isRootPath(pathname: string): boolean {
   return ROOT_PATHS.includes(pathname);
@@ -240,7 +247,7 @@ export function isRootPath(pathname: string): boolean {
 
 /** Titles for screens that aren't nav destinations (details, editors, profile). */
 const EXTRA_TITLES: { match: RegExp; title: string }[] = [
-  { match: /^\/athlete\/profile$/, title: 'Profil' },
+  { match: /^\/athlete\/profile$/, title: 'Profil i ustawienia' },
   { match: /^\/athlete\/trainers\/[^/]+$/, title: 'Trener' },
   { match: /^\/athlete\/templates$/, title: 'Szablony' },
   { match: /^\/athlete\/gamification$/, title: 'Osiągnięcia' },
@@ -254,6 +261,7 @@ const EXTRA_TITLES: { match: RegExp; title: string }[] = [
 
 /** Label for the current screen, or undefined when there is nothing sensible to show. */
 export function getScreenTitle(pathname: string, search = ''): string | undefined {
+  if (ROOT_TITLES[pathname]) return ROOT_TITLES[pathname];
   // Tab links (`/athlete/social?tab=people`) title their own tab, not the screen's default one.
   const activeLeaf = athleteNavLeaves.find(leaf => isNavLeafActive(leaf.href, pathname, search));
   return activeLeaf?.label ?? findNavLeaf(pathname)?.label ?? EXTRA_TITLES.find(e => e.match.test(pathname))?.title;

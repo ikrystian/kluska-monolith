@@ -41,10 +41,10 @@ export function RequireFullAccount() {
 
   return (
     <div className="flex h-full min-h-[60vh] flex-col items-center justify-center gap-4 p-6 text-center">
-      <span className="hero-ember texture-grain grid h-14 w-14 place-items-center rounded-2xl shadow-glow">
-        <UserPlus className="h-6 w-6 text-white" />
+      <span className="bg-primary text-primary-foreground grid h-14 w-14 place-items-center rounded-2xl">
+        <UserPlus className="h-6 w-6 text-primary-foreground" />
       </span>
-      <h2 className="font-display text-2xl font-extrabold uppercase tracking-tight">
+      <h2 className="font-display text-4xl font-bold uppercase">
         {hasProgress ? 'Nie zostawiaj swoich postępów' : 'Ta funkcja wymaga konta'}
       </h2>
       <p className="max-w-sm text-sm text-muted-foreground">
@@ -64,7 +64,7 @@ export function RequireFullAccount() {
           </>
         )}
       </p>
-      <Button asChild className="h-12 rounded-2xl px-8 text-base font-bold shadow-glow">
+      <Button asChild className="h-12 px-8 text-base font-bold">
         <Link to="/register">
           {hasProgress ? 'Zachowaj postępy i odblokuj' : 'Załóż konto'}
         </Link>

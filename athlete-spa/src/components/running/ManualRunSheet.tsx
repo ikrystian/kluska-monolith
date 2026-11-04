@@ -107,7 +107,7 @@ export function ManualRunSheet({
               value={(field.value as number | undefined) ?? ''}
             />
           </FormControl>
-          <p className="text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+          <p className="text-center text-xs font-semibold text-muted-foreground">{label}</p>
         </FormItem>
       )}
     />
@@ -117,7 +117,7 @@ export function ManualRunSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="mx-auto max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-[2rem] px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5"
+        className="mx-auto max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-3xl px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5"
       >
         <SheetHeader className="mb-4 text-left">
           <SheetTitle className="font-headline text-xl">Dodaj bieg ręcznie</SheetTitle>
@@ -139,7 +139,7 @@ export function ManualRunSheet({
                         inputMode="decimal"
                         step="0.01"
                         placeholder="5,00"
-                        className="h-14 rounded-xl pr-12 font-display text-2xl font-extrabold tabular-nums"
+                        className="h-14 rounded-xl pr-12 font-display text-4xl font-bold tabular-nums"
                         {...field}
                         value={(field.value as number | undefined) ?? ''}
                       />
@@ -169,7 +169,7 @@ export function ManualRunSheet({
 
             <div className="flex items-center justify-between rounded-2xl bg-secondary/60 px-4 py-3">
               <span className="text-sm text-muted-foreground">Średnie tempo</span>
-              <span className="font-headline text-lg font-bold tabular-nums">{formatPace(previewPace)}</span>
+              <span className="font-display text-2xl font-bold tabular-nums">{formatPace(previewPace)}</span>
             </div>
 
             <FormField
@@ -200,7 +200,7 @@ export function ManualRunSheet({
               )}
             />
 
-            <Button type="submit" size="lg" className="h-12 w-full rounded-full text-base" disabled={isLoading}>
+            <Button type="submit" size="lg" className="h-12 w-full text-base" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Zapisz bieg
             </Button>

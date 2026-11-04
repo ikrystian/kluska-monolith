@@ -34,16 +34,16 @@ export function WeeklySummary({ runs, isLoading }: { runs: RunActivity[]; isLoad
   const delta = week.km - week.lastWeekKm;
 
   return (
-    <section className="rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-soft">
+    <section className="rounded-2xl bg-card p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Ten tydzień</p>
+          <p className="text-xs font-semibold text-muted-foreground">Ten tydzień</p>
           {isLoading ? (
             <Skeleton className="mt-2 h-10 w-32" />
           ) : (
-            <p className="mt-1 font-display text-4xl font-extrabold leading-none tabular-nums">
+            <p className="mt-1 font-display text-6xl font-bold leading-none tabular-nums">
               {formatKm(week.km, 1)}
-              <span className="ml-1 font-headline text-base font-bold text-muted-foreground">km</span>
+              <span className="ml-1 font-body text-base font-semibold text-muted-foreground">km</span>
             </p>
           )}
           <p className="mt-2 text-xs text-muted-foreground">
@@ -71,21 +71,21 @@ export function WeeklySummary({ runs, isLoading }: { runs: RunActivity[]; isLoad
           const today = isToday(day);
           return (
             <div key={day.toISOString()} className="flex h-full flex-col items-center justify-end gap-1.5">
-              <span className={cn('text-[10px] font-semibold tabular-nums', km > 0 ? 'text-foreground' : 'text-transparent')}>
+              <span className={cn('text-[11px] font-semibold tabular-nums', km > 0 ? 'text-foreground' : 'text-transparent')}>
                 {km > 0 ? formatKm(km, km >= 10 ? 0 : 1) : '0'}
               </span>
               <div className="relative w-full flex-1">
                 <div
                   className={cn(
-                    'absolute inset-x-0 bottom-0 rounded-full transition-[height] duration-500',
-                    km > 0 ? 'hero-ember' : 'bg-secondary'
+                    'absolute inset-x-0 bottom-0 rounded-lg transition-[height] duration-500',
+                    km > 0 ? 'bg-run' : 'bg-secondary'
                   )}
                   style={{ height: km > 0 ? `${Math.max(12, (km / week.maxKm) * 100)}%` : '6px' }}
                 />
               </div>
               <span
                 className={cn(
-                  'grid h-6 w-6 place-items-center rounded-full text-[11px] font-bold uppercase',
+                  'grid h-6 w-6 place-items-center rounded-full text-xs font-semibold',
                   today ? 'bg-foreground text-background' : 'text-muted-foreground'
                 )}
               >

@@ -84,27 +84,23 @@ export default function AthleteSocialPage() {
 
   if (!hasProfile) {
     return (
-      <div className="mx-auto w-full max-w-2xl px-4 pb-5 pt-20 md:px-6 md:pt-8">
+      <div className="page">
         <NicknameSetup onComplete={handleProfileCreated} />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 pb-5 pt-20 md:px-6 md:pt-8">
+    <div className="page">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="sticky top-[calc(env(safe-area-inset-top))] z-20 md:top-16 grid h-auto w-full grid-cols-3 gap-1 rounded-full border border-border/60 bg-background/80 p-1 shadow-soft backdrop-blur-md">
-          <TabsTrigger value="feed" className="h-9 rounded-full text-sm font-semibold data-[state=active]:bg-card data-[state=active]:shadow-soft">
-            Znajomi
-          </TabsTrigger>
-          <TabsTrigger value="discover" className="h-9 rounded-full text-sm font-semibold data-[state=active]:bg-card data-[state=active]:shadow-soft">
-            Odkrywaj
-          </TabsTrigger>
-          <TabsTrigger value="people" className="gap-1.5 h-9 rounded-full text-sm font-semibold data-[state=active]:bg-card data-[state=active]:shadow-soft">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="feed">Znajomi</TabsTrigger>
+          <TabsTrigger value="discover">Odkrywaj</TabsTrigger>
+          <TabsTrigger value="people" className="gap-1.5">
             Ludzie
             {incomingCount > 0 && (
               <span
-                className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold tabular-nums text-primary-foreground"
+                className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-xs font-bold tabular-nums text-primary-foreground"
                 aria-label={`Nowe zaproszenia: ${incomingCount}`}
               >
                 {incomingCount}
@@ -113,13 +109,13 @@ export default function AthleteSocialPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="feed" className="mt-5">
+        <TabsContent value="feed" className="mt-4">
           <FriendsFeed onProfileClick={setProfileUserId} onOpenPeople={() => setActiveTab('people')} />
         </TabsContent>
-        <TabsContent value="discover" className="mt-5">
+        <TabsContent value="discover" className="mt-4">
           <DiscoverGrid onProfileClick={setProfileUserId} />
         </TabsContent>
-        <TabsContent value="people" className="mt-5">
+        <TabsContent value="people" className="mt-4">
           <PeopleTab onProfileClick={setProfileUserId} />
         </TabsContent>
       </Tabs>

@@ -103,7 +103,7 @@ export function SummaryRangeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] rounded-[1.75rem] sm:max-w-md">
+      <DialogContent className="max-w-[calc(100vw-2rem)] rounded-2xl">
         <DialogHeader>
           <DialogTitle>Zakres podsumowania</DialogTitle>
           <DialogDescription>Wybierz gotowy okres albo ustaw własne daty.</DialogDescription>
@@ -124,7 +124,7 @@ export function SummaryRangeDialog({
         </div>
 
         <div className="space-y-3 rounded-2xl border border-border/60 p-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Własny zakres</p>
+          <p className="text-xs font-semibold text-muted-foreground">Własny zakres</p>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="summary-from">Od</Label>
@@ -156,7 +156,7 @@ export function SummaryRangeDialog({
           {error && <p className="text-xs font-medium text-destructive">{error}</p>}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-2">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Anuluj
           </Button>

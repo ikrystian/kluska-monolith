@@ -43,10 +43,10 @@ export function RpeSelector({
   return (
     <div className={cn('space-y-1.5', className)}>
       <div className="flex items-baseline justify-between gap-2 px-0.5">
-        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+        <span className="text-xs font-semibold text-muted-foreground">
           RPE
         </span>
-        <span className="text-[10px] text-muted-foreground">jak ciężka była seria?</span>
+        <span className="text-[11px] text-muted-foreground">jak ciężka była seria?</span>
       </div>
       <div className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5">
         {RPE_VALUES.map(rpe => (

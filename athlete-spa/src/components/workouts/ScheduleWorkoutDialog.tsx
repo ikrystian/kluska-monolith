@@ -140,18 +140,18 @@ export function ScheduleWorkoutDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px] bg-[#09090b] text-white border-zinc-800 p-0 overflow-hidden gap-0">
+            <DialogContent className=" p-0 overflow-hidden gap-0">
                 <div className="p-6 pb-0">
                     <DialogHeader className="mb-2">
-                        <DialogTitle className="text-2xl font-bold text-white">Zaplanuj trening</DialogTitle>
-                        <DialogDescription className="text-zinc-400">
+                        <DialogTitle className="text-2xl font-bold ">Zaplanuj trening</DialogTitle>
+                        <DialogDescription className="text-muted-foreground">
                             Wybierz czas, aby zaplanować trening
                         </DialogDescription>
                     </DialogHeader>
 
                     {/* Month Navigation */}
                     <div className="flex items-center justify-between mt-6 mb-4">
-                        <h3 className="text-xl font-semibold text-white capitalize">
+                        <h3 className="text-xl font-semibold  capitalize">
                             {format(currentMonthDate, 'MMMM', { locale: pl })}
                         </h3>
                         <div className="flex gap-2">
@@ -159,7 +159,7 @@ export function ScheduleWorkoutDialog({
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleMonthChange(-1)}
-                                className="h-8 w-8 text-blue-500 hover:text-blue-400 hover:bg-zinc-800"
+                                className="h-8 w-8 text-run hover:text-run "
                             >
                                 <ChevronLeft className="h-5 w-5" />
                             </Button>
@@ -167,7 +167,7 @@ export function ScheduleWorkoutDialog({
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleMonthChange(1)}
-                                className="h-8 w-8 text-blue-500 hover:text-blue-400 hover:bg-zinc-800"
+                                className="h-8 w-8 text-run hover:text-run "
                             >
                                 <ChevronRight className="h-5 w-5" />
                             </Button>
@@ -197,19 +197,19 @@ export function ScheduleWorkoutDialog({
                                 className={cn(
                                     "flex flex-col items-center justify-center min-w-[70px] h-[90px] rounded-xl transition-all snap-start border-2",
                                     isSelected
-                                        ? "bg-zinc-900 border-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.3)]"
-                                        : "bg-zinc-900/50 border-transparent hover:bg-zinc-800"
+                                        ? "bg-secondary border-run shadow-[0_0_15px_rgba(37,99,235,0.3)]"
+                                        : "bg-secondary border-transparent "
                                 )}
                             >
                                 <span className={cn(
                                     "text-2xl font-bold mb-1",
-                                    isSelected ? "text-white" : "text-zinc-300"
+                                    isSelected ? "text-foreground" : "text-muted-foreground"
                                 )}>
                                     {format(date, 'd')}
                                 </span>
                                 <span className={cn(
-                                    "text-xs font-medium uppercase tracking-wider",
-                                    isSelected ? "text-white" : "text-zinc-500"
+                                    "text-xs font-medium",
+                                    isSelected ? "text-foreground" : "text-muted-foreground"
                                 )}>
                                     {formatDayName(date)}
                                 </span>
@@ -234,11 +234,11 @@ export function ScheduleWorkoutDialog({
                                 setHour(val);
                             }}
                             onBlur={() => setHour(hour.padStart(2, '0'))}
-                            className="w-24 h-16 bg-zinc-900 border border-zinc-700 rounded-lg text-center text-3xl font-bold text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-24 h-16 bg-secondary border border-border rounded-lg text-center text-3xl font-bold  focus:border-run focus:outline-none focus:ring-1 focus:ring-run"
                         />
                         {/* Blue indicator line/dot simulation if needed, but input border is cleaner */}
                     </div>
-                    <span className="text-4xl font-bold text-zinc-600">:</span>
+                    <span className="text-4xl font-bold text-muted-foreground">:</span>
                     <div className="relative">
                         <input
                             type="text"
@@ -250,7 +250,7 @@ export function ScheduleWorkoutDialog({
                                 setMinute(val);
                             }}
                             onBlur={() => setMinute(minute.padStart(2, '0'))}
-                            className="w-24 h-16 bg-zinc-900 border border-zinc-700 rounded-lg text-center text-3xl font-bold text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-24 h-16 bg-secondary border border-border rounded-lg text-center text-3xl font-bold  focus:border-run focus:outline-none focus:ring-1 focus:ring-run"
                         />
                     </div>
                 </div>
@@ -259,7 +259,7 @@ export function ScheduleWorkoutDialog({
                     <Button
                         onClick={handleSchedule}
                         disabled={!selectedDate || isLoading}
-                        className="w-full h-12 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
+                        className="w-full h-12 text-lg font-semibold  text-black rounded-xl"
                     >
                         {isLoading ? 'Planowanie...' : 'Zaplanuj trening'}
                     </Button>

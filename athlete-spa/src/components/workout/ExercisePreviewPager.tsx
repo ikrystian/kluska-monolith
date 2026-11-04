@@ -73,7 +73,7 @@ export function ExercisePreviewPager({
   const typeMeta = exercise.type ? exerciseTypeMeta[exercise.type] : null;
 
   return (
-    <div className="absolute inset-0 z-20 flex flex-col overflow-hidden rounded-t-[2rem] bg-background">
+    <div className="absolute inset-0 z-20 flex flex-col overflow-hidden rounded-t-3xl bg-background">
       <div className="flex shrink-0 items-center gap-1 px-3 pb-2 pt-4">
         <Button type="button" variant="ghost" size="icon" className="h-10 w-10 shrink-0" aria-label="Wróć do listy ćwiczeń" onClick={onClose}>
           <ArrowLeft className="h-5 w-5" />
@@ -121,7 +121,7 @@ export function ExercisePreviewPager({
             <ExerciseMedia exercise={exercise} />
             <div className="space-y-1.5 px-5 pt-5">
               {typeMeta && (
-                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
                   <typeMeta.icon className="h-3 w-3" />
                   {typeMeta.label}
                 </span>
@@ -136,7 +136,7 @@ export function ExercisePreviewPager({
       </div>
 
       <div className="shrink-0 border-t border-border/60 bg-background/90 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur">
-        <Button type="button" className="h-12 w-full rounded-full text-base" onClick={() => onAdd(exercise.id)}>
+        <Button type="button" className="h-12 w-full text-base" onClick={() => onAdd(exercise.id)}>
           <PlusCircle className="mr-2 h-5 w-5" />
           Dodaj do treningu
         </Button>

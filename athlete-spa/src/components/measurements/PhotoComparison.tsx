@@ -28,7 +28,7 @@ function Caption({ text, side }: { text: string; side: 'left' | 'right' }) {
   return (
     <span
       className={cn(
-        'pointer-events-none absolute top-3 rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-md',
+        'pointer-events-none absolute top-3 rounded-full bg-black/55 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-md',
         side === 'left' ? 'left-3' : 'right-3'
       )}
     >
@@ -92,7 +92,7 @@ function Slider({ before, after }: { before?: BodyMeasurement; after?: BodyMeasu
       <Caption text="Po" side="right" />
 
       <div className="pointer-events-none absolute inset-y-0 w-0.5 -translate-x-1/2 bg-white shadow-[0_0_12px_rgba(0,0,0,0.5)]" style={{ left: `${pos}%` }}>
-        <span className="absolute top-1/2 grid h-9 w-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white text-primary shadow-lifted">
+        <span className="absolute top-1/2 grid h-9 w-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white text-primary">
           <ChevronsLeftRight className="h-4 w-4" />
         </span>
       </div>
@@ -140,10 +140,10 @@ export function PhotoComparison({ measurements }: { measurements: BodyMeasuremen
   const dayGap = distinct ? Math.abs(differenceInCalendarDays(new Date(after.date), new Date(before.date))) : null;
 
   return (
-    <section className="rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-soft md:p-5">
+    <section className="rounded-2xl bg-card p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-primary">
+          <p className="flex items-center gap-1.5 text-xs font-semibold text-primary">
             <ArrowLeftRight className="h-3.5 w-3.5" /> Sylwetka
           </p>
           <h2 className="font-headline text-2xl font-bold tracking-tight">Przed i po</h2>
@@ -157,8 +157,8 @@ export function PhotoComparison({ measurements }: { measurements: BodyMeasuremen
                 onClick={() => setMode(id)}
                 aria-pressed={mode === id}
                 className={cn(
-                  'rounded-full px-3 py-1 text-[11px] font-bold transition-colors',
-                  mode === id ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
+                  'rounded-full px-3 py-1 text-xs font-bold transition-colors',
+                  mode === id ? 'bg-background text-foreground' : 'text-muted-foreground'
                 )}
               >
                 {text}

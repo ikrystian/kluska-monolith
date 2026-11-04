@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Dumbbell, Plus } from 'lucide-react';
+import { Dumbbell, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -31,17 +31,17 @@ export default function ExerciseQuickViewPage() {
 
   if (isLoadingExercise || isLoadingWorkout) {
     return (
-      <div className="container mx-auto max-w-lg space-y-4 p-4 md:p-8">
-        <Skeleton className="aspect-[4/3] w-full rounded-3xl" />
+      <div className="container mx-auto max-w-lg space-y-4 p-4">
+        <Skeleton className="aspect-[4/3] w-full rounded-2xl" />
         <Skeleton className="h-8 w-3/4" />
-        <Skeleton className="h-24 w-full rounded-3xl" />
+        <Skeleton className="h-24 w-full rounded-2xl" />
       </div>
     );
   }
 
   if (!exercise) {
     return (
-      <div className="container mx-auto max-w-lg space-y-4 p-4 text-center md:p-8">
+      <div className="container mx-auto max-w-lg space-y-4 p-4 text-center">
         <p className="text-muted-foreground">Nie znaleziono tego ćwiczenia.</p>
         <Button variant="outline" onClick={() => navigate('/athlete/exercises')}>
           Biblioteka ćwiczeń
@@ -57,12 +57,8 @@ export default function ExerciseQuickViewPage() {
   const steps = exercise.instructions || exercise.description || '';
 
   return (
-    <div className="container mx-auto max-w-lg space-y-5 p-4 md:p-8">
-      <Button variant="ghost" className="-ml-3 gap-2" onClick={() => navigate('/athlete/exercises')}>
-        <ArrowLeft className="h-4 w-4" /> Biblioteka
-      </Button>
-
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-border/70 bg-muted">
+    <div className="page space-y-4">
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border/70 bg-muted">
         {mediaUrl &&
           (isVideo ? (
             <video src={mediaUrl} className="h-full w-full object-contain" autoPlay loop muted playsInline controls />
@@ -72,8 +68,8 @@ export default function ExerciseQuickViewPage() {
       </div>
 
       <div className="space-y-3">
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Ćwiczenie z maszyny</p>
-        <h1 className="font-display text-3xl font-extrabold uppercase leading-tight tracking-tight">{exercise.name}</h1>
+        <p className="text-xs font-semibold text-muted-foreground">Ćwiczenie z maszyny</p>
+        <h1 className="font-display text-5xl font-bold uppercase leading-tight">{exercise.name}</h1>
         <div className="flex flex-wrap gap-2">
           {exercise.mainMuscleGroups?.map(mg => (
             <Badge key={mg.name} variant="default">
@@ -105,7 +101,7 @@ export default function ExerciseQuickViewPage() {
       </div>
 
       {steps && (
-        <section className="space-y-2 rounded-3xl border border-border/70 bg-card p-5 shadow-soft">
+        <section className="space-y-2 rounded-2xl bg-card p-5">
           <h2 className="flex items-center gap-2 font-semibold">
             <Dumbbell className="h-4 w-4 text-primary" /> Instrukcje
           </h2>

@@ -11,8 +11,8 @@ export const MODE_LABEL: Record<CooperationMode, string> = {
 };
 
 export const AVAILABILITY: Record<Availability, { label: string; short: string; dot: string; ping: boolean }> = {
-  open: { label: 'Przyjmuje nowych podopiecznych', short: 'Wolne miejsca', dot: 'bg-emerald-400', ping: true },
-  limited: { label: 'Ostatnie wolne miejsca', short: 'Ostatnie miejsca', dot: 'bg-amber-400', ping: true },
+  open: { label: 'Przyjmuje nowych podopiecznych', short: 'Wolne miejsca', dot: 'bg-volt', ping: true },
+  limited: { label: 'Ostatnie wolne miejsca', short: 'Ostatnie miejsca', dot: 'bg-food', ping: true },
   closed: { label: 'Chwilowo brak miejsc', short: 'Brak miejsc', dot: 'bg-zinc-400', ping: false },
 };
 

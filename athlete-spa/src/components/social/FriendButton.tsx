@@ -9,7 +9,7 @@ export function FriendButton({ athlete }: { athlete: AthleteListItem }) {
 
   if (isPending) {
     return (
-      <Button size="sm" variant="outline" disabled className="h-9 shrink-0 rounded-full">
+      <Button size="sm" variant="outline" disabled className="h-9 shrink-0">
         <Loader2 className="h-4 w-4 animate-spin" />
       </Button>
     );
@@ -18,7 +18,7 @@ export function FriendButton({ athlete }: { athlete: AthleteListItem }) {
   switch (athlete.relation) {
     case 'friends':
       return (
-        <Button size="sm" variant="secondary" disabled className="h-9 shrink-0 gap-1.5 rounded-full disabled:opacity-100">
+        <Button size="sm" variant="secondary" disabled className="h-9 shrink-0 gap-1.5 disabled:opacity-100">
           <UserCheck className="h-4 w-4 text-volt" />
           Znajomi
         </Button>

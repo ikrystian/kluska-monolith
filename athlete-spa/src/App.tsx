@@ -56,6 +56,7 @@ const RunDetailPage = lazy(() => import('@/pages/athlete/RunDetail'));
 const RunDetailStravaPage = lazy(() => import('@/pages/athlete/RunDetailStrava'));
 const SocialPage = lazy(() => import('@/pages/athlete/Social'));
 const SummaryPage = lazy(() => import('@/pages/athlete/Summary'));
+const YouPage = lazy(() => import('@/pages/athlete/You'));
 const TemplatesPage = lazy(() => import('@/pages/athlete/Templates'));
 const TrainersPage = lazy(() => import('@/pages/athlete/Trainers'));
 const TrainerDetailPage = lazy(() => import('@/pages/athlete/TrainerDetail'));
@@ -164,6 +165,7 @@ export default function App() {
                 </Route>
 
                 <Route path="workout-plans" element={<WorkoutPlansPage />} />
+                <Route path="you" element={<YouPage />} />
 
                 <Route path="workouts" element={<WorkoutsPage />} />
                 <Route path="workouts/create" element={<WorkoutCreatePage />} />
@@ -178,15 +180,16 @@ export default function App() {
 
           <Toaster
             position="top-center"
+            containerStyle={{ top: 'calc(env(safe-area-inset-top) + 0.5rem)' }}
             toastOptions={{
               duration: 4000,
               style: {
-                background: 'hsl(var(--background))',
-                color: 'hsl(var(--foreground))',
+                background: 'hsl(var(--popover))',
+                color: 'hsl(var(--popover-foreground))',
                 border: '1px solid hsl(var(--border))',
-                borderRadius: '0.9rem',
-                boxShadow: '0 10px 30px rgb(0 0 0 / 0.12)',
-                fontSize: '0.875rem',
+                borderRadius: '0.875rem',
+                boxShadow: '0 8px 32px -8px rgb(0 0 0 / 0.4)',
+                fontSize: '0.9375rem',
                 maxWidth: '92vw',
               },
               error: {
@@ -198,8 +201,8 @@ export default function App() {
               },
               success: {
                 iconTheme: {
-                  primary: 'hsl(var(--primary))',
-                  secondary: 'hsl(var(--primary-foreground))',
+                  primary: 'hsl(var(--volt))',
+                  secondary: 'hsl(var(--volt-foreground))',
                 },
               },
             }}

@@ -161,11 +161,11 @@ export function WorkoutsListView({
     const getLevelBadge = (level: TrainingLevel) => {
         switch (level) {
             case TrainingLevel.Beginner:
-                return <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-200">Początkujący</Badge>;
+                return <Badge variant="secondary" className="bg-volt/10 text-volt hover:bg-volt/10">Początkujący</Badge>;
             case TrainingLevel.Intermediate:
-                return <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200">Średniozaawansowany</Badge>;
+                return <Badge variant="secondary" className="bg-run/10 text-run hover:bg-run/10">Średniozaawansowany</Badge>;
             case TrainingLevel.Advanced:
-                return <Badge variant="secondary" className="bg-red-100 text-red-800 hover:bg-red-200">Zaawansowany</Badge>;
+                return <Badge variant="secondary" className="bg-destructive/10 text-destructive hover:bg-destructive/10">Zaawansowany</Badge>;
             default:
                 return <Badge variant="outline">{level}</Badge>;
         }
@@ -180,7 +180,7 @@ export function WorkoutsListView({
 
     if (showNoExercisesMessage) {
         return (
-            <div className="container mx-auto p-4 md:p-8">
+            <div className="page">
                 <Card className="border-dashed border-2">
                     <CardHeader className="text-center">
                         <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
@@ -206,15 +206,11 @@ export function WorkoutsListView({
     }
 
     return (
-        <div className="container mx-auto p-4 md:p-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold font-headline">{title ?? defaultTitle}</h1>
-                    <p className="text-muted-foreground">{description ?? defaultDescription}</p>
-                </div>
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="page">
+            <div className="flex flex-col justify-between items-start mb-8 gap-4">
+                <div className="flex flex-col gap-2">
                     {shouldShowSearch && (
-                        <div className="relative w-full md:w-64">
+                        <div className="relative w-full">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 type="search"
@@ -238,7 +234,7 @@ export function WorkoutsListView({
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-6">
                 {isLoading ? (
                     Array.from({ length: role === 'admin' ? 8 : 6 }).map((_, i) => (
                         <Card key={i} className="overflow-hidden">
@@ -257,7 +253,7 @@ export function WorkoutsListView({
                 ) : filteredWorkouts && filteredWorkouts.length > 0 ? (
                     <AnimatePresence mode="popLayout" initial={false}>
                     {filteredWorkouts.map((workout) => (
-                        <AnimatedCard key={workout.id} className="overflow-hidden flex flex-col hover:shadow-lg transition-shadow">
+                        <AnimatedCard key={workout.id} className="overflow-hidden flex flex-col transition-shadow">
                             {/* Image section - not shown for admin */}
                             {role !== 'admin' && (
                                 <div className="relative h-48 w-full bg-muted">
@@ -369,7 +365,7 @@ export function WorkoutsListView({
                     </AnimatePresence>
                 ) : (
                     role === 'admin' ? (
-                        <Card className="sm:col-span-2 lg:col-span-3 xl:col-span-4 text-center py-20">
+                        <Card className="text-center py-20">
                             <p>{emptyMessage}</p>
                         </Card>
                     ) : (

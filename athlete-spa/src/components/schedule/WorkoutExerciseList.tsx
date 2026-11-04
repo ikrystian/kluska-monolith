@@ -148,7 +148,7 @@ export function LoggedExerciseList({ exercises, scroll = true }: { exercises: Ex
                                         <p className="font-mono text-sm font-bold tabular-nums">
                                             {volume.toLocaleString('pl-PL')}
                                         </p>
-                                        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">kg</p>
+                                        <p className="text-xs text-muted-foreground">kg</p>
                                     </>
                                 ) : (
                                     <Icon className="h-4 w-4 text-muted-foreground" />
@@ -164,7 +164,7 @@ export function LoggedExerciseList({ exercises, scroll = true }: { exercises: Ex
                                                 key={si}
                                                 title={cfg.name}
                                                 className={cn(
-                                                    'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums',
+                                                    'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-mono text-xs font-semibold tabular-nums',
                                                     cfg.bgColorClass,
                                                     cfg.colorClass,
                                                     cfg.borderColorClass,
@@ -185,7 +185,7 @@ export function LoggedExerciseList({ exercises, scroll = true }: { exercises: Ex
             </ol>
 
             {legendTypes.size > 1 && (
-                <div className="flex flex-wrap gap-x-3 gap-y-1 px-1 pt-1 text-[10px] text-muted-foreground">
+                <div className="flex flex-wrap gap-x-3 gap-y-1 px-1 pt-1 text-[11px] text-muted-foreground">
                     {Array.from(legendTypes.values()).map(cfg => (
                         <span key={cfg.shortName} className="inline-flex items-center gap-1">
                             <span className={cn('h-2 w-2 rounded-full bg-current', cfg.colorClass)} />

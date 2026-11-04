@@ -18,8 +18,8 @@ import { KIND_COLOR, KIND_LABEL, formatRunPace, type AgendaEvent } from './agend
 function Stat({ value, label, color }: { value: string; label: string; color: string }) {
     return (
         <div className="rounded-2xl px-2 py-3 text-center" style={{ backgroundColor: tint(color, 10) }}>
-            <p className="font-display text-xl font-extrabold leading-none tabular-nums">{value}</p>
-            <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
+            <p className="font-display text-3xl font-bold leading-none tabular-nums">{value}</p>
+            <p className="mt-1 text-xs font-semibold text-muted-foreground">{label}</p>
         </div>
     );
 }
@@ -37,7 +37,7 @@ function Stats({ items, color }: { items: [string, string][]; color: string }) {
 function Section({ title, children }: { title: string; children: ReactNode }) {
     return (
         <section>
-            <h3 className="mb-2 px-1 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{title}</h3>
+            <h3 className="mb-2 px-1 text-xs font-semibold text-muted-foreground">{title}</h3>
             {children}
         </section>
     );
@@ -65,7 +65,7 @@ export function EventSheet({ event, onOpenChange, onOpenSession }: EventSheetPro
         body = (
             <>
                 {photoUrl && (
-                    <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-muted shadow-soft">
+                    <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-muted">
                         <img
                             src={resolveMediaUrl(photoUrl)}
                             alt={`Zdjęcie z treningu ${event.log.workoutName}`}
@@ -89,7 +89,7 @@ export function EventSheet({ event, onOpenChange, onOpenSession }: EventSheetPro
             </>
         );
         actions = (
-            <Button asChild className="h-12 w-full rounded-full text-base">
+            <Button asChild className="h-12 w-full text-base">
                 <Link to={`/athlete/history/${event.log.id}`}>
                     Pełne podsumowanie <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
@@ -105,12 +105,12 @@ export function EventSheet({ event, onOpenChange, onOpenSession }: EventSheetPro
         );
         actions = workoutId ? (
             <div className="grid gap-2">
-                <Button asChild className="h-12 w-full rounded-full text-base">
+                <Button asChild className="h-12 w-full text-base">
                     <Link to={`/athlete/log?workoutId=${workoutId}`}>
                         <Play className="mr-2 h-4 w-4 fill-current" /> Rozpocznij trening
                     </Link>
                 </Button>
-                <Button asChild variant="outline" className="h-11 w-full rounded-full">
+                <Button asChild variant="outline" className="h-11 w-full">
                     <Link to={`/athlete/workouts/${workoutId}`}>Szczegóły treningu</Link>
                 </Button>
             </div>
@@ -120,7 +120,7 @@ export function EventSheet({ event, onOpenChange, onOpenSession }: EventSheetPro
         title = session.title;
         body = (
             <>
-                <dl className="divide-y divide-border/60 overflow-hidden rounded-[1.5rem] border border-border/60 bg-card text-sm">
+                <dl className="divide-y divide-border/60 overflow-hidden rounded-2xl bg-card text-sm">
                     <div className="flex items-center justify-between gap-3 px-4 py-3">
                         <dt className="text-muted-foreground">Godzina</dt>
                         <dd className="font-semibold tabular-nums">
@@ -148,7 +148,7 @@ export function EventSheet({ event, onOpenChange, onOpenSession }: EventSheetPro
                 </dl>
                 {session.description && (
                     <Section title="Opis">
-                        <p className="rounded-[1.25rem] bg-secondary/50 p-4 text-sm leading-relaxed text-muted-foreground">{session.description}</p>
+                        <p className="rounded-2xl bg-secondary/50 p-4 text-sm leading-relaxed text-muted-foreground">{session.description}</p>
                     </Section>
                 )}
             </>
@@ -156,11 +156,11 @@ export function EventSheet({ event, onOpenChange, onOpenSession }: EventSheetPro
         actions = (
             <div className="grid gap-2">
                 {session.status === 'scheduled' && (
-                    <Button className="h-12 w-full rounded-full text-base" onClick={() => onOpenSession(event)}>
+                    <Button className="h-12 w-full text-base" onClick={() => onOpenSession(event)}>
                         <CheckCircle className="mr-2 h-4 w-4" /> Potwierdź udział
                     </Button>
                 )}
-                <Button variant="outline" className="h-11 w-full rounded-full" onClick={() => onOpenSession(event)}>
+                <Button variant="outline" className="h-11 w-full" onClick={() => onOpenSession(event)}>
                     Zarządzaj sesją
                 </Button>
             </div>
@@ -179,7 +179,7 @@ export function EventSheet({ event, onOpenChange, onOpenSession }: EventSheetPro
             />
         );
         actions = run.isClickable ? (
-            <Button asChild className="h-12 w-full rounded-full text-base">
+            <Button asChild className="h-12 w-full text-base">
                 <Link to={run.href}>
                     Pełne podsumowanie <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
@@ -191,12 +191,12 @@ export function EventSheet({ event, onOpenChange, onOpenSession }: EventSheetPro
         <Sheet open={!!event} onOpenChange={onOpenChange}>
             <SheetContent
                 side="bottom"
-                className="mx-auto flex max-h-[90dvh] w-full max-w-lg flex-col gap-0 rounded-t-[2rem] p-0"
+                className="mx-auto flex max-h-[90dvh] w-full max-w-lg flex-col gap-0 rounded-t-3xl p-0"
             >
                 {event && (
                     <>
                         <SheetHeader className="shrink-0 space-y-1 px-5 pb-3 pt-6 text-left">
-                            <span className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color }}>
+                            <span className="text-xs font-semibold" style={{ color }}>
                                 {KIND_LABEL[event.kind]}
                             </span>
                             <SheetTitle className="font-headline text-2xl leading-tight">{title}</SheetTitle>

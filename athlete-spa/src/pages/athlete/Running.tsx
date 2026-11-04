@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/section';
 import { useToast } from '@/hooks/use-toast';
 import { haptic } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
@@ -65,15 +66,15 @@ function StatTile({
   isLoading: boolean;
 }) {
   return (
-    <div className="rounded-[1.5rem] border border-border/60 bg-card p-4 shadow-soft">
+    <div className="rounded-2xl bg-card p-4">
       <span className="grid h-9 w-9 place-items-center rounded-xl" style={{ backgroundColor: tint(color, 15), color }}>
         <Icon className="h-[18px] w-[18px]" />
       </span>
-      <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+      <p className="mt-3 text-xs font-semibold text-muted-foreground">{label}</p>
       {isLoading ? (
         <Skeleton className="mt-1 h-7 w-20" />
       ) : (
-        <p className="mt-0.5 truncate font-headline text-xl font-bold tabular-nums">{value}</p>
+        <p className="mt-0.5 truncate font-display text-2xl font-bold tabular-nums">{value}</p>
       )}
     </div>
   );
@@ -89,7 +90,7 @@ function RecordRow({ icon: Icon, label, run, value }: { icon: LucideIcon; label:
         <p className="text-xs text-muted-foreground">{label}</p>
         <p className="truncate text-sm font-semibold">{runTitle(run)}</p>
       </div>
-      <span className="shrink-0 font-headline text-base font-bold tabular-nums">{value}</span>
+      <span className="shrink-0 font-display text-xl font-bold tabular-nums">{value}</span>
       {run.href && <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/70" />}
     </>
   );
@@ -105,8 +106,8 @@ function RecordRow({ icon: Icon, label, run, value }: { icon: LucideIcon; label:
 
 function SectionTitle({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div className="mb-3 flex items-end justify-between gap-3 px-1">
-      <h2 className="font-headline text-xl font-bold tracking-tight">{children}</h2>
+    <div className="mb-2 flex items-center justify-between gap-3 px-1">
+      <h2 className="text-[15px] font-semibold leading-tight">{children}</h2>
       {action}
     </div>
   );
@@ -214,58 +215,49 @@ export default function RunningPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-7 px-4 pb-5 pt-20 md:px-6 md:pt-8">
-      <header className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Bieganie</p>
-          <h1 className="font-headline text-3xl font-bold tracking-tight md:text-4xl">Dziennik biegowy</h1>
-        </div>
-        {isStravaConnected && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSyncStrava}
-            disabled={isSyncing}
-            className="shrink-0 gap-1.5 rounded-full"
-            style={{ color: STRAVA_COLOR }}
-          >
-            {isSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            Strava
-          </Button>
-        )}
-      </header>
-
-      <section className="grid grid-cols-[1fr_auto] gap-3">
+    <div className="page space-y-5">
+      <section className="grid grid-cols-[1fr_auto] gap-2.5">
         <button
           type="button"
           onClick={openPrimary}
-          className="hero-ember texture-grain group relative flex items-center justify-between gap-4 overflow-hidden rounded-[1.75rem] p-5 text-left text-white shadow-glow transition-transform duration-200 active:scale-[0.98] md:p-6"
+          className="group flex min-w-0 items-center justify-between gap-3 rounded-2xl bg-run p-4 text-left text-black transition-transform active:scale-[0.98]"
         >
-          <div aria-hidden className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full border-[1.1rem] border-white/10" />
-          <div className="relative min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/75">
-              {supportsGeolocation ? 'Nagrywanie GPS' : 'Bez GPS'}
-            </p>
-            <p className="mt-1 font-display text-xl font-extrabold uppercase leading-tight md:text-2xl">
-              {supportsGeolocation ? 'Rozpocznij bieg' : 'Dodaj bieg'}
-            </p>
-          </div>
-          <span className="relative grid h-14 w-14 shrink-0 place-items-center rounded-full bg-white text-primary shadow-lg transition-transform duration-200 group-hover:scale-105 group-active:scale-95">
-            {supportsGeolocation ? <Play className="h-6 w-6 fill-current" /> : <Plus className="h-6 w-6" />}
+          <span className="min-w-0">
+            <span className="block text-[13px] font-semibold opacity-75">
+              {supportsGeolocation ? 'Trasa z GPS' : 'Bez GPS'}
+            </span>
+            <span className="mt-0.5 block font-display text-[2.25rem] font-bold uppercase leading-none">
+              {supportsGeolocation ? 'Biegnij' : 'Dodaj bieg'}
+            </span>
+          </span>
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-black text-run">
+            {supportsGeolocation ? <Play className="h-5 w-5 fill-current" /> : <Plus className="h-5 w-5" />}
           </span>
         </button>
-        {supportsGeolocation && (
-          <button
-            type="button"
-            onClick={() => setManualOpen(true)}
-            className="flex w-24 flex-col items-center justify-center gap-2 rounded-[1.75rem] border border-border/60 bg-card p-3 text-center shadow-soft transition-colors hover:bg-secondary/50 active:scale-[0.98]"
-          >
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-secondary">
+        <div className="flex w-[4.5rem] flex-col gap-2.5">
+          {supportsGeolocation && (
+            <button
+              type="button"
+              onClick={() => setManualOpen(true)}
+              aria-label="Dodaj bieg ręcznie"
+              className="row-tap grid flex-1 place-items-center rounded-2xl bg-card"
+            >
               <Plus className="h-5 w-5" />
-            </span>
-            <span className="text-xs font-semibold leading-tight">Dodaj ręcznie</span>
-          </button>
-        )}
+            </button>
+          )}
+          {isStravaConnected && (
+            <button
+              type="button"
+              onClick={handleSyncStrava}
+              disabled={isSyncing}
+              aria-label="Pobierz biegi ze Strava"
+              className="row-tap grid flex-1 place-items-center rounded-2xl bg-card"
+              style={{ color: STRAVA_COLOR }}
+            >
+              {isSyncing ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
+            </button>
+          )}
+        </div>
       </section>
 
       <WeeklySummary runs={runs} isLoading={isLoading} />
@@ -273,20 +265,20 @@ export default function RunningPage() {
       {supportsGeolocation && runningPrograms && runningPrograms.length > 0 && (
         <section>
           <SectionTitle>Treningi od trenera</SectionTitle>
-          <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:-mx-6 md:px-6 [&::-webkit-scrollbar]:hidden">
+          <div className="no-scrollbar -mx-4 flex snap-x scroll-pl-4 gap-2.5 overflow-x-auto px-4">
             {runningPrograms.map(program => (
               <button
                 key={program.id}
                 type="button"
                 onClick={() => startRecording(program.id)}
-                className="group flex w-56 shrink-0 snap-start flex-col rounded-[1.5rem] border border-border/60 bg-card p-4 text-left shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-lifted active:scale-[0.98]"
+                className="group flex w-52 shrink-0 snap-start flex-col rounded-2xl bg-card p-3.5 text-left transition-transform active:scale-[0.98]"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <span className="font-display text-3xl font-extrabold leading-none tabular-nums">
+                  <span className="font-display text-5xl font-bold leading-none tabular-nums">
                     {formatKm(program.targetDistanceKm, program.targetDistanceKm % 1 ? 1 : 0)}
-                    <span className="ml-1 font-headline text-sm font-bold text-muted-foreground">km</span>
+                    <span className="ml-1 font-body text-sm font-semibold text-muted-foreground">km</span>
                   </span>
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-transform group-hover:scale-105">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-run text-black">
                     <Play className="h-4 w-4 fill-current" />
                   </span>
                 </div>
@@ -309,15 +301,15 @@ export default function RunningPage() {
       {(isLoading || runs.length > 0) && (
         <section>
           <SectionTitle>Łącznie</SectionTitle>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <StatTile icon={Route} color="hsl(var(--primary))" label="Dystans" value={`${formatKm(stats.totalDistance, 1)} km`} isLoading={isLoading} />
-            <StatTile icon={Footprints} color="hsl(var(--chart-2))" label="Biegi" value={String(stats.totalRuns)} isLoading={isLoading} />
-            <StatTile icon={Timer} color="hsl(var(--chart-4))" label="Czas" value={formatHours(stats.totalDuration)} isLoading={isLoading} />
-            <StatTile icon={Gauge} color="hsl(var(--volt))" label="Śr. tempo" value={formatPace(stats.avgPace)} isLoading={isLoading} />
+          <div className="grid grid-cols-2 gap-3">
+            <StatTile icon={Route} color="hsl(var(--run))" label="Dystans" value={`${formatKm(stats.totalDistance, 1)} km`} isLoading={isLoading} />
+            <StatTile icon={Footprints} color="hsl(var(--run))" label="Biegi" value={String(stats.totalRuns)} isLoading={isLoading} />
+            <StatTile icon={Timer} color="hsl(var(--run))" label="Czas" value={formatHours(stats.totalDuration)} isLoading={isLoading} />
+            <StatTile icon={Gauge} color="hsl(var(--run))" label="Śr. tempo" value={formatPace(stats.avgPace)} isLoading={isLoading} />
           </div>
 
           {!isLoading && (stats.longest || stats.fastest) && (
-            <div className="mt-3 divide-y divide-border/60 overflow-hidden rounded-[1.5rem] border border-border/60 bg-card shadow-soft">
+            <div className="mt-3 divide-y divide-border/60 overflow-hidden rounded-2xl bg-card">
               {stats.longest && (
                 <RecordRow icon={Trophy} label="Najdłuższy bieg" run={stats.longest} value={`${formatKm(stats.longest.distanceKm)} km`} />
               )}
@@ -333,7 +325,7 @@ export default function RunningPage() {
         <SectionTitle
           action={
             hasStrava && runs.length > 0 ? (
-              <div className="flex gap-1 rounded-full border border-border/60 bg-card p-1 shadow-soft" role="tablist" aria-label="Źródło biegów">
+              <div className="flex gap-1 rounded-full bg-card p-1" role="tablist" aria-label="Źródło biegów">
                 {SOURCE_FILTERS.map(f => (
                   <button
                     key={f.id}
@@ -357,7 +349,7 @@ export default function RunningPage() {
         </SectionTitle>
 
         {isLoading ? (
-          <div className="space-y-px overflow-hidden rounded-[1.5rem] border border-border/60 bg-card">
+          <div className="space-y-px overflow-hidden rounded-2xl bg-card">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 px-4 py-3.5">
                 <Skeleton className="h-14 w-14 rounded-2xl" />
@@ -372,36 +364,25 @@ export default function RunningPage() {
         ) : filteredRuns.length > 0 ? (
           <RunHistoryList key={sourceFilter} runs={filteredRuns} />
         ) : runs.length > 0 ? (
-          <p className="rounded-[1.5rem] border border-dashed border-border bg-card/50 p-6 text-center text-sm text-muted-foreground">
-            Brak biegów z tego źródła.
-          </p>
+          <EmptyState title="Brak biegów z tego źródła" />
         ) : (
-          <div className="rounded-[1.75rem] border border-dashed border-border bg-card/50 p-8 text-center">
-            <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-secondary text-primary">
-              <Footprints className="h-7 w-7" />
-            </span>
-            <p className="font-semibold">Brak biegów</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {supportsGeolocation ? 'Nagraj pierwszy bieg z GPS albo dodaj go ręcznie.' : 'Dodaj swój pierwszy bieg.'}
-            </p>
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
-              <Button size="sm" className="rounded-full" onClick={openPrimary}>
-                {supportsGeolocation ? 'Rozpocznij bieg' : 'Dodaj bieg'}
-              </Button>
-              {isStravaConnected && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="rounded-full"
-                  style={{ color: STRAVA_COLOR }}
-                  onClick={handleSyncStrava}
-                  disabled={isSyncing}
-                >
-                  Pobierz ze Strava
+          <EmptyState
+            icon={Footprints}
+            title="Brak biegów"
+            description={supportsGeolocation ? 'Nagraj pierwszy bieg z GPS albo dodaj go ręcznie.' : 'Dodaj swój pierwszy bieg.'}
+            action={
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button size="sm" onClick={openPrimary}>
+                  {supportsGeolocation ? 'Rozpocznij bieg' : 'Dodaj bieg'}
                 </Button>
-              )}
-            </div>
-          </div>
+                {isStravaConnected && (
+                  <Button size="sm" variant="secondary" style={{ color: STRAVA_COLOR }} onClick={handleSyncStrava} disabled={isSyncing}>
+                    Pobierz ze Strava
+                  </Button>
+                )}
+              </div>
+            }
+          />
         )}
       </section>
 

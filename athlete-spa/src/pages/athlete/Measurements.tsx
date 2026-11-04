@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, ClipboardCheck } from 'lucide-react';
 import { useCollection, useDeleteDoc, useUser } from '@/lib/db-hooks';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +20,14 @@ export default function MeasurementsPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [metric, setMetric] = useState<MetricKey>('weight');
   const chartRef = useRef<HTMLDivElement>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // "+" shortcuts land here with ?add=1 and go straight to the form.
+  useEffect(() => {
+    if (searchParams.get('add') !== '1') return;
+    setSheetOpen(true);
+    setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const { data, isLoading, refetch } = useCollection<BodyMeasurement>(
     user ? 'bodyMeasurements' : null,
@@ -47,23 +55,17 @@ export default function MeasurementsPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-6 px-4 pb-6 pt-18 md:px-6 md:pt-8">
-      <header>
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Sylwetka</p>
-        <h1 className="font-headline text-3xl font-bold tracking-tight md:text-4xl">Pomiary ciała</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Waga, obwody i zdjęcia — dowód, że plan działa.</p>
-      </header>
-
+    <div className="page space-y-4">
       <MeasurementHero weights={weights} isLoading={loading} onAdd={() => setSheetOpen(true)} />
 
       {loading ? (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2.5">
             {Array.from({ length: 3 }).map((_, i) => (
               <Skeleton key={i} className="h-24 rounded-[1.4rem]" />
             ))}
           </div>
-          <Skeleton className="h-80 rounded-[1.75rem]" />
+          <Skeleton className="h-80 rounded-2xl" />
         </div>
       ) : measurements.length > 0 ? (
         <>
@@ -81,7 +83,7 @@ export default function MeasurementsPage() {
 
       <Link
         to="/athlete/check-in"
-        className="flex items-center gap-3 rounded-[1.5rem] border border-border/60 bg-card p-4 shadow-soft transition-colors hover:bg-secondary/50 active:scale-[0.99]"
+        className="flex items-center gap-3 rounded-2xl bg-card p-4 transition-colors hover:bg-secondary/50 active:scale-[0.99]"
       >
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
           <ClipboardCheck className="h-5 w-5" />

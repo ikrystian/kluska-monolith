@@ -28,7 +28,7 @@ export function AnimateReveal() {
         setRevealed(true);
         document.documentElement.classList.add('de-revealed');
       }}
-      className="fixed bottom-4 right-4 z-[9999] flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform active:scale-95"
+      className="fixed bottom-4 right-4 z-[9999] flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform active:scale-95"
     >
       <Sparkles className="h-6 w-6" />
     </button>

@@ -20,10 +20,10 @@ export type AgendaEvent =
     | { kind: 'run'; id: string; date: Date; run: AgendaRun };
 
 export const KIND_COLOR: Record<AgendaEvent['kind'], string> = {
-    trainer: '#f97316',
-    completed: '#8b5cf6',
-    planned: '#3b82f6',
-    run: '#0ea5e9',
+    trainer: 'hsl(var(--social))',
+    completed: 'hsl(var(--volt))',
+    planned: 'hsl(var(--primary))',
+    run: 'hsl(var(--run))',
 };
 
 export const KIND_LABEL: Record<AgendaEvent['kind'], string> = {

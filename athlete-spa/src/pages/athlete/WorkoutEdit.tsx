@@ -7,11 +7,6 @@ export default function AthleteEditWorkoutPage() {
     if (!id) return null;
 
     return (
-        <EditWorkoutPageLayout
-            workoutId={id}
-            backHref={`/athlete/workouts/${id}`}
-            redirectPath="/athlete/workouts"
-            description="Edytuj swój trening."
-        />
+        <EditWorkoutPageLayout workoutId={id} redirectPath="/athlete/workouts" />
     );
 }

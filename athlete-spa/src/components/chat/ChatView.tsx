@@ -33,7 +33,7 @@ export function ChatView({
     return (
         <div className="flex flex-col h-full bg-background">
             <header className="flex items-center gap-3 p-4 border-b border-border/60 bg-card/60 backdrop-blur-sm">
-                <Button variant="ghost" size="icon" className="-ml-1 shrink-0 md:hidden" onClick={onBack}>
+                <Button variant="ghost" size="icon" className="-ml-1 shrink-0" onClick={onBack}>
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <Avatar className="h-10 w-10 ring-2 ring-primary/20">

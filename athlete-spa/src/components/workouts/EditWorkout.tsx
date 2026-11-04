@@ -323,7 +323,7 @@ export function EditWorkout({ workoutId, onSuccess, redirectPath }: EditWorkoutP
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <FormProgressIndicator steps={steps} />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                         <FormFieldWithValidation
                             label="Nazwa Treningu"
                             error={form.formState.errors.name?.message}
@@ -564,8 +564,8 @@ function ExerciseSeriesItem({
                 </CardHeader>
                 <CollapsibleContent>
                     <CardContent className="space-y-4 pt-2">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="md:col-span-2 space-y-2">
+                        <div className="grid grid-cols-1 gap-4">
+                            <div className="space-y-2">
                                 <FormFieldWithValidation
                                     label="Ćwiczenie"
                                     error={form.formState.errors.exerciseSeries?.[index]?.exerciseId?.message}
@@ -574,12 +574,12 @@ function ExerciseSeriesItem({
                                 >
                                     <Dialog open={exerciseDialogOpen} onOpenChange={setExerciseDialogOpen}>
                                         <DialogTrigger asChild>
-                                            <Button variant="outline" role="combobox" className={cn("w-full justify-between", !selectedExerciseId && "text-muted-foreground")}>
+                                            <Button variant="outline" role="combobox" className={cn("w-full justify-between", !selectedExerciseId &&"text-muted-foreground")}>
                                                 {selectedExercise ? selectedExercise.name : "Wybierz ćwiczenie..."}
                                                 <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                             </Button>
                                         </DialogTrigger>
-                                        <DialogContent className="flex flex-col gap-3 p-4 max-sm:h-dvh max-sm:max-w-none max-sm:rounded-none max-sm:border-0 max-sm:pt-[max(1rem,env(safe-area-inset-top))] max-sm:pb-[max(1rem,env(safe-area-inset-bottom))] sm:max-h-[85vh] sm:max-w-3xl">
+                                        <DialogContent className="flex flex-col gap-3 p-4 h-dvh max-w-none rounded-none border-0 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
                                             <DialogHeader>
                                                 <DialogTitle>Wybierz ćwiczenie</DialogTitle>
                                             </DialogHeader>
@@ -604,7 +604,7 @@ function ExerciseSeriesItem({
                                     <Input {...form.register(`exerciseSeries.${index}.tempo`)} placeholder="3-0-1-0" />
                                 </FormFieldWithValidation>
                             </div>
-                            <div className="md:col-span-3 space-y-2">
+                            <div className="space-y-2">
                                 <FormFieldWithValidation
                                     label="Wskazówka (Tip)"
                                     error={form.formState.errors.exerciseSeries?.[index]?.tip?.message}
@@ -674,33 +674,33 @@ function ExerciseSeriesItem({
                                 </div>
 
                                 <div className="space-y-2">
-                                    <div className="hidden md:grid grid-cols-12 gap-2 items-center text-center">
-                                        <Label className="col-span-1 text-[10px] text-muted-foreground">#</Label>
-                                        <Label className="col-span-2 text-[10px] text-muted-foreground">Typ</Label>
+                                    <div className="hidden grid-cols-12 gap-2 items-center text-center">
+                                        <Label className="col-span-1 text-[11px] text-muted-foreground">#</Label>
+                                        <Label className="col-span-2 text-[11px] text-muted-foreground">Typ</Label>
                                         {exerciseType === 'weight' ? (
                                             <>
-                                                <Label className="col-span-2 text-[10px] text-muted-foreground">
+                                                <Label className="col-span-2 text-[11px] text-muted-foreground">
                                                     {weightUnit === 'kg' ? 'kg' : 'RPE'}
                                                 </Label>
-                                                <Label className="col-span-2 text-[10px] text-muted-foreground">Powt.</Label>
+                                                <Label className="col-span-2 text-[11px] text-muted-foreground">Powt.</Label>
                                             </>
                                         ) : exerciseType === 'reps' ? (
-                                            <Label className="col-span-4 text-[10px] text-muted-foreground">Powtórzenia</Label>
+                                            <Label className="col-span-4 text-[11px] text-muted-foreground">Powtórzenia</Label>
                                         ) : (
-                                            <Label className="col-span-4 text-[10px] text-muted-foreground">Czas (sek.)</Label>
+                                            <Label className="col-span-4 text-[11px] text-muted-foreground">Czas (sek.)</Label>
                                         )}
-                                        <Label className="col-span-3 text-[10px] text-muted-foreground">Przerwa</Label>
-                                        <Label className="col-span-2 text-[10px] text-muted-foreground">Akcje</Label>
+                                        <Label className="col-span-3 text-[11px] text-muted-foreground">Przerwa</Label>
+                                        <Label className="col-span-2 text-[11px] text-muted-foreground">Akcje</Label>
                                     </div>
 
                                     <AnimatePresence initial={false}>
                                     {setFields.map((setField: any, setIndex: number) => (
                                         <motion.div key={setField.id} {...listItemMotion}>
-                                        <div className="grid grid-cols-2 md:grid-cols-12 gap-2 items-center border rounded-md p-2 md:border-0 md:p-0 bg-muted/20 md:bg-transparent">
-                                            <div className="col-span-2 md:col-span-1 flex justify-between md:justify-center items-center text-sm font-mono text-muted-foreground md:mb-0 mb-2">
-                                                <span className="md:hidden text-xs font-bold">Seria {setIndex + 1}</span>
-                                                <span className="hidden md:inline">{setIndex + 1}</span>
-                                                <div className="flex md:hidden gap-1">
+                                        <div className="grid grid-cols-2 gap-2 items-center border rounded-md p-2 bg-muted/20">
+                                            <div className="col-span-2 flex justify-between items-center text-sm font-mono text-muted-foreground mb-2">
+                                                <span className="text-xs font-bold">Seria {setIndex + 1}</span>
+                                                <span className="hidden">{setIndex + 1}</span>
+                                                <div className="flex gap-1">
                                                     <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDuplicateSet(setIndex)}>
                                                         <Copy className="h-3 w-3" />
                                                     </Button>
@@ -710,7 +710,7 @@ function ExerciseSeriesItem({
                                                 </div>
                                             </div>
 
-                                            <div className="col-span-2 md:col-span-2">
+                                            <div className="col-span-2">
                                                 <SetTypeButton
                                                     value={form.watch(`exerciseSeries.${index}.sets.${setIndex}.type`) || SetType.WorkingSet}
                                                     onChange={(val) => form.setValue(`exerciseSeries.${index}.sets.${setIndex}.type`, val)}
@@ -719,8 +719,8 @@ function ExerciseSeriesItem({
 
                                             {exerciseType === 'weight' ? (
                                                 <>
-                                                    <div className="col-span-1 md:col-span-2">
-                                                        <div className="relative md:static">
+                                                    <div className="col-span-1">
+                                                        <div className="relative">
                                                             {weightUnit === 'kg' ? (
                                                                 <>
                                                                     <Input
@@ -730,7 +730,7 @@ function ExerciseSeriesItem({
                                                                         placeholder="0"
                                                                         {...form.register(`exerciseSeries.${index}.sets.${setIndex}.weight`)}
                                                                     />
-                                                                    <span className="md:hidden absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">kg</span>
+                                                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">kg</span>
                                                                 </>
                                                             ) : (
                                                                 <>
@@ -743,25 +743,25 @@ function ExerciseSeriesItem({
                                                                         placeholder="7"
                                                                         {...form.register(`exerciseSeries.${index}.sets.${setIndex}.rpe`)}
                                                                     />
-                                                                    <span className="md:hidden absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">RPE</span>
+                                                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">RPE</span>
                                                                 </>
                                                             )}
                                                         </div>
                                                     </div>
-                                                    <div className="col-span-1 md:col-span-2">
-                                                        <div className="relative md:static">
+                                                    <div className="col-span-1">
+                                                        <div className="relative">
                                                             <Input
                                                                 type="number"
                                                                 className="h-8 text-xs text-center"
                                                                 placeholder="0"
                                                                 {...form.register(`exerciseSeries.${index}.sets.${setIndex}.reps`)}
                                                             />
-                                                            <span className="md:hidden absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">powt.</span>
+                                                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">powt.</span>
                                                         </div>
                                                     </div>
                                                 </>
                                             ) : exerciseType === 'reps' ? (
-                                                <div className="col-span-2 md:col-span-4">
+                                                <div className="col-span-2">
                                                     <Input
                                                         type="number"
                                                         className="h-8 text-xs text-center"
@@ -770,7 +770,7 @@ function ExerciseSeriesItem({
                                                     />
                                                 </div>
                                             ) : (
-                                                <div className="col-span-2 md:col-span-4">
+                                                <div className="col-span-2">
                                                     <div className="relative">
                                                         <Input
                                                             type="number"
@@ -783,7 +783,7 @@ function ExerciseSeriesItem({
                                                 </div>
                                             )}
 
-                                            <div className="col-span-2 md:col-span-3">
+                                            <div className="col-span-2">
                                                 <div className="relative">
                                                     <Input
                                                         type="number"
@@ -792,11 +792,11 @@ function ExerciseSeriesItem({
                                                         {...form.register(`exerciseSeries.${index}.sets.${setIndex}.restTimeSeconds`)}
                                                     />
                                                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
-                                                    <span className="md:hidden absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">Przerwa</span>
+                                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">Przerwa</span>
                                                 </div>
                                             </div>
 
-                                            <div className="hidden md:flex col-span-2 gap-1 justify-center">
+                                            <div className="hidden col-span-2 gap-1 justify-center">
                                                 <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleDuplicateSet(setIndex)} title="Duplikuj serię">
                                                     <Copy className="h-3 w-3" />
                                                 </Button>

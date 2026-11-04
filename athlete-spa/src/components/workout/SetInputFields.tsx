@@ -172,7 +172,7 @@ interface SetInputHeadersProps {
 export function SetInputHeaders({ exerciseType, compact = false }: SetInputHeadersProps) {
   const labelClassName = cn(
     "text-xs text-muted-foreground text-center",
-    compact && "text-[10px]"
+    compact && "text-[11px]"
   );
 
   if (exerciseType === 'weight') {

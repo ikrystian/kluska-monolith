@@ -30,7 +30,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
         transition={{ duration: 0.8, type: 'spring', stiffness: 100 }}
         className="relative mb-8"
       >
-        <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-2xl">
+        <div className="w-28 h-28 rounded-full bg-primary flex items-center justify-center">
           <Dumbbell className="w-14 h-14 text-primary-foreground" />
         </div>
         <motion.div
@@ -46,7 +46,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
           }}
           className="absolute -top-2 -right-2"
         >
-          <Sparkles className="w-8 h-8 text-yellow-400" />
+          <Sparkles className="w-8 h-8 text-food" />
         </motion.div>
       </motion.div>
 
@@ -55,7 +55,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.5 }}
-        className="text-4xl font-bold text-center mb-4 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent"
+        className="text-4xl font-bold text-center mb-4 "
       >
         Witaj w #leniwkluska!
       </motion.h1>
@@ -102,7 +102,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
         <Button
           onClick={onNext}
           size="lg"
-          className="w-full h-14 text-lg font-semibold rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg"
+          className="w-full h-14 text-lg font-semibold rounded-xl bg-primary"
         >
           Rozpocznij
         </Button>

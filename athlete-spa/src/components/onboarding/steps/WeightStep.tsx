@@ -27,10 +27,10 @@ export function WeightStep({ value, height, onChange, onNext, onPrev, canProceed
   }, [height, value]);
 
   const getBmiCategory = (bmi: number): { label: string; color: string } => {
-    if (bmi < 18.5) return { label: 'Niedowaga', color: 'text-blue-500' };
-    if (bmi < 25) return { label: 'Waga prawidłowa', color: 'text-green-500' };
-    if (bmi < 30) return { label: 'Nadwaga', color: 'text-yellow-500' };
-    return { label: 'Otyłość', color: 'text-red-500' };
+    if (bmi < 18.5) return { label: 'Niedowaga', color: 'text-run' };
+    if (bmi < 25) return { label: 'Waga prawidłowa', color: 'text-volt' };
+    if (bmi < 30) return { label: 'Nadwaga', color: 'text-food' };
+    return { label: 'Otyłość', color: 'text-destructive' };
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,8 +55,8 @@ export function WeightStep({ value, height, onChange, onNext, onPrev, canProceed
         transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
         className="mb-6"
       >
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-xl">
-          <Weight className="w-10 h-10 text-white" />
+        <div className="w-20 h-20 rounded-full bg-food flex items-center justify-center">
+          <Weight className="w-10 h-10 text-primary-foreground" />
         </div>
       </motion.div>
 
@@ -127,7 +127,7 @@ export function WeightStep({ value, height, onChange, onNext, onPrev, canProceed
                 r="50"
                 fill="none"
                 strokeWidth="10"
-                className="stroke-amber-500"
+                className="stroke-food"
                 strokeLinecap="round"
                 initial={{ pathLength: 0 }}
                 animate={{ pathLength: Math.min((weight - 30) / 170, 1) }}
@@ -141,7 +141,7 @@ export function WeightStep({ value, height, onChange, onNext, onPrev, canProceed
             {/* Center content */}
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <motion.div
-                className="text-3xl font-bold text-amber-500"
+                className="text-3xl font-bold text-food"
                 key={weight}
                 initial={{ scale: 1.1 }}
                 animate={{ scale: 1 }}
@@ -203,7 +203,7 @@ export function WeightStep({ value, height, onChange, onNext, onPrev, canProceed
         <Button
           onClick={onNext}
           disabled={!canProceed}
-          className="flex-1 h-12 rounded-xl bg-gradient-to-r from-primary to-primary/80"
+          className="flex-1 h-12 rounded-xl bg-primary"
         >
           Dalej
           <ArrowRight className="w-4 h-4 ml-2" />

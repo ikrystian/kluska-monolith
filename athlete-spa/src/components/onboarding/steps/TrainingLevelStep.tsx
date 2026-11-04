@@ -27,24 +27,24 @@ const levelOptions: {
     label: 'Początkujący',
     description: 'Dopiero zaczynam swoją przygodę z siłownią lub ćwiczę od niedawna',
     icon: Sprout,
-    color: 'from-green-500 to-emerald-600',
-    bgColor: 'bg-green-500/10',
+    color: 'bg-volt',
+    bgColor: 'bg-volt/10',
   },
   {
     value: 'intermediate',
     label: 'Średniozaawansowany',
     description: 'Regularnie ćwiczę od kilku miesięcy, znam podstawowe techniki',
     icon: Dumbbell,
-    color: 'from-blue-500 to-indigo-600',
-    bgColor: 'bg-blue-500/10',
+    color: 'bg-run',
+    bgColor: 'bg-run/10',
   },
   {
     value: 'advanced',
     label: 'Zaawansowany',
     description: 'Trenuję od lat, mam doświadczenie w różnych metodach treningowych',
     icon: Trophy,
-    color: 'from-amber-500 to-orange-600',
-    bgColor: 'bg-amber-500/10',
+    color: 'bg-food',
+    bgColor: 'bg-food/10',
   },
 ];
 
@@ -81,14 +81,14 @@ export function TrainingLevelStep({
               className={cn(
                 'w-14 h-14 rounded-full flex items-center justify-center',
                 value === option.value
-                  ? `bg-gradient-to-br ${option.color} shadow-lg`
+                  ? `${option.color}`
                   : 'bg-secondary'
               )}
             >
               <Icon
                 className={cn(
                   'w-7 h-7',
-                  value === option.value ? 'text-white' : 'text-muted-foreground'
+                  value === option.value ? 'text-primary-foreground' : 'text-muted-foreground'
                 )}
               />
             </motion.div>
@@ -136,7 +136,7 @@ export function TrainingLevelStep({
               className={cn(
                 'w-full p-4 rounded-xl border-2 flex items-start gap-4 transition-all duration-300 text-left',
                 isSelected
-                  ? `border-primary ${option.bgColor} shadow-md`
+                  ? `border-primary ${option.bgColor}`
                   : 'border-secondary hover:border-primary/50 hover:bg-secondary/50'
               )}
             >
@@ -144,14 +144,14 @@ export function TrainingLevelStep({
                 className={cn(
                   'w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-all duration-300',
                   isSelected
-                    ? `bg-gradient-to-br ${option.color}`
+                    ? `${option.color}`
                     : 'bg-secondary'
                 )}
               >
                 <Icon
                   className={cn(
                     'w-6 h-6',
-                    isSelected ? 'text-white' : 'text-muted-foreground'
+                    isSelected ? 'text-primary-foreground' : 'text-muted-foreground'
                   )}
                 />
               </div>
@@ -159,7 +159,7 @@ export function TrainingLevelStep({
                 <span className="text-lg font-semibold block">
                   {option.label}
                   {option.value === 'beginner' && (
-                    <span className="ml-2 align-middle rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+                    <span className="ml-2 align-middle rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
                       Najczęstszy wybór
                     </span>
                   )}
@@ -210,7 +210,7 @@ export function TrainingLevelStep({
         <Button
           onClick={onNext}
           disabled={!canProceed}
-          className="flex-1 h-12 rounded-xl bg-gradient-to-r from-primary to-primary/80"
+          className="flex-1 h-12 rounded-xl bg-primary"
         >
           Dalej
           <ArrowRight className="w-4 h-4 ml-2" />

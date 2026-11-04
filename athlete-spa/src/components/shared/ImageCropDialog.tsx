@@ -137,7 +137,7 @@ export function ImageCropDialog({
   return (
     <Dialog open={!!file} onOpenChange={open => { if (!open && !isProcessing) onCancel(); }}>
       {/* No autofocus: it would land on "Anuluj", so a stray Enter would drop the photo. */}
-      <DialogContent className="sm:max-w-md" onOpenAutoFocus={e => e.preventDefault()}>
+      <DialogContent  onOpenAutoFocus={e => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="font-headline">{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>

@@ -217,7 +217,7 @@ export function RouteMap({ polyline: encodedPolyline, segments, className = '' }
                                 <Marker key={segment.km} longitude={lng} latitude={lat} anchor="center">
                                     <div
                                         title={`Km ${segment.km} · ${formatPaceSec(segment.paceSecPerKm)}/km`}
-                                        className="grid h-5 w-5 place-items-center rounded-full bg-white text-[10px] font-bold leading-none text-neutral-900 shadow"
+                                        className="grid h-5 w-5 place-items-center rounded-full bg-white text-[11px] font-bold leading-none text-neutral-900 shadow"
                                         style={{ border: `2px solid ${segment.color}` }}
                                     >
                                         {segment.km}
@@ -227,7 +227,7 @@ export function RouteMap({ polyline: encodedPolyline, segments, className = '' }
                         })}
 
                     <Marker longitude={route.coords[0][0]} latitude={route.coords[0][1]} anchor="center">
-                        <div className="h-3 w-3 rounded-full border-2 border-white bg-green-500 shadow" />
+                        <div className="h-3 w-3 rounded-full border-2 border-white bg-volt shadow" />
                     </Marker>
 
                     {progress >= 1 && (
@@ -236,7 +236,7 @@ export function RouteMap({ polyline: encodedPolyline, segments, className = '' }
                             latitude={route.coords[route.coords.length - 1][1]}
                             anchor="center"
                         >
-                            <div className="h-3 w-3 rounded-full border-2 border-white bg-red-500 shadow" />
+                            <div className="h-3 w-3 rounded-full border-2 border-white bg-destructive shadow" />
                         </Marker>
                     )}
 
@@ -255,7 +255,7 @@ export function RouteMap({ polyline: encodedPolyline, segments, className = '' }
                     <button
                         type="button"
                         onClick={() => setPlays(n => n + 1)}
-                        className="absolute left-3 top-3 z-10 inline-flex h-9 items-center gap-1.5 rounded-full bg-background/90 px-3 text-xs font-semibold shadow-lifted backdrop-blur transition-transform active:scale-95"
+                        className="absolute left-3 top-3 z-10 inline-flex h-9 items-center gap-1.5 rounded-full bg-background/90 px-3 text-xs font-semibold backdrop-blur transition-transform active:scale-95"
                     >
                         <RotateCcw className="h-3.5 w-3.5" /> Odtwórz trasę
                     </button>

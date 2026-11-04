@@ -193,7 +193,7 @@ export function SessionDetailsDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent >
                 <DialogHeader>
                     <div className="flex items-center gap-2">
                         <DialogTitle>{isEditing ? 'Edytuj sesję' : session.title}</DialogTitle>
@@ -313,7 +313,7 @@ export function SessionDetailsDialog({
                     )}
                 </div>
 
-                <DialogFooter className="flex-col sm:flex-row gap-2">
+                <DialogFooter className="flex-col gap-2">
                     {isEditing ? (
                         <>
                             <Button variant="outline" onClick={handleCancelEdit} disabled={isLoading}>

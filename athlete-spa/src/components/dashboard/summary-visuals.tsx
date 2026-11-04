@@ -143,16 +143,16 @@ export function EquatorCard({ km, isLoading }: { km: number; isLoading: boolean 
       : `${fmtSmart(fraction * 100)}% długości równika`;
 
   return (
-    <div className="flex items-center gap-4 rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-soft">
+    <div className="flex items-center gap-4 rounded-2xl bg-card p-4">
       <EquatorGlobe fraction={fraction} />
       <div className="min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Dookoła świata</p>
+        <p className="text-xs font-semibold text-muted-foreground">Dookoła świata</p>
         {isLoading ? (
           <Skeleton className="mt-2 h-7 w-40" />
         ) : (
           <p className="mt-1.5 font-headline text-xl font-bold leading-tight tracking-tight">{headline}</p>
         )}
-        <p className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+        <p className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
           <Globe2 className="h-3 w-3" />
           {fraction >= 1
             ? `${fmtNumber(km, 0)} km przy ${fmtNumber(EQUATOR_KM)} km obwodu`
@@ -213,8 +213,8 @@ export function TankCard({ tons, isLoading }: { tons: number; isLoading: boolean
   const overflow = full - MAX_TANK_ICONS;
 
   return (
-    <div className="rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-soft">
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Ciężka artyleria</p>
+    <div className="rounded-2xl bg-card p-4">
+      <p className="text-xs font-semibold text-muted-foreground">Ciężka artyleria</p>
       {isLoading ? (
         <Skeleton className="mt-2 h-7 w-40" />
       ) : (
@@ -228,10 +228,10 @@ export function TankCard({ tons, isLoading }: { tons: number; isLoading: boolean
           <TankIcon key={i} fill={f} />
         ))}
         {overflow > 0 && (
-          <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-bold tabular-nums">+{fmtNumber(overflow)}</span>
+          <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-bold tabular-nums">+{fmtNumber(overflow)}</span>
         )}
       </div>
-      <p className="mt-2 text-[11px] text-muted-foreground">
+      <p className="mt-2 text-xs text-muted-foreground">
         {fmtNumber(tons, 1)} t podniesione · 1 T-55 waży ok. {T55_TONS} t
       </p>
     </div>
@@ -257,10 +257,10 @@ export function TimeSplit({
   ].filter(p => p.minutes > 0);
 
   return (
-    <div className="rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-soft">
+    <div className="rounded-2xl bg-card p-4">
       <div className="flex items-baseline justify-between gap-2">
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Czas aktywności</p>
-        <p className="font-headline text-lg font-bold tabular-nums">{formatMinutes(total)}</p>
+        <p className="text-xs font-semibold text-muted-foreground">Czas aktywności</p>
+        <p className="font-display text-2xl font-bold tabular-nums">{formatMinutes(total)}</p>
       </div>
       <div className="mt-3 flex h-3 gap-0.5 overflow-hidden rounded-full">
         {parts.map(p => (
@@ -360,7 +360,7 @@ function TrendTooltip({ active, payload, metric }: { active?: boolean; payload?:
   if (!active || !bucket) return null;
   const m = METRICS[metric];
   return (
-    <div className="rounded-xl border border-border/60 bg-background px-3 py-2 text-xs shadow-lifted">
+    <div className="rounded-xl border border-border/60 bg-background px-3 py-2 text-xs">
       <p className="font-semibold capitalize">{bucket.full}</p>
       <p className="mt-1 flex items-center gap-1.5">
         <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: m.color }} />
@@ -413,10 +413,10 @@ export function ActivityTrend({
   const hasData = buckets.some(b => b[metric] > 0);
 
   return (
-    <div className="rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-soft">
+    <div className="rounded-2xl bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Aktywność w czasie</p>
+          <p className="text-xs font-semibold text-muted-foreground">Aktywność w czasie</p>
           <p className="text-xs text-muted-foreground">{m.label} na {GRANULARITY[granularity].noun}</p>
         </div>
         <div className="flex rounded-full bg-muted p-1" role="tablist" aria-label="Miara na wykresie">
@@ -429,7 +429,7 @@ export function ActivityTrend({
               onClick={() => setMetric(id)}
               className={cn(
                 'rounded-full px-3 py-1 text-xs font-semibold text-muted-foreground transition-all active:scale-[0.96]',
-                metric === id && 'bg-background text-foreground shadow-soft'
+                metric === id && 'bg-background text-foreground'
               )}
             >
               {METRICS[id].label}

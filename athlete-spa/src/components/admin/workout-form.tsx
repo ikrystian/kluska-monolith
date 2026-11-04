@@ -119,7 +119,7 @@ export function WorkoutForm({ initialData, onSubmit, isLoading }: WorkoutFormPro
                     <CardHeader>
                         <CardTitle>Szczegóły Treningu</CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-4 sm:grid-cols-2">
+                    <CardContent className="grid gap-4">
                         <FormField
                             control={form.control}
                             name="name"
@@ -168,7 +168,7 @@ export function WorkoutForm({ initialData, onSubmit, isLoading }: WorkoutFormPro
                             control={form.control}
                             name="description"
                             render={({ field }) => (
-                                <FormItem className="sm:col-span-2">
+                                <FormItem >
                                     <FormLabel>Opis (opcjonalny)</FormLabel>
                                     <FormControl><Textarea {...field} disabled={isLoading} /></FormControl>
                                     <FormMessage />
@@ -226,7 +226,7 @@ function ExerciseSeriesItem({ index, form, removeSeries, exercises, openCombobox
                 </Button>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4">
                     <FormField
                         control={form.control}
                         name={`exerciseSeries.${index}.exerciseId`}
@@ -302,7 +302,7 @@ function ExerciseSeriesItem({ index, form, removeSeries, exercises, openCombobox
                         control={form.control}
                         name={`exerciseSeries.${index}.tip`}
                         render={({ field }) => (
-                            <FormItem className="sm:col-span-2">
+                            <FormItem >
                                 <FormLabel>Wskazówka (opcjonalna)</FormLabel>
                                 <FormControl><Input {...field} disabled={isLoading} /></FormControl>
                                 <FormMessage />
@@ -323,7 +323,7 @@ function ExerciseSeriesItem({ index, form, removeSeries, exercises, openCombobox
                     <div className="space-y-2">
                         {setFields.map((setField: any, setIndex: number) => (
                             <div key={setField.id} className="grid grid-cols-12 gap-2 items-end">
-                                <div className="col-span-3 sm:col-span-3">
+                                <div className="col-span-3">
                                     <FormField
                                         control={form.control}
                                         name={`exerciseSeries.${index}.sets.${setIndex}.type`}
@@ -346,7 +346,7 @@ function ExerciseSeriesItem({ index, form, removeSeries, exercises, openCombobox
                                         )}
                                     />
                                 </div>
-                                <div className="col-span-2 sm:col-span-2">
+                                <div className="col-span-2">
                                     <FormField
                                         control={form.control}
                                         name={`exerciseSeries.${index}.sets.${setIndex}.reps`}
@@ -358,7 +358,7 @@ function ExerciseSeriesItem({ index, form, removeSeries, exercises, openCombobox
                                         )}
                                     />
                                 </div>
-                                <div className="col-span-2 sm:col-span-2">
+                                <div className="col-span-2">
                                     <FormField
                                         control={form.control}
                                         name={`exerciseSeries.${index}.sets.${setIndex}.weight`}
@@ -370,7 +370,7 @@ function ExerciseSeriesItem({ index, form, removeSeries, exercises, openCombobox
                                         )}
                                     />
                                 </div>
-                                <div className="col-span-3 sm:col-span-3">
+                                <div className="col-span-3">
                                     <FormField
                                         control={form.control}
                                         name={`exerciseSeries.${index}.sets.${setIndex}.restTimeSeconds`}
@@ -382,7 +382,7 @@ function ExerciseSeriesItem({ index, form, removeSeries, exercises, openCombobox
                                         )}
                                     />
                                 </div>
-                                <div className="col-span-2 sm:col-span-2 flex justify-end">
+                                <div className="col-span-2 flex justify-end">
                                     <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => removeSet(setIndex)} disabled={isLoading}>
                                         <Trash2 className="h-3 w-3 text-destructive" />
                                     </Button>

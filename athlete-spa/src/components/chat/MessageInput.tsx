@@ -33,7 +33,7 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
                 <Button
                     type="submit"
                     size="icon"
-                    className="h-11 w-11 shrink-0 rounded-full shadow-glow"
+                    className="h-11 w-11 shrink-0 rounded-full"
                     disabled={!message.trim() || isLoading}
                 >
                     <Send className="h-4 w-4" />

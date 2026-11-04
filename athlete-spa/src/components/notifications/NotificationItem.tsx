@@ -2,7 +2,7 @@
 
 import { Notification } from '@/lib/hooks/useNotifications';
 import { cn } from '@/lib/utils';
-import { Info, CheckCircle, AlertTriangle, XCircle, ExternalLink } from 'lucide-react';
+import { Info, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -22,10 +22,10 @@ export function NotificationItem({ notification, onRead, onClick }: Notification
     }[notification.type];
 
     const iconColor = {
-        info: 'text-blue-500',
-        success: 'text-green-500',
-        warning: 'text-yellow-500',
-        error: 'text-red-500',
+        info: 'text-run',
+        success: 'text-volt',
+        warning: 'text-food',
+        error: 'text-destructive',
     }[notification.type];
 
     const handleClick = () => {
@@ -36,31 +36,20 @@ export function NotificationItem({ notification, onRead, onClick }: Notification
     };
 
     const content = (
-        <div className={cn(
-            "flex gap-3 p-3 transition-colors hover:bg-muted/50 cursor-pointer",
-            !notification.isRead && "bg-muted/30"
-        )}>
-            <div className={cn("mt-1", iconColor)}>
-                <Icon className="h-5 w-5" />
-            </div>
-            <div className="flex-1 space-y-1">
-                <div className="flex justify-between gap-2">
-                    <p className={cn("text-sm font-medium leading-none", !notification.isRead && "font-semibold")}>
+        <div className="row-tap flex gap-3 px-5 py-3">
+            <Icon className={cn('mt-0.5 h-5 w-5 shrink-0', iconColor)} />
+            <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-2">
+                    <p className={cn('truncate text-[15px]', notification.isRead ? 'font-medium' : 'font-semibold')}>
                         {notification.title}
                     </p>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    <span className="shrink-0 text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true, locale: pl })}
                     </span>
                 </div>
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                    {notification.message}
-                </p>
+                <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{notification.message}</p>
             </div>
-            {!notification.isRead && (
-                <div className="flex items-center justify-center">
-                    <div className="h-2 w-2 rounded-full bg-blue-500" />
-                </div>
-            )}
+            {!notification.isRead && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />}
         </div>
     );
 
@@ -72,9 +61,5 @@ export function NotificationItem({ notification, onRead, onClick }: Notification
         );
     }
 
-    return (
-        <div onClick={handleClick}>
-            {content}
-        </div>
-    );
+    return <div onClick={handleClick}>{content}</div>;
 }

@@ -44,7 +44,7 @@ export function ConversationList({
     return (
         <aside className={cn(
             "flex flex-col border-r border-border/60 h-full bg-card",
-            selectedId && "hidden md:flex"
+            selectedId && "hidden"
         )}>
             {header && <header className="p-4 border-b border-border/60">{header}</header>}
             <ScrollArea className="flex-1">

@@ -38,7 +38,7 @@ export function ExerciseCardGrid({
     <motion.div
       whileTap={{ scale: 0.97 }}
       transition={{ duration: 0.1 }}
-      className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border bg-card transition-[box-shadow,border-color] hover:border-primary/40 hover:shadow-lg"
+      className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border bg-card transition-[box-shadow,border-color] hover:border-primary/40"
       onClick={() => onClick?.(exercise)}
     >
       {/* Media */}
@@ -48,7 +48,7 @@ export function ExerciseCardGrid({
         </div>
 
         {typeMeta && (
-          <span className="glass absolute left-2 top-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium">
+          <span className="bg-card absolute left-2 top-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium">
             <typeMeta.icon className="h-2.5 w-2.5" />
             {typeMeta.short}
           </span>
@@ -59,7 +59,7 @@ export function ExerciseCardGrid({
             <FavoriteButton
               active={isFavorite}
               onToggle={() => onToggleFavorite(exercise)}
-              className="glass h-7 w-7 hover:bg-background/80"
+              className="bg-card h-7 w-7 hover:bg-background/80"
               iconClassName="h-3.5 w-3.5"
             />
           )}
@@ -71,12 +71,12 @@ export function ExerciseCardGrid({
             onEdit={onEdit}
             onDelete={onDelete}
             onShowProgress={onShowProgress}
-            triggerClassName="glass h-7 w-7 hover:bg-background/80"
+            triggerClassName="bg-card h-7 w-7 hover:bg-background/80"
           />
         </div>
 
         {ownerLabel && (
-          <span className="absolute bottom-2 left-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">
+          <span className="absolute bottom-2 left-2 rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
             {ownerLabel}
           </span>
         )}

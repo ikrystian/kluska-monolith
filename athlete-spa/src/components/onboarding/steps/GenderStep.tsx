@@ -34,9 +34,9 @@ const VenusIcon = ({ className }: { className?: string }) => (
 );
 
 const genderOptions: { value: Gender; label: string; icon: React.FC<{ className?: string }>; color: string }[] = [
-  { value: 'male', label: 'Mężczyzna', icon: MarsIcon, color: 'from-blue-500 to-blue-600' },
-  { value: 'female', label: 'Kobieta', icon: VenusIcon, color: 'from-pink-500 to-pink-600' },
-  { value: 'other', label: 'Inna', icon: CircleDashed, color: 'from-purple-500 to-purple-600' },
+  { value: 'male', label: 'Mężczyzna', icon: MarsIcon, color: 'bg-run' },
+  { value: 'female', label: 'Kobieta', icon: VenusIcon, color: 'bg-social' },
+  { value: 'other', label: 'Inna', icon: CircleDashed, color: 'bg-social' },
 ];
 
 export function GenderStep({ value, onChange, onNext, onPrev, canProceed }: GenderStepProps) {
@@ -64,13 +64,13 @@ export function GenderStep({ value, onChange, onNext, onPrev, canProceed }: Gend
             className={cn(
               'w-16 h-16 rounded-full flex items-center justify-center',
               value === option.value
-                ? `bg-gradient-to-br ${option.color} shadow-lg`
+                ? `${option.color}`
                 : 'bg-secondary'
             )}
           >
             <option.icon className={cn(
               'w-8 h-8',
-              value === option.value ? 'text-white' : 'text-muted-foreground'
+              value === option.value ? 'text-primary-foreground' : 'text-muted-foreground'
             )} />
           </motion.div>
         ))}
@@ -112,7 +112,7 @@ export function GenderStep({ value, onChange, onNext, onPrev, canProceed }: Gend
             className={cn(
               'w-full p-4 rounded-xl border-2 flex items-center gap-4 transition-all duration-300',
               value === option.value
-                ? `border-primary bg-primary/10 shadow-md`
+                ? `border-primary bg-primary/10`
                 : 'border-secondary hover:border-primary/50 hover:bg-secondary/50'
             )}
           >
@@ -120,13 +120,13 @@ export function GenderStep({ value, onChange, onNext, onPrev, canProceed }: Gend
               className={cn(
                 'w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300',
                 value === option.value
-                  ? `bg-gradient-to-br ${option.color}`
+                  ? `${option.color}`
                   : 'bg-secondary'
               )}
             >
               <option.icon className={cn(
                 'w-7 h-7',
-                value === option.value ? 'text-white' : 'text-muted-foreground'
+                value === option.value ? 'text-primary-foreground' : 'text-muted-foreground'
               )} />
             </div>
             <span className="text-lg font-medium">{option.label}</span>
@@ -173,7 +173,7 @@ export function GenderStep({ value, onChange, onNext, onPrev, canProceed }: Gend
         <Button
           onClick={onNext}
           disabled={!canProceed}
-          className="flex-1 h-12 rounded-xl bg-gradient-to-r from-primary to-primary/80"
+          className="flex-1 h-12 rounded-xl bg-primary"
         >
           Dalej
           <ArrowRight className="w-4 h-4 ml-2" />

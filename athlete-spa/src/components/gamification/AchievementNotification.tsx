@@ -23,15 +23,15 @@ interface AchievementNotificationProps {
 function getRarityGradient(rarity: string) {
   switch (rarity) {
     case 'common':
-      return 'from-gray-500 to-gray-600';
+      return 'bg-secondary';
     case 'rare':
-      return 'from-blue-500 to-blue-600';
+      return 'bg-run';
     case 'epic':
-      return 'from-purple-500 to-purple-600';
+      return 'bg-social';
     case 'legendary':
-      return 'from-yellow-500 via-orange-500 to-red-500';
+      return 'bg-food';
     default:
-      return 'from-gray-500 to-gray-600';
+      return 'bg-secondary';
   }
 }
 
@@ -59,8 +59,8 @@ export function AchievementNotification({ achievement, onClose }: AchievementNot
         isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'
       }`}
     >
-      <Card className={`w-80 overflow-hidden border-2 border-primary/50 shadow-xl`}>
-        <div className={`h-2 bg-gradient-to-r ${getRarityGradient(achievement.rarity)}`} />
+      <Card className={`w-80 overflow-hidden border-2 border-primary/50`}>
+        <div className={`h-2 ${getRarityGradient(achievement.rarity)}`} />
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
             <div className="p-2 bg-primary/20 rounded-full animate-pulse">
@@ -68,8 +68,8 @@ export function AchievementNotification({ achievement, onClose }: AchievementNot
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <Sparkles className="h-4 w-4 text-yellow-500" />
-                <span className="text-sm font-medium text-yellow-600">
+                <Sparkles className="h-4 w-4 text-food" />
+                <span className="text-sm font-medium text-food">
                   Nowe Osiągnięcie!
                 </span>
               </div>
@@ -78,7 +78,7 @@ export function AchievementNotification({ achievement, onClose }: AchievementNot
                 {achievement.description}
               </p>
               {achievement.pointsAwarded > 0 && (
-                <p className="text-sm font-medium text-green-600 mt-1">
+                <p className="text-sm font-medium text-volt mt-1">
                   +{achievement.pointsAwarded} punktów
                 </p>
               )}

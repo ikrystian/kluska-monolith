@@ -138,10 +138,10 @@ export default function ManageArticlesPage() {
   }
 
   return (
-    <div className="container mx-auto p-4 md:p-8">
+    <div className="page">
       <div className="mb-6 flex items-center gap-3">
         <BookOpen className="h-8 w-8 text-primary" />
-        <h1 className="font-headline text-3xl font-bold">Strefa Wiedzy</h1>
+        <h2 className="text-lg font-bold">Strefa wiedzy</h2>
       </div>
       <Card>
         <CardHeader className="flex-row items-center justify-between">
@@ -208,7 +208,7 @@ export default function ManageArticlesPage() {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent >
           <DialogHeader>
             <DialogTitle className="font-headline">{editingArticle ? 'Edytuj Artykuł' : 'Napisz Nowy Artykuł'}</DialogTitle>
           </DialogHeader>

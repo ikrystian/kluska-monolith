@@ -188,7 +188,7 @@ export function AvatarUploadDialog({
 
     return (
         <Dialog open={open} onOpenChange={handleClose}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent >
                 <DialogHeader>
                     <DialogTitle className="font-headline">Zmień zdjęcie profilowe</DialogTitle>
                     <DialogDescription>

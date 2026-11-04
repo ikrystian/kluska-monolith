@@ -80,7 +80,7 @@ export function RestTimerSlide({
           {/* Timer Header */}
           <div className="flex items-center justify-center gap-2">
             <Timer className="h-4 w-4 text-primary" />
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <span className="text-xs font-medium text-muted-foreground">
               Przerwa
             </span>
           </div>
@@ -107,7 +107,7 @@ export function RestTimerSlide({
                 strokeLinecap="round"
                 className={cn(
                   'transition-all duration-1000 ease-linear',
-                  isComplete ? 'text-green-500' : 'text-primary'
+                  isComplete ? 'text-volt' : 'text-primary'
                 )}
                 style={{
                   strokeDasharray: 2 * Math.PI * 80,
@@ -116,7 +116,7 @@ export function RestTimerSlide({
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-4xl font-bold font-mono tabular-nums">
+              <span className="font-display text-6xl font-bold tabular-nums">
                 {formatTime(timeRemaining)}
               </span>
               <span className="text-xs text-muted-foreground mt-1">
@@ -167,7 +167,7 @@ export function RestTimerSlide({
             </div>
             {nextSetInfo ? (
               <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {nextSetInfo.isNewExercise ? 'Następne ćwiczenie' : 'Następna seria'}
                 </p>
                 <p className="line-clamp-2 font-semibold text-sm">
@@ -176,8 +176,8 @@ export function RestTimerSlide({
               </div>
             ) : (
               <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Ostatnia seria!</p>
-                <p className="font-semibold text-sm text-green-600">🎉 Koniec treningu</p>
+                <p className="text-xs text-muted-foreground">Ostatnia seria!</p>
+                <p className="text-sm font-semibold text-volt">Koniec treningu</p>
               </div>
             )}
           </div>

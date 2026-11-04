@@ -203,7 +203,7 @@ export function ExerciseFormDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-headline">
             {isEditMode ? 'Edytuj Ćwiczenie' : 'Dodaj Nowe Ćwiczenie'}

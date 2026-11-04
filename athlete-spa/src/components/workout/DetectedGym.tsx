@@ -26,7 +26,7 @@ export function DetectedGym({ status, match, onDismiss }: DetectedGymProps) {
         <MapPin className="h-4 w-4" />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Miejsce treningu</p>
+        <p className="text-xs font-semibold text-muted-foreground">Miejsce treningu</p>
         <p className="truncate text-sm font-bold">{match.gym.name}</p>
       </div>
       <button

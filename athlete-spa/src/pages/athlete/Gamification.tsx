@@ -55,17 +55,8 @@ export default function GamificationPage() {
   };
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="page space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Trophy className="h-8 w-8 text-yellow-500" />
-            Gamifikacja
-          </h1>
-          <p className="text-muted-foreground">
-            Zdobywaj punkty, odblokowuj osiągnięcia i wymieniaj nagrody
-          </p>
-        </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleCheckin}>
             <Target className="h-4 w-4 mr-2" />
@@ -102,7 +93,7 @@ export default function GamificationPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Dostępne Nagrody</h2>
             <p className="text-muted-foreground">
-              Twoje FitCoins: <span className="font-bold text-yellow-600">{stats?.currentFitCoins || 0}</span>
+              Twoje FitCoins: <span className="font-bold text-food">{stats?.currentFitCoins || 0}</span>
             </p>
           </div>
           <RewardsGrid
@@ -128,7 +119,7 @@ export default function GamificationPage() {
 
         <TabsContent value="leaderboard" className="space-y-4">
           <h2 className="text-xl font-semibold">Ranking Globalny</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6">
             <LeaderboardCard
               leaderboard={leaderboard}
               isLoading={leaderboardLoading}

@@ -56,16 +56,16 @@ export function ExerciseCard({
 
   const getOwnerBadge = (ownerId: string | undefined) => {
     if (ownerId === 'public' || !ownerId) {
-      return <Badge variant="secondary" className="text-[10px]">Publiczne</Badge>;
+      return <Badge variant="secondary" className="text-[11px]">Publiczne</Badge>;
     }
     if (ownerId === userId) {
-      return <Badge variant="outline" className="text-[10px]">Własne</Badge>;
+      return <Badge variant="outline" className="text-[11px]">Własne</Badge>;
     }
-    return <Badge variant="outline" className="text-[10px]">Użytkownika</Badge>;
+    return <Badge variant="outline" className="text-[11px]">Użytkownika</Badge>;
   };
 
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-lg flex flex-col">
+    <Card className="overflow-hidden transition-all flex flex-col">
       <div className="relative h-48 w-full bg-muted flex items-center justify-center group">
         {(exercise.mediaUrl || exercise.image) ? (
           isVideoUrl(resolveMediaUrl(exercise.mediaUrl || exercise.image)) ? (
@@ -115,14 +115,14 @@ export function ExerciseCard({
         </div>
         <div className="flex flex-wrap gap-1 pt-1">
           {exercise.mainMuscleGroups?.map((mg, idx) => (
-            <Badge key={idx} variant="secondary" className="text-[10px]">{mg.name}</Badge>
+            <Badge key={idx} variant="secondary" className="text-[11px]">{mg.name}</Badge>
           ))}
           {!exercise.mainMuscleGroups?.length && exercise.muscleGroup && (
-            <Badge variant="secondary" className="text-[10px]">{exercise.muscleGroup}</Badge>
+            <Badge variant="secondary" className="text-[11px]">{exercise.muscleGroup}</Badge>
           )}
           {/* Exercise type badge */}
           {exercise.type && (
-            <Badge variant="outline" className="text-[10px] gap-1">
+            <Badge variant="outline" className="text-[11px] gap-1">
               {exercise.type === 'weight' && <Dumbbell className="h-2.5 w-2.5" />}
               {exercise.type === 'reps' && <Repeat className="h-2.5 w-2.5" />}
               {exercise.type === 'duration' && <Timer className="h-2.5 w-2.5" />}
@@ -130,7 +130,7 @@ export function ExerciseCard({
             </Badge>
           )}
           {showOwnerBadge && getOwnerBadge(exercise.ownerId)}
-          {!showOwnerBadge && isOwner && <Badge variant="outline" className="text-[10px]">Własne</Badge>}
+          {!showOwnerBadge && isOwner && <Badge variant="outline" className="text-[11px]">Własne</Badge>}
         </div>
       </CardHeader>
       <CardContent className="flex-grow">
