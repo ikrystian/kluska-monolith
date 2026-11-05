@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { QuickAddSheet } from '@/components/quick-add-sheet';
 import { useUserProfile } from '@/contexts/UserProfileContext';
+import { keepsChromeVisible } from '@/lib/athlete-nav';
 import { resolveMediaUrl } from '@/lib/api-client';
 import { haptic } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
@@ -47,12 +48,17 @@ export function BottomNav() {
   }
 
   const youActive = pathname === '/athlete/you' || pathname === '/athlete/profile';
+  // Slides away with the header on scroll (same chrome state, same pinned screens).
+  const keepNavVisible = keepsChromeVisible(pathname);
 
   return (
     <>
       <nav
         id="bottom-nav"
-        className="app-column fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl"
+        className={cn(
+          'app-column fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl transition-transform duration-300 ease-out',
+          !keepNavVisible && 'group-data-[chrome=hidden]/chrome:translate-y-full'
+        )}
       >
         <div className="grid h-[var(--tabbar-h)] grid-cols-5">
           <TabLink href="/athlete/dashboard" label="Dziś" icon={House} isActive={pathname === '/athlete/dashboard'} />

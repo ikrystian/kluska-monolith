@@ -245,6 +245,11 @@ export function isRootPath(pathname: string): boolean {
   return ROOT_PATHS.includes(pathname);
 }
 
+/** Screens where the header and bottom nav stay pinned while scrolling (infinite exercise list). */
+export function keepsChromeVisible(pathname: string): boolean {
+  return /^\/athlete\/exercises/.test(pathname);
+}
+
 /** Titles for screens that aren't nav destinations (details, editors, profile). */
 const EXTRA_TITLES: { match: RegExp; title: string }[] = [
   { match: /^\/athlete\/profile$/, title: 'Profil i ustawienia' },

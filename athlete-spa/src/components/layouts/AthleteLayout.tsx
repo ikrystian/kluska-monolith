@@ -67,7 +67,7 @@ function AthleteLayoutContent() {
   const { mutate } = useSWRConfig();
   const refreshAll = useCallback(() => mutate(() => true), [mutate]);
   const { indicatorRef } = usePullToRefresh(scrollRef, refreshAll, !isActiveWorkoutSession);
-  // The header tucks away while reading down, returns on scroll up; the tab bar stays put.
+  // The header and tab bar tuck away while reading down, and return on scroll up.
   const [chromeRoot, setChromeRoot] = useState<HTMLElement | null>(null);
   const chromeHidden = useHideOnScroll(chromeRoot, location.pathname + location.search, !isActiveWorkoutSession);
 

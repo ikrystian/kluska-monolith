@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { NotificationBell } from './notifications/NotificationBell';
 import { QuickChatWidget } from './chat/QuickChatWidget';
-import { getScreenTitle, isRootPath } from '@/lib/athlete-nav';
+import { getScreenTitle, isRootPath, keepsChromeVisible } from '@/lib/athlete-nav';
 import { haptic } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
 
@@ -21,7 +21,7 @@ export function AppHeader() {
 
   // On the exercise library, keep the header pinned while scrolling (infinite
   // list) — other screens tuck it away to reclaim reading space.
-  const keepHeaderVisible = /^\/athlete\/exercises/.test(pathname);
+  const keepHeaderVisible = keepsChromeVisible(pathname);
 
   const goBack = () => {
     haptic('tap');
