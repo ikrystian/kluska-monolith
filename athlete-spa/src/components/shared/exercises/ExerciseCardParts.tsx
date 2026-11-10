@@ -2,6 +2,7 @@
 
 import { Exercise } from '@/lib/types';
 import { resolveMediaUrl } from '@/lib/api-client';
+import { isOfflineVideoUrl } from '@/lib/offline-media';
 import { cn } from '@/lib/utils';
 import { copyToClipboard } from '@/lib/clipboard';
 import { useToast } from '@/hooks/use-toast';
@@ -28,6 +29,7 @@ import {
 
 export function isVideoUrl(url: string | undefined) {
   if (!url) return false;
+  if (isOfflineVideoUrl(url)) return true;
   return url.includes('youtube.com') || url.includes('youtu.be') || url.includes('.mp4') || url.includes('.webm');
 }
 

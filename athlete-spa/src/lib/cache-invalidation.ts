@@ -79,10 +79,13 @@ export function staleKeyMatcher(path: string): KeyMatcher | null {
 }
 
 export function invalidateAfterMutation(path: string): void {
-  if (!binding) return;
   const matcher = staleKeyMatcher(path);
-  if (!matcher) return;
+  if (matcher) invalidateMatching(matcher);
+}
 
+/** Drops unseen cached reads matching `matcher` and revalidates the visible ones. */
+export function invalidateMatching(matcher: KeyMatcher): void {
+  if (!binding) return;
   const { mutate, cache } = binding;
   const keys = Array.from(cache.keys()).filter(matcher);
   const inactive = keys.filter((key) => !activeKeys.has(key));

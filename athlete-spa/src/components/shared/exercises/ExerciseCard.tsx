@@ -2,6 +2,7 @@
 
 import { Exercise } from '@/lib/types';
 import { resolveMediaUrl } from '@/lib/api-client';
+import { isOfflineVideoUrl } from '@/lib/offline-media';
 import {
   Card,
   CardContent,
@@ -51,6 +52,7 @@ export function ExerciseCard({
 
   const isVideoUrl = (url: string | undefined) => {
     if (!url) return false;
+    if (isOfflineVideoUrl(url)) return true;
     return url.includes('youtube.com') || url.includes('youtu.be') || url.includes('.mp4') || url.includes('.webm');
   };
 

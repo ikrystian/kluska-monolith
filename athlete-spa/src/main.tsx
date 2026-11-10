@@ -8,6 +8,8 @@ import '@fontsource/barlow-condensed/800.css';
 import './globals.css';
 import App from './App';
 import { AnimateReveal } from '@/components/animate-reveal';
+// Installs the local reader for the downloaded exercise library before the first fetch.
+import '@/lib/offline-exercises';
 
 // Old path-style links (bookmarks, installed PWAs, push notifications) still
 // arrive as /athlete/...; move them into the hash so the router sees them.

@@ -36,6 +36,7 @@ import type { RunningSession, StravaActivity, UserProfile } from '@/lib/types';
 import { SettingsGroup, SettingsLinkRow } from './profile-ui';
 import { IntegrationsSection } from './IntegrationsSection';
 import { AppSettingsSections } from './AppSettingsSections';
+import { OfflineDataSection } from './OfflineDataSection';
 
 // Editors (react-image-crop, zod form, gyms list) only load when the athlete opens them.
 const AvatarUploadDialog = lazy(() =>
@@ -312,6 +313,8 @@ export function ProfilePage() {
           />
 
           <AppSettingsSections />
+
+          <OfflineDataSection />
 
           <Button
             type="button"

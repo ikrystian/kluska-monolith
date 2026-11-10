@@ -4,6 +4,7 @@ import { getDeviceId } from '@/lib/device-id';
 import { clearPersistedCache } from '@/lib/swr-cache';
 import { clearMemoryCache } from '@/lib/cache-invalidation';
 import { clearOfflineQueue } from '@/lib/offline-queue';
+import { clearOfflineExerciseData } from '@/lib/offline-exercises';
 
 /**
  * Set while the app is used in guest mode, so an expired guest token can be
@@ -221,6 +222,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Pending writes belong to the account that made them; replaying them
     // under whoever signs in next would attribute data to the wrong athlete.
     clearOfflineQueue();
+    // The offline exercise pack holds this account's private/trainer exercises.
+    clearOfflineExerciseData();
 
     setUser(null);
   };

@@ -7,11 +7,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SETUP_GROUPS } from '@/components/shared/exercises/setup';
 import { useActiveWorkout } from '@/hooks/useActiveWorkout';
 import { resolveMediaUrl } from '@/lib/api-client';
+import { isOfflineVideoUrl } from '@/lib/offline-media';
 import { useDoc } from '@/lib/db-hooks';
 import { haptic } from '@/lib/haptics';
 import type { Exercise } from '@/lib/types';
 
-const isVideoFileUrl = (url: string | undefined) => !!url && /\.(mp4|webm)(\?|#|$)/i.test(url);
+const isVideoFileUrl = (url: string | undefined) =>
+  !!url && (isOfflineVideoUrl(url) || /\.(mp4|webm)(\?|#|$)/i.test(url));
 
 /**
  * Ekran otwierany z kodu QR na maszynie. Trening trwa → ćwiczenie trafia od razu
