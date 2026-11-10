@@ -55,7 +55,6 @@ const RunRecordPage = lazy(() => import('@/pages/athlete/RunRecord'));
 const RunDetailPage = lazy(() => import('@/pages/athlete/RunDetail'));
 const RunDetailStravaPage = lazy(() => import('@/pages/athlete/RunDetailStrava'));
 const SocialPage = lazy(() => import('@/pages/athlete/Social'));
-const SummaryPage = lazy(() => import('@/pages/athlete/Summary'));
 const YouPage = lazy(() => import('@/pages/athlete/You'));
 const TemplatesPage = lazy(() => import('@/pages/athlete/Templates'));
 const TrainersPage = lazy(() => import('@/pages/athlete/Trainers'));
@@ -163,7 +162,8 @@ export default function App() {
                 <Route path="running/record" element={<RunRecordPage />} />
                 <Route path="running/strava/:activityId" element={<RunDetailStravaPage />} />
                 <Route path="running/:sessionId" element={<RunDetailPage />} />
-                <Route path="summary" element={<SummaryPage />} />
+                {/* Podsumowanie is now the profile card on the "Ty" tab. */}
+                <Route path="summary" element={<Navigate to="/athlete/you" replace />} />
                 <Route path="templates" element={<TemplatesPage />} />
                 <Route path="trainers" element={<TrainersPage />} />
                 <Route path="trainers/:id" element={<TrainerDetailPage />} />

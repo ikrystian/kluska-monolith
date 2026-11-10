@@ -112,7 +112,6 @@ export const athleteNavItems: NavEntry[] = [
     icon: TrendingUp,
     color: 'hsl(var(--primary))',
     items: [
-      { href: '/athlete/summary', label: 'Podsumowanie', icon: IdCard, description: 'Kilometry, tony, treningi', keywords: ['wizytówka', 'statystyki', 'profil', 'czołgi', 'równik'] },
       { href: '/athlete/progress', label: 'Wykresy', icon: BarChart3, color: 'hsl(var(--run))', description: 'Objętość, 1RM, waga', keywords: ['postępy', 'progres', 'siła', 'objętość'] },
       { href: '/athlete/measurements', label: 'Pomiary', icon: Ruler, color: 'hsl(var(--volt))', description: 'Waga, obwody i zdjęcia', keywords: ['waga', 'obwody', 'sylwetka', 'zdjęcia'] },
       { href: '/athlete/goals', label: 'Cele i trofea', icon: Trophy, color: 'hsl(var(--food))', description: 'Cele i osiągnięcia', keywords: ['osiągnięcia', 'odznaki', 'nagrody'] },
@@ -155,7 +154,7 @@ export const athleteNavItems: NavEntry[] = [
     icon: User,
     color: 'hsl(var(--muted-foreground))',
     items: [
-      { href: '/athlete/you', label: 'Profil', icon: User, color: 'hsl(var(--primary))', description: 'Poziom, statystyki, dane profilu', keywords: ['konto', 'awatar', 'zdjęcie', 'imię', 'email', 'siłownie', 'poziom', 'xp', 'równik'] },
+      { href: '/athlete/you', label: 'Profil', icon: IdCard, color: 'hsl(var(--primary))', description: 'Podsumowanie, poziom, dane profilu', keywords: ['podsumowanie', 'wizytówka', 'statystyki', 'kilometry', 'tony', 'czołgi', 'równik', 'konto', 'awatar', 'zdjęcie', 'imię', 'email', 'siłownie', 'poziom', 'xp'] },
       { href: '/athlete/you?tab=settings', label: 'Ustawienia', icon: SlidersHorizontal, description: 'Motyw, powiadomienia, integracje', keywords: ['motyw', 'ciemny', 'jasny', 'powiadomienia', 'push', 'strava', 'spotify', 'integracje', 'wibracje', 'przerwa', 'gps', 'lokalizacja', 'aparat', 'offline', 'wyloguj'] },
     ],
   },

@@ -13,6 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { ProfileHero } from '@/components/profile/ProfileHero';
 import { ProfileTab } from '@/components/profile/ProfileTab';
 import { SettingsTab } from '@/components/profile/SettingsTab';
 import { useUserProfile } from '@/contexts/UserProfileContext';
@@ -42,7 +43,8 @@ function isYouTab(value: string | null): value is YouTab {
 }
 
 /**
- * The "Ty" tab: your profile and the app's settings, one tap apart. The tab
+ * The "Ty" tab: who you are on top, then your profile and the app's settings,
+ * one tap apart. The tab
  * lives in the URL (`?tab=settings`), so search hits and old profile links
  * land on the right one.
  */
@@ -97,24 +99,26 @@ export default function YouPage() {
 
   return (
     <div className="page">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="profile" className="gap-1.5">
+      <ProfileHero onEditProfile={() => setOpenPanel('edit')} onEditAvatar={() => setOpenPanel('avatar')} />
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-5">
+        <TabsList className="grid h-11 w-full grid-cols-2 rounded-full p-1">
+          <TabsTrigger value="profile" className="h-full gap-1.5 rounded-full">
             <UserRound className="h-4 w-4" /> Profil
           </TabsTrigger>
-          <TabsTrigger value="settings" className="gap-1.5">
+          <TabsTrigger value="settings" className="h-full gap-1.5 rounded-full">
             <Settings className="h-4 w-4" /> Ustawienia
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="profile" className="mt-4">
+        <TabsContent value="profile" className="mt-5">
           <ProfileTab
             onEditProfile={() => setOpenPanel('edit')}
             onEditAvatar={() => setOpenPanel('avatar')}
             onEditGyms={() => setOpenPanel('gyms')}
           />
         </TabsContent>
-        <TabsContent value="settings" className="mt-4">
+        <TabsContent value="settings" className="mt-5">
           <SettingsTab onLogout={handleLogout} />
         </TabsContent>
       </Tabs>

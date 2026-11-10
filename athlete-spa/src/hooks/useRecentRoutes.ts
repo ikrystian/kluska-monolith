@@ -12,8 +12,9 @@ const EXCLUDED = new Set([
   '/athlete/menu',
   '/athlete/you',
   '/athlete/onboarding',
-  // Redirects to `/athlete/you`; only an old link lands here.
+  // Redirect to `/athlete/you`; only an old link lands here.
   '/athlete/profile',
+  '/athlete/summary',
 ]);
 
 function read(): string[] {
