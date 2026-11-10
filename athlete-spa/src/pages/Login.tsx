@@ -1,9 +1,11 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowRight, Loader2, Lock, Mail, UserRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AuthError, useAuth } from '@/contexts/AuthContext';
+import { getRememberMePreference } from '@/lib/api-client';
 import { ResendVerification } from '@/components/auth/ResendVerification';
 import { AuthField, AuthShell, PasswordToggle } from '@/components/auth/AuthShell';
 
@@ -13,6 +15,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(getRememberMePreference);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isGuestLoading, setIsGuestLoading] = useState(false);
@@ -34,7 +37,7 @@ export default function LoginPage() {
     setIsLoading(true);
     setUnverifiedEmail(null);
     try {
-      const user = await login(email.trim(), password);
+      const user = await login(email.trim(), password, rememberMe);
 
       if (user.role === 'admin') {
         toast({
@@ -149,7 +152,16 @@ export default function LoginPage() {
             error={errors.password}
             trailing={<PasswordToggle visible={showPassword} onToggle={() => setShowPassword((prev) => !prev)} />}
           />
-          <div className="-mt-1 text-right">
+          <div className="-mt-1 flex items-center justify-between gap-3">
+            <label htmlFor="remember-me" className="flex min-h-11 items-center gap-2.5 text-sm font-medium">
+              <Checkbox
+                id="remember-me"
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked === true)}
+                disabled={isBusy}
+              />
+              Zapamiętaj mnie
+            </label>
             <Link to="/forgot-password" className="text-sm font-medium text-muted-foreground">
               Nie pamiętasz hasła?
             </Link>

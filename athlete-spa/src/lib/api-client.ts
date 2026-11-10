@@ -6,6 +6,22 @@ const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export const TOKEN_STORAGE_KEY = 'athlete-spa:token';
 
+/**
+ * Last "Zapamiętaj mnie" choice on the login screen. When on, the token lives
+ * in localStorage and survives app restarts; when off, it lives in
+ * sessionStorage and is gone once the app (or browser tab) is closed.
+ */
+const REMEMBER_ME_KEY = 'athlete-spa:remember-me';
+
+/** Defaults to on — this is a phone app people expect to stay signed in to. */
+export function getRememberMePreference(): boolean {
+  return localStorage.getItem(REMEMBER_ME_KEY) !== '0';
+}
+
+export function setRememberMePreference(remember: boolean) {
+  localStorage.setItem(REMEMBER_ME_KEY, remember ? '1' : '0');
+}
+
 type UnauthorizedHandler = () => void;
 let unauthorizedHandler: UnauthorizedHandler | null = null;
 
@@ -56,7 +72,19 @@ export function setLocalReadInterceptor(next: LocalReadInterceptor | null) {
 }
 
 export function getStoredToken(): string | null {
-  return localStorage.getItem(TOKEN_STORAGE_KEY);
+  return localStorage.getItem(TOKEN_STORAGE_KEY) ?? sessionStorage.getItem(TOKEN_STORAGE_KEY);
+}
+
+/** `persistent` picks localStorage (survives restarts) over sessionStorage. */
+export function storeToken(token: string, persistent: boolean) {
+  const [target, other] = persistent ? [localStorage, sessionStorage] : [sessionStorage, localStorage];
+  target.setItem(TOKEN_STORAGE_KEY, token);
+  other.removeItem(TOKEN_STORAGE_KEY);
+}
+
+export function clearStoredToken() {
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
+  sessionStorage.removeItem(TOKEN_STORAGE_KEY);
 }
 
 /**
@@ -103,7 +131,7 @@ export async function apiFetchRemote(path: string, options: RequestInit = {}): P
   reportNetworkSuccess();
 
   if (response.status === 401) {
-    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    clearStoredToken();
     unauthorizedHandler?.();
   }
 

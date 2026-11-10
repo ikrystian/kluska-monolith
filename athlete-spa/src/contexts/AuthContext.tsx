@@ -1,5 +1,13 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { apiFetch, setUnauthorizedHandler, TOKEN_STORAGE_KEY } from '@/lib/api-client';
+import {
+  apiFetch,
+  clearStoredToken,
+  getRememberMePreference,
+  getStoredToken,
+  setRememberMePreference,
+  setUnauthorizedHandler,
+  storeToken,
+} from '@/lib/api-client';
 import { getDeviceId } from '@/lib/device-id';
 import { clearPersistedCache } from '@/lib/swr-cache';
 import { clearMemoryCache } from '@/lib/cache-invalidation';
@@ -105,14 +113,16 @@ async function requestGuestToken(): Promise<AuthUser> {
     throw new Error('Otrzymano nieprawidłowy token logowania.');
   }
 
-  localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  // Guests can't log back in, so their session is always kept.
+  storeToken(token, true);
   localStorage.setItem(GUEST_MODE_KEY, '1');
   return decoded;
 }
 
 /**
  * Replaces next-auth's session cookie for this SPA: a JWT Bearer token
- * (from POST /api/auth/token) stored in localStorage. `useUser()` below
+ * (from POST /api/auth/token) kept in localStorage, or in sessionStorage
+ * when "Zapamiętaj mnie" is off (see api-client.ts). `useUser()` below
  * mirrors the exact shape the ported pages/hooks/contexts already expect
  * from db-hooks.tsx's next-auth-backed `useUser()`, so nothing downstream
  * needs to change.
@@ -125,7 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     const restoreSession = async () => {
-      const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+      const token = getStoredToken();
       if (token) {
         const decoded = userFromToken(token);
         if (decoded) {
@@ -133,7 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsUserLoading(false);
           return;
         }
-        localStorage.removeItem(TOKEN_STORAGE_KEY);
+        clearStoredToken();
       }
 
       // Guest sessions are bound to the device, not to credentials — when the
@@ -180,7 +190,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('Otrzymano nieprawidłowy token logowania.');
     }
 
-    localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    storeToken(token, rememberMe);
+    setRememberMePreference(rememberMe);
     localStorage.removeItem(GUEST_MODE_KEY);
     setUser(decoded);
     return decoded;
@@ -204,12 +215,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // (Capacitor caches it here; losing it would re-generate a new UUID
       // which could diverge from the native platform identifier).
       const deviceId = localStorage.getItem('athlete-spa:device-id');
+      const rememberMe = getRememberMePreference();
       localStorage.clear();
       if (deviceId) {
         localStorage.setItem('athlete-spa:device-id', deviceId);
       }
+      setRememberMePreference(rememberMe);
+      clearStoredToken();
     } else {
-      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      clearStoredToken();
       localStorage.removeItem(GUEST_MODE_KEY);
       localStorage.removeItem(ONBOARDING_PENDING_KEY);
     }
