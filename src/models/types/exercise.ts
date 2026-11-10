@@ -26,6 +26,8 @@ export interface Exercise {
   imageHint?: string;
   ownerId?: string;
   type?: 'weight' | 'duration' | 'reps';
+  /** 1–100, wyżej = popularniejsze; biblioteka sortuje po tym malejąco. */
+  popularity?: number;
 }
 
 export interface WorkoutSet {

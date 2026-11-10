@@ -25,6 +25,8 @@ export interface IExercise extends Document {
   image?: string;
   imageHint?: string;
   ownerId?: string;
+  /** 1–100: jak często ćwiczenie jest wybierane — po tym sortuje biblioteka (scripts/assign-exercise-popularity.ts). */
+  popularity?: number;
   type: 'weight' | 'duration' | 'reps';
   createdAt: Date;
   updatedAt: Date;
@@ -55,6 +57,7 @@ const ExerciseSchema = new Schema<IExercise>(
     image: { type: String },
     imageHint: { type: String },
     ownerId: { type: String },
+    popularity: { type: Number, min: 0, max: 100 },
     type: {
       type: String,
       enum: ['weight', 'duration', 'reps'],
@@ -79,6 +82,8 @@ ExerciseSchema.index({ muscleGroup: 1 });
 ExerciseSchema.index({ ownerId: 1 });
 ExerciseSchema.index({ type: 1 });
 ExerciseSchema.index({ name: 'text' });
+// Domyślna kolejność biblioteki: najpopularniejsze najpierw.
+ExerciseSchema.index({ popularity: -1, name: 1, _id: 1 });
 
 export const Exercise: Model<IExercise> =
   mongoose.models.Exercise || mongoose.model<IExercise>('Exercise', ExerciseSchema);

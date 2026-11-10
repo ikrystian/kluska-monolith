@@ -100,7 +100,7 @@ export function ExerciseDetailBody({ exercise }: { exercise: Exercise }) {
     const mainMuscles = getMainMuscleNames(exercise);
     const secondaryMuscles = exercise.secondaryMuscleGroups?.map((mg) => mg.name) ?? [];
     const setup = exercise.setup?.filter((item) => item.group !== 'Animacja' && item.group && item.value) ?? [];
-    const instructions = exercise.instructions || exercise.description || '';
+    const instructions = exercise.description || exercise.instructions || '';
     const steps = splitSteps(instructions);
 
     return (

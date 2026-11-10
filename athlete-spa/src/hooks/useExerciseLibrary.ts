@@ -15,6 +15,9 @@ import { SETUP_GROUPS } from '@/components/shared/exercises/setup';
  *   nie klient,
  * - zwraca też liczby: wszystkich ćwiczeń (`totalAll`) i przefiltrowanych
  *   (`totalFiltered`),
+ * - kolejność: najpierw ulubione (gwiazdka), potem reszta od najpopularniejszych
+ *   (`popularity` malejąco, przy remisie alfabetycznie) — tak samo przy
+ *   przeglądaniu, jak i w wynikach wyszukiwania,
  * - ulubione (`favoriteIds`) pasujące do filtrów idą osobnym zapytaniem na
  *   początek listy, a z kolejnych stron są pomijane.
  */
@@ -40,9 +43,9 @@ export const EMPTY_EXERCISE_FILTERS: ExerciseLibraryFilters = {
   category: 'all',
 };
 
-/** Liczba aktywnych filtrów poza wyszukiwaniem i partią mięśniową (chipy). */
+/** Liczba aktywnych filtrów z arkusza (wszystko poza wyszukiwaniem). */
 export function countExtraFilters(filters: ExerciseLibraryFilters): number {
-  return (['type', 'bodyPart', 'equipment', 'category'] as const)
+  return (['muscleGroup', 'type', 'bodyPart', 'equipment', 'category'] as const)
     .filter((key) => filters[key] !== EMPTY_EXERCISE_FILTERS[key]).length;
 }
 
@@ -121,7 +124,13 @@ interface ExercisePage {
   data: Exercise[];
 }
 
-const SORT = JSON.stringify({ name: 1, _id: 1 });
+/** Najpopularniejsze najpierw; ćwiczenia bez oceny (np. świeżo dodane własne) lądują na końcu. */
+const SORT = JSON.stringify({ popularity: -1, name: 1, _id: 1 });
+
+/** Ta sama kolejność co `SORT`, po stronie klienta (dla listy ulubionych). */
+function byPopularity(a: Exercise, b: Exercise): number {
+  return (b.popularity ?? -1) - (a.popularity ?? -1) || a.name.localeCompare(b.name, 'pl');
+}
 
 function pageFetcher(url: string): Promise<ExercisePage> {
   return apiFetch(url).then((res) => {
@@ -147,7 +156,7 @@ function collectionUrl(query: Record<string, unknown>, params: Record<string, st
 }
 
 export interface ExerciseLibraryResult {
-  /** Ulubione (alfabetycznie), potem reszta w kolejności stron. */
+  /** Ulubione, potem reszta w kolejności stron — obie części od najpopularniejszych. */
   exercises: Exercise[];
   isLoading: boolean;
   isLoadingMore: boolean;
@@ -221,7 +230,7 @@ export function useExerciseLibrary(
     for (const ex of [...favoriteDocs, ...pagedExercises]) {
       if (favoriteSet.has(ex.id) && !favorites.has(ex.id)) favorites.set(ex.id, ex);
     }
-    const sortedFavorites = [...favorites.values()].sort((a, b) => a.name.localeCompare(b.name, 'pl'));
+    const sortedFavorites = [...favorites.values()].sort(byPopularity);
     return [...sortedFavorites, ...pagedExercises.filter((ex) => !favoriteSet.has(ex.id))];
   }, [pagedExercises, favoriteDocs, favoriteIds]);
 

@@ -80,7 +80,7 @@ export function TemplateCover({ workout, className, children }: { workout: Pick<
 function FocusBadge({ workout, className }: { workout: Pick<Workout, 'exerciseSeries'>; className?: string }) {
   const meta = FOCUS_META[templateFocus(workout.exerciseSeries)];
   return (
-    <span className={cn('inline-flex items-center gap-1.5 rounded-full bg-black/55 px-2 py-[3px] text-[10px] font-bold uppercase tracking-[0.08em] text-white backdrop-blur-sm', className)}>
+    <span className={cn('inline-flex items-center gap-1.5 rounded-full bg-black/55 px-2 py-[3px] text-[11px] font-semibold tracking-[0.08em] text-white backdrop-blur-sm', className)}>
       <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: meta.accent }} />
       {meta.label}
     </span>
@@ -109,7 +109,7 @@ export function TemplatePreviewSheet({ template, trigger, onStart, lastSession }
     <Sheet>
       <SheetTrigger asChild>{trigger}</SheetTrigger>
       <SheetContent side="bottom" className="flex flex-col gap-0 px-0 pt-0">
-        <TemplateCover workout={template} className="h-44 shrink-0">
+        <TemplateCover workout={template} className="h-52 shrink-0">
           <div className="absolute inset-0 bg-gradient-to-t from-popover via-popover/20 to-transparent" />
         </TemplateCover>
         <div className="relative -mt-12 shrink-0 px-5">
@@ -203,7 +203,7 @@ export function TemplateTile({ template, logs, onStart }: { template: Workout; l
       lastSession={last}
       trigger={
         <button type="button" className="flex min-w-0 flex-col overflow-hidden rounded-2xl bg-card text-left transition-transform duration-150 active:scale-[0.97]">
-          <TemplateCover workout={template} className="aspect-[4/3] w-full">
+          <TemplateCover workout={template} className="aspect-[16/9] w-full">
             <FocusBadge workout={template} className="absolute left-2 top-2" />
             {isOwn && (
               <span className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-[3px] text-[10px] font-bold uppercase tracking-[0.08em] text-black">Mój</span>

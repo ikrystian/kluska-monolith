@@ -42,7 +42,7 @@ export function ExerciseCardGrid({
       onClick={() => onClick?.(exercise)}
     >
       {/* Media */}
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
+      <div className="relative aspect-[16/8] w-full overflow-hidden bg-muted">
         <div className="absolute inset-0 transition-transform duration-300 group-hover:scale-105">
           <ExerciseThumb exercise={exercise} iconClassName="h-10 w-10" />
         </div>

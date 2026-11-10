@@ -122,7 +122,7 @@ export function AddExerciseSheet({ onAddExercise }: { onAddExercise: (exerciseId
           <div className="flex items-end justify-between gap-3">
             <div className="min-w-0">
               <SheetTitle>Wybierz ćwiczenie</SheetTitle>
-              <SheetDescription>Ulubione są na górze listy.</SheetDescription>
+              <SheetDescription>Ulubione na górze, potem najpopularniejsze.</SheetDescription>
             </div>
             <ViewModeToggle value={viewMode} onChange={setViewMode} />
           </div>

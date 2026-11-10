@@ -1756,7 +1756,7 @@ function SectionHeader({ title, count, action }: { title: string; count?: number
 /** Small start tile: picture or plain card behind, icon chip on top, label at the bottom. */
 function QuickTile({ image, icon: Icon, iconClassName, title, subtitle, onClick, to }: { image?: string; icon: typeof Plus; iconClassName: string; title: string; subtitle: string; onClick?: () => void; to?: string }) {
   const className = cn(
-    'relative flex h-[6.5rem] min-w-0 flex-col justify-between overflow-hidden rounded-2xl p-3 text-left transition-transform duration-150 active:scale-[0.97]',
+    'relative flex h-[6.5rem] min-w-0 justify-between overflow-hidden rounded-2xl p-3 text-left transition-transform duration-150 active:scale-[0.97]',
     image ? 'bg-[#111316] text-white' : 'bg-card text-foreground'
   );
   const body = (
@@ -1771,8 +1771,8 @@ function QuickTile({ image, icon: Icon, iconClassName, title, subtitle, onClick,
         <Icon className="h-4 w-4" strokeWidth={2.5} />
       </span>
       <span className="relative block min-w-0">
-        <span className="block font-display text-[1.375rem] font-bold uppercase leading-none">{title}</span>
-        <span className={cn('mt-0.5 block truncate text-[11px] font-medium', image ? 'text-white/75' : 'text-muted-foreground')}>{subtitle}</span>
+        <span className="block font-display text-[2.375rem] font-bold uppercase leading-none">{title}</span>
+        <span className={cn('mt-0.5 block text-right truncate text-[11px] font-medium', image ? 'text-white/75' : 'text-muted-foreground')}>{subtitle}</span>
       </span>
     </>
   );
@@ -1928,15 +1928,10 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
   return (
     <div className="stagger-rise space-y-6">
 
-      <div className={cn('grid gap-2', supportsGeolocation ? 'grid-cols-3' : 'grid-cols-2')}>
+      <div className={cn('grid gap-2 grid-cols-1')}>
         <QuickTile image={gymPhoto} icon={Plus} iconClassName="bg-primary text-primary-foreground" title="Od zera" subtitle="Pusty trening" onClick={handleStartEmpty} />
         {supportsGeolocation && (
           <QuickTile image={runCover} icon={Footprints} iconClassName="bg-run text-white" title="Bieg" subtitle="Trasa z GPS" onClick={() => setStartRunDialogOpen(true)} />
-        )}
-        {lastLog ? (
-          <QuickTile icon={RotateCcw} iconClassName="bg-secondary text-primary" title="Powtórz" subtitle={lastLog.workoutName} onClick={() => handleRepeatWorkout(lastLog)} />
-        ) : (
-          <QuickTile icon={BookOpen} iconClassName="bg-secondary text-primary" title="Atlas" subtitle="Ćwiczenia" to="/athlete/exercises" />
         )}
       </div>
       <StartRunDialog open={startRunDialogOpen} onOpenChange={setStartRunDialogOpen} programs={runningPrograms} />

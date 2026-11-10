@@ -200,7 +200,8 @@ const policies: Record<string, CollectionPolicy> = {
   socialProfiles: owned('userId', { readAll: true }),
 
   // Shared templates — anyone may browse, owners edit
-  exercises: owned('ownerId', { readAll: true }),
+  // Popularność ustala skrypt/admin — inaczej każdy mógłby wypchnąć swoje ćwiczenie na górę listy.
+  exercises: { ...owned('ownerId', { readAll: true }), protectedFields: ['popularity'] },
   workouts: owned('ownerId', { readAll: true }),
 
   // Personal data

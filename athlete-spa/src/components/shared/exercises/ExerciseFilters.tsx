@@ -28,9 +28,11 @@ const TYPE_OPTIONS = [
 
 const toOptions = (values: string[]) => values.map((value) => ({ value, label: value }));
 
-type SheetFilterKey = 'type' | 'bodyPart' | 'equipment' | 'category';
+type SheetFilterKey = 'muscleGroup' | 'type' | 'bodyPart' | 'equipment' | 'category';
 
-const SHEET_GROUPS: { key: SheetFilterKey; label: string; options: { value: string; label: string }[] }[] = [
+type SheetGroup = { key: SheetFilterKey; label: string; options: { value: string; label: string }[] };
+
+const STATIC_GROUPS: SheetGroup[] = [
   { key: 'type', label: 'Typ ćwiczenia', options: TYPE_OPTIONS },
   { key: 'bodyPart', label: SETUP_GROUPS.bodyPart, options: toOptions(SETUP_SUGGESTIONS.bodyPart) },
   { key: 'category', label: SETUP_GROUPS.category, options: toOptions(SETUP_SUGGESTIONS.category) },
@@ -75,8 +77,11 @@ function Chip({
 
 export function ExerciseFilters({ filters, onChange, muscleGroupOptions, resultCount }: ExerciseFiltersProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
-  const chips = [{ label: 'Wszystkie', value: 'all' }, ...muscleGroupOptions];
   const extraCount = countExtraFilters(filters);
+  const sheetGroups: SheetGroup[] = [
+    { key: 'muscleGroup', label: 'Partia mięśniowa', options: muscleGroupOptions },
+    ...STATIC_GROUPS,
+  ];
 
   const set = (patch: Partial<ExerciseLibraryFilters>) => onChange({ ...filters, ...patch });
 
@@ -84,7 +89,7 @@ export function ExerciseFilters({ filters, onChange, muscleGroupOptions, resultC
   const toggle = (key: SheetFilterKey, value: string) =>
     set({ [key]: filters[key] === value ? 'all' : value });
 
-  const activeExtras = SHEET_GROUPS.flatMap(({ key, options }) => {
+  const activeExtras = sheetGroups.flatMap(({ key, options }) => {
     const option = options.find((o) => o.value === filters[key]);
     return option ? [{ key, label: option.label }] : [];
   });
@@ -97,7 +102,7 @@ export function ExerciseFilters({ filters, onChange, muscleGroupOptions, resultC
           <Input
             type="text"
             inputMode="search"
-            placeholder="Szukaj ćwiczeń, partii, sprzętu…"
+            placeholder="Szukaj ćwiczeń…"
             className="h-11 rounded-full bg-card pl-10 pr-10"
             value={filters.search}
             onChange={(e) => set({ search: e.target.value })}
@@ -113,34 +118,26 @@ export function ExerciseFilters({ filters, onChange, muscleGroupOptions, resultC
             </button>
           )}
         </div>
-        <Button
+        {/* Wyraźny przycisk z etykietą: tu są wszystkie filtry (partia, typ, sprzęt…). */}
+        <button
           type="button"
-          variant={extraCount > 0 ? 'default' : 'outline'}
-          className="relative h-11 w-11 flex-shrink-0 rounded-full p-0"
           onClick={() => setSheetOpen(true)}
           aria-label={extraCount > 0 ? `Filtry (aktywne: ${extraCount})` : 'Filtry'}
+          className={cn(
+            'flex h-11 flex-shrink-0 items-center gap-2 rounded-full border pl-3.5 pr-4 text-sm font-semibold transition-[transform,background-color] duration-150 active:scale-[0.97]',
+            extraCount > 0
+              ? 'border-primary bg-primary text-primary-foreground'
+              : 'border-primary/40 bg-primary/10 text-primary hover:bg-primary/15',
+          )}
         >
-          <SlidersHorizontal className="h-4 w-4" />
+          <SlidersHorizontal className="h-4 w-4" strokeWidth={2.5} />
+          Filtry
           {extraCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-background bg-foreground px-1 text-[11px] font-bold text-background">
+            <span className="-mr-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-foreground px-1 text-[11px] font-bold text-primary">
               {extraCount}
             </span>
           )}
-        </Button>
-      </div>
-
-      {/* Partie mięśniowe jako przewijane chipy */}
-      <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
-        {chips.map((option) => (
-          <Chip
-            key={option.value}
-            active={filters.muscleGroup === option.value}
-            onClick={() => set({ muscleGroup: option.value })}
-            revealWhenActive
-          >
-            {option.label}
-          </Chip>
-        ))}
+        </button>
       </div>
 
       {/* Aktywne filtry z arkusza — szybkie zdejmowanie bez otwierania go */}
@@ -168,11 +165,11 @@ export function ExerciseFilters({ filters, onChange, muscleGroupOptions, resultC
         >
           <SheetHeader className="mb-2 px-5 text-left">
             <SheetTitle className="font-headline text-xl">Filtry</SheetTitle>
-            <SheetDescription>Zawęź bibliotekę po typie, części ciała, kategorii i sprzęcie.</SheetDescription>
+            <SheetDescription>Zawęź bibliotekę po partii, typie, części ciała, kategorii i sprzęcie.</SheetDescription>
           </SheetHeader>
 
           <div className="flex-1 space-y-5 overflow-y-auto px-5 py-3">
-            {SHEET_GROUPS.map(({ key, label, options }) => (
+            {sheetGroups.map(({ key, label, options }) => (
               <section key={key} className="space-y-2">
                 <h3 className="text-xs font-semibold text-muted-foreground">{label}</h3>
                 <div className="flex flex-wrap gap-2">
@@ -198,6 +195,7 @@ export function ExerciseFilters({ filters, onChange, muscleGroupOptions, resultC
               disabled={extraCount === 0}
               onClick={() =>
                 set({
+                  muscleGroup: EMPTY_EXERCISE_FILTERS.muscleGroup,
                   type: EMPTY_EXERCISE_FILTERS.type,
                   bodyPart: EMPTY_EXERCISE_FILTERS.bodyPart,
                   equipment: EMPTY_EXERCISE_FILTERS.equipment,
