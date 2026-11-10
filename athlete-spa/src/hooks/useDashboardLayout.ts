@@ -15,6 +15,7 @@ export const DASHBOARD_SECTION_IDS = [
   'habits',
   'nutrition',
   'upcoming',
+  'knowledge',
   'week-stats',
   'plans',
   'challenges',
