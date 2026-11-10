@@ -66,7 +66,11 @@ function RunRow({ run }: { run: RunActivity }) {
 
   const className = 'flex items-center gap-3 px-4 py-3.5';
   return run.href ? (
-    <Link to={run.href} className={cn(className, 'transition-colors hover:bg-secondary/50 active:bg-secondary')}>
+    <Link
+      to={run.href}
+      state={{ title: runTitle(run) }}
+      className={cn(className, 'transition-colors hover:bg-secondary/50 active:bg-secondary')}
+    >
       {content}
     </Link>
   ) : (

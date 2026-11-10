@@ -63,6 +63,9 @@ export interface RunningSession {
   programId?: string;
   /** Snapshot of the program's name at run time. */
   programName?: string;
+  /** Custom name or title of the run, if saved. */
+  name?: string;
+  title?: string;
 }
 
 export type RunningCueTrigger = 'time' | 'distance';

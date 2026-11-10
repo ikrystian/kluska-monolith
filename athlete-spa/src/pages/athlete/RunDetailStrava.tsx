@@ -21,6 +21,7 @@ import {
 } from '@/lib/run-pace';
 import { useThresholdPace } from '@/hooks/useThresholdPace';
 import { PaceDistribution } from '@/components/running/PaceDistribution';
+import { useHeaderTitle } from '@/contexts/HeaderTitleContext';
 
 // Mapbox GL + its CSS only load when an activity that actually has a route is opened.
 const RouteMap = lazy(() =>
@@ -99,6 +100,8 @@ export default function RunDetailStravaPage() {
   const [streams, setStreams] = useState<StravaStreams | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useHeaderTitle(activity?.name);
 
   useEffect(() => {
     if (!activityId) return;

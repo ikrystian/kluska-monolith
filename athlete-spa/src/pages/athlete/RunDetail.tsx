@@ -18,6 +18,8 @@ import { computeElevationGain, computeRunSplits } from '@/lib/geo';
 import { buildKmSegments, cumulativeDistances, samplesFromPoints, type LatLngTuple, type PaceSample } from '@/lib/run-pace';
 import { useThresholdPace } from '@/hooks/useThresholdPace';
 import { PaceDistribution } from '@/components/running/PaceDistribution';
+import { useHeaderTitle } from '@/contexts/HeaderTitleContext';
+import { getRunningSessionName } from '@/components/running/running-format';
 import type { RunningSession } from '@/lib/types';
 
 // Mapbox GL + its CSS only load when a run with a saved route is opened.
@@ -53,6 +55,9 @@ export default function RunDetailPage() {
   const { sessionId } = useParams();
 
   const { data: session, isLoading } = useDoc<RunningSession>('runningSessions', sessionId ?? null);
+
+  const runName = useMemo(() => (session ? getRunningSessionName(session) : null), [session]);
+  useHeaderTitle(runName);
 
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
@@ -144,7 +149,7 @@ export default function RunDetailPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Footprints className="h-5 w-5 text-primary" />
-            {session.programName || 'Bieg'}
+            {runName || session.programName || 'Bieg'}
           </CardTitle>
         </CardHeader>
         <CardContent>

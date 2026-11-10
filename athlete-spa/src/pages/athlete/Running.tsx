@@ -96,7 +96,11 @@ function RecordRow({ icon: Icon, label, run, value }: { icon: LucideIcon; label:
   );
   const className = 'flex items-center gap-3 px-4 py-3';
   return run.href ? (
-    <Link to={run.href} className={cn(className, 'transition-colors hover:bg-secondary/50 active:bg-secondary')}>
+    <Link
+      to={run.href}
+      state={{ title: runTitle(run) }}
+      className={cn(className, 'transition-colors hover:bg-secondary/50 active:bg-secondary')}
+    >
       {content}
     </Link>
   ) : (

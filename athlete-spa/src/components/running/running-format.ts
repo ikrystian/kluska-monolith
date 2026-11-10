@@ -29,6 +29,7 @@ export function fromSession(session: RunningSession): RunActivity {
     durationMin: session.duration,
     avgPace: session.avgPace,
     source: 'app',
+    title: session.title ?? session.name,
     notes: session.notes,
     polyline: session.polyline,
     programName: session.programName,
@@ -100,4 +101,19 @@ export function runTitle(run: RunActivity): string {
   const hour = run.date.getHours();
   const label = TIME_OF_DAY.find(([until]) => hour < until)?.[1] ?? 'Nocny';
   return `${label} bieg`;
+}
+
+/** Resolves the saved or display name for a running session doc. */
+export function getRunningSessionName(session: Partial<RunningSession> & { name?: string; title?: string }): string {
+  const custom = session.title?.trim() || session.name?.trim() || session.programName?.trim();
+  if (custom) return custom;
+  if (session.date) {
+    const d = new Date(session.date);
+    if (!isNaN(d.getTime())) {
+      const hour = d.getHours();
+      const label = TIME_OF_DAY.find(([until]) => hour < until)?.[1] ?? 'Nocny';
+      return `${label} bieg`;
+    }
+  }
+  return 'Bieg';
 }

@@ -195,7 +195,7 @@ export default function HistoryPage() {
                         <MotionAccordionItem value={`run-${item.id}`} key={`run-${item.id}`} {...listItemMotion}>
                           <AccordionTrigger
                             className={cn('hover:no-underline', item.isClickable && 'cursor-pointer')}
-                            onClick={() => item.isClickable && navigate(item.href)}
+                            onClick={() => item.isClickable && navigate(item.href, { state: { title: item.title } })}
                           >
                             <div className="flex w-full items-center justify-between pr-4">
                               <div className="text-left">

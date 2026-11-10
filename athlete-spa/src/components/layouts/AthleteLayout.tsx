@@ -6,6 +6,7 @@ import { AppHeader } from '@/components/header';
 import { useUser } from '@/lib/db-hooks';
 import { BottomNav } from '@/components/bottom-nav';
 import { ActiveWorkoutProvider } from '@/contexts/ActiveWorkoutContext';
+import { HeaderTitleProvider } from '@/contexts/HeaderTitleContext';
 import { ActiveWorkoutWidget } from '@/components/workout/ActiveWorkoutWidget';
 import { NativeWidgetBridge } from '@/components/native-widget-bridge';
 import { UserProfileProvider, useUserProfile } from '@/contexts/UserProfileContext';
@@ -133,35 +134,37 @@ function AthleteLayoutContent() {
   // or a trainer. It is now safe to render the athlete layout and its children.
   return (
     <ActiveWorkoutProvider>
-      <NativeWidgetBridge />
-      <main
-        ref={setChromeRoot}
-        data-chrome={chromeHidden ? 'hidden' : 'visible'}
-        className="group/chrome app-column relative flex h-dvh flex-col overflow-hidden bg-background"
-      >
-        {!isActiveWorkoutSession && <AppHeader />}
-        <OfflineBanner />
-        <PullToRefreshIndicator ref={indicatorRef} />
-        {/* The padding belongs to the scroller, so content slides under the
-            frosted header and tab bar instead of stopping at their edge. */}
-        <div
-          ref={scrollRef}
-          id="outlet"
-          className={cn(
-            'relative z-10 min-h-0 flex-1 overflow-y-auto overflow-x-hidden',
-            isActiveWorkoutSession
-              ? 'pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)]'
-              : 'pb-[var(--app-bottom)] pt-[var(--app-top)] has-[~#mini-player]:pb-[calc(var(--app-bottom)+4rem)]'
-          )}
+      <HeaderTitleProvider>
+        <NativeWidgetBridge />
+        <main
+          ref={setChromeRoot}
+          data-chrome={chromeHidden ? 'hidden' : 'visible'}
+          className="group/chrome app-column relative flex h-dvh flex-col overflow-hidden bg-background"
         >
-          {/* h-full so pages that build their own internal scroll region
-              (ExercisesListView's virtualized list, Log's builder) resolve
-              a real height off #outlet instead of collapsing to content. */}
-          <AnimatedOutlet className="h-full" />
-        </div>
-        <BottomNav />
-        <ActiveWorkoutWidget />
-      </main>
+          {!isActiveWorkoutSession && <AppHeader />}
+          <OfflineBanner />
+          <PullToRefreshIndicator ref={indicatorRef} />
+          {/* The padding belongs to the scroller, so content slides under the
+              frosted header and tab bar instead of stopping at their edge. */}
+          <div
+            ref={scrollRef}
+            id="outlet"
+            className={cn(
+              'relative z-10 min-h-0 flex-1 overflow-y-auto overflow-x-hidden',
+              isActiveWorkoutSession
+                ? 'pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)]'
+                : 'pb-[var(--app-bottom)] pt-[var(--app-top)] has-[~#mini-player]:pb-[calc(var(--app-bottom)+4rem)]'
+            )}
+          >
+            {/* h-full so pages that build their own internal scroll region
+                (ExercisesListView's virtualized list, Log's builder) resolve
+                a real height off #outlet instead of collapsing to content. */}
+            <AnimatedOutlet className="h-full" />
+          </div>
+          <BottomNav />
+          <ActiveWorkoutWidget />
+        </main>
+      </HeaderTitleProvider>
     </ActiveWorkoutProvider>
   );
 }

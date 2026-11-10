@@ -275,7 +275,7 @@ const EXTRA_TITLES: { match: RegExp; title: string }[] = [
   { match: /^\/athlete\/workouts\/[^/]+\/edit$/, title: 'Edycja treningu' },
   { match: /^\/athlete\/workouts\/[^/]+$/, title: 'Trening' },
   { match: /^\/athlete\/running\/record$/, title: 'Bieg' },
-  { match: /^\/athlete\/running\/.+$/, title: 'Szczegóły biegu' },
+  { match: /^\/athlete\/running\/.+$/, title: 'Bieg' },
   { match: /^\/athlete\/exercise\/[^/]+$/, title: 'Ćwiczenie' },
   { match: /^\/athlete\/knowledge-zone\/manage$/, title: 'Zarządzaj artykułami' },
   { match: /^\/athlete\/knowledge-zone\/[^/]+$/, title: 'Artykuł' },

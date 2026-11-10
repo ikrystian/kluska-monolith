@@ -180,7 +180,7 @@ export function EventSheet({ event, onOpenChange, onOpenSession }: EventSheetPro
         );
         actions = run.isClickable ? (
             <Button asChild className="h-12 w-full text-base">
-                <Link to={run.href}>
+                <Link to={run.href} state={{ title: run.title }}>
                     Pełne podsumowanie <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
             </Button>
