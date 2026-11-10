@@ -34,6 +34,7 @@ export interface AreaReadiness {
   ready: number;
   hours: number;
   trained: boolean;
+  lastDate?: Date | null;
 }
 
 /** Readiness per area, worked out from completed sessions sorted newest first. */
@@ -41,6 +42,6 @@ export function areaReadiness(logs: WorkoutLog[], now = new Date()): AreaReadine
   return MUSCLE_AREAS.map(area => {
     const date = lastTrained(logs, area.muscles);
     const hours = date ? differenceInHours(now, date) : RECOVERY_HOURS;
-    return { id: area.id, label: area.label, ready: Math.min(1, hours / RECOVERY_HOURS), hours, trained: Boolean(date) };
+    return { id: area.id, label: area.label, ready: Math.min(1, hours / RECOVERY_HOURS), hours, trained: Boolean(date), lastDate: date };
   });
 }

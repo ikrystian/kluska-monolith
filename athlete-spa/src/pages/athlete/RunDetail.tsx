@@ -269,7 +269,7 @@ export default function RunDetailPage() {
                   <Skeleton className="h-4 w-2/3" />
                 </div>
               ) : summaryError ? (
-                <p className="text-destructive">{summaryError}</p>
+                <p className="text-lg">{summaryError}</p>
               ) : (
                 <p>{summary}</p>
               )}

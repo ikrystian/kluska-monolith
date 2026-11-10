@@ -1936,6 +1936,39 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
       </div>
       <StartRunDialog open={startRunDialogOpen} onOpenChange={setStartRunDialogOpen} programs={runningPrograms} />
 
+      {historyLogs && <MuscleRecovery logs={historyLogs} />}
+
+      {historyLogs && historyLogs.length > 0 && (
+        <section>
+          <SectionHeader
+            title="Ostatnie"
+            action={<Link to="/athlete/history" className="pb-0.5 text-sm font-semibold text-primary">Cała historia</Link>}
+          />
+          <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto scroll-px-4 px-4 pb-1">
+            {historyLogs.slice(0, 8).map(log => (
+              <WorkoutPreviewSheet
+                key={log.id}
+                title={log.workoutName}
+                description={`${exercisesLabel(log.exercises?.length || 0)} · ${format(logDate(log), 'd MMMM yyyy', { locale: pl })}`}
+                exerciseSeries={log.exercises}
+                actionLabel="Powtórz trening"
+                onAction={() => handleRepeatWorkout(log)}
+                trigger={
+                  <button type="button" className="flex w-[10.5rem] shrink-0 snap-start flex-col rounded-2xl bg-card p-3.5 text-left transition-transform duration-150 active:scale-[0.97]">
+                    <span className="eyebrow capitalize">{format(logDate(log), 'EEE, d MMM', { locale: pl })}</span>
+                    <span className="mt-1 line-clamp-2 font-display text-xl font-bold uppercase leading-[1.02]">{log.workoutName}</span>
+                    <span className="mt-auto flex items-center justify-between gap-2 pt-2 text-xs text-muted-foreground">
+                      <span className="truncate">{exercisesLabel(log.exercises?.length || 0)}</span>
+                      <RotateCcw className="h-3.5 w-3.5 shrink-0 text-primary" />
+                    </span>
+                  </button>
+                }
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
       <section>
         <SectionHeader
           title="Szablony"
@@ -2082,38 +2115,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
         </section>
       )}
 
-      {historyLogs && <MuscleRecovery logs={historyLogs} />}
 
-      {historyLogs && historyLogs.length > 0 && (
-        <section>
-          <SectionHeader
-            title="Ostatnie"
-            action={<Link to="/athlete/history" className="pb-0.5 text-sm font-semibold text-primary">Cała historia</Link>}
-          />
-          <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto scroll-px-4 px-4 pb-1">
-            {historyLogs.slice(0, 8).map(log => (
-              <WorkoutPreviewSheet
-                key={log.id}
-                title={log.workoutName}
-                description={`${exercisesLabel(log.exercises?.length || 0)} · ${format(logDate(log), 'd MMMM yyyy', { locale: pl })}`}
-                exerciseSeries={log.exercises}
-                actionLabel="Powtórz trening"
-                onAction={() => handleRepeatWorkout(log)}
-                trigger={
-                  <button type="button" className="flex w-[10.5rem] shrink-0 snap-start flex-col rounded-2xl bg-card p-3.5 text-left transition-transform duration-150 active:scale-[0.97]">
-                    <span className="eyebrow capitalize">{format(logDate(log), 'EEE, d MMM', { locale: pl })}</span>
-                    <span className="mt-1 line-clamp-2 font-display text-xl font-bold uppercase leading-[1.02]">{log.workoutName}</span>
-                    <span className="mt-auto flex items-center justify-between gap-2 pt-2 text-xs text-muted-foreground">
-                      <span className="truncate">{exercisesLabel(log.exercises?.length || 0)}</span>
-                      <RotateCcw className="h-3.5 w-3.5 shrink-0 text-primary" />
-                    </span>
-                  </button>
-                }
-              />
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 }

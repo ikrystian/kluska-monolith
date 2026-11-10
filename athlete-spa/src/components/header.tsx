@@ -65,19 +65,17 @@ export function AppHeader() {
         <div className="flex shrink-0 items-center">
           <NotificationBell />
           <QuickChatWidget />
-          {pathname === '/athlete/you' && (
-            <Link
-              to={isSettingsTab ? '/athlete/you' : '/athlete/you?tab=settings'}
-              onClick={() => haptic('tap')}
-              aria-label={isSettingsTab ? 'Wróć do profilu' : 'Ustawienia'}
-              className={cn(
-                'relative grid h-11 w-11 place-items-center rounded-full transition-transform active:scale-90 active:bg-secondary',
-                isSettingsTab ? 'text-primary bg-secondary' : 'text-foreground'
-              )}
-            >
-              <Settings className="h-[22px] w-[22px]" />
-            </Link>
-          )}
+          <Link
+            to={isSettingsTab ? '/athlete/you' : '/athlete/you?tab=settings'}
+            onClick={() => haptic('tap')}
+            aria-label={isSettingsTab ? 'Wróć do profilu' : 'Ustawienia'}
+            className={cn(
+              'relative grid h-11 w-11 place-items-center rounded-full transition-transform active:scale-90 active:bg-secondary',
+              isSettingsTab ? 'text-primary bg-secondary' : 'text-foreground'
+            )}
+          >
+            <Settings className="h-[22px] w-[22px]" />
+          </Link>
         </div>
       </div>
     </header>
