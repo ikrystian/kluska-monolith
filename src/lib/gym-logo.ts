@@ -18,7 +18,7 @@ import path from 'path';
  * pomijany — serwowany z naszej domeny mógłby wykonać skrypt.
  */
 
-const UPLOAD_DIR = path.join(process.cwd(), 'upload-data');
+const UPLOAD_DIR = path.join(/* turbopackIgnore: true */ process.cwd(), 'upload-data');
 const REQUEST_TIMEOUT_MS = 8_000;
 const MAX_REDIRECTS = 4;
 const MAX_HTML_BYTES = 512 * 1024;

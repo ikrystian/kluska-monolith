@@ -7,7 +7,7 @@ import path from 'path';
 export const runtime = 'nodejs';
 
 /** Same folder the upload route writes to. */
-const UPLOAD_DIR = path.join(process.cwd(), 'upload-data');
+const UPLOAD_DIR = path.join(/* turbopackIgnore: true */ process.cwd(), 'upload-data');
 
 const CONTENT_TYPE_BY_EXT: Record<string, string> = {
   '.jpg': 'image/jpeg',
@@ -29,7 +29,7 @@ export async function GET(
 ) {
   const { path: segments } = await context.params;
   const relative = segments.join('/');
-  const filePath = path.resolve(UPLOAD_DIR, relative);
+  const filePath = path.resolve(/* turbopackIgnore: true */ UPLOAD_DIR, relative);
 
   // Refuse anything that escapes the upload folder.
   if (filePath !== UPLOAD_DIR && !filePath.startsWith(UPLOAD_DIR + path.sep)) {
@@ -38,7 +38,7 @@ export async function GET(
 
   let fileStat;
   try {
-    fileStat = await stat(filePath);
+    fileStat = await stat(/* turbopackIgnore: true */ filePath);
   } catch {
     return new NextResponse('Not found', { status: 404 });
   }
@@ -47,7 +47,7 @@ export async function GET(
   }
 
   const ext = path.extname(filePath).toLowerCase();
-  const body = Readable.toWeb(createReadStream(filePath)) as ReadableStream<Uint8Array>;
+  const body = Readable.toWeb(createReadStream(/* turbopackIgnore: true */ filePath)) as ReadableStream<Uint8Array>;
 
   return new NextResponse(body, {
     headers: {

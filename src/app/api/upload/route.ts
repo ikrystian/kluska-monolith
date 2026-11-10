@@ -7,7 +7,7 @@ import { getRequestUser } from '@/lib/api-auth';
 export const runtime = 'nodejs';
 
 /** On-disk upload folder (repo root / upload-data). */
-const UPLOAD_DIR = path.join(process.cwd(), 'upload-data');
+const UPLOAD_DIR = path.join(/* turbopackIgnore: true */ process.cwd(), 'upload-data');
 
 /** Hard cap per file — comfortably covers 100 MB exercise media. */
 const MAX_FILE_SIZE = 128 * 1024 * 1024;
@@ -97,7 +97,7 @@ export async function POST(request: Request) {
   for (const file of inputs) {
     const filename = `${randomUUID()}.${extensionFor(file)}`;
     const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(path.join(UPLOAD_DIR, filename), buffer);
+    await writeFile(path.join(/* turbopackIgnore: true */ UPLOAD_DIR, filename), buffer);
     files.push({
       url: `/upload-data/${filename}`,
       name: file.name,

@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const rawText = await fs.readFile(filePath, 'utf8');
+    const rawText = await fs.readFile(/* turbopackIgnore: true */ filePath, 'utf8');
     const parsed = parseOpenGymExercises(JSON.parse(rawText));
 
     if (parsed.length === 0) {

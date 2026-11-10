@@ -10,7 +10,7 @@ import path from 'path';
  * import pomija już pobrane pliki (idempotentność).
  */
 
-const UPLOAD_DIR = path.join(process.cwd(), 'upload-data');
+const UPLOAD_DIR = path.join(/* turbopackIgnore: true */ process.cwd(), 'upload-data');
 const MAX_FILE_SIZE = 128 * 1024 * 1024; // 128 MB — tyle samo co w /api/upload
 
 const EXTENSION_BY_CONTENT_TYPE: Record<string, string> = {
