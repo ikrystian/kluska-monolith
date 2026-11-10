@@ -1,7 +1,5 @@
-import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { ChevronLeft, Settings } from 'lucide-react';
 import { NotificationBell } from './notifications/NotificationBell';
 import { QuickChatWidget } from './chat/QuickChatWidget';
 import { getScreenTitle, isRootPath, keepsChromeVisible } from '@/lib/athlete-nav';
@@ -12,10 +10,10 @@ export function AppHeader() {
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
 
+  const isSettingsTab = pathname === '/athlete/you' && new URLSearchParams(search).get('tab') === 'settings';
   // Root screens are reachable from the bottom bar, so they get a big title.
-  // Everywhere else the header has to say where you are and offer a way up —
-  // the hardware/gesture back was previously the only exit.
-  const isRoot = isRootPath(pathname);
+  // Everywhere else the header has to say where you are and offer a way up.
+  const isRoot = isRootPath(pathname) && !isSettingsTab;
   const screenTitle = getScreenTitle(pathname, search);
   const isToday = pathname === '/athlete/dashboard';
 
@@ -29,6 +27,8 @@ export function AppHeader() {
     // pop, which would otherwise leave the button dead.
     if (window.history.state?.idx > 0) {
       navigate(-1);
+    } else if (isSettingsTab) {
+      navigate('/athlete/you');
     } else {
       navigate('/athlete/dashboard');
     }
@@ -65,6 +65,19 @@ export function AppHeader() {
         <div className="flex shrink-0 items-center">
           <NotificationBell />
           <QuickChatWidget />
+          {pathname === '/athlete/you' && (
+            <Link
+              to={isSettingsTab ? '/athlete/you' : '/athlete/you?tab=settings'}
+              onClick={() => haptic('tap')}
+              aria-label={isSettingsTab ? 'Wróć do profilu' : 'Ustawienia'}
+              className={cn(
+                'relative grid h-11 w-11 place-items-center rounded-full transition-transform active:scale-90 active:bg-secondary',
+                isSettingsTab ? 'text-primary bg-secondary' : 'text-foreground'
+              )}
+            >
+              <Settings className="h-[22px] w-[22px]" />
+            </Link>
+          )}
         </div>
       </div>
     </header>

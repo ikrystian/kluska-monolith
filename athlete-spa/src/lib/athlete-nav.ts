@@ -148,14 +148,14 @@ export const athleteNavItems: NavEntry[] = [
     ],
   },
   {
-    // The "Ty" tab is on the bottom bar, so the menu draws no tiles for it —
-    // it is listed so the menu search can still find profile and settings.
-    label: 'Ty',
-    icon: User,
-    color: 'hsl(var(--muted-foreground))',
+    // Profil is on the bottom bar under "Ty", while Ustawienia is displayed in
+    // the menu and accessible from the profile header.
+    label: 'Ustawienia',
+    icon: SlidersHorizontal,
+    color: 'hsl(var(--primary))',
     items: [
       { href: '/athlete/you', label: 'Profil', icon: IdCard, color: 'hsl(var(--primary))', description: 'Podsumowanie, poziom, dane profilu', keywords: ['podsumowanie', 'wizytówka', 'statystyki', 'kilometry', 'tony', 'czołgi', 'równik', 'konto', 'awatar', 'zdjęcie', 'imię', 'email', 'siłownie', 'poziom', 'xp'] },
-      { href: '/athlete/you?tab=settings', label: 'Ustawienia', icon: SlidersHorizontal, description: 'Motyw, powiadomienia, integracje', keywords: ['motyw', 'ciemny', 'jasny', 'powiadomienia', 'push', 'strava', 'spotify', 'integracje', 'wibracje', 'przerwa', 'gps', 'lokalizacja', 'aparat', 'offline', 'wyloguj'] },
+      { href: '/athlete/you?tab=settings', label: 'Ustawienia', icon: SlidersHorizontal, color: 'hsl(var(--primary))', description: 'Motyw, powiadomienia, integracje', keywords: ['motyw', 'ciemny', 'jasny', 'powiadomienia', 'push', 'strava', 'spotify', 'integracje', 'wibracje', 'przerwa', 'gps', 'lokalizacja', 'aparat', 'offline', 'wyloguj'] },
     ],
   },
 ];
@@ -282,8 +282,14 @@ const EXTRA_TITLES: { match: RegExp; title: string }[] = [
 
 /** Label for the current screen, or undefined when there is nothing sensible to show. */
 export function getScreenTitle(pathname: string, search = ''): string | undefined {
+  // Tab links (`/athlete/you?tab=settings`, `/athlete/social?tab=people`) title their own tab, not the screen's default one.
+  if (search) {
+    const activeLeafWithQuery = athleteNavLeaves.find(
+      leaf => leaf.href.includes('?') && isNavLeafActive(leaf.href, pathname, search)
+    );
+    if (activeLeafWithQuery) return activeLeafWithQuery.label;
+  }
   if (ROOT_TITLES[pathname]) return ROOT_TITLES[pathname];
-  // Tab links (`/athlete/social?tab=people`) title their own tab, not the screen's default one.
   const activeLeaf = athleteNavLeaves.find(leaf => isNavLeafActive(leaf.href, pathname, search));
   return activeLeaf?.label ?? findNavLeaf(pathname)?.label ?? EXTRA_TITLES.find(e => e.match.test(pathname))?.title;
 }

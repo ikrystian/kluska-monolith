@@ -20,7 +20,8 @@ const tint = (color: string, pct: number) => `color-mix(in srgb, ${color} ${pct}
 
 /** Reached from the tab bar, so listing them here would only repeat it. Search still finds them. */
 const ON_TAB_BAR = ['/athlete/log', '/athlete/social', '/athlete/you'];
-const offTabBar = (leaf: NavLeaf) => !ON_TAB_BAR.includes(leaf.href.split('?')[0]);
+const offTabBar = (leaf: NavLeaf) =>
+  leaf.href === '/athlete/you?tab=settings' || !ON_TAB_BAR.includes(leaf.href.split('?')[0]);
 
 /** Words that show what the search reaches beyond screen names: settings and features. */
 const SEARCH_HINTS = ['motyw', 'powiadomienia', 'strava', 'waga', 'makro', 'wyloguj'];
