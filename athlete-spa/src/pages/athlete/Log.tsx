@@ -1723,7 +1723,7 @@ function WorkoutPreviewSheet({ trigger, title, description, exerciseSeries, acti
   return (
     <Sheet>
       <SheetTrigger asChild>{trigger}</SheetTrigger>
-      <SheetContent side="bottom" className="flex flex-col">
+      <SheetContent side="bottom" className="template-preview-sheet flex flex-col">
         <SheetHeader>
           <SheetTitle className="font-display text-[2rem] font-bold uppercase leading-none">{title}</SheetTitle>
           <SheetDescription>{description}</SheetDescription>

@@ -1,11 +1,15 @@
-import type { ReactNode } from 'react';
+import { useState, useMemo, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock3, Layers, ListOrdered, Play, Plus, Sparkles } from 'lucide-react';
-import type { ExerciseSeries, Workout, WorkoutLog, WorkoutSet } from '@/lib/types';
+import { ChevronRight, Clock3, Layers, ListOrdered, Play, Plus, Sparkles } from 'lucide-react';
+import type { Exercise, ExerciseSeries, Workout, WorkoutLog, WorkoutSet } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { exercisesLabel } from '@/lib/plural';
 import { cn } from '@/lib/utils';
+import { useUser, useDoc } from '@/lib/db-hooks';
+import { useFavoriteExercises } from '@/hooks/useFavoriteExercises';
+import { ExerciseDetailDialog } from '@/components/shared/exercises/ExerciseDetailDialog';
+import { ProgressDialog } from '@/components/shared/exercises/ProgressDialog';
 import {
   FOCUS_META,
   lastSessionOf,
@@ -38,28 +42,101 @@ const summarizeSets = (sets: WorkoutSet[] | undefined): string | null => {
   return `${count} ${count === 1 ? 'seria' : 'serii'}${detail}`;
 };
 
-export function WorkoutExercisesPreview({ exerciseSeries }: { exerciseSeries: ExerciseSeries[] | undefined }) {
+const normalizeExercise = (exerciseInput: any): Exercise | null => {
+  if (!exerciseInput) return null;
+  const id = exerciseInput.id || exerciseInput._id || exerciseInput.exerciseId || '';
+  return {
+    ...exerciseInput,
+    id: typeof id === 'object' && id.toString ? id.toString() : String(id),
+  };
+};
+
+export function WorkoutExercisesPreview({
+  exerciseSeries,
+  onExerciseClick,
+}: {
+  exerciseSeries: ExerciseSeries[] | undefined;
+  onExerciseClick?: (exercise: Exercise) => void;
+}) {
+  const [internalSelectedExercise, setInternalSelectedExercise] = useState<Exercise | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [progressOpen, setProgressOpen] = useState(false);
+  const { user } = useUser();
+  const { favoriteSet, toggleFavorite } = useFavoriteExercises();
+
+  const handleItemClick = (exercise: Exercise) => {
+    if (onExerciseClick) {
+      onExerciseClick(exercise);
+    } else {
+      setInternalSelectedExercise(exercise);
+      setDetailOpen(true);
+    }
+  };
+
+  const exerciseId = internalSelectedExercise?.id || (internalSelectedExercise as any)?._id;
+  const { data: latestExercise } = useDoc<Exercise>('exercises', exerciseId || null);
+  const activeExercise = useMemo(() => {
+    if (latestExercise) return latestExercise;
+    if (!internalSelectedExercise) return null;
+    return normalizeExercise(internalSelectedExercise);
+  }, [latestExercise, internalSelectedExercise]);
+
   if (!exerciseSeries || exerciseSeries.length === 0) {
     return <p className="rounded-2xl bg-secondary/60 p-4 text-center text-sm text-muted-foreground">Ten trening nie ma jeszcze żadnych ćwiczeń.</p>;
   }
 
   return (
-    <ol className="divide-y divide-border/50">
-      {exerciseSeries.map((series, i) => {
-        const muscles = series.exercise?.mainMuscleGroups?.map(mg => mg.name).filter(Boolean).join(', ');
-        const summary = summarizeSets(series.sets);
-        const meta = [summary, muscles].filter(Boolean).join(' · ');
-        return (
-          <li key={i} className="flex items-center gap-3 py-2.5">
-            <span className="w-5 shrink-0 text-center font-display text-xl font-bold tabular-nums text-muted-foreground">{i + 1}</span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[15px] font-semibold leading-tight">{series.exercise?.name || 'Nieznane ćwiczenie'}</p>
-              <p className="truncate text-xs text-muted-foreground">{meta || 'Ogólnorozwojowe'}</p>
-            </div>
-          </li>
-        );
-      })}
-    </ol>
+    <>
+      <ol className="divide-y divide-border/50">
+        {exerciseSeries.map((series, i) => {
+          const rawExercise = series.exercise || ((series as any).exerciseId ? { id: (series as any).exerciseId, name: 'Ćwiczenie' } : null);
+          const exercise = normalizeExercise(rawExercise);
+          const muscles = exercise?.mainMuscleGroups?.map(mg => mg.name).filter(Boolean).join(', ');
+          const summary = summarizeSets(series.sets);
+          const meta = [summary, muscles].filter(Boolean).join(' · ');
+          return (
+            <li key={i}>
+              <button
+                type="button"
+                disabled={!exercise}
+                onClick={() => exercise && handleItemClick(exercise)}
+                className="row-tap group -mx-1.5 flex w-[calc(100%+0.75rem)] items-center gap-3 rounded-xl px-1.5 py-2.5 text-left transition-colors hover:bg-secondary/40 active:bg-secondary/60 disabled:pointer-events-none"
+              >
+                <span className="w-5 shrink-0 text-center font-display text-xl font-bold tabular-nums text-muted-foreground">
+                  {i + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[15px] font-semibold leading-tight transition-colors group-hover:text-primary">
+                    {exercise?.name || 'Nieznane ćwiczenie'}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">{meta || 'Ogólnorozwojowe'}</p>
+                </div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+
+      <ExerciseDetailDialog
+        exercise={activeExercise}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onShowProgress={() => {
+          setDetailOpen(false);
+          setProgressOpen(true);
+        }}
+        isFavorite={!!activeExercise && favoriteSet.has(activeExercise.id)}
+        onToggleFavorite={activeExercise ? () => toggleFavorite(activeExercise.id) : undefined}
+      />
+
+      <ProgressDialog
+        exercise={activeExercise}
+        userId={user?.uid}
+        open={progressOpen}
+        onOpenChange={setProgressOpen}
+      />
+    </>
   );
 }
 
@@ -108,7 +185,7 @@ export function TemplatePreviewSheet({ template, trigger, onStart, lastSession }
   return (
     <Sheet>
       <SheetTrigger asChild>{trigger}</SheetTrigger>
-      <SheetContent side="bottom" className="template-preview-sheetflex flex-col gap-0 px-0 pt-0">
+      <SheetContent side="bottom" className="template-preview-sheet flex flex-col gap-0 px-0 pt-0">
         <TemplateCover workout={template} className="h-52 shrink-0">
           <div className="absolute inset-0 bg-gradient-to-t from-popover via-popover/20 to-transparent" />
         </TemplateCover>

@@ -120,7 +120,7 @@ export function ProgressDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent >
+      <DialogContent className="z-[70]">
         <DialogHeader>
           <DialogTitle className="font-headline">Postęp: {exercise.name}</DialogTitle>
           <DialogDescription>

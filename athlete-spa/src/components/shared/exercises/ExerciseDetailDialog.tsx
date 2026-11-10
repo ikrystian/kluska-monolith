@@ -255,7 +255,7 @@ export function ExerciseDetailDialog({
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent side="bottom" className="flex flex-col gap-0 overflow-hidden p-0 [&>button]:z-10">
+            <SheetContent side="bottom" className="z-[60] flex flex-col gap-0 overflow-hidden p-0 [&>button]:z-10">
                 {scrollBody}
                 {actions}
             </SheetContent>

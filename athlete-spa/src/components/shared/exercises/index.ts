@@ -5,6 +5,7 @@ export { ExerciseCardGrid } from './ExerciseCardGrid';
 export { ExerciseFilters } from './ExerciseFilters';
 export { ExerciseFormDialog } from './ExerciseForm';
 export { ProgressDialog } from './ProgressDialog';
+export { ExerciseDetailDialog } from './ExerciseDetailDialog';
 
 // Export types
 export type {
