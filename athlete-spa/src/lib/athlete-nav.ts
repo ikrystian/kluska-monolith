@@ -248,6 +248,7 @@ export function searchNavLeaves(query: string, role: NavRole | undefined): NavLe
 export const ROOT_TITLES: Record<string, string> = {
   '/athlete/dashboard': '#leniwakluska',
   '/athlete/log': 'Trening',
+  '/athlete/diet': 'Dieta',
   '/athlete/social': 'Ekipa',
   '/athlete/menu': 'Menu',
   '/athlete/you': 'Ty',

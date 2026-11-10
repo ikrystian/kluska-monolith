@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Dumbbell, House, LayoutGrid, Plus, Users, type LucideIcon } from 'lucide-react';
+import { Dumbbell, House, LayoutGrid, Plus, Users, UtensilsCrossed, type LucideIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { QuickAddSheet } from '@/components/quick-add-sheet';
@@ -49,6 +49,7 @@ export function BottomNav() {
 
   const youActive = pathname === '/athlete/you' || pathname === '/athlete/profile';
   const menuActive = pathname === '/athlete/menu';
+  const dietActive = pathname.startsWith('/athlete/diet') || pathname.startsWith('/athlete/nutrition');
   // Slides away with the header on scroll (same chrome state, same pinned screens).
   const keepNavVisible = keepsChromeVisible(pathname);
 
@@ -61,9 +62,10 @@ export function BottomNav() {
           !keepNavVisible && 'group-data-[chrome=hidden]/chrome:translate-y-full'
         )}
       >
-        <div className="grid h-[var(--tabbar-h)] grid-cols-6">
+        <div className="grid h-[var(--tabbar-h)] grid-cols-7">
           <TabLink href="/athlete/dashboard" label="Dziś" icon={House} isActive={pathname === '/athlete/dashboard'} />
           <TabLink href="/athlete/log" label="Trening" icon={Dumbbell} isActive={pathname.startsWith('/athlete/log')} />
+          <TabLink href="/athlete/diet" label="Dieta" icon={UtensilsCrossed} isActive={dietActive} />
 
           {/* Quick add sits on the bar like a plate on the sleeve. */}
           <div className="relative">
