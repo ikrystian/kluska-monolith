@@ -81,12 +81,12 @@ export default function LoginPage() {
     <>
       <AuthShell
         mode="login"
-        title="Witaj"
-        accent="z powrotem"
+        title="Wracaj"
+        accent="częściej."
         subtitle=""
         footer={
           <div className="space-y-3">
-            <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+            <div className="flex items-center gap-3 text-xs font-semibold text-muted-foreground">
               <span className="h-px flex-1 bg-border" />
               lub
               <span className="h-px flex-1 bg-border" />
@@ -95,23 +95,23 @@ export default function LoginPage() {
               type="button"
               onClick={handleGuestLogin}
               disabled={isBusy}
-              className="group flex w-full items-center gap-4 rounded-[1.5rem] border border-dashed border-border bg-card/60 p-4 text-left transition-colors hover:border-primary/50 hover:bg-card active:scale-[0.99] disabled:pointer-events-none disabled:opacity-60"
+              className="row-tap flex w-full items-center gap-3 rounded-2xl bg-card p-3.5 text-left disabled:pointer-events-none disabled:opacity-60"
             >
-              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-muted text-foreground">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-secondary">
                 {isGuestLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <UserRound className="h-5 w-5" />}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-bold">
+                <span className="block text-[15px] font-semibold leading-tight">
                   {isGuestLoading ? 'Uruchamianie...' : 'Kontynuuj bez konta'}
                 </span>
                 <span className="mt-0.5 block text-xs text-muted-foreground">
                   Dane zostaną na tym urządzeniu — konto założysz później.
                 </span>
               </span>
-              <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+              <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
             </button>
 
-            <p className="relative text-xs text-white/60 mt-5 text-center">#leniwakluska 2026 Lightweight, baby! 🏋️</p>
+            <p className="pt-1 text-center text-xs text-muted-foreground">Lightweight, baby!</p>
           </div>
         }
       >
@@ -150,7 +150,7 @@ export default function LoginPage() {
             trailing={<PasswordToggle visible={showPassword} onToggle={() => setShowPassword((prev) => !prev)} />}
           />
           <div className="-mt-1 text-right">
-            <Link to="/forgot-password" className="text-sm font-semibold text-primary underline-offset-4 hover:underline">
+            <Link to="/forgot-password" className="text-sm font-medium text-muted-foreground">
               Nie pamiętasz hasła?
             </Link>
           </div>
@@ -165,7 +165,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          <Button type="submit" className="h-[3.25rem] w-full rounded-2xl text-base font-bold shadow-glow" disabled={isBusy}>
+          <Button type="submit" size="lg" className="w-full" disabled={isBusy}>
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />

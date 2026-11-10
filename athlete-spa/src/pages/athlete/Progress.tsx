@@ -34,6 +34,8 @@ import {
     Calendar,
 } from 'lucide-react';
 import { useUser, jsonFetcher } from '@/lib/db-hooks';
+import { SectionHeader } from '@/components/ui/section';
+import { cn } from '@/lib/utils';
 import { useEffect } from 'react';
 
 interface VolumeTrend {
@@ -94,21 +96,21 @@ const StatCard = ({
     trend?: number;
     isLoading: boolean;
 }) => (
-    <div className="rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-soft">
+    <div className="rounded-2xl bg-card p-4">
         <div className="flex items-center justify-between">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{title}</p>
+            <p className="text-xs font-semibold text-muted-foreground">{title}</p>
             <Icon className="h-4 w-4 text-muted-foreground/50" />
         </div>
         {isLoading ? (
             <Skeleton className="mt-2 h-8 w-24" />
         ) : (
             <div className="mt-2 flex flex-wrap items-baseline gap-2">
-                <p className="font-headline text-2xl font-bold leading-none tracking-tight tabular-nums">
+                <p className={cn('font-display font-bold leading-none tabular-nums', String(value).length > 9 ? 'line-clamp-2 text-2xl' : 'text-[2rem]')}>
                     {value}
-                    {unit && <span className="ml-1 text-sm font-semibold text-muted-foreground">{unit}</span>}
+                    {unit && <span className="ml-1 font-body text-sm font-semibold text-muted-foreground">{unit}</span>}
                 </p>
                 {trend !== undefined && trend !== 0 && (
-                    <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${trend > 0 ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-destructive/15 text-destructive'}`}>
+                    <span className={`inline-flex items-center gap-0.5 text-xs font-semibold tabular-nums ${trend > 0 ? 'text-volt' : 'text-destructive'}`}>
                         {trend > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                         {Math.abs(trend)}%
                     </span>
@@ -226,44 +228,38 @@ export default function ProgressPage() {
     const combinedLoading = isUserLoading || isLoading;
 
     const NoDataMessage = ({ message }: { message: string }) => (
-        <div className="flex h-64 flex-col items-center justify-center rounded-[1.75rem] border border-dashed border-border bg-card/50 p-4 text-center">
-            <span className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-secondary text-primary">
-                <BarChart3 className="h-6 w-6" />
-            </span>
-            <p className="text-sm text-muted-foreground">{message}</p>
+        <div className="flex h-56 flex-col items-center justify-center text-center">
+            <BarChart3 className="mb-2 h-6 w-6 text-muted-foreground" />
+            <p className="text-sm font-medium">{message}</p>
             <p className="text-xs text-muted-foreground">Dodaj więcej treningów, aby zobaczyć wykresy.</p>
         </div>
     );
 
     return (
-        <div className="container mx-auto p-4 md:p-8">
-            <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-                <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-muted-foreground">Analiza wyników</p>
-                    <h1 className="mt-2 font-display text-3xl font-extrabold uppercase tracking-tight md:text-4xl">
-                        Twoje <span className="text-gradient-ember">postępy</span>
-                    </h1>
-                </div>
-                <Select value={period} onValueChange={setPeriod}>
-                    <SelectTrigger className="h-11 w-full rounded-full px-4 md:w-[180px]">
-                        <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
-                        <SelectValue placeholder="Wybierz okres" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {periods.map(p => (
-                            <SelectItem key={p.value} value={p.value}>
-                                {p.label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+        <div className="page space-y-4">
+            <div className="no-scrollbar -mx-4 flex gap-1.5 overflow-x-auto px-4" role="tablist" aria-label="Okres">
+                {periods.map(p => (
+                    <button
+                        key={p.value}
+                        type="button"
+                        role="tab"
+                        aria-selected={period === p.value}
+                        onClick={() => setPeriod(p.value)}
+                        className={cn(
+                            'h-9 shrink-0 rounded-full px-3.5 text-sm font-semibold transition-colors',
+                            period === p.value ? 'bg-foreground text-background' : 'bg-card text-muted-foreground'
+                        )}
+                    >
+                        {p.label}
+                    </button>
+                ))}
             </div>
 
             {/* Summary Cards */}
-            <div className="mb-6 grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2.5">
                 <StatCard
                     title="Objętość"
-                    value={data?.summary?.totalVolume?.toLocaleString() || '0'}
+                    value={data?.summary?.totalVolume?.toLocaleString('pl-PL') || '0'}
                     unit="kg"
                     icon={Dumbbell}
                     trend={data?.summary?.volumeChange}
@@ -277,7 +273,7 @@ export default function ProgressPage() {
                 />
                 <StatCard
                     title="Obecna waga"
-                    value={data?.bodyWeight?.at(-1)?.weight?.toFixed(1) || '-'}
+                    value={data?.bodyWeight?.at(-1)?.weight?.toLocaleString('pl-PL', { minimumFractionDigits: 1 }) || '-'}
                     unit="kg"
                     icon={Weight}
                     isLoading={combinedLoading}
@@ -291,24 +287,12 @@ export default function ProgressPage() {
             </div>
 
             {/* Charts */}
-            <Tabs defaultValue="volume" className="space-y-4">
+            <Tabs defaultValue="volume">
                 <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="volume" className="flex items-center gap-2">
-                        <Dumbbell className="h-4 w-4" />
-                        <span className="hidden sm:inline">Objętość</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="strength" className="flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4" />
-                        <span className="hidden sm:inline">Siła (1RM)</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="weight" className="flex items-center gap-2">
-                        <Weight className="h-4 w-4" />
-                        <span className="hidden sm:inline">Waga</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="circumferences" className="flex items-center gap-2">
-                        <Ruler className="h-4 w-4" />
-                        <span className="hidden sm:inline">Obwody</span>
-                    </TabsTrigger>
+                    <TabsTrigger value="volume">Objętość</TabsTrigger>
+                    <TabsTrigger value="strength">Siła</TabsTrigger>
+                    <TabsTrigger value="weight">Waga</TabsTrigger>
+                    <TabsTrigger value="circumferences">Obwody</TabsTrigger>
                 </TabsList>
 
                 {/* Volume Tab */}
@@ -326,7 +310,7 @@ export default function ProgressPage() {
                             ) : formattedVolumeData.length < 2 ? (
                                 <NoDataMessage message="Za mało danych do wyświetlenia wykresu objętości." />
                             ) : (
-                                <ChartContainer config={volumeChartConfig} className="min-h-[300px] w-full">
+                                <ChartContainer config={volumeChartConfig} className="min-h-[240px] w-full">
                                     <AreaChart data={formattedVolumeData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id="volumeGradient" x1="0" y1="0" x2="0" y2="1">
@@ -353,7 +337,7 @@ export default function ProgressPage() {
                                                     formatter={(value, name, props) => (
                                                         <div className="flex flex-col">
                                                             <span className="font-medium">{props.payload.formattedDateFull}</span>
-                                                            <span>Objętość: {Number(value).toLocaleString()} kg</span>
+                                                            <span>Objętość: {Number(value).toLocaleString('pl-PL')} kg</span>
                                                             <span className="text-muted-foreground text-sm">
                                                                 Treningi: {props.payload.workoutCount}
                                                             </span>
@@ -379,14 +363,14 @@ export default function ProgressPage() {
                 {/* Strength (1RM) Tab */}
                 <TabsContent value="strength">
                     <Card>
-                        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <CardHeader className="flex flex-col gap-3">
                             <div>
                                 <CardTitle>Szacowane 1RM w czasie</CardTitle>
                                 <CardDescription>Postęp siły wg formuły Brzycki</CardDescription>
                             </div>
                             {exerciseOptions.length > 0 && (
                                 <Select value={selectedExercise || ''} onValueChange={setSelectedExercise}>
-                                    <SelectTrigger className="h-10 w-full rounded-full px-4 sm:w-[200px]">
+                                    <SelectTrigger className="h-10 w-full rounded-full px-4">
                                         <SelectValue placeholder="Wybierz ćwiczenie" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -407,7 +391,7 @@ export default function ProgressPage() {
                             ) : formattedOneRMData.length < 2 ? (
                                 <NoDataMessage message="Za mało danych do wyświetlenia wykresu 1RM." />
                             ) : (
-                                <ChartContainer config={oneRMChartConfig} className="min-h-[300px] w-full">
+                                <ChartContainer config={oneRMChartConfig} className="min-h-[240px] w-full">
                                     <LineChart data={formattedOneRMData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                                         <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.6} />
                                         <XAxis
@@ -467,7 +451,7 @@ export default function ProgressPage() {
                             ) : formattedWeightData.length < 2 ? (
                                 <NoDataMessage message="Za mało danych do wyświetlenia wykresu wagi." />
                             ) : (
-                                <ChartContainer config={weightChartConfig} className="min-h-[300px] w-full">
+                                <ChartContainer config={weightChartConfig} className="min-h-[240px] w-full">
                                     <LineChart data={formattedWeightData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                                         <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.6} />
                                         <XAxis
@@ -545,7 +529,7 @@ export default function ProgressPage() {
                             ) : selectedCircumferences.length === 0 ? (
                                 <p className="py-10 text-center text-sm text-muted-foreground">Wybierz partie ciała powyżej.</p>
                             ) : (
-                                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                <div className="grid gap-3">
                                     {selectedCircumferences.map(key => {
                                         const series = formattedCircumferencesData.filter(
                                             d => d[key as keyof CircumferencesEntry] != null
@@ -555,18 +539,18 @@ export default function ProgressPage() {
                                         const delta = latest != null && first != null ? latest - first : null;
 
                                         return (
-                                            <div key={key} className="rounded-2xl border border-border/60 bg-card p-4 shadow-soft">
+                                            <div key={key} className="rounded-2xl bg-card p-4">
                                                 <div className="flex items-center justify-between">
-                                                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                                                    <p className="text-xs font-semibold text-muted-foreground">
                                                         {circumferenceLabels[key]}
                                                     </p>
                                                     {delta != null && delta !== 0 && (
-                                                        <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-bold tabular-nums text-foreground">
+                                                        <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-bold tabular-nums text-foreground">
                                                             {delta > 0 ? '+' : ''}{delta.toFixed(1)} cm
                                                         </span>
                                                     )}
                                                 </div>
-                                                <p className="mt-1 font-headline text-2xl font-bold tabular-nums">
+                                                <p className="mt-1 font-display text-3xl font-bold tabular-nums">
                                                     {latest != null ? latest.toFixed(1) : '–'}
                                                     <span className="ml-1 text-sm font-semibold text-muted-foreground">cm</span>
                                                 </p>
@@ -585,7 +569,7 @@ export default function ProgressPage() {
                                                                     cursor={{ stroke: 'hsl(var(--border))' }}
                                                                     content={({ active, payload }) =>
                                                                         active && payload?.length ? (
-                                                                            <div className="rounded-lg border border-border/60 bg-popover px-2.5 py-1.5 text-xs shadow-lifted">
+                                                                            <div className="rounded-lg border border-border/60 bg-popover px-2.5 py-1.5 text-xs">
                                                                                 <p className="font-medium">{(payload[0].payload as any).formattedDateFull}</p>
                                                                                 <p className="tabular-nums text-muted-foreground">{Number(payload[0].value).toFixed(1)} cm</p>
                                                                             </div>
@@ -617,37 +601,26 @@ export default function ProgressPage() {
 
             {/* Top Exercises */}
             {data?.summary?.topExercises && data.summary.topExercises.length > 0 && (
-                <Card className="mt-6">
-                    <CardHeader>
-                        <CardTitle>Najbardziej obciążające ćwiczenia</CardTitle>
-                        <CardDescription>Top 5 ćwiczeń wg całkowitej objętości</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-3">
-                            {data.summary.topExercises.map((exercise, index) => (
-                                <div key={exercise.name} className="flex items-center gap-3.5 rounded-2xl border border-border/60 bg-secondary/30 p-3">
-                                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary font-headline text-sm font-bold text-primary">
-                                        {index + 1}
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <div className="line-clamp-2 font-semibold">{exercise.name}</div>
-                                        <div className="text-xs tabular-nums text-muted-foreground">
-                                            {exercise.volume.toLocaleString()} kg objętości
-                                        </div>
-                                    </div>
-                                    <div className="h-2 w-20 shrink-0 overflow-hidden rounded-full bg-secondary md:w-28">
+                <section>
+                    <SectionHeader title="Najwięcej objętości" />
+                    <div className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card">
+                        {data.summary.topExercises.map((exercise, index) => (
+                            <div key={exercise.name} className="flex items-center gap-3 px-3.5 py-2.5">
+                                <span className="w-4 shrink-0 text-center font-display text-xl font-bold tabular-nums text-muted-foreground">{index + 1}</span>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-sm font-semibold">{exercise.name}</p>
+                                    <div className="mt-1 h-1 overflow-hidden rounded-full bg-secondary">
                                         <div
-                                            className="h-full rounded-full bg-[hsl(var(--chart-1))]"
-                                            style={{
-                                                width: `${(exercise.volume / data.summary.topExercises[0].volume) * 100}%`,
-                                            }}
+                                            className="h-full rounded-full bg-primary"
+                                            style={{ width: `${(exercise.volume / data.summary.topExercises[0].volume) * 100}%` }}
                                         />
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
+                                <span className="shrink-0 text-[13px] tabular-nums text-muted-foreground">{exercise.volume.toLocaleString('pl-PL')} kg</span>
+                            </div>
+                        ))}
+                    </div>
+                </section>
             )}
         </div>
     );

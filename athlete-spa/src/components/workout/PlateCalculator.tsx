@@ -20,10 +20,10 @@ import { cn } from '@/lib/utils';
 
 /** Plate colours follow the IWF calibrated-disc convention gyms label by. */
 const PLATE_STYLES: Record<number, string> = {
-  25: 'bg-red-600 text-white',
-  20: 'bg-blue-600 text-white',
-  15: 'bg-yellow-500 text-black',
-  10: 'bg-green-600 text-white',
+  25: 'bg-destructive text-white',
+  20: 'bg-run text-black',
+  15: 'bg-food text-black',
+  10: 'bg-volt text-volt-foreground',
   5: 'bg-white text-black',
   2.5: 'bg-neutral-800 text-white ring-1 ring-white/25',
   1.25: 'bg-neutral-500 text-white',
@@ -73,7 +73,7 @@ export function PlateCalculator({ targetWeight }: { targetWeight: number | undef
         </button>
       </SheetTrigger>
 
-      <SheetContent side="bottom" className="rounded-t-[2rem] pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <SheetContent side="bottom" className="rounded-t-3xl pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         <SheetHeader className="text-left">
           <SheetTitle className="font-headline">Kalkulator talerzy</SheetTitle>
           <SheetDescription>
@@ -84,7 +84,7 @@ export function PlateCalculator({ targetWeight }: { targetWeight: number | undef
         <div className="mt-4 space-y-5">
           {/* Bar selection — remembered between sessions */}
           <div>
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Gryf</p>
+            <p className="mb-2 text-xs font-semibold text-muted-foreground">Gryf</p>
             <div className="grid grid-cols-2 gap-2">
               {BAR_OPTIONS.map(option => (
                 <button
@@ -106,7 +106,7 @@ export function PlateCalculator({ targetWeight }: { targetWeight: number | undef
 
           {/* Loading diagram */}
           <div>
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            <p className="mb-2 text-xs font-semibold text-muted-foreground">
               Na jedną stronę
             </p>
 
@@ -127,7 +127,7 @@ export function PlateCalculator({ targetWeight }: { targetWeight: number | undef
                     <span
                       key={`${plate}-${index}`}
                       className={cn(
-                        'grid w-7 place-items-center rounded-md text-[10px] font-bold tabular-nums shadow-soft',
+                        'grid w-7 place-items-center rounded-md text-[11px] font-bold tabular-nums',
                         plateHeight(plate),
                         PLATE_STYLES[plate] ?? 'bg-muted text-foreground'
                       )}
@@ -141,7 +141,7 @@ export function PlateCalculator({ targetWeight }: { targetWeight: number | undef
                   {grouped.map(({ plate, count }) => (
                     <span
                       key={plate}
-                      className="rounded-full bg-card px-2.5 py-1 text-xs font-semibold tabular-nums shadow-soft"
+                      className="rounded-full bg-card px-2.5 py-1 text-xs font-semibold tabular-nums"
                     >
                       {count}× {plate} kg
                     </span>
@@ -153,9 +153,9 @@ export function PlateCalculator({ targetWeight }: { targetWeight: number | undef
 
           {/* Reality check when the target isn't loadable */}
           {breakdown.remainder !== 0 && !breakdown.belowBar && (
-            <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
-              <p className="text-xs text-amber-600 dark:text-amber-400">
+            <div className="flex items-start gap-2 rounded-xl border border-food/30 bg-food/10 p-3">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-food" />
+              <p className="text-xs text-food">
                 Dostępnymi talerzami złożysz <strong>{breakdown.achievable} kg</strong> — brakuje{' '}
                 {breakdown.remainder} kg do celu.
               </p>

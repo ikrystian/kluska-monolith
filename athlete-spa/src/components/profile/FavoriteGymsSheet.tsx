@@ -58,7 +58,7 @@ export function FavoriteGymsSheet({ open, onOpenChange, userProfile, onSaved }: 
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="mx-auto flex max-h-[88vh] w-full max-w-lg flex-col rounded-t-[2rem] px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-5"
+        className="mx-auto flex max-h-[88vh] w-full max-w-lg flex-col rounded-t-3xl px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-5"
       >
         <SheetHeader className="text-left">
           <SheetTitle className="font-headline text-xl">Ulubione siłownie</SheetTitle>
@@ -128,7 +128,7 @@ export function FavoriteGymsSheet({ open, onOpenChange, userProfile, onSaved }: 
           )}
         </div>
 
-        <Button className="h-11 w-full rounded-full font-semibold" disabled={!isDirty || isSaving} onClick={handleSave}>
+        <Button className="h-11 w-full font-semibold" disabled={!isDirty || isSaving} onClick={handleSave}>
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Zapisz {selected.length > 0 && `(${selected.length})`}
         </Button>

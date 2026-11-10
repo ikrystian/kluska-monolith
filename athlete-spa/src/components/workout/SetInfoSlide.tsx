@@ -80,7 +80,7 @@ function Stepper({
       className={cn(
         'rounded-2xl border p-2.5 transition-colors',
         isCompleted
-          ? 'bg-green-500/10 border-green-500/30'
+          ? 'bg-volt/10 border-volt/30'
           : hasError
             ? 'bg-destructive/5 border-destructive/40'
             : 'bg-secondary/40 border-transparent'
@@ -206,7 +206,7 @@ export function SetInfoSlide({
             <button
               type="button"
               onClick={() => setTipExpanded((v) => !v)}
-              className="flex w-full items-start gap-2 rounded-lg bg-yellow-500/10 px-2.5 py-1.5 text-left text-xs text-yellow-700 dark:text-yellow-500"
+              className="flex w-full items-start gap-2 rounded-lg bg-food/10 px-2.5 py-1.5 text-left text-xs text-food"
             >
               <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span className={cn(!tipExpanded && 'line-clamp-1')}>{tip}</span>

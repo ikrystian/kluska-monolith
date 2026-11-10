@@ -76,27 +76,27 @@ export function PeopleTab({ onProfileClick }: PeopleTabProps) {
           onChange={e => setSearch(e.target.value)}
           placeholder="Szukaj sportowców po nicku lub mieście"
           aria-label="Szukaj sportowców"
-          className="h-11 rounded-full border-border/60 bg-card pl-10 shadow-soft"
+          className="h-11 rounded-full border-border/60 bg-card pl-10"
         />
       </div>
 
       {athletesError ? (
-        <div className="rounded-[1.75rem] border border-dashed border-border bg-card/50 p-8 text-center">
+        <div className="rounded-2xl border border-dashed border-border bg-card/50 p-8 text-center">
           <p className="mb-3 text-sm text-muted-foreground">Nie udało się wczytać listy sportowców.</p>
-          <Button variant="outline" size="sm" className="rounded-full" onClick={() => refetchAthletes()}>
+          <Button variant="outline" size="sm"  onClick={() => refetchAthletes()}>
             Spróbuj ponownie
           </Button>
         </div>
       ) : isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-[4.5rem] w-full rounded-[1.5rem]" />
+            <Skeleton key={i} className="h-[4.5rem] w-full rounded-2xl" />
           ))}
         </div>
       ) : term ? (
         <Section title="Wyniki wyszukiwania" count={results.length}>
           {results.length === 0 ? (
-            <p className="rounded-[1.5rem] bg-card/50 p-6 text-center text-sm text-muted-foreground">
+            <p className="rounded-2xl bg-card/50 p-6 text-center text-sm text-muted-foreground">
               Nikt nie pasuje do „{search.trim()}”.
             </p>
           ) : (
@@ -151,11 +151,11 @@ export function PeopleTab({ onProfileClick }: PeopleTabProps) {
 
           {suggestions.length > 0 && (
             <Section title="Blisko Ciebie" subtitle="Sportowcy z Twojej okolicy">
-              <ul className="no-scrollbar -mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 md:mx-0 md:px-0">
+              <ul className="no-scrollbar -mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2">
                 {suggestions.map(a => (
                   <li
                     key={a.userId}
-                    className="flex w-40 shrink-0 snap-start flex-col items-center rounded-[1.5rem] border border-border/60 bg-card p-4 text-center shadow-soft"
+                    className="flex w-40 shrink-0 snap-start flex-col items-center rounded-2xl bg-card p-4 text-center"
                   >
                     <button
                       type="button"
@@ -181,7 +181,7 @@ export function PeopleTab({ onProfileClick }: PeopleTabProps) {
 
           <Section title="Twoi znajomi" count={friends.length}>
             {friends.length === 0 ? (
-              <div className="rounded-[1.75rem] border border-dashed border-border bg-card/50 p-6 text-center">
+              <div className="rounded-2xl border border-dashed border-border bg-card/50 p-6 text-center">
                 <span className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-secondary text-primary">
                   <Users className="h-6 w-6" />
                 </span>
@@ -266,7 +266,7 @@ export function PeopleTab({ onProfileClick }: PeopleTabProps) {
                 ))}
               </PersonList>
               {!showAllOthers && others.length > OTHERS_PREVIEW && (
-                <Button variant="ghost" className="mt-2 w-full rounded-full" onClick={() => setShowAllOthers(true)}>
+                <Button variant="ghost" className="mt-2 w-full" onClick={() => setShowAllOthers(true)}>
                   Pokaż wszystkich ({others.length})
                 </Button>
               )}
@@ -332,7 +332,7 @@ function Section({
 
 function PersonList({ children }: { children: ReactNode }) {
   return (
-    <ul className="divide-y divide-border/60 overflow-hidden rounded-[1.5rem] border border-border/60 bg-card shadow-soft">
+    <ul className="divide-y divide-border/60 overflow-hidden rounded-2xl bg-card">
       {children}
     </ul>
   );

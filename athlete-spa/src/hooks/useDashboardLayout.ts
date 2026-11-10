@@ -11,15 +11,16 @@ import { useUser } from '@/lib/db-hooks';
  */
 
 export const DASHBOARD_SECTION_IDS = [
-  'bento',
-  'challenges',
-  'recent-goals',
-  'friends-activity',
-  'trainer-sessions',
-  'plans',
+  'bar',
   'habits',
-  'planned',
-  'quick-actions',
+  'nutrition',
+  'upcoming',
+  'week-stats',
+  'plans',
+  'challenges',
+  'recent',
+  'goals',
+  'friends-activity',
 ] as const;
 
 export type DashboardSectionId = (typeof DASHBOARD_SECTION_IDS)[number];

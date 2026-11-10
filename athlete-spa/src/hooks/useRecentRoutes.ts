@@ -7,9 +7,9 @@ const MAX_ENTRIES = 4;
 /** Screens reachable from the bottom bar don't belong in a shortcut list. */
 const EXCLUDED = new Set([
   '/athlete/dashboard',
-  '/athlete/calendar',
   '/athlete/log',
-  '/athlete/chat',
+  '/athlete/social',
+  '/athlete/you',
   '/athlete/onboarding',
 ]);
 
@@ -24,7 +24,7 @@ function read(): string[] {
 }
 
 /**
- * Most-recently-visited screens, so the "more" menu can surface what this
+ * Most-recently-visited screens, so the "Ty" tab can surface what this
  * athlete actually uses instead of making them re-scan the full list.
  *
  * Only exact top-level athlete routes are recorded — detail screens like

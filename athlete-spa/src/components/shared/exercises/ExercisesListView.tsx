@@ -239,13 +239,10 @@ export function ExercisesListView(props: ExercisesListViewProps) {
       : `${totalFiltered} z ${totalAll} ćwiczeń`;
 
   return (
-    <div className="container mx-auto p-4 md:p-8 pt-18 h-full flex flex-col">
-      <div className="mb-4 flex flex-shrink-0 flex-col gap-4">
-        <div className="flex items-end justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">{countLabel}</p>
-            <h1 className="font-headline text-3xl font-bold leading-tight">{title}</h1>
-          </div>
+    <div className="page h-full flex flex-col">
+      <div className="mb-3 flex flex-shrink-0 flex-col gap-3">
+        <div className="flex items-center justify-between gap-3">
+          <p className="min-w-0 truncate text-sm text-muted-foreground">{countLabel}</p>
           <div className="flex flex-shrink-0 items-center gap-2">
             <ViewModeToggle value={viewMode} onChange={setViewMode} />
             {showBulkDelete && allExercises && allExercises.length > 0 && (
@@ -254,14 +251,14 @@ export function ExercisesListView(props: ExercisesListViewProps) {
                 variant="destructive"
                 className="h-10 rounded-full"
               >
-                <Trash2 className="h-4 w-4 md:mr-2" />
-                <span className="hidden md:inline">Usuń wszystkie ({allExercises.length})</span>
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Usuń wszystkie ({allExercises.length})</span>
               </Button>
             )}
             {canCreate && (
-              <Button onClick={handleCreate} className="h-10 w-10 rounded-full p-0 md:w-auto md:px-4">
-                <Plus className="h-5 w-5 md:mr-1.5 md:h-4 md:w-4" />
-                <span className="sr-only md:not-sr-only">Dodaj ćwiczenie</span>
+              <Button onClick={handleCreate} className="h-10 w-10 p-0">
+                <Plus className="h-5 w-5" />
+                <span className="sr-only">Dodaj ćwiczenie</span>
               </Button>
             )}
           </div>
@@ -300,7 +297,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
           onToggleFavorite: showFavorites ? handleToggleFavorite : undefined,
         })}
         empty={
-          <Card className="flex flex-col items-center justify-center rounded-3xl border-dashed py-16">
+          <Card className="flex flex-col items-center justify-center rounded-2xl border-dashed py-16">
             <CardContent className="text-center">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                 <Dumbbell className="h-8 w-8 text-primary" />
@@ -308,7 +305,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
               <h3 className="font-headline text-xl font-semibold mb-2">Brak ćwiczeń</h3>
               <p className="mx-auto mb-4 max-w-sm text-sm text-muted-foreground">{emptyMessage}</p>
               {canCreate && (
-                <Button variant="outline" className="rounded-full" onClick={handleCreate}>
+                <Button variant="outline"  onClick={handleCreate}>
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Dodaj Ćwiczenie
                 </Button>

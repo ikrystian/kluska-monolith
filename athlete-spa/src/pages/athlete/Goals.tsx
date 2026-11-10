@@ -720,20 +720,10 @@ export default function GoalsAndAchievementsPage() {
         achievement={currentNotification}
         onClose={dismissCurrent}
       />
-      <div className="container mx-auto p-4 md:p-8">
-        {/* --- Header --- */}
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-muted-foreground">Motywacja</p>
-            <h1 className="mt-2 font-display text-3xl font-extrabold uppercase tracking-tight md:text-4xl">
-              Cele i <span className="text-gradient-ember">trofea</span>
-            </h1>
-          </div>
-        </div>
-
+      <div className="page">
         {/* --- Active Goals Section --- */}
         <section className="mb-12">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6">
             {isLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
                 <Card key={i} className="flex flex-col">
@@ -754,7 +744,7 @@ export default function GoalsAndAchievementsPage() {
                           <div className="flex items-start justify-between">
                             <div>
                               <CardTitle className="font-headline">{goal.title}</CardTitle>
-                              <CardDescription className="text-xs uppercase tracking-wider">
+                              <CardDescription className="text-xs">
                                 Termin: {format(new Date(goal.deadline), 'd MMM yyyy', { locale: pl })}
                               </CardDescription>
                             </div>
@@ -783,17 +773,17 @@ export default function GoalsAndAchievementsPage() {
                         </CardHeader>
                         <CardContent className="flex-grow">
                           <div className="mb-3 flex items-baseline justify-center gap-2">
-                            <span className="font-headline text-4xl font-extrabold tabular-nums tracking-tight">{goal.current.toLocaleString()}</span>
-                            <span className="text-sm text-muted-foreground">/ {goal.target.toLocaleString()} {goal.unit}</span>
+                            <span className="font-display text-5xl font-extrabold tabular-nums">{goal.current.toLocaleString('pl-PL')}</span>
+                            <span className="text-sm text-muted-foreground">/ {goal.target.toLocaleString('pl-PL')} {goal.unit}</span>
                           </div>
                           <Progress value={progress} aria-label={`${goal.title} postęp`} />
-                          <p className={`mt-2 text-center text-[11px] font-bold uppercase tracking-wider ${isCompleted ? 'text-volt' : 'text-muted-foreground'}`}>
+                          <p className={`mt-2 text-center text-xs font-semibold ${isCompleted ? 'text-volt' : 'text-muted-foreground'}`}>
                             {progress.toFixed(0)}% ukończono
                           </p>
                         </CardContent>
                         <CardFooter className="flex-col gap-2">
                           {isCompleted ? (
-                            <Button onClick={() => setGoalToConvert(goal)} className="w-full bg-volt font-bold text-volt-foreground shadow-glow-volt hover:bg-volt/90">
+                            <Button onClick={() => setGoalToConvert(goal)} className="w-full bg-volt font-bold text-volt-foreground hover:bg-volt/90">
                               <Trophy className="mr-2 h-4 w-4" /> Zamień w trofeum
                             </Button>
                           ) : (
@@ -811,7 +801,7 @@ export default function GoalsAndAchievementsPage() {
 
             <div
               onClick={() => { setEditingGoal(null); setGoalDialogOpen(true); }}
-              className="flex min-h-[280px] cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-card/50 p-6 text-center transition-all hover:border-primary/50 hover:bg-secondary/30 active:scale-[0.99]"
+              className="flex min-h-[280px] cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 p-6 text-center transition-all hover:border-primary/50 hover:bg-secondary/30 active:scale-[0.99]"
             >
               <span className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-secondary text-primary">
                 <PlusCircle className="h-7 w-7" />
@@ -826,7 +816,7 @@ export default function GoalsAndAchievementsPage() {
         {/* --- Gamification Badges Section --- */}
         <section className="mb-12">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="flex items-center gap-2 font-headline text-lg font-bold tracking-tight md:text-xl">
+            <h2 className="flex items-center gap-2 font-headline text-lg font-bold tracking-tight">
               <Medal className="h-5 w-5 text-[hsl(var(--chart-5))]" />
               Odznaki gamifikacji
             </h2>
@@ -842,29 +832,29 @@ export default function GoalsAndAchievementsPage() {
 
           {/* Mini stats card */}
           {gamificationStats && (
-            <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-              <div className="rounded-2xl border border-border/60 bg-card p-4 text-center shadow-soft">
-                <p className="font-headline text-2xl font-bold tabular-nums">{gamificationStats.level}</p>
-                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Poziom</p>
+            <div className="mb-6 grid grid-cols-2 gap-3">
+              <div className="rounded-2xl bg-card p-4 text-center">
+                <p className="font-display text-3xl font-bold tabular-nums">{gamificationStats.level}</p>
+                <p className="mt-0.5 text-xs font-semibold text-muted-foreground">Poziom</p>
               </div>
-              <div className="rounded-2xl border border-border/60 bg-card p-4 text-center shadow-soft">
-                <p className="font-headline text-2xl font-bold tabular-nums text-volt">{gamificationStats.currentFitCoins}</p>
-                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">FitCoins</p>
+              <div className="rounded-2xl bg-card p-4 text-center">
+                <p className="font-display text-3xl font-bold tabular-nums text-volt">{gamificationStats.currentFitCoins}</p>
+                <p className="mt-0.5 text-xs font-semibold text-muted-foreground">FitCoins</p>
               </div>
-              <div className="rounded-2xl border border-border/60 bg-card p-4 text-center shadow-soft">
-                <p className="font-headline text-2xl font-bold tabular-nums text-primary">{gamificationStats.streaks.goals}</p>
-                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Seria celów</p>
+              <div className="rounded-2xl bg-card p-4 text-center">
+                <p className="font-display text-3xl font-bold tabular-nums text-primary">{gamificationStats.streaks.goals}</p>
+                <p className="mt-0.5 text-xs font-semibold text-muted-foreground">Seria celów</p>
               </div>
-              <div className="rounded-2xl border border-border/60 bg-card p-4 text-center shadow-soft">
-                <p className="font-headline text-2xl font-bold tabular-nums">{gamificationStats.achievementCount}</p>
-                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Odznaki</p>
+              <div className="rounded-2xl bg-card p-4 text-center">
+                <p className="font-display text-3xl font-bold tabular-nums">{gamificationStats.achievementCount}</p>
+                <p className="mt-0.5 text-xs font-semibold text-muted-foreground">Odznaki</p>
               </div>
             </div>
           )}
 
           {/* Badges Grid */}
           {badgesLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {Array.from({ length: 3 }).map((_, i) => (
                 <Card key={i} className="animate-pulse">
                   <CardHeader><div className="h-6 bg-muted rounded w-3/4"></div></CardHeader>
@@ -873,7 +863,7 @@ export default function GoalsAndAchievementsPage() {
               ))}
             </div>
           ) : badges.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-card/50 py-12 text-center">
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
               <span className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-secondary text-primary">
                 <Medal className="h-7 w-7" />
               </span>
@@ -888,17 +878,17 @@ export default function GoalsAndAchievementsPage() {
         {/* --- Achievements Section --- */}
         <section>
           <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="font-headline text-lg font-bold tracking-tight md:text-xl">Zdobyte trofea</h2>
+            <h2 className="font-headline text-lg font-bold tracking-tight">Zdobyte trofea</h2>
             <Button variant="outline" size="sm" onClick={() => setAchievementDialogOpen(true)}>
               <PlusCircle className="mr-2 h-4 w-4" /> Dodaj trofeum
             </Button>
           </div>
           {isLoading ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-96 w-full rounded-3xl" />)}
+            <div className="grid grid-cols-1 gap-6">
+              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-96 w-full rounded-2xl" />)}
             </div>
           ) : achievements?.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-card/50 py-20 text-center">
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 py-20 text-center">
               <span className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-secondary text-primary">
                 <Trophy className="h-7 w-7" />
               </span>
@@ -906,7 +896,7 @@ export default function GoalsAndAchievementsPage() {
               <p className="max-w-sm text-sm text-muted-foreground">Osiągnij swoje cele lub dodaj osiągnięcie ręcznie, aby zapełnić tę galerię chwały!</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6">
               {achievements?.map((achievement) => (
                 <Card key={achievement.id} className="overflow-hidden flex flex-col">
                   <Carousel className="w-full">

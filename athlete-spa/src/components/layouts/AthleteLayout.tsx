@@ -2,9 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useSWRConfig } from 'swr';
 import { Loader2 } from 'lucide-react';
-import { AppNav } from '@/components/nav';
 import { AppHeader } from '@/components/header';
-import { SidebarProvider } from '@/components/ui/sidebar';
 import { useUser } from '@/lib/db-hooks';
 import { BottomNav } from '@/components/bottom-nav';
 import { ActiveWorkoutProvider } from '@/contexts/ActiveWorkoutContext';
@@ -26,7 +24,7 @@ function WrongRoleScreen() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-4 text-center">
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-4 p-6 text-center">
       <p className="text-lg font-semibold">Ten panel jest przeznaczony dla kont sportowców i trenerów.</p>
       <p className="text-muted-foreground">Zaloguj się na konto sportowca lub trenera, aby kontynuować.</p>
       <Button
@@ -54,8 +52,8 @@ function AthleteLayoutContent() {
   // would just eat into that space and fight its own fixed-position layout.
   const isRunRecordPage = location.pathname.startsWith('/athlete/running/record');
   const isImmersivePage = isOnboardingPage || isRunRecordPage;
-  // Active workout session hides the bottom nav, so the scroll area drops the
-  // bottom clearance padding it otherwise needs to sit above it.
+  // Active workout session hides the header and bottom nav, so the scroll area
+  // drops the clearance padding it otherwise needs to sit between them.
   const isActiveWorkoutSession = location.pathname === '/athlete/log' && new URLSearchParams(location.search).has('logId');
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -69,7 +67,7 @@ function AthleteLayoutContent() {
   const { mutate } = useSWRConfig();
   const refreshAll = useCallback(() => mutate(() => true), [mutate]);
   const { indicatorRef } = usePullToRefresh(scrollRef, refreshAll, !isActiveWorkoutSession);
-  // Mobile chrome (header + bottom nav) tucks away while reading down, returns on scroll up.
+  // The header and tab bar tuck away while reading down, and return on scroll up.
   const [chromeRoot, setChromeRoot] = useState<HTMLElement | null>(null);
   const chromeHidden = useHideOnScroll(chromeRoot, location.pathname + location.search, !isActiveWorkoutSession);
 
@@ -109,11 +107,8 @@ function AthleteLayoutContent() {
   // This prevents child components from rendering and attempting to fetch data prematurely.
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          <p className="text-muted-foreground">Weryfikacja uprawnień...</p>
-        </div>
+      <div className="flex min-h-dvh items-center justify-center">
+        <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -136,48 +131,37 @@ function AthleteLayoutContent() {
   // At this point, user is loaded, logged in, and is confirmed to be an athlete
   // or a trainer. It is now safe to render the athlete layout and its children.
   return (
-    <SidebarProvider>
-      <ActiveWorkoutProvider>
-        <NativeWidgetBridge />
-        <div className="flex h-dvh w-full">
-          <AppNav />
-          <main
-            ref={setChromeRoot}
-            data-chrome={chromeHidden ? 'hidden' : 'visible'}
-            className="group/chrome relative flex-1 flex flex-col overflow-hidden bg-background"
-          >
-            {/* Aurora — ambient light field behind every screen */}
-            <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-              <div className="absolute -left-32 -top-40 h-96 w-96 rounded-full bg-primary/[0.14] blur-[110px]" />
-              <div className="absolute -right-40 top-1/4 h-[30rem] w-[30rem] rounded-full bg-[hsl(var(--chart-4)/0.10)] blur-[130px]" />
-              <div className="absolute -bottom-40 left-1/4 h-96 w-96 rounded-full bg-[hsl(var(--volt)/0.07)] blur-[120px]" />
-              <div className="texture-grain absolute inset-0" />
-            </div>
-            <AppHeader />
-            <OfflineBanner />
-            <PullToRefreshIndicator ref={indicatorRef} />
-            <div
-              ref={scrollRef}
-              id="outlet"
-              className={cn(
-                'relative z-10 flex-1 overflow-x-hidden overflow-y-auto min-h-0',
-                isActiveWorkoutSession
-                  ? 'pb-[env(safe-area-inset-bottom)]'
-                  : 'pb-[calc(env(safe-area-inset-bottom))] md:pb-0'
-              )}
-            >
-              {/* h-full so pages that build their own internal scroll region
-                  (ExercisesListView's virtualized list, Log's builder) resolve
-                  a real height off #outlet instead of collapsing to content. */}
-              <AnimatedOutlet className="h-full" />
-            </div>
-            <BottomNav />
-            {/* Inside <main> so it follows data-chrome and drops into the bottom nav's place when that hides. */}
-            <ActiveWorkoutWidget />
-          </main>
+    <ActiveWorkoutProvider>
+      <NativeWidgetBridge />
+      <main
+        ref={setChromeRoot}
+        data-chrome={chromeHidden ? 'hidden' : 'visible'}
+        className="group/chrome app-column relative flex h-dvh flex-col overflow-hidden bg-background"
+      >
+        {!isActiveWorkoutSession && <AppHeader />}
+        <OfflineBanner />
+        <PullToRefreshIndicator ref={indicatorRef} />
+        {/* The padding belongs to the scroller, so content slides under the
+            frosted header and tab bar instead of stopping at their edge. */}
+        <div
+          ref={scrollRef}
+          id="outlet"
+          className={cn(
+            'relative z-10 min-h-0 flex-1 overflow-y-auto overflow-x-hidden',
+            isActiveWorkoutSession
+              ? 'pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)]'
+              : 'pb-[var(--app-bottom)] pt-[var(--app-top)] has-[~#mini-player]:pb-[calc(var(--app-bottom)+4rem)]'
+          )}
+        >
+          {/* h-full so pages that build their own internal scroll region
+              (ExercisesListView's virtualized list, Log's builder) resolve
+              a real height off #outlet instead of collapsing to content. */}
+          <AnimatedOutlet className="h-full" />
         </div>
-      </ActiveWorkoutProvider>
-    </SidebarProvider>
+        <BottomNav />
+        <ActiveWorkoutWidget />
+      </main>
+    </ActiveWorkoutProvider>
   );
 }
 

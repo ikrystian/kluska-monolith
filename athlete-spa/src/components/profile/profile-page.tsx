@@ -3,20 +3,13 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  ArrowRight,
-  Award,
   Camera,
   Dumbbell,
-  Globe,
-  IdCard,
-  LineChart,
   LogOut,
   MapPin,
   Pencil,
   UserPen,
   UserPlus,
-  Users,
-  type LucideIcon,
 } from 'lucide-react';
 import { Facebook, Instagram, Twitter } from '@/components/ui/social-icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -40,7 +33,7 @@ import { haptic } from '@/lib/haptics';
 import { useUserProfile } from '@/contexts/UserProfileContext';
 import { useAuth } from '@/contexts/AuthContext';
 import type { RunningSession, StravaActivity, UserProfile } from '@/lib/types';
-import { SettingsGroup, SettingsLinkRow, tint } from './profile-ui';
+import { SettingsGroup, SettingsLinkRow } from './profile-ui';
 import { IntegrationsSection } from './IntegrationsSection';
 import { AppSettingsSections } from './AppSettingsSections';
 
@@ -63,13 +56,6 @@ const ROLE_LABELS: Record<string, string> = {
   admin: 'Administrator',
 };
 
-const QUICK_LINKS: { to: string; label: string; hint: string; icon: LucideIcon; color: string }[] = [
-  { to: '/athlete/progress', label: 'Postępy', hint: 'Wykresy i rekordy', icon: LineChart, color: 'hsl(var(--chart-4))' },
-  { to: '/athlete/gamification', label: 'Osiągnięcia', hint: 'Odznaki i poziomy', icon: Award, color: 'hsl(var(--chart-5))' },
-  { to: '/athlete/social', label: 'Społeczność', hint: 'Znajomi i feed', icon: Users, color: 'hsl(var(--primary))' },
-  { to: '/athlete/history', label: 'Historia', hint: 'Wszystkie treningi', icon: Dumbbell, color: 'hsl(var(--volt))' },
-];
-
 const getInitials = (name: string | undefined) =>
   name
     ? name
@@ -87,14 +73,14 @@ function HeroStat({ label, value, unit, isLoading }: { label: string; value: str
   return (
     <div className="min-w-0 px-2 text-center">
       {isLoading ? (
-        <Skeleton className="mx-auto h-7 w-12 bg-white/20" />
+        <Skeleton className="mx-auto h-7 w-12" />
       ) : (
-        <p className="truncate font-headline text-2xl font-extrabold leading-none tabular-nums">
+        <p className="truncate font-display text-[1.75rem] font-bold leading-none tabular-nums">
           {value}
-          {unit && <span className="ml-0.5 text-xs font-bold text-white/70">{unit}</span>}
+          {unit && <span className="ml-0.5 font-body text-xs font-semibold text-muted-foreground">{unit}</span>}
         </p>
       )}
-      <p className="mt-1.5 truncate text-[10px] font-bold uppercase tracking-[0.16em] text-white/70">{label}</p>
+      <p className="mt-1 truncate text-xs text-muted-foreground">{label}</p>
     </div>
   );
 }
@@ -174,11 +160,11 @@ export function ProfilePage() {
   const avatarSrc = userProfile?.avatarUrl ? resolveMediaUrl(userProfile.avatarUrl) : fallbackAvatar?.imageUrl;
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 pb-4 pt-20 md:px-8 md:pt-8">
+    <div className="page">
       {user?.isGuest && (
-        <div className="mb-5 flex flex-col gap-3 rounded-[1.5rem] border border-amber-500/30 bg-amber-500/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-4 flex flex-col gap-3 rounded-2xl bg-card p-4">
           <div className="flex items-start gap-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-food/20 text-food">
               <UserPlus className="h-5 w-5" />
             </span>
             <div className="space-y-0.5">
@@ -188,166 +174,119 @@ export function ProfilePage() {
               </p>
             </div>
           </div>
-          <Button asChild size="sm" className="shrink-0 rounded-full font-semibold">
+          <Button asChild size="sm" className="shrink-0 font-semibold">
             <Link to="/register">Załóż konto</Link>
           </Button>
         </div>
       )}
 
-      <div className="grid gap-6 md:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] md:items-start md:gap-8">
-        {/* Identity column */}
-        <div className="space-y-4 md:sticky md:top-6">
-          <section className="hero-ember texture-grain relative overflow-hidden rounded-[2rem] p-5 pb-4 text-white shadow-glow">
-            <div className="relative flex items-start gap-4">
-              <div className="relative shrink-0">
-                <Avatar className="h-20 w-20 border-[3px] border-white/80 shadow-lifted">
-                  {avatarSrc && <AvatarImage src={avatarSrc} alt="Awatar użytkownika" className="object-cover" />}
-                  <AvatarFallback className="bg-black/25 text-xl font-bold text-white">
-                    {isLoading ? '' : getInitials(userProfile?.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <button
-                  type="button"
-                  onClick={() => setOpenPanel('avatar')}
-                  aria-label="Zmień zdjęcie profilowe"
-                  className="absolute -bottom-1 -right-1 grid h-8 w-8 place-items-center rounded-full border-2 border-white bg-foreground text-background shadow-soft transition-transform active:scale-90"
-                >
-                  <Camera className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="min-w-0 flex-1 pt-1">
-                {isLoading ? (
-                  <>
-                    <Skeleton className="h-6 w-36 bg-white/20" />
-                    <Skeleton className="mt-2 h-4 w-20 bg-white/20" />
-                  </>
-                ) : (
-                  <>
-                    <h1 className="truncate font-headline text-2xl font-extrabold leading-tight tracking-tight">
-                      {userProfile?.name || 'Twój profil'}
-                    </h1>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs font-semibold">
-                      <span className="rounded-full bg-black/20 px-2.5 py-0.5">
-                        {user?.isGuest ? 'Gość' : ROLE_LABELS[userProfile?.role ?? ''] ?? 'Sportowiec'}
-                      </span>
-                      {userProfile?.location && (
-                        <span className="flex min-w-0 items-center gap-1 text-white/85">
-                          <MapPin className="h-3 w-3 shrink-0" />
-                          <span className="truncate">{userProfile.location}</span>
-                        </span>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <Button
+      <div className="space-y-5">
+        <section className="rounded-2xl bg-card p-4">
+          <div className="flex items-center gap-3.5">
+            <div className="relative shrink-0">
+              <Avatar className="h-[4.5rem] w-[4.5rem]">
+                {avatarSrc && <AvatarImage src={avatarSrc} alt="Awatar użytkownika" className="object-cover" />}
+                <AvatarFallback className="text-xl font-bold">{isLoading ? '' : getInitials(userProfile?.name)}</AvatarFallback>
+              </Avatar>
+              <button
                 type="button"
-                size="icon"
-                variant="ghost"
-                onClick={() => setOpenPanel('edit')}
-                disabled={!userProfile}
-                aria-label="Edytuj profil"
-                className="h-9 w-9 shrink-0 rounded-full bg-black/20 text-white hover:bg-black/30 hover:text-white"
+                onClick={() => setOpenPanel('avatar')}
+                aria-label="Zmień zdjęcie profilowe"
+                className="absolute -bottom-1 -right-1 grid h-8 w-8 place-items-center rounded-full bg-foreground text-background ring-2 ring-card transition-transform active:scale-90"
               >
-                <Pencil className="h-4 w-4" />
-              </Button>
+                <Camera className="h-4 w-4" />
+              </button>
             </div>
 
-            {socialLinks.length > 0 && (
-              <div className="relative mt-4 flex gap-2">
-                {socialLinks.map(({ href, icon: Icon, label }) => (
-                  <a
-                    key={label}
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={label}
-                    className="grid h-8 w-8 place-items-center rounded-full bg-black/20 transition-colors hover:bg-black/30"
-                  >
-                    <Icon className="h-4 w-4" />
-                  </a>
-                ))}
-              </div>
-            )}
-
-            <div className="relative mt-5 grid grid-cols-3 divide-x divide-white/20 rounded-2xl bg-black/20 py-3 backdrop-blur-sm">
-              <HeroStat label="Kilometry" value={fmtKm(totalKm)} isLoading={statsLoading} />
-              <HeroStat label="Aktywności" value={String(activityCount)} isLoading={statsLoading} />
-              <HeroStat label="Siłownie" value={String(favoriteGymsCount)} isLoading={isLoading} />
-            </div>
-          </section>
-
-          {/* Around-the-equator goal */}
-          <section className="rounded-[1.5rem] border border-border/60 bg-card p-4 shadow-soft">
-            <div className="flex items-center gap-3">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sky-500/15 text-sky-600 dark:text-sky-400">
-                <Globe className="h-[18px] w-[18px]" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold">Dookoła Ziemi</p>
-                <p className="text-xs text-muted-foreground">
-                  {earthPercentage >= 100
-                    ? 'Okrążono równik! 🎉'
-                    : `Zostało ${Math.max(0, EARTH_EQUATOR_KM - totalKm).toLocaleString('pl-PL', { maximumFractionDigits: 0 })} km`}
-                </p>
-              </div>
-              <span className="font-headline text-lg font-extrabold tabular-nums text-sky-600 dark:text-sky-400">
-                {earthPercentage.toLocaleString('pl-PL', { maximumFractionDigits: earthPercentage < 10 ? 2 : 1 })}%
-              </span>
-            </div>
-            <div
-              className="mt-3 h-2 overflow-hidden rounded-full bg-secondary"
-              role="progressbar"
-              aria-label="Postęp okrążenia Ziemi"
-              aria-valuenow={Math.min(earthPercentage, 100)}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            >
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-sky-500 to-emerald-500 transition-[width] duration-700"
-                style={{ width: `${Math.max(Math.min(earthPercentage, 100), earthPercentage > 0 ? 1.5 : 0)}%` }}
-              />
-            </div>
-          </section>
-
-          {/* Summary entry point */}
-          <Link
-            to="/athlete/summary"
-            className="group flex items-center gap-3 rounded-[1.5rem] border border-border/60 bg-card p-4 shadow-soft transition-transform active:scale-[0.98]"
-          >
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
-              <IdCard className="h-[18px] w-[18px]" />
-            </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold">Twoje podsumowanie</p>
-              <p className="text-xs text-muted-foreground">Kilometry, tony, treningi i rekordy</p>
+              {isLoading ? (
+                <>
+                  <Skeleton className="h-6 w-36" />
+                  <Skeleton className="mt-2 h-4 w-20" />
+                </>
+              ) : (
+                <>
+                  <h1 className="truncate text-xl font-bold leading-tight">{userProfile?.name || 'Twój profil'}</h1>
+                  <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
+                    <span>{user?.isGuest ? 'Gość' : ROLE_LABELS[userProfile?.role ?? ''] ?? 'Sportowiec'}</span>
+                    {userProfile?.location && (
+                      <>
+                        <span aria-hidden>·</span>
+                        <MapPin className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{userProfile.location}</span>
+                      </>
+                    )}
+                  </p>
+                </>
+              )}
             </div>
-            <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-          </Link>
 
-          <div className="grid grid-cols-2 gap-2.5">
-            {QUICK_LINKS.map(({ to, label, hint, icon: Icon, color }) => (
-              <Link
-                key={to}
-                to={to}
-                className="flex flex-col gap-2 rounded-[1.25rem] border border-border/60 bg-card p-3.5 shadow-soft transition-transform active:scale-[0.97]"
-              >
-                <span className="grid h-8 w-8 place-items-center rounded-lg" style={{ backgroundColor: tint(color, 15), color }}>
-                  <Icon className="h-4 w-4" />
-                </span>
-                <span>
-                  <span className="block text-sm font-semibold">{label}</span>
-                  <span className="block truncate text-[11px] text-muted-foreground">{hint}</span>
-                </span>
-              </Link>
-            ))}
+            <Button
+              type="button"
+              size="icon"
+              variant="secondary"
+              onClick={() => setOpenPanel('edit')}
+              disabled={!userProfile}
+              aria-label="Edytuj profil"
+              className="shrink-0"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
           </div>
-        </div>
 
-        {/* Settings column */}
-        <div className="space-y-6">
+          {socialLinks.length > 0 && (
+            <div className="mt-3 flex gap-2">
+              {socialLinks.map(({ href, icon: Icon, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className="grid h-9 w-9 place-items-center rounded-full bg-secondary transition-transform active:scale-90"
+                >
+                  <Icon className="h-4 w-4" />
+                </a>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-4 grid grid-cols-3 divide-x divide-border/50 border-t border-border/50 pt-3.5">
+            <HeroStat label="Kilometry" value={fmtKm(totalKm)} isLoading={statsLoading} />
+            <HeroStat label="Aktywności" value={String(activityCount)} isLoading={statsLoading} />
+            <HeroStat label="Siłownie" value={String(favoriteGymsCount)} isLoading={isLoading} />
+          </div>
+        </section>
+
+        {/* Around-the-equator goal */}
+        <section className="rounded-2xl bg-card p-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="text-[15px] font-semibold">Dookoła Ziemi</p>
+            <span className="font-display text-[1.625rem] font-bold leading-none tabular-nums">
+              {earthPercentage.toLocaleString('pl-PL', { maximumFractionDigits: earthPercentage < 10 ? 2 : 1 })}%
+            </span>
+          </div>
+          <div
+            className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-secondary"
+            role="progressbar"
+            aria-label="Postęp okrążenia Ziemi"
+            aria-valuenow={Math.min(earthPercentage, 100)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <div
+              className="h-full rounded-full bg-run transition-[width] duration-700"
+              style={{ width: `${Math.max(Math.min(earthPercentage, 100), earthPercentage > 0 ? 1.5 : 0)}%` }}
+            />
+          </div>
+          <p className="mt-2 text-[13px] text-muted-foreground">
+            {earthPercentage >= 100
+              ? 'Okrążono równik!'
+              : `Do okrążenia równika zostało ${Math.max(0, EARTH_EQUATOR_KM - totalKm).toLocaleString('pl-PL', { maximumFractionDigits: 0 })} km`}
+          </p>
+        </section>
+
+        <div className="space-y-5">
           <SettingsGroup title="Konto">
             <SettingsLinkRow
               icon={UserPen}
@@ -378,7 +317,7 @@ export function ProfilePage() {
             type="button"
             variant="outline"
             onClick={handleLogout}
-            className="h-12 w-full rounded-[1.25rem] border-destructive/30 font-semibold text-destructive hover:bg-destructive/10 hover:text-destructive"
+            className="w-full border-destructive/30 text-destructive active:text-destructive"
           >
             <LogOut className="mr-2 h-4 w-4" />
             Wyloguj się

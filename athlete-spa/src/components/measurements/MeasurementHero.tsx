@@ -27,8 +27,8 @@ function Sparkline({ points }: { points: SeriesPoint[] }) {
         </linearGradient>
       </defs>
       <path d={`${line} L${W},${H} L0,${H} Z`} fill="url(#spark-fill)" />
-      <path d={line} fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-      <circle cx={lastX} cy={lastY} r="3.5" fill="white" vectorEffect="non-scaling-stroke" />
+      <path d={line} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+      <circle cx={lastX} cy={lastY} r="3.5" fill="currentColor" vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }
@@ -36,10 +36,10 @@ function Sparkline({ points }: { points: SeriesPoint[] }) {
 function DeltaPill({ delta, label }: { delta: number; label: string }) {
   const Icon = delta > 0 ? ArrowUpRight : delta < 0 ? ArrowDownRight : Minus;
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-1 text-xs font-semibold tabular-nums backdrop-blur-sm">
+    <span className="inline-flex items-center gap-1 rounded-lg bg-black/15 px-2 py-1 text-xs font-semibold tabular-nums">
       <Icon className="h-3.5 w-3.5" />
       {formatDelta(delta, 'kg')}
-      <span className="font-normal text-white/75">{label}</span>
+      <span className="font-normal text-primary-foreground/75">{label}</span>
     </span>
   );
 }
@@ -52,7 +52,7 @@ interface MeasurementHeroProps {
 
 /** Headline of the page: current weight, how it moved, and the one action that matters. */
 export function MeasurementHero({ weights, isLoading, onAdd }: MeasurementHeroProps) {
-  if (isLoading) return <Skeleton className="h-64 rounded-[2rem]" />;
+  if (isLoading) return <Skeleton className="h-64 rounded-2xl" />;
 
   const latest = weights[weights.length - 1];
   const previous = weights[weights.length - 2];
@@ -61,19 +61,17 @@ export function MeasurementHero({ weights, isLoading, onAdd }: MeasurementHeroPr
   const overdue = !!latest && days >= 7;
 
   return (
-    <section className="hero-ember texture-grain relative overflow-hidden rounded-[2rem] p-5 text-white shadow-glow md:p-7">
-      <div aria-hidden className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full border-[1.5rem] border-white/10" />
-
-      <div className="relative">
-        <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-white/80">
+    <section className="rounded-2xl bg-primary p-4 text-primary-foreground">
+      <div>
+        <p className="flex items-center gap-2 text-xs font-semibold text-primary-foreground/80">
           <Scale className="h-3.5 w-3.5" /> Aktualna waga
         </p>
 
         {latest ? (
           <>
-            <p className="mt-2 font-display text-6xl font-extrabold leading-none tabular-nums md:text-7xl">
-              {latest.value.toFixed(1)}
-              <span className="ml-2 text-2xl font-bold text-white/75">kg</span>
+            <p className="mt-1 font-display text-[4rem] font-bold leading-none tabular-nums">
+              {latest.value.toLocaleString('pl-PL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+              <span className="ml-1.5 font-body text-xl font-semibold text-primary-foreground/75">kg</span>
             </p>
 
             <div className="mt-4 flex flex-wrap gap-2">
@@ -89,23 +87,23 @@ export function MeasurementHero({ weights, isLoading, onAdd }: MeasurementHeroPr
           </>
         ) : (
           <div className="mt-3 max-w-md">
-            <p className="font-display text-2xl font-extrabold uppercase leading-tight">Zacznij mierzyć postępy</p>
-            <p className="mt-2 text-sm text-white/85">
+            <p className="font-display text-4xl font-bold uppercase leading-tight">Zacznij mierzyć postępy</p>
+            <p className="mt-2 text-sm text-primary-foreground/85">
               Zapisz wagę, obwody i zdjęcia sylwetki. Po kilku pomiarach zobaczysz wykresy i porównanie przed/po.
             </p>
           </div>
         )}
 
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-          <p className={cn('text-sm', overdue ? 'font-semibold text-white' : 'text-white/80')}>
+        <div className="mt-4 space-y-2.5">
+          <p className={cn('text-sm', overdue ? 'font-semibold text-primary-foreground' : 'text-primary-foreground/80')}>
             {latest
               ? overdue
                 ? `Minęło ${days} dni — czas na nowy pomiar`
                 : `Ostatni pomiar: ${relativeDays(days)}`
               : 'Pierwszy pomiar zajmie minutę'}
           </p>
-          <Button onClick={onAdd} variant="secondary" className="h-11 rounded-full px-5 font-bold text-primary shadow-lg">
-            <Plus className="mr-1.5 h-4 w-4" /> Dodaj pomiar
+          <Button onClick={onAdd} className="w-full bg-primary-foreground text-primary active:bg-primary-foreground/85">
+            <Plus /> Dodaj pomiar
           </Button>
         </div>
       </div>

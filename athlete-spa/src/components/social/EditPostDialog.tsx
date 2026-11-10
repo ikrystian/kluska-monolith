@@ -88,7 +88,7 @@ export function EditPostDialog({ open, onOpenChange, post, onSuccess }: EditPost
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent >
                 <DialogHeader>
                     <DialogTitle>Edytuj Post</DialogTitle>
                     <DialogDescription>

@@ -83,7 +83,7 @@ export function PublicProfileDialog({ open, onOpenChange, userId }: PublicProfil
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Profil użytkownika</DialogTitle>
           <DialogDescription>
@@ -136,7 +136,7 @@ export function PublicProfileDialog({ open, onOpenChange, userId }: PublicProfil
               </div>
               <div className="bg-muted/50 rounded-lg p-4 text-center">
                 <div className="flex items-center justify-center mb-2">
-                  <Heart className="h-5 w-5 text-red-500 mr-2" />
+                  <Heart className="h-5 w-5 text-destructive mr-2" />
                   <span className="text-2xl font-bold">{profileData.stats.totalLikes}</span>
                 </div>
                 <p className="text-sm text-muted-foreground">Polubień</p>
@@ -147,7 +147,7 @@ export function PublicProfileDialog({ open, onOpenChange, userId }: PublicProfil
             {profileData.records && profileData.records.length > 0 && (
               <div>
                 <h4 className="text-lg font-semibold mb-3 flex items-center">
-                  <Trophy className="h-5 w-5 mr-2 text-yellow-500" />
+                  <Trophy className="h-5 w-5 mr-2 text-food" />
                   Rekordy Osobiste
                 </h4>
                 <div className="space-y-2">

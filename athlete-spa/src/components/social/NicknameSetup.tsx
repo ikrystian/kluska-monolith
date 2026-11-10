@@ -140,18 +140,18 @@ export function NicknameSetup({ onComplete }: NicknameSetupProps) {
                           {isChecking || isCheckingDb ? (
                             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                           ) : isAvailable === true ? (
-                            <Check className="h-4 w-4 text-green-500" />
+                            <Check className="h-4 w-4 text-volt" />
                           ) : isAvailable === false ? (
-                            <X className="h-4 w-4 text-red-500" />
+                            <X className="h-4 w-4 text-destructive" />
                           ) : null}
                         </div>
                       </div>
                     </FormControl>
                     {isAvailable === true && (
-                      <p className="text-sm text-green-500">Nickname jest dostępny!</p>
+                      <p className="text-sm text-volt">Nickname jest dostępny!</p>
                     )}
                     {isAvailable === false && (
-                      <p className="text-sm text-red-500">Ten nickname jest już zajęty.</p>
+                      <p className="text-sm text-destructive">Ten nickname jest już zajęty.</p>
                     )}
                     <FormMessage />
                   </FormItem>

@@ -50,19 +50,19 @@ export function ExerciseCardHorizontal({
 
       {/* Treść */}
       <div className="min-w-0 flex-1 py-1">
-        <h3 className="line-clamp-1 text-sm font-semibold md:text-base">{exercise.name}</h3>
+        <h3 className="line-clamp-1 text-sm font-semibold">{exercise.name}</h3>
         <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
           {muscles.length ? muscles.join(' · ') : 'Brak partii'}
         </p>
         <div className="mt-1.5 flex items-center gap-1.5">
           {typeMeta && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
               <typeMeta.icon className="h-2.5 w-2.5" />
               {typeMeta.short}
             </span>
           )}
           {ownerLabel && (
-            <Badge variant="outline" className="h-[18px] px-1.5 text-[10px] font-medium">
+            <Badge variant="outline" className="h-[18px] px-1.5 text-[11px] font-medium">
               {ownerLabel}
             </Badge>
           )}

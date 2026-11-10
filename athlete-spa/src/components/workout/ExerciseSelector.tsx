@@ -143,7 +143,7 @@ export function ExerciseSelector({ exercises, selectedId, onSelect }: ExerciseSe
                                         <p className="truncate font-medium">{exercise.name}</p>
                                         <div className="mt-0.5 flex flex-wrap gap-1">
                                             {exercise.mainMuscleGroups?.slice(0, 2).map(mg => (
-                                                <Badge key={mg.name} variant="secondary" className="h-4 px-1 py-0 text-[10px]">
+                                                <Badge key={mg.name} variant="secondary" className="h-4 px-1 py-0 text-[11px]">
                                                     {mg.name}
                                                 </Badge>
                                             ))}

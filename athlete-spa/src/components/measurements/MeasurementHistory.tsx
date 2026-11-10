@@ -49,7 +49,7 @@ export function MeasurementHistory({ measurements, onDelete }: MeasurementHistor
   return (
     <section>
       <div className="mb-3 px-1">
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Dziennik</p>
+        <p className="text-xs font-semibold text-primary">Dziennik</p>
         <h2 className="font-headline text-2xl font-bold tracking-tight">Historia pomiarów</h2>
       </div>
 
@@ -63,17 +63,17 @@ export function MeasurementHistory({ measurements, onDelete }: MeasurementHistor
                 const circs = CIRCUMFERENCES.map(m => ({ m, v: metricValue(entry, m.key) })).filter(c => c.v !== undefined);
                 const photos = entry.photoURLs ?? [];
                 return (
-                  <li key={entry.id} className="flex gap-4 rounded-[1.5rem] border border-border/60 bg-card p-4 shadow-soft">
+                  <li key={entry.id} className="flex gap-4 rounded-2xl bg-card p-4">
                     <div className="w-12 shrink-0 text-center">
-                      <p className="font-display text-2xl font-extrabold leading-none tabular-nums">{format(date, 'd')}</p>
-                      <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      <p className="font-display text-4xl font-bold leading-none tabular-nums">{format(date, 'd')}</p>
+                      <p className="mt-1 text-xs font-semibold text-muted-foreground">
                         {format(date, 'LLL', { locale: pl })}
                       </p>
                     </div>
 
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                        <p className="font-headline text-xl font-bold tabular-nums">
+                        <p className="font-display text-2xl font-bold tabular-nums">
                           {entry.weight.toFixed(1)} <span className="text-sm font-medium text-muted-foreground">kg</span>
                         </p>
                         {delta !== null && delta !== 0 && (
@@ -144,7 +144,7 @@ export function MeasurementHistory({ measurements, onDelete }: MeasurementHistor
       </div>
 
       {visible < measurements.length && (
-        <Button variant="outline" className="mt-5 w-full rounded-full" onClick={() => setVisible(v => v + PAGE)}>
+        <Button variant="outline" className="mt-5 w-full" onClick={() => setVisible(v => v + PAGE)}>
           Pokaż starsze ({measurements.length - visible})
         </Button>
       )}

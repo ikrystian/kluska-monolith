@@ -13,15 +13,43 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Process-wide state of the run being recorded: route, distance and moving
- * time. RunTrackingService feeds it fixes, RunTrackingPlugin reads and steers
- * it. The filtering mirrors the WebView recorder in src/hooks/useRunTracker.ts
- * so a run measures the same whichever side recorded it.
+ * Process-wide state of the run being recorded: route, distance, moving time
+ * and the training's audio cues. RunTrackingService feeds it fixes and plays
+ * the cues it reports due, RunTrackingPlugin reads and steers it. The
+ * filtering mirrors the WebView recorder in src/hooks/useRunTracker.ts so a
+ * run measures the same whichever side recorded it.
  */
 public final class RunRecorder {
 
     public interface Listener {
-        void onUpdate(JSObject update);
+        /** Forwarded to JS as a plugin event: "update" or "cue". */
+        void onEvent(String event, JSObject data);
+    }
+
+    /**
+     * A training cue (interval reached) played from here rather than from the
+     * WebView: once the app is minimised or the screen locks, the WebView is
+     * frozen and would only notice the threshold after being reopened.
+     */
+    public static final class Cue {
+        /** Position in the list the run was started with, so JS can show its label. */
+        final int index;
+        final boolean byDistance;
+        /** Metres covered, or seconds of moving time. */
+        final double value;
+        public final String src;
+        boolean fired;
+
+        Cue(int index, boolean byDistance, double value, String src) {
+            this.index = index;
+            this.byDistance = byDistance;
+            this.value = value;
+            this.src = src;
+        }
+
+        boolean isDue(double distance, long durationMs) {
+            return byDistance ? distance >= value : durationMs >= value * 1000;
+        }
     }
 
     /** Fixes less accurate than this are shown but never add distance. */
@@ -76,6 +104,7 @@ public final class RunRecorder {
     private Float accuracy;
     /** The next accepted fix starts a new segment instead of extending the last one. */
     private boolean segmentStart;
+    private final List<Cue> cues = new ArrayList<>();
     private Listener listener;
 
     private RunRecorder() {}
@@ -106,7 +135,8 @@ public final class RunRecorder {
         return ms;
     }
 
-    public synchronized void start() {
+    /** `cueList` holds the training's cues as sent by JS ({ trigger, value, src }), or null. */
+    public synchronized void start(JSONArray cueList) {
         points.clear();
         distance = 0;
         movingMs = 0;
@@ -114,6 +144,7 @@ public final class RunRecorder {
         segmentStart = true;
         status = RUNNING;
         runningSince = SystemClock.elapsedRealtime();
+        setCues(cueList, false);
     }
 
     public void pause(boolean external) {
@@ -127,8 +158,8 @@ public final class RunRecorder {
 
     /**
      * Continues a paused run. When this process lost the run (it was killed
-     * while paused), `restore` carries the route the WebView kept; returns
-     * false if there is nothing to continue.
+     * while paused), `restore` carries the route and cues the WebView kept;
+     * returns false if there is nothing to continue.
      */
     public boolean resume(JSObject restore, boolean external) {
         synchronized (this) {
@@ -154,7 +185,45 @@ public final class RunRecorder {
         distance = 0;
         movingMs = 0;
         accuracy = null;
+        cues.clear();
         return snapshot;
+    }
+
+    /** Marks the cues the run has now reached as fired, tells JS, and returns them to be played. */
+    public List<Cue> fireDueCues() {
+        List<Cue> due = new ArrayList<>();
+        Listener target;
+        synchronized (this) {
+            long durationMs = getDurationMs();
+            for (Cue cue : cues) {
+                if (cue.fired || !cue.isDue(distance, durationMs)) continue;
+                cue.fired = true;
+                due.add(cue);
+            }
+            target = listener;
+        }
+        if (target != null) {
+            for (Cue cue : due) {
+                JSObject event = new JSObject();
+                event.put("index", cue.index);
+                event.put("firedAt", System.currentTimeMillis());
+                target.onEvent("cue", event);
+            }
+        }
+        return due;
+    }
+
+    /** Moving time until the next time cue is due, or -1 when none is pending or the clock is stopped. */
+    public synchronized long msUntilNextTimeCue() {
+        if (!RUNNING.equals(status)) return -1;
+        long durationMs = getDurationMs();
+        long next = -1;
+        for (Cue cue : cues) {
+            if (cue.fired || cue.byDistance) continue;
+            long wait = Math.max(0, (long) Math.ceil(cue.value * 1000) - durationMs);
+            if (next < 0 || wait < next) next = wait;
+        }
+        return next;
     }
 
     public void onLocation(Location location) {
@@ -215,7 +284,22 @@ public final class RunRecorder {
             if (point != null) update.put("point", point.toJson());
             if (external) update.put("external", true);
         }
-        target.onUpdate(update);
+        target.onEvent("update", update);
+    }
+
+    /** With `skipPassed`, cues the restored run is already past count as played. */
+    private void setCues(JSONArray list, boolean skipPassed) {
+        cues.clear();
+        if (list == null) return;
+        long durationMs = getDurationMs();
+        for (int i = 0; i < list.length(); i++) {
+            JSONObject json = list.optJSONObject(i);
+            String src = json != null ? json.optString("src") : "";
+            if (src.isEmpty()) continue;
+            Cue cue = new Cue(i, "distance".equals(json.optString("trigger")), json.optDouble("value", 0), src);
+            cue.fired = skipPassed && cue.isDue(distance, durationMs);
+            cues.add(cue);
+        }
     }
 
     private void restoreFrom(JSObject run) {
@@ -232,6 +316,7 @@ public final class RunRecorder {
         distance = run.optDouble("distance", 0);
         movingMs = (long) run.optDouble("durationMs", 0);
         accuracy = null;
+        setCues(run.optJSONArray("cues"), true);
     }
 
     private static double haversine(Point a, Point b) {

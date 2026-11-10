@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { ArrowLeft, BookOpen, Check, Clock, Share2 } from 'lucide-react';
+import { BookOpen, Check, Clock, Share2 } from 'lucide-react';
 import { useCollection, useDoc } from '@/lib/db-hooks';
 import type { Article, ArticleCategory } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -90,11 +90,6 @@ export default function ArticlePage() {
   }, [article?.id, markRead]);
 
   // Opened from a shared link there is no in-app history to go back to.
-  const goBack = () => {
-    if (location.key !== 'default') navigate(-1);
-    else navigate(BASE_PATH);
-  };
-
   const share = async () => {
     if (!article) return;
     haptic('tap');
@@ -116,8 +111,8 @@ export default function ArticlePage() {
   if (isLoading) {
     return (
       <div className="pb-28">
-        <Skeleton className="h-[52svh] max-h-[520px] w-full rounded-none md:mx-auto md:mt-8 md:max-w-4xl md:rounded-[2rem]" />
-        <div className="relative z-10 mx-auto -mt-10 max-w-2xl space-y-4 rounded-t-[2rem] bg-background px-5 pt-7 md:mt-8 md:px-6">
+        <Skeleton className="h-[52svh] max-h-[520px] w-full rounded-none" />
+        <div className="relative z-10 mx-auto -mt-10 max-w-2xl space-y-4 rounded-t-3xl bg-background px-5 pt-7">
           <Skeleton className="h-6 w-28 rounded-full" />
           <Skeleton className="h-9 w-full" />
           <Skeleton className="h-9 w-2/3" />
@@ -140,7 +135,7 @@ export default function ArticlePage() {
         </span>
         <h1 className="font-headline text-2xl font-bold">Nie znaleziono artykułu</h1>
         <p className="mt-2 text-sm text-muted-foreground">Mógł zostać usunięty lub przeniesiony do szkiców.</p>
-        <Button asChild className="mt-6 rounded-full">
+        <Button asChild className="mt-6">
           <Link to={BASE_PATH}>Wróć do Strefy Wiedzy</Link>
         </Button>
       </div>
@@ -165,25 +160,17 @@ export default function ArticlePage() {
         aria-valuenow={Math.round(progress * 100)}
       />
 
-      <div className="relative md:mx-auto md:mt-8 md:max-w-4xl md:px-6">
-        <div className="relative h-[52svh] max-h-[520px] min-h-[300px] overflow-hidden bg-secondary md:rounded-[2rem] md:shadow-lifted">
+      <div className="relative">
+        <div className="relative h-[34svh] min-h-[220px] overflow-hidden bg-secondary">
           <img
             src={articleCoverUrl(article, '1600/1000')}
             alt={article.imageHint || ''}
             className="absolute inset-0 h-full w-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/30" />
+          
         </div>
 
-        <div className="absolute inset-x-0 top-0 flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] md:px-10 md:pt-4">
-          <button
-            type="button"
-            onClick={goBack}
-            className="grid h-10 w-10 place-items-center rounded-full bg-black/35 text-white backdrop-blur-md transition-colors hover:bg-black/50"
-            aria-label="Wróć"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
+        <div className="absolute right-4 top-3">
           <button
             type="button"
             onClick={share}
@@ -195,12 +182,12 @@ export default function ArticlePage() {
         </div>
       </div>
 
-      <div className="relative z-10 mx-auto -mt-10 max-w-2xl rounded-t-[2rem] bg-background px-5 pt-7 md:mt-0 md:rounded-none md:px-6 md:pt-10">
+      <div className="relative z-10 -mt-6 rounded-t-3xl bg-background px-4 pt-6">
         <header>
           <Link to={`${BASE_PATH}?category=${encodeURIComponent(category)}`} className="inline-block">
             <CategoryPill label={category} color={color} />
           </Link>
-          <h1 className="mt-3 font-headline text-[1.875rem] font-bold leading-[1.15] tracking-tight md:text-5xl">
+          <h1 className="mt-3 font-headline text-[1.875rem] font-bold leading-[1.15] tracking-tight">
             {article.title}
           </h1>
 
@@ -228,7 +215,7 @@ export default function ArticlePage() {
 
         <div className="article-body mt-6" dangerouslySetInnerHTML={{ __html: article.content }} />
 
-        <footer className="mt-10 flex items-center justify-between gap-3 rounded-[1.5rem] border border-border/60 bg-card p-4 shadow-soft">
+        <footer className="mt-10 flex items-center justify-between gap-3 rounded-2xl bg-card p-4">
           <div className="flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-volt/15 text-volt">
               <Check className="h-5 w-5" />
@@ -244,7 +231,7 @@ export default function ArticlePage() {
               </p>
             </div>
           </div>
-          <Button size="sm" variant="outline" className="shrink-0 gap-1.5 rounded-full" onClick={share}>
+          <Button size="sm" variant="outline" className="shrink-0 gap-1.5" onClick={share}>
             <Share2 className="h-4 w-4" />
             Udostępnij
           </Button>
@@ -252,14 +239,14 @@ export default function ArticlePage() {
       </div>
 
       {related.length > 0 && (
-        <section className="mx-auto mt-12 max-w-4xl px-5 md:px-6">
+        <section className="mx-auto mt-12 max-w-4xl px-5">
           <div className="mb-3 flex items-end justify-between px-1">
             <h2 className="font-headline text-xl font-bold tracking-tight">Czytaj dalej</h2>
             <Link to={BASE_PATH} className="text-sm font-semibold text-primary hover:underline">
               Wszystkie
             </Link>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+          <div className="grid gap-3">
             {related.map(item => (
               <ArticleRow
                 key={item.id}

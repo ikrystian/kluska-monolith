@@ -391,7 +391,7 @@ export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
                 // The mobile keyboard "Enter/Go" must not publish a half-finished workout.
                 if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') e.preventDefault();
             }}
-            className="mx-auto max-w-2xl space-y-4"
+            className="space-y-4"
         >
             {(!!draft || !!lastAutoSave) && (
                 <div className="flex items-center justify-between gap-2 rounded-xl border border-dashed bg-muted/40 px-3 py-1.5">
@@ -452,9 +452,9 @@ export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
                                     type="button"
                                     onClick={() => form.setValue('level', opt.value, { shouldValidate: true, shouldDirty: true })}
                                     className={cn(
-                                        'h-10 rounded-lg px-1 text-xs font-semibold transition-colors sm:text-sm',
+                                        'h-10 rounded-lg px-1 text-xs font-semibold transition-colors',
                                         level === opt.value
-                                            ? 'bg-background text-foreground shadow-soft'
+                                            ? 'bg-background text-foreground'
                                             : 'text-muted-foreground active:scale-95'
                                     )}
                                 >
@@ -504,7 +504,7 @@ export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
             </Card>
 
             <div className="space-y-3">
-                <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <h2 className="px-1 text-xs font-semibold text-muted-foreground">
                     Ćwiczenia{exerciseFields.length > 0 && ` (${exerciseFields.length})`}
                 </h2>
 
@@ -562,15 +562,15 @@ export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
                     <div className="grid grid-cols-3 divide-x divide-border/60 rounded-xl bg-secondary/40 py-2.5 text-center">
                         <div>
                             <p className="text-lg font-bold tabular-nums">{exerciseFields.length}</p>
-                            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Ćwiczenia</p>
+                            <p className="text-xs text-muted-foreground">Ćwiczenia</p>
                         </div>
                         <div>
                             <p className="text-lg font-bold tabular-nums">{totalSets}</p>
-                            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Serie</p>
+                            <p className="text-xs text-muted-foreground">Serie</p>
                         </div>
                         <div>
                             <p className="text-lg font-bold tabular-nums">≈{durationMinutes}</p>
-                            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Minut</p>
+                            <p className="text-xs text-muted-foreground">Minut</p>
                         </div>
                     </div>
                     <Button type="submit" size="lg" disabled={isCreating} className="h-12 w-full text-base font-semibold">
@@ -597,7 +597,7 @@ export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
             />
 
             <AlertDialog open={!!confirm} onOpenChange={(open) => !open && setConfirm(null)}>
-                <AlertDialogContent className="max-w-[calc(100vw-2rem)] rounded-2xl sm:max-w-md">
+                <AlertDialogContent className="max-w-[calc(100vw-2rem)] rounded-2xl">
                     <AlertDialogHeader>
                         <AlertDialogTitle>{confirm?.title}</AlertDialogTitle>
                         <AlertDialogDescription>{confirm?.description}</AlertDialogDescription>
@@ -806,7 +806,7 @@ function ExerciseSeriesItem({
                                         <Search className="ml-2 h-5 w-5 shrink-0 opacity-60" />
                                     </Button>
                                 </DialogTrigger>
-                                <DialogContent className="flex flex-col gap-3 p-4 max-sm:h-dvh max-sm:max-w-none max-sm:rounded-none max-sm:border-0 max-sm:pt-[max(1rem,env(safe-area-inset-top))] max-sm:pb-[max(1rem,env(safe-area-inset-bottom))] sm:max-h-[85vh] sm:max-w-3xl">
+                                <DialogContent className="flex flex-col gap-3 p-4 h-dvh max-w-none rounded-none border-0 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
                                     <DialogHeader className="text-left">
                                         <DialogTitle>Wybierz ćwiczenie</DialogTitle>
                                     </DialogHeader>
@@ -825,7 +825,7 @@ function ExerciseSeriesItem({
 
                         {selectedExerciseId && exerciseType === 'weight' && (
                             <div className="flex items-center justify-between">
-                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Obciążenie</Label>
+                                <Label className="text-xs font-semibold text-muted-foreground">Obciążenie</Label>
                                 <div className="grid grid-cols-2 gap-1 rounded-lg bg-secondary/60 p-0.5">
                                     {(['kg', 'rpe'] as const).map((unit) => (
                                         <button
@@ -835,7 +835,7 @@ function ExerciseSeriesItem({
                                             className={cn(
                                                 'h-8 min-w-14 rounded-md px-3 text-xs font-semibold uppercase transition-colors',
                                                 weightUnit === unit
-                                                    ? 'bg-background text-foreground shadow-soft'
+                                                    ? 'bg-background text-foreground'
                                                     : 'text-muted-foreground'
                                             )}
                                         >
@@ -849,21 +849,21 @@ function ExerciseSeriesItem({
                         {selectedExerciseId && (
                             <div className="space-y-1.5">
                                 <div className={cn('grid items-center gap-1.5 px-0.5', gridColsClass)}>
-                                    <span className="text-center text-[10px] font-semibold uppercase text-muted-foreground">#</span>
-                                    <span className="text-center text-[10px] font-semibold uppercase text-muted-foreground">Typ</span>
+                                    <span className="text-center text-xs font-semibold text-muted-foreground">#</span>
+                                    <span className="text-center text-xs font-semibold text-muted-foreground">Typ</span>
                                     {exerciseType === 'weight' ? (
                                         <>
-                                            <span className="text-center text-[10px] font-semibold uppercase text-muted-foreground">
+                                            <span className="text-center text-xs font-semibold text-muted-foreground">
                                                 {weightUnit === 'kg' ? 'Kg' : 'RPE'}
                                             </span>
-                                            <span className="text-center text-[10px] font-semibold uppercase text-muted-foreground">Powt.</span>
+                                            <span className="text-center text-xs font-semibold text-muted-foreground">Powt.</span>
                                         </>
                                     ) : exerciseType === 'reps' ? (
-                                        <span className="text-center text-[10px] font-semibold uppercase text-muted-foreground">Powt.</span>
+                                        <span className="text-center text-xs font-semibold text-muted-foreground">Powt.</span>
                                     ) : (
-                                        <span className="text-center text-[10px] font-semibold uppercase text-muted-foreground">Czas (s)</span>
+                                        <span className="text-center text-xs font-semibold text-muted-foreground">Czas (s)</span>
                                     )}
-                                    <span className="text-center text-[10px] font-semibold uppercase text-muted-foreground">Przerwa (s)</span>
+                                    <span className="text-center text-xs font-semibold text-muted-foreground">Przerwa (s)</span>
                                 </div>
 
                                 <AnimatePresence initial={false}>

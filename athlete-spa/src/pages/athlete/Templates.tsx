@@ -131,7 +131,7 @@ export default function AthleteTemplatesPage() {
 
   if (view === 'new-workout') {
     return (
-      <div className="container mx-auto p-4 md:p-8">
+      <div className="page">
         <Button variant="ghost" onClick={() => setView('list')} className="mb-4">&larr; Powrót</Button>
         <h1 className="text-2xl font-bold mb-6">Nowy Trening</h1>
         <WorkoutForm onSubmit={handleCreateWorkout} />
@@ -141,7 +141,7 @@ export default function AthleteTemplatesPage() {
 
   if (view === 'edit-workout') {
     return (
-      <div className="container mx-auto p-4 md:p-8">
+      <div className="page">
         <Button variant="ghost" onClick={() => { setView('list'); setEditingItem(null); }} className="mb-4">&larr; Powrót</Button>
         <h1 className="text-2xl font-bold mb-6">Edytuj Trening</h1>
         <WorkoutForm initialData={editingItem} onSubmit={handleUpdateWorkout} />
@@ -151,7 +151,7 @@ export default function AthleteTemplatesPage() {
 
   if (view === 'new-plan') {
     return (
-      <div className="container mx-auto p-4 md:p-8">
+      <div className="page">
         <Button variant="ghost" onClick={() => setView('list')} className="mb-4">&larr; Powrót</Button>
         <h1 className="text-2xl font-bold mb-6">Nowy Plan Treningowy</h1>
         <PlanForm onSubmit={handleCreatePlan} />
@@ -161,7 +161,7 @@ export default function AthleteTemplatesPage() {
 
   if (view === 'edit-plan') {
     return (
-      <div className="container mx-auto p-4 md:p-8">
+      <div className="page">
         <Button variant="ghost" onClick={() => { setView('list'); setEditingItem(null); }} className="mb-4">&larr; Powrót</Button>
         <h1 className="text-2xl font-bold mb-6">Edytuj Plan Treningowy</h1>
         <PlanForm initialData={editingItem} onSubmit={handleUpdatePlan} />
@@ -170,10 +170,10 @@ export default function AthleteTemplatesPage() {
   }
 
   return (
-    <div className="container mx-auto p-4 md:p-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div className="page">
+      <div className="flex flex-col justify-between items-start mb-8 gap-4">
         <div>
-          <h1 className="font-headline text-3xl font-bold">Baza Treningowa</h1>
+          <h2 className="text-lg font-bold">Baza treningowa</h2>
           <p className="text-muted-foreground">Zarządzaj swoimi treningami i planami treningowymi.</p>
         </div>
       </div>
@@ -190,7 +190,7 @@ export default function AthleteTemplatesPage() {
               <PlusCircle className="mr-2 h-4 w-4" /> Nowy Trening
             </Button>
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4">
             {workoutsLoading ? <p>Ładowanie...</p> : (
               <AnimatePresence initial={false}>
                 {workouts?.map(workout => (
@@ -247,7 +247,7 @@ export default function AthleteTemplatesPage() {
               <PlusCircle className="mr-2 h-4 w-4" /> Nowy Plan
             </Button>
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4">
             {(myPlansLoading || assignedPlansLoading) ? <p>Ładowanie...</p> : (
               <AnimatePresence initial={false}>
                 {allPlans?.map(plan => {

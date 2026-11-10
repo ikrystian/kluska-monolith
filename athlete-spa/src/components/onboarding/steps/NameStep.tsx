@@ -35,9 +35,9 @@ export function NameStep({ value, onChange, onNext, onPrev, canProceed }: NameSt
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-        className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-8 shadow-xl"
+        className="w-20 h-20 rounded-full bg-run flex items-center justify-center mb-8"
       >
-        <User className="w-10 h-10 text-white" />
+        <User className="w-10 h-10 text-primary-foreground" />
       </motion.div>
 
       {/* Title */}
@@ -101,7 +101,7 @@ export function NameStep({ value, onChange, onNext, onPrev, canProceed }: NameSt
           <Button
             type="submit"
             disabled={!canProceed}
-            className="flex-1 h-12 rounded-xl bg-gradient-to-r from-primary to-primary/80"
+            className="flex-1 h-12 rounded-xl bg-primary"
           >
             Dalej
             <ArrowRight className="w-4 h-4 ml-2" />

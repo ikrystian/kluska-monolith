@@ -114,7 +114,7 @@ export function ShareGoalDialog({ goal, onClose }: ShareGoalDialogProps) {
 
   return (
     <Dialog open={!!goal} onOpenChange={open => { if (!open && !isSharing) onClose(); }}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent >
         <DialogHeader>
           <DialogTitle className="font-headline">Udostępnij cel</DialogTitle>
           <DialogDescription>Wybierz, czy wrzucić go na Instagram jako relację, czy post.</DialogDescription>
@@ -132,7 +132,7 @@ export function ShareGoalDialog({ goal, onClose }: ShareGoalDialogProps) {
                 onClick={() => setShareFormat(id)}
                 className={cn(
                   'flex h-9 items-center justify-center gap-1.5 rounded-full text-xs font-semibold transition-all',
-                  active ? 'bg-card text-foreground shadow-soft' : 'text-muted-foreground hover:text-foreground'
+                  active ? 'bg-card text-foreground' : 'text-muted-foreground hover:text-foreground'
                 )}
               >
                 {label}
@@ -147,7 +147,7 @@ export function ShareGoalDialog({ goal, onClose }: ShareGoalDialogProps) {
             <img
               src={previewUrl}
               alt={`Podgląd: ${goal?.title ?? 'cel'}`}
-              className="h-full w-full rounded-xl border border-border/60 object-contain shadow-soft"
+              className="h-full w-full rounded-xl border border-border/60 object-contain"
             />
           ) : (
             <Skeleton className="h-full w-full rounded-xl" />

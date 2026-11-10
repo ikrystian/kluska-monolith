@@ -105,7 +105,7 @@ export function FriendsFeed({ onProfileClick, onOpenPeople }: FriendsFeedProps) 
         <button
           type="button"
           onClick={onOpenPeople}
-          className="flex w-full items-center gap-3 rounded-[1.5rem] border border-primary/25 bg-primary/5 p-3 text-left transition-transform active:scale-[0.99]"
+          className="flex w-full items-center gap-3 rounded-2xl border border-primary/25 bg-primary/5 p-3 text-left transition-transform active:scale-[0.99]"
         >
           <div className="flex -space-x-3">
             {incoming.slice(0, 3).map(invite => (
@@ -148,7 +148,7 @@ export function FriendsFeed({ onProfileClick, onOpenPeople }: FriendsFeedProps) 
       ) : isFeedLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-36 w-full rounded-[1.75rem]" />
+            <Skeleton key={i} className="h-36 w-full rounded-2xl" />
           ))}
         </div>
       ) : days.length === 0 ? (
@@ -158,7 +158,7 @@ export function FriendsFeed({ onProfileClick, onOpenPeople }: FriendsFeedProps) 
             title="Trenuj w towarzystwie"
             text="Dodaj znajomych, aby widzieć tutaj ich treningi, biegi, cele i statusy."
             action={
-              <Button size="sm" className="rounded-full" onClick={onOpenPeople}>
+              <Button size="sm"  onClick={onOpenPeople}>
                 Znajdź znajomych
               </Button>
             }
@@ -170,7 +170,7 @@ export function FriendsFeed({ onProfileClick, onOpenPeople }: FriendsFeedProps) 
         <div className="space-y-6">
           {days.map(group => (
             <section key={group.day} aria-label={group.label}>
-              <h3 className="mb-2.5 px-1 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground first-letter:uppercase">
+              <h3 className="mb-2.5 px-1 text-xs font-semibold text-muted-foreground first-letter:uppercase">
                 {group.label}
               </h3>
               <ul className="space-y-3">
@@ -208,7 +208,7 @@ function EmptyCard({
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-[1.75rem] border border-dashed border-border bg-card/50 p-8 text-center">
+    <div className="rounded-2xl border border-dashed border-border bg-card/50 p-8 text-center">
       <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-secondary text-primary">
         <Icon className="h-7 w-7" />
       </span>
@@ -231,7 +231,7 @@ function FriendsStrip({
   onAdd: () => void;
 }) {
   return (
-    <ul className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0" aria-label="Twoi znajomi">
+    <ul className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-1" aria-label="Twoi znajomi">
       <li className="shrink-0">
         <button
           type="button"
@@ -241,7 +241,7 @@ function FriendsStrip({
           <span className="grid h-[3.875rem] w-[3.875rem] place-items-center rounded-full border-2 border-dashed border-primary/50 text-primary">
             <Plus className="h-6 w-6" />
           </span>
-          <span className="text-[11px] font-medium text-muted-foreground">Dodaj</span>
+          <span className="text-xs font-medium text-muted-foreground">Dodaj</span>
         </button>
       </li>
       {isLoading
@@ -259,12 +259,12 @@ function FriendsStrip({
                 className="flex w-16 flex-col items-center gap-1.5 transition-transform enabled:active:scale-95"
                 aria-label={`Profil ${socialName(friend)}`}
               >
-                <span className="rounded-full bg-gradient-to-tr from-primary via-chart-5 to-volt p-[2.5px]">
+                <span className="rounded-full bg-primary p-[2px]">
                   <span className="block rounded-full border-[3px] border-background">
                     <SocialAvatar user={friend} className="h-12 w-12" />
                   </span>
                 </span>
-                <span className="w-full truncate text-center text-[11px] font-medium">{friend.displayName}</span>
+                <span className="w-full truncate text-center text-xs font-medium">{friend.displayName}</span>
               </button>
             </li>
           ))}
@@ -369,7 +369,7 @@ function CardHeader({
 function ActivityCard({ item, onProfileClick }: { item: FriendActivityItem; onProfileClick: (userId: string) => void }) {
   const { icon: Icon, color, kind, title, stats } = activityView(item);
   return (
-    <li className="overflow-hidden rounded-[1.75rem] border border-border/60 bg-card shadow-soft">
+    <li className="overflow-hidden rounded-2xl bg-card">
       <div className="p-4 pb-3">
         <CardHeader
           user={item.user}
@@ -385,7 +385,7 @@ function ActivityCard({ item, onProfileClick }: { item: FriendActivityItem; onPr
             </span>
           }
         />
-        <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color }}>
+        <p className="mt-3 text-xs font-semibold" style={{ color }}>
           {kind}
         </p>
         <h4 className="mt-0.5 font-headline text-lg font-bold leading-snug tracking-tight">{title}</h4>
@@ -399,8 +399,8 @@ function ActivityCard({ item, onProfileClick }: { item: FriendActivityItem; onPr
         >
           {stats.map(s => (
             <div key={s.label} className="px-4 py-3">
-              <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{s.label}</dt>
-              <dd className="mt-0.5 truncate font-headline text-lg font-extrabold tabular-nums">{s.value}</dd>
+              <dt className="text-xs font-semibold text-muted-foreground">{s.label}</dt>
+              <dd className="mt-0.5 truncate font-display text-2xl font-extrabold tabular-nums">{s.value}</dd>
             </div>
           ))}
         </dl>
@@ -419,7 +419,7 @@ function GoalCard({ goal, onProfileClick }: { goal: FriendGoalPost; onProfileCli
   ];
 
   return (
-    <li className="overflow-hidden rounded-[1.75rem] border border-border/60 bg-card shadow-soft">
+    <li className="overflow-hidden rounded-2xl bg-card">
       <div className="p-4 pb-3">
         <CardHeader
           user={goal.author}
@@ -435,7 +435,7 @@ function GoalCard({ goal, onProfileClick }: { goal: FriendGoalPost; onProfileCli
             </span>
           }
         />
-        <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color }}>
+        <p className="mt-3 text-xs font-semibold" style={{ color }}>
           {completed ? 'Cel osiągnięty' : 'Nowy cel'}
         </p>
         <h4 className="mt-0.5 font-headline text-lg font-bold leading-snug tracking-tight">{goal.title}</h4>
@@ -449,8 +449,8 @@ function GoalCard({ goal, onProfileClick }: { goal: FriendGoalPost; onProfileCli
       >
         {stats.map(s => (
           <div key={s.label} className="px-4 py-3">
-            <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{s.label}</dt>
-            <dd className="mt-0.5 truncate font-headline text-lg font-extrabold tabular-nums">{s.value}</dd>
+            <dt className="text-xs font-semibold text-muted-foreground">{s.label}</dt>
+            <dd className="mt-0.5 truncate font-display text-2xl font-extrabold tabular-nums">{s.value}</dd>
           </div>
         ))}
       </dl>
@@ -479,7 +479,7 @@ function StatusCard({ status, onProfileClick }: { status: FriendStatusPost; onPr
   };
 
   return (
-    <li className="rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-soft">
+    <li className="rounded-2xl bg-card p-4">
       <CardHeader
         user={status.author}
         date={status.createdAt}
@@ -541,7 +541,7 @@ function StatusComposer() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-[1.75rem] border border-border/60 bg-card p-3 shadow-soft transition-colors focus-within:border-primary/40"
+      className="rounded-2xl bg-card p-3 transition-colors focus-within:border-primary/40"
     >
       <label htmlFor="friends-status" className="sr-only">
         Twój status
@@ -560,7 +560,7 @@ function StatusComposer() {
           <span className={cn('text-xs tabular-nums', remaining < 20 ? 'text-primary' : 'text-muted-foreground')}>
             {remaining}
           </span>
-          <Button type="submit" size="sm" disabled={!trimmed || isPosting} className="gap-1.5 rounded-full px-4">
+          <Button type="submit" size="sm" disabled={!trimmed || isPosting} className="gap-1.5 px-4">
             {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             Opublikuj
           </Button>

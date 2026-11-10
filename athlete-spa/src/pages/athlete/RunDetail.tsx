@@ -1,10 +1,10 @@
 'use client';
 
 import { lazy, Suspense, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { ArrowLeft, Footprints, Calendar, Clock, Route, TrendingUp, Mountain, Sparkles } from 'lucide-react';
+import { Footprints, Calendar, Clock, Route, TrendingUp, Mountain, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -50,7 +50,6 @@ function formatTime(totalSeconds: number) {
  * so heart-rate/cadence/kudos sections Strava has don't apply here.
  */
 export default function RunDetailPage() {
-  const navigate = useNavigate();
   const { sessionId } = useParams();
 
   const { data: session, isLoading } = useDoc<RunningSession>('runningSessions', sessionId ?? null);
@@ -108,16 +107,9 @@ export default function RunDetailPage() {
     session?.avgPace ? (session.avgPace * 60) / 1.15 : 300
   );
 
-  const backButton = (
-    <Button onClick={() => navigate('/athlete/running')} variant="ghost" className="mb-4">
-      <ArrowLeft className="mr-2 h-4 w-4" /> Wróć do biegów
-    </Button>
-  );
-
   if (isLoading) {
     return (
-      <div className="container mx-auto max-w-4xl p-4 md:p-8">
-        {backButton}
+      <div className="page">
         <Card>
           <CardHeader>
             <Skeleton className="h-7 w-3/4 mb-2" />
@@ -125,7 +117,7 @@ export default function RunDetailPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <Skeleton className="h-[400px] w-full" />
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4">
               <Skeleton className="h-20 w-full" />
               <Skeleton className="h-20 w-full" />
               <Skeleton className="h-20 w-full" />
@@ -139,8 +131,7 @@ export default function RunDetailPage() {
 
   if (!session) {
     return (
-      <div className="container mx-auto p-4 text-center md:p-8">
-        {backButton}
+      <div className="page text-center">
         <h2 className="text-xl font-semibold">Nie znaleziono biegu</h2>
         <p className="text-muted-foreground">Nie można załadować szczegółów tego biegu.</p>
       </div>
@@ -148,8 +139,7 @@ export default function RunDetailPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-4xl p-4 md:p-8">
-      {backButton}
+    <div className="page">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -180,7 +170,7 @@ export default function RunDetailPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="rounded-lg border p-4">
                 <div className="flex items-center gap-2 text-muted-foreground mb-1">
                   <Route className="h-4 w-4" />

@@ -84,16 +84,16 @@ const HeroStat = ({
   isLoading: boolean;
 }) => (
   <div className="flex min-w-0 flex-col rounded-2xl bg-black/20 p-3 backdrop-blur-sm">
-    <p className="truncate text-[10px] font-bold uppercase tracking-[0.18em] text-white/75">{label}</p>
+    <p className="truncate text-xs font-semibold text-primary-foreground/75">{label}</p>
     {isLoading ? (
-      <Skeleton className="mt-2 h-8 w-16 bg-white/20" />
+      <Skeleton className="mt-2 h-8 w-16 bg-primary-foreground/20" />
     ) : (
-      <p className="mt-1.5 truncate font-display text-[1.65rem] font-extrabold leading-none tabular-nums md:text-4xl">
+      <p className="mt-1.5 truncate font-display text-2xl font-bold leading-none tabular-nums">
         <CountUp value={value} digits={digits} />
-        {unit && <span className="ml-1 text-xs font-bold text-white/75 md:text-sm">{unit}</span>}
+        {unit && <span className="ml-1 text-xs font-bold text-primary-foreground/75">{unit}</span>}
       </p>
     )}
-    {note && !isLoading && <p className="mt-1.5 text-[10px] font-semibold leading-tight text-white/80 md:text-[11px]">{note}</p>}
+    {note && !isLoading && <p className="mt-1.5 text-[11px] font-semibold leading-tight text-primary-foreground/80">{note}</p>}
   </div>
 );
 
@@ -127,7 +127,7 @@ const StatTile = ({
       </span>
     </div>
     <TileValue value={value} unit={unit} isLoading={isLoading} />
-    {hint && <p className="mt-1 truncate text-[11px] text-muted-foreground">{hint}</p>}
+    {hint && <p className="mt-1 truncate text-xs text-muted-foreground">{hint}</p>}
   </Tile>
 );
 
@@ -287,11 +287,9 @@ export function ProfileSummary() {
   const tanks = summary.tons / T55_TONS;
 
   return (
-    <div className="space-y-3 md:space-y-4">
+    <div className="space-y-3">
       {/* Profile card */}
-      <section className="hero-ember texture-grain relative overflow-hidden rounded-[1.75rem] p-5 text-white shadow-glow">
-        <div aria-hidden className="pointer-events-none absolute -right-14 -top-20 h-52 w-52 rounded-full border-[1.25rem] border-white/10" />
-        <div aria-hidden className="pointer-events-none absolute -bottom-24 -left-10 h-48 w-48 rounded-full border-[1rem] border-white/5" />
+      <section className="bg-primary text-primary-foreground relative overflow-hidden rounded-2xl p-5">
 
         <div className="relative flex justify-end gap-3">
 
@@ -299,14 +297,14 @@ export function ProfileSummary() {
             type="button"
             size="sm"
             onClick={() => setDialogOpen(true)}
-            className="shrink-0 gap-1.5 bg-white text-primary shadow-lg hover:bg-white/90"
+            className="shrink-0 gap-1.5 bg-primary-foreground text-primary hover:bg-white/90"
           >
             <CalendarRange className="h-3.5 w-3.5" />
             {rangeLabel(range)}
           </Button>
         </div>
 
-        <div className="relative mt-5 grid grid-cols-3 gap-2 md:gap-3">
+        <div className="relative mt-5 grid grid-cols-3 gap-2">
           <HeroStat
             label="Kilometry"
             value={summary.runKm}
@@ -333,7 +331,7 @@ export function ProfileSummary() {
       </section>
 
       {isEmpty && (
-        <div className="rounded-[1.75rem] border border-dashed border-border bg-card/50 p-6 text-center">
+        <div className="rounded-2xl border border-dashed border-border bg-card/50 p-6 text-center">
           <span className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-secondary text-primary">
             <Activity className="h-6 w-6" />
           </span>
@@ -345,7 +343,7 @@ export function ProfileSummary() {
       )}
 
       {/* Fun comparisons */}
-      <section className="grid gap-3 md:grid-cols-2 md:gap-4">
+      <section className="grid gap-3">
         <EquatorCard km={summary.runKm} isLoading={isLoading} />
         <TankCard tons={summary.tons} isLoading={isLoading} />
       </section>
@@ -355,7 +353,7 @@ export function ProfileSummary() {
       <TimeSplit strengthMinutes={summary.workoutMinutes} runMinutes={summary.runMinutes} formatMinutes={fmtDurationText} />
 
       {/* Detailed stats */}
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+      <section className="grid grid-cols-2 gap-3">
         <GroupHeader title="Bieganie" color={SUMMARY_COLORS.running} />
         <StatTile label="Biegi" icon={Footprints} accent={SUMMARY_COLORS.running} value={summary.runCount} hint={`${runTime.value} ${runTime.unit} w biegu`} isLoading={isLoading} />
         <StatTile label="Śr. tempo" icon={Timer} accent={SUMMARY_COLORS.running} value={fmtPace(summary.avgPace)} unit="/km" isLoading={isLoading} />
@@ -380,7 +378,7 @@ export function ProfileSummary() {
           ) : summary.topExercise ? (
             <>
               <p className="mt-2 truncate font-headline text-xl font-bold tracking-tight">{summary.topExercise.name}</p>
-              <p className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Repeat className="h-3 w-3" />
                 {summary.topExercise.sets} serii
                 {summary.topExercise.volume > 0 && ` · ${fmtNumber(summary.topExercise.volume / 1000, 1)} t`}

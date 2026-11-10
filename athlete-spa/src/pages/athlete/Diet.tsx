@@ -122,7 +122,7 @@ function MealCard({ dayMeal }: { dayMeal: DietDayMeal }) {
     const { meal } = dayMeal;
 
     return (
-        <Card className="border-primary/10">
+        <Card>
             <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -200,9 +200,8 @@ function MealCard({ dayMeal }: { dayMeal: DietDayMeal }) {
 
 function NoDietView() {
     return (
-        <div className="container mx-auto p-4 md:p-8">
-            <section className="relative overflow-hidden rounded-3xl border border-primary/10 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-8 md:p-12 text-center">
-                <div className="absolute top-0 right-0 -mt-16 -mr-16 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
+        <div className="page">
+            <section className="relative overflow-hidden rounded-2xl bg-card p-6 text-center">
                 <div className="relative z-10 mx-auto max-w-md space-y-6">
                     <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
                         <UtensilsCrossed className="h-8 w-8" />
@@ -213,13 +212,13 @@ function NoDietView() {
                         wszystkie dni, posiłki i makroskładniki.
                     </p>
                     <div className="flex flex-wrap justify-center gap-3">
-                        <Button size="lg" className="rounded-full" asChild>
+                        <Button size="lg"  asChild>
                             <Link to="/athlete/chat">
                                 <MessageSquare className="mr-2 h-4 w-4" />
                                 Napisz do Trenera
                             </Link>
                         </Button>
-                        <Button size="lg" variant="outline" className="rounded-full" asChild>
+                        <Button size="lg" variant="outline"  asChild>
                             <Link to="/athlete/nutrition">
                                 <NotebookPen className="mr-2 h-4 w-4" />
                                 Dzienniczek Kalorii
@@ -234,8 +233,8 @@ function NoDietView() {
 
 function LoadingView() {
     return (
-        <div className="container mx-auto space-y-6 p-4 pt-18 md:p-8">
-            <Skeleton className="h-44 w-full rounded-3xl" />
+        <div className="page space-y-6">
+            <Skeleton className="h-44 w-full rounded-2xl" />
             <div className="flex gap-2">
                 {[1, 2, 3].map((i) => (
                     <Skeleton key={i} className="h-9 w-20 rounded-full" />
@@ -260,7 +259,7 @@ export default function AthleteDietPage() {
 
     if (error) {
         return (
-            <div className="container mx-auto p-4 md:p-8">
+            <div className="page">
                 <div className="rounded-xl border-2 border-dashed bg-muted/30 py-12 text-center">
                     <UtensilsCrossed className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
                     <p className="text-muted-foreground">{error}</p>
@@ -278,15 +277,14 @@ export default function AthleteDietPage() {
         sortedDays.reduce((acc, day) => acc + dayTotals(day).calories, 0) / sortedDays.length;
 
     return (
-        <div className="container mx-auto space-y-6 p-4 pt-18 md:p-8">
+        <div className="page space-y-6">
             {/* Header */}
-            <section className="relative overflow-hidden rounded-3xl border border-primary/10 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-6 md:p-8">
-                <div className="absolute top-0 right-0 -mt-16 -mr-16 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
+            <section className="rounded-2xl bg-card p-4">
                 <div className="relative z-10 space-y-3">
                     <Badge variant="secondary" className="rounded-full px-4 py-1 text-sm font-medium">
                         Dieta od Trenera
                     </Badge>
-                    <h1 className="font-headline text-3xl font-bold tracking-tight md:text-4xl">{diet.name}</h1>
+                    <h1 className="font-headline text-3xl font-bold tracking-tight">{diet.name}</h1>
                     {diet.description && (
                         <p className="max-w-2xl leading-relaxed text-muted-foreground">{diet.description}</p>
                     )}
@@ -305,7 +303,7 @@ export default function AthleteDietPage() {
                             </span>
                         )}
                     </div>
-                    <Button variant="outline" size="sm" className="rounded-full" asChild>
+                    <Button variant="outline" size="sm"  asChild>
                         <Link to="/athlete/nutrition">
                             <NotebookPen className="mr-2 h-4 w-4" />
                             Dzienniczek Kalorii
@@ -315,7 +313,7 @@ export default function AthleteDietPage() {
             </section>
 
             {/* Day selector */}
-            <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:px-0">
+            <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
                 {sortedDays.map((day) => (
                     <button
                         key={day.dayNumber}
@@ -323,7 +321,7 @@ export default function AthleteDietPage() {
                         className={cn(
                             'pressable-sm shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors',
                             day.dayNumber === activeDay.dayNumber
-                                ? 'border-transparent bg-primary text-primary-foreground shadow-glow'
+                                ? 'border-transparent bg-primary text-primary-foreground'
                                 : 'border-border bg-secondary/40 text-muted-foreground hover:text-foreground'
                         )}
                     >
@@ -342,7 +340,7 @@ export default function AthleteDietPage() {
                     transition={{ duration: 0.15 }}
                     className="space-y-4"
                 >
-                    <Card className="border-primary/10">
+                    <Card>
                         <CardHeader className="pb-2">
                             <CardTitle className="text-base">Podsumowanie dnia {activeDay.dayNumber}</CardTitle>
                             <CardDescription>

@@ -120,7 +120,7 @@ export function ProgressDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent >
         <DialogHeader>
           <DialogTitle className="font-headline">Postęp: {exercise.name}</DialogTitle>
           <DialogDescription>

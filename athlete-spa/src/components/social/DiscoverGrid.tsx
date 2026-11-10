@@ -72,9 +72,9 @@ export function DiscoverGrid({ onProfileClick }: DiscoverGridProps) {
 
   if (error) {
     return (
-      <div className="rounded-[1.75rem] border border-dashed border-border bg-card/50 p-8 text-center">
+      <div className="rounded-2xl border border-dashed border-border bg-card/50 p-8 text-center">
         <p className="mb-3 text-sm text-muted-foreground">Nie udało się załadować postów.</p>
-        <Button size="sm" variant="outline" className="rounded-full" onClick={() => refetch()}>
+        <Button size="sm" variant="outline"  onClick={() => refetch()}>
           Spróbuj ponownie
         </Button>
       </div>
@@ -89,7 +89,7 @@ export function DiscoverGrid({ onProfileClick }: DiscoverGridProps) {
           <p className="text-sm text-muted-foreground">Zdjęcia z treningów wszystkich sportowców</p>
         </div>
         {user && (
-          <Button size="sm" className="shrink-0 gap-1.5 rounded-full" onClick={() => setCreateOpen(true)}>
+          <Button size="sm" className="shrink-0 gap-1.5" onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4" />
             Post
           </Button>
@@ -97,26 +97,26 @@ export function DiscoverGrid({ onProfileClick }: DiscoverGridProps) {
       </div>
 
       {isLoading && !posts?.length ? (
-        <div className="grid grid-cols-3 gap-1 overflow-hidden rounded-[1.5rem]">
+        <div className="grid grid-cols-3 gap-1 overflow-hidden rounded-2xl">
           {Array.from({ length: 9 }).map((_, i) => (
             <Skeleton key={i} className="aspect-square rounded-none" />
           ))}
         </div>
       ) : !posts?.length ? (
-        <div className="rounded-[1.75rem] border border-dashed border-border bg-card/50 p-8 text-center">
+        <div className="rounded-2xl border border-dashed border-border bg-card/50 p-8 text-center">
           <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-secondary text-primary">
             <ImagePlus className="h-7 w-7" />
           </span>
           <p className="text-sm text-muted-foreground">Brak postów. Wrzuć pierwsze zdjęcie z treningu!</p>
           {user && (
-            <Button size="sm" className="mt-4 rounded-full" onClick={() => setCreateOpen(true)}>
+            <Button size="sm" className="mt-4" onClick={() => setCreateOpen(true)}>
               Dodaj post
             </Button>
           )}
         </div>
       ) : (
         <>
-          <ul className="grid grid-cols-3 gap-1 overflow-hidden rounded-[1.5rem]">
+          <ul className="grid grid-cols-3 gap-1 overflow-hidden rounded-2xl">
             {posts.map(post => {
               const liked = user ? post.likes?.includes(user.uid) : false;
               return (
@@ -133,7 +133,7 @@ export function DiscoverGrid({ onProfileClick }: DiscoverGridProps) {
                       loading="lazy"
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
-                    <span className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/70 to-transparent px-2 pb-1.5 pt-6 text-[11px] font-semibold text-white">
+                    <span className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/70 to-transparent px-2 pb-1.5 pt-6 text-xs font-semibold text-white">
                       <span className="truncate">@{post.authorNickname}</span>
                       <span className="flex shrink-0 items-center gap-0.5 tabular-nums">
                         <Heart className={liked ? 'h-3 w-3 fill-current text-primary' : 'h-3 w-3'} />
@@ -160,7 +160,7 @@ export function DiscoverGrid({ onProfileClick }: DiscoverGridProps) {
       )}
 
       <Dialog open={!!openPost} onOpenChange={open => !open && setOpenPostId(null)}>
-        <DialogContent className="max-h-[92vh] w-[calc(100%-2rem)] max-w-lg overflow-y-auto rounded-[2rem] border-0 bg-transparent p-0 pt-12 shadow-none [&>button:last-child]:right-1 [&>button:last-child]:top-1 [&>button:last-child]:grid [&>button:last-child]:h-9 [&>button:last-child]:w-9 [&>button:last-child]:place-items-center [&>button:last-child]:rounded-full [&>button:last-child]:bg-card [&>button:last-child]:opacity-100 [&>button:last-child]:shadow-soft">
+        <DialogContent className="max-h-[92vh] w-[calc(100%-2rem)] max-w-lg overflow-y-auto rounded-2xl border-0 bg-transparent p-0 pt-12 shadow-none [&>button:last-child]:right-1 [&>button:last-child]:top-1 [&>button:last-child]:grid [&>button:last-child]:h-9 [&>button:last-child]:w-9 [&>button:last-child]:place-items-center [&>button:last-child]:rounded-full [&>button:last-child]:bg-card [&>button:last-child]:opacity-100 [&>button:last-child]:">
           <DialogTitle className="sr-only">Post @{openPost?.authorNickname}</DialogTitle>
           {openPost && (
             <PostCard

@@ -16,11 +16,11 @@ interface LeaderboardCardProps {
 function getRankIcon(rank: number) {
   switch (rank) {
     case 1:
-      return <Crown className="h-5 w-5 text-yellow-500" />;
+      return <Crown className="h-5 w-5 text-food" />;
     case 2:
       return <Medal className="h-5 w-5 text-gray-400" />;
     case 3:
-      return <Award className="h-5 w-5 text-amber-600" />;
+      return <Award className="h-5 w-5 text-food" />;
     default:
       return null;
   }
@@ -84,7 +84,7 @@ export function LeaderboardCard({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Crown className="h-5 w-5 text-yellow-500" />
+          <Crown className="h-5 w-5 text-food" />
           {title}
         </CardTitle>
       </CardHeader>
@@ -130,7 +130,7 @@ export function LeaderboardCard({
 
                 {/* Points */}
                 <Badge variant={getRankBadgeVariant(entry.rank)}>
-                  {entry.totalPoints.toLocaleString()} pkt
+                  {entry.totalPoints.toLocaleString('pl-PL')} pkt
                 </Badge>
               </div>
             );

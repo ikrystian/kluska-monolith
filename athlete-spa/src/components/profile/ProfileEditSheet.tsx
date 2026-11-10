@@ -74,7 +74,7 @@ export function ProfileEditSheet({ open, onOpenChange, userProfile, onSaved }: P
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="mx-auto max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-[2rem] px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5"
+        className="mx-auto max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-3xl px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5"
       >
         <SheetHeader className="mb-4 text-left">
           <SheetTitle className="font-headline text-xl">Edytuj profil</SheetTitle>

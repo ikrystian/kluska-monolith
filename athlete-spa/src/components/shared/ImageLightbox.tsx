@@ -32,7 +32,7 @@ export function ImageLightbox({ images, index, onIndexChange, title }: ImageLigh
 
   return (
     <Dialog open={open} onOpenChange={o => !o && onIndexChange(null)}>
-      <DialogContent className="max-w-3xl border-0 bg-black/95 p-0 sm:rounded-[1.75rem]">
+      <DialogContent className="max-w-3xl border-0 bg-black/95 p-0">
         <DialogTitle className="sr-only">{title}</DialogTitle>
         <DialogDescription className="sr-only">
           Zdjęcie {(index ?? 0) + 1} z {images.length}

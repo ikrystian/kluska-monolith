@@ -34,9 +34,9 @@ export function HeightStep({ value, onChange, onNext, onPrev, canProceed }: Heig
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-        className="w-20 h-20 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center mb-6 shadow-xl"
+        className="w-20 h-20 rounded-full bg-volt flex items-center justify-center mb-6"
       >
-        <Ruler className="w-10 h-10 text-white" />
+        <Ruler className="w-10 h-10 text-primary-foreground" />
       </motion.div>
 
       {/* Title */}
@@ -65,7 +65,7 @@ export function HeightStep({ value, onChange, onNext, onPrev, canProceed }: Heig
         transition={{ delay: 0.5 }}
         className="mb-6 text-center"
       >
-        <div className="text-6xl font-bold bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">
+        <div className="text-6xl font-bold bg-volt">
           {height}
         </div>
         <div className="text-xl text-muted-foreground">cm</div>
@@ -96,7 +96,7 @@ export function HeightStep({ value, onChange, onNext, onPrev, canProceed }: Heig
                 d="M 20 100 A 80 80 0 0 1 180 100"
                 fill="none"
                 strokeWidth="12"
-                className="stroke-emerald-500"
+                className="stroke-volt"
                 strokeLinecap="round"
                 initial={{ pathLength: 0 }}
                 animate={{ pathLength: heightPercentage / 100 }}
@@ -106,7 +106,7 @@ export function HeightStep({ value, onChange, onNext, onPrev, canProceed }: Heig
             {/* Center indicator */}
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2">
               <motion.div
-                className="w-3 h-3 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50"
+                className="w-3 h-3 rounded-full bg-volt shadow-emerald-500/50"
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
               />
@@ -120,14 +120,14 @@ export function HeightStep({ value, onChange, onNext, onPrev, canProceed }: Heig
         {/* Height categories */}
         <div className="flex justify-center gap-2 mb-6">
           {[
-            { label: 'Niski', range: [100, 160], color: 'bg-blue-500' },
-            { label: 'Średni', range: [161, 180], color: 'bg-emerald-500' },
-            { label: 'Wysoki', range: [181, 250], color: 'bg-purple-500' },
+            { label: 'Niski', range: [100, 160], color: 'bg-run' },
+            { label: 'Średni', range: [161, 180], color: 'bg-volt' },
+            { label: 'Wysoki', range: [181, 250], color: 'bg-social' },
           ].map((cat) => (
             <div
               key={cat.label}
               className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-300 ${height >= cat.range[0] && height <= cat.range[1]
-                  ? `${cat.color} text-white shadow-md`
+                  ? `${cat.color} text-primary-foreground shadow-md`
                   : 'bg-secondary text-muted-foreground'
                 }`}
             >
@@ -172,7 +172,7 @@ export function HeightStep({ value, onChange, onNext, onPrev, canProceed }: Heig
         <Button
           onClick={onNext}
           disabled={!canProceed}
-          className="flex-1 h-12 rounded-xl bg-gradient-to-r from-primary to-primary/80"
+          className="flex-1 h-12 rounded-xl bg-primary"
         >
           Dalej
           <ArrowRight className="w-4 h-4 ml-2" />

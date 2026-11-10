@@ -110,7 +110,7 @@ export function PlanForm({ initialData, onSubmit, isLoading }: PlanFormProps) {
                     <CardHeader>
                         <CardTitle>Szczegóły Planu</CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-4 sm:grid-cols-2">
+                    <CardContent className="grid gap-4">
                         <FormField
                             control={form.control}
                             name="name"
@@ -148,7 +148,7 @@ export function PlanForm({ initialData, onSubmit, isLoading }: PlanFormProps) {
                             control={form.control}
                             name="description"
                             render={({ field }) => (
-                                <FormItem className="sm:col-span-2">
+                                <FormItem >
                                     <FormLabel>Opis (opcjonalny)</FormLabel>
                                     <FormControl><Textarea {...field} disabled={isLoading} /></FormControl>
                                     <FormMessage />
@@ -236,7 +236,7 @@ function StageWeeks({ stageIndex, form, workouts, daysOfWeek, isLoading }: any) 
                                 <Trash2 className="mr-2 h-3 w-3" /> Usuń Tydzień
                             </Button>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 gap-4">
                             {daysOfWeek.map((dayName: string, dayIndex: number) => (
                                 <Card key={dayIndex} className="border-dashed">
                                     <CardHeader className="p-4 pb-2">

@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { TrainerAvatar } from '@/components/trainers/TrainerAvatar';
 import { TrainerGallery } from '@/components/trainers/TrainerGallery';
 import { TrainerInquirySheet } from '@/components/trainers/TrainerInquirySheet';
-import { ContactActions, ContactCard } from '@/components/trainers/TrainerContact';
+import { ContactActions } from '@/components/trainers/TrainerContact';
 import {
   AboutSection,
   Achievements,
@@ -26,7 +26,7 @@ import {
 } from '@/components/trainers/TrainerProfileSections';
 import { AVAILABILITY, MODE_LABEL, RESPONSE_LABEL, plural, publishedCard } from '@/components/trainers/trainer-meta';
 
-const SHELL = 'mx-auto w-full max-w-5xl px-4 pb-32 pt-18 md:px-6 md:pb-10 md:pt-8';
+const SHELL = 'page pb-24';
 
 interface Fact {
   value: string;
@@ -36,11 +36,11 @@ interface Fact {
 function FactsStrip({ facts }: { facts: Fact[] }) {
   if (facts.length === 0) return null;
   return (
-    <dl className="grid grid-cols-[repeat(auto-fit,minmax(5.5rem,1fr))] divide-x divide-border/60 overflow-hidden rounded-[1.5rem] border border-border/60 bg-card py-3 shadow-soft">
+    <dl className="grid grid-cols-[repeat(auto-fit,minmax(5.5rem,1fr))] divide-x divide-border/60 overflow-hidden rounded-2xl bg-card py-3">
       {facts.map(f => (
         <div key={f.label} className="flex flex-col-reverse px-2 text-center">
-          <dt className="mt-0.5 text-[10px] font-bold uppercase leading-tight tracking-wider text-muted-foreground">{f.label}</dt>
-          <dd className="font-headline text-lg font-bold leading-tight sm:text-xl">{f.value}</dd>
+          <dt className="mt-0.5 text-xs font-semibold leading-tight text-muted-foreground">{f.label}</dt>
+          <dd className="font-headline text-lg font-bold leading-tight">{f.value}</dd>
         </div>
       ))}
     </dl>
@@ -50,14 +50,14 @@ function FactsStrip({ facts }: { facts: Fact[] }) {
 function DetailSkeleton() {
   return (
     <div className={SHELL}>
-      <Skeleton className="h-56 rounded-[2rem]" />
+      <Skeleton className="h-56 rounded-2xl" />
       <div className="px-5">
         <Skeleton className="-mt-14 h-28 w-28 rounded-full ring-4 ring-background" />
         <Skeleton className="mt-4 h-9 w-2/3" />
         <Skeleton className="mt-2 h-5 w-1/2" />
       </div>
-      <Skeleton className="mt-6 h-20 rounded-[1.5rem]" />
-      <Skeleton className="mt-6 h-40 rounded-[1.5rem]" />
+      <Skeleton className="mt-6 h-20 rounded-2xl" />
+      <Skeleton className="mt-6 h-40 rounded-2xl" />
     </div>
   );
 }
@@ -94,13 +94,13 @@ export default function AthleteTrainerDetailPage() {
 
   if (!trainer || trainer.role !== 'trainer') {
     return (
-      <div className="mx-auto w-full max-w-3xl px-4 py-20 text-center">
+      <div className="page py-20 text-center">
         <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-secondary">
           <Users className="h-6 w-6 text-muted-foreground" />
         </span>
         <h2 className="mt-4 font-headline text-2xl font-bold">Nie znaleziono trenera</h2>
         <p className="mb-6 mt-1 text-muted-foreground">Ten profil nie istnieje lub nie jest profilem trenera.</p>
-        <Button className="rounded-full" onClick={() => navigate('/athlete/trainers')}>
+        <Button  onClick={() => navigate('/athlete/trainers')}>
           Wszyscy trenerzy
         </Button>
       </div>
@@ -145,25 +145,11 @@ export default function AthleteTrainerDetailPage() {
     <div className={SHELL}>
       {/* Banner */}
       <header>
-        <div className="hero-ember texture-grain relative h-52 overflow-hidden rounded-[2rem] shadow-glow sm:h-64 md:h-72">
-          {cover ? (
-            <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />
-          ) : (
-            <div aria-hidden className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full border-[1.6rem] border-white/10" />
-          )}
-          <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/45" />
-
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            aria-label="Wróć"
-            className="absolute left-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full bg-black/35 text-white backdrop-blur-md transition-transform active:scale-90"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-
+        <div className="relative h-40 overflow-hidden rounded-2xl bg-secondary">
+          {cover && <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+          
           {availability && (
-            <span className="absolute right-3 top-3 z-10 inline-flex items-center gap-2 rounded-full bg-black/45 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur-md">
+            <span className="absolute right-3 top-3 z-10 inline-flex items-center gap-2 rounded-full bg-black/45 px-3 py-1.5 text-xs font-semibold text-primary-foreground backdrop-blur-md">
               <span className="relative flex h-2 w-2">
                 {availability.ping && (
                   <span className={cn('absolute inline-flex h-full w-full animate-ping rounded-full opacity-75', availability.dot)} />
@@ -176,22 +162,22 @@ export default function AthleteTrainerDetailPage() {
         </div>
 
         {/* Identity */}
-        <div className="relative -mt-14 px-3 sm:px-6">
-          <TrainerAvatar trainer={trainer} className="h-28 w-28 text-4xl shadow-lifted ring-4 ring-background sm:h-32 sm:w-32" />
+        <div className="relative -mt-14 px-3">
+          <TrainerAvatar trainer={trainer} className="h-28 w-28 text-4xl ring-4 ring-background" />
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
+            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
               Trener osobisty
             </span>
             {isMine && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+              <span className="inline-flex items-center gap-1 rounded-full bg-volt/15 px-3 py-1 text-xs font-semibold text-volt">
                 <UserCheck className="h-3 w-3" /> Twój trener
               </span>
             )}
           </div>
 
-          <h1 className="mt-2 font-headline text-3xl font-bold leading-tight tracking-tight md:text-4xl">{trainer.name}</h1>
-          {card?.headline && <p className="mt-1.5 max-w-2xl text-base text-muted-foreground md:text-lg">{card.headline}</p>}
+          <h1 className="mt-2 font-headline text-3xl font-bold leading-tight tracking-tight">{trainer.name}</h1>
+          {card?.headline && <p className="mt-1.5 max-w-2xl text-base text-muted-foreground">{card.headline}</p>}
 
           {chips.length > 0 && (
             <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
@@ -207,12 +193,12 @@ export default function AthleteTrainerDetailPage() {
 
       <div className="mt-6 space-y-3">
         <FactsStrip facts={facts} />
-        <div ref={ctaRef} className="lg:hidden">
+        <div ref={ctaRef} >
           <ContactActions {...contact} />
         </div>
       </div>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-start">
+      <div className="mt-8 grid gap-8">
         <div className="min-w-0 space-y-10">
           {!!card?.achievements?.length && <Achievements items={card.achievements} />}
 
@@ -238,7 +224,7 @@ export default function AthleteTrainerDetailPage() {
 
           {!card && (
             <Reveal>
-              <div className="rounded-[1.5rem] border border-dashed border-border/80 p-6 text-center">
+              <div className="rounded-2xl border border-dashed border-border/80 p-6 text-center">
                 <MessageSquare className="mx-auto h-6 w-6 text-muted-foreground" />
                 <p className="mt-2 font-headline text-lg font-bold">Profil w trakcie uzupełniania</p>
                 <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
@@ -254,10 +240,10 @@ export default function AthleteTrainerDetailPage() {
 
           {/* Closing call to action for small screens, where the sidebar is hidden. */}
           {!isMine && (
-            <Reveal className="lg:hidden">
-              <div className="hero-ember texture-grain relative overflow-hidden rounded-[1.75rem] p-6 text-center text-white shadow-glow">
-                <p className="font-display text-xl font-extrabold uppercase leading-tight">Gotowy na zmianę?</p>
-                <p className="mx-auto mt-2 max-w-xs text-sm text-white/85">
+            <Reveal >
+              <div className="bg-primary text-primary-foreground relative overflow-hidden rounded-2xl p-6 text-center">
+                <p className="font-display text-3xl font-bold uppercase leading-tight">Gotowy na zmianę?</p>
+                <p className="mx-auto mt-2 max-w-xs text-sm text-primary-foreground/85">
                   Napisz do trenera — odpowie i dobierze plan do Twoich celów.
                 </p>
                 <Button
@@ -273,20 +259,17 @@ export default function AthleteTrainerDetailPage() {
           )}
         </div>
 
-        <aside className="hidden lg:sticky lg:top-6 lg:block">
-          <ContactCard {...contact} />
-        </aside>
       </div>
 
       {/* Floating call to action (mobile) */}
       <div
         className={cn(
-          'fixed inset-x-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 mx-auto max-w-md transition-all duration-300 group-data-[chrome=hidden]/chrome:bottom-[calc(1rem+env(safe-area-inset-bottom))] lg:hidden',
+          'app-column fixed inset-x-0 bottom-[var(--app-bottom)] z-30 px-3 pb-2 transition-all duration-300',
           showStickyCta ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'
         )}
         inert={!showStickyCta}
       >
-        <div className="rounded-full bg-background/80 p-1.5 shadow-lifted backdrop-blur-xl">
+        <div className="rounded-2xl bg-popover p-1.5">
           <ContactActions {...contact} compact />
         </div>
       </div>

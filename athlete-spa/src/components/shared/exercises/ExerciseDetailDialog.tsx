@@ -2,13 +2,6 @@
 
 import { Exercise } from '@/lib/types';
 import { resolveMediaUrl } from '@/lib/api-client';
-import { useIsMobile } from '@/hooks/use-mobile';
-import {
-    Dialog,
-    DialogContent,
-    DialogTitle,
-    DialogDescription,
-} from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Copy, Dumbbell, Edit, LineChart as ChartIcon, Target } from 'lucide-react';
@@ -187,7 +180,7 @@ export function ExerciseDetailBody({ exercise }: { exercise: Exercise }) {
             <section className="flex items-center gap-2 rounded-2xl border bg-card py-1.5 pl-4 pr-1.5 text-xs">
                 <span className="font-medium text-muted-foreground">ID</span>
                 <code className="min-w-0 flex-1 select-all truncate font-mono">{exercise.id}</code>
-                <Button type="button" variant="ghost" size="sm" className="h-8 rounded-full" onClick={() => void copyId(exercise)}>
+                <Button type="button" variant="ghost" size="sm" className="h-8" onClick={() => void copyId(exercise)}>
                     <Copy className="mr-1.5 h-3.5 w-3.5" />
                     Kopiuj
                 </Button>
@@ -205,23 +198,21 @@ export function ExerciseDetailDialog({
     isFavorite = false,
     onToggleFavorite,
 }: ExerciseDetailDialogProps) {
-    const isMobile = useIsMobile();
-
     if (!exercise) return null;
 
     const typeMeta = exercise.type ? exerciseTypeMeta[exercise.type] : null;
     const hasActions = !!onShowProgress || !!onEdit;
 
-    const header = (Title: typeof DialogTitle, Description: typeof DialogDescription) => (
+    const header = (
         <div className="space-y-1.5 px-5 pt-5 text-left">
             {typeMeta && (
-                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
                     <typeMeta.icon className="h-3 w-3" />
                     {typeMeta.label}
                 </span>
             )}
             <div className="flex items-start justify-between gap-2">
-                <Title className="font-headline text-2xl font-bold leading-tight">{exercise.name}</Title>
+                <SheetTitle className="font-display text-[2rem] font-bold uppercase leading-none">{exercise.name}</SheetTitle>
                 {onToggleFavorite && (
                     <FavoriteButton
                         active={isFavorite}
@@ -231,20 +222,20 @@ export function ExerciseDetailDialog({
                     />
                 )}
             </div>
-            <Description className="sr-only">Szczegółowe informacje o ćwiczeniu</Description>
+            <SheetDescription className="sr-only">Szczegółowe informacje o ćwiczeniu</SheetDescription>
         </div>
     );
 
     const actions = hasActions && (
-        <div className="flex shrink-0 gap-2 border-t border-border/60 bg-background/90 px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur md:pb-4">
+        <div className="flex shrink-0 gap-2 border-t border-border/60 bg-background/90 px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur">
             {onEdit && (
-                <Button variant="outline" className="flex-1 rounded-full" onClick={() => onEdit(exercise)}>
+                <Button variant="outline" className="flex-1" onClick={() => onEdit(exercise)}>
                     <Edit className="mr-2 h-4 w-4" />
                     Edytuj
                 </Button>
             )}
             {onShowProgress && (
-                <Button className="flex-1 rounded-full" onClick={() => onShowProgress(exercise)}>
+                <Button className="flex-1" onClick={() => onShowProgress(exercise)}>
                     <ChartIcon className="mr-2 h-4 w-4" />
                     Zobacz postęp
                 </Button>
@@ -255,35 +246,19 @@ export function ExerciseDetailDialog({
     const scrollBody = (
         <div className="min-h-0 flex-1 overflow-y-auto">
             <ExerciseMedia exercise={exercise} />
-            {/* Typy Title/Description z sheet i dialog są zgodne (Radix Dialog pod spodem) */}
-            {isMobile ? header(SheetTitle, SheetDescription) : header(DialogTitle, DialogDescription)}
+            {header}
             <div className="px-5 pb-6 pt-5">
                 <ExerciseDetailBody exercise={exercise} />
             </div>
         </div>
     );
 
-    if (isMobile) {
-        return (
-            <Sheet open={open} onOpenChange={onOpenChange}>
-                <SheetContent
-                    side="bottom"
-                    className="mx-auto flex max-h-[92dvh] w-full flex-col gap-0 overflow-hidden rounded-t-[2rem] p-0 [&>button]:z-10 [&>button]:rounded-full [&>button]:bg-background/80 [&>button]:p-1.5 [&>button]:backdrop-blur"
-                >
-                    <div className="absolute left-1/2 top-2 z-10 h-1 w-10 -translate-x-1/2 rounded-full bg-white/70 shadow" />
-                    {scrollBody}
-                    {actions}
-                </SheetContent>
-            </Sheet>
-        );
-    }
-
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="flex max-h-[90vh] max-w-2xl flex-col gap-0 overflow-hidden rounded-3xl p-0 sm:rounded-3xl [&>button]:z-10 [&>button]:rounded-full [&>button]:bg-background/80 [&>button]:p-1.5 [&>button]:backdrop-blur">
+        <Sheet open={open} onOpenChange={onOpenChange}>
+            <SheetContent side="bottom" className="flex flex-col gap-0 overflow-hidden p-0 [&>button]:z-10">
                 {scrollBody}
                 {actions}
-            </DialogContent>
-        </Dialog>
+            </SheetContent>
+        </Sheet>
     );
 }

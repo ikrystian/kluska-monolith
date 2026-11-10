@@ -178,7 +178,7 @@ export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdd
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
+            <DialogContent className="max-h-[90dvh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{selected ? 'Dodaj do dzienniczka' : 'Dodaj produkt'}</DialogTitle>
                 </DialogHeader>
@@ -358,7 +358,7 @@ export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdd
                                                 </div>
                                                 <div className="shrink-0 text-right">
                                                     <p className="text-sm font-bold text-primary">{Math.round(product.calories)}</p>
-                                                    <p className="text-[10px] text-muted-foreground">kcal / 100 g</p>
+                                                    <p className="text-[11px] text-muted-foreground">kcal / 100 g</p>
                                                 </div>
                                             </button>
                                         </li>

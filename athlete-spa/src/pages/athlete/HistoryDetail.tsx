@@ -5,10 +5,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { format, differenceInMinutes } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import {
-  ArrowLeft,
   Activity,
   Award,
-  Calendar,
   CheckCircle2,
   Clock,
   Copy,
@@ -17,13 +15,11 @@ import {
   Layers,
   Lightbulb,
   MapPin,
-  Maximize2,
   MessageSquare,
   Play,
   Repeat,
   RotateCcw,
   Share2,
-  Sparkles,
   Timer,
   TrendingUp,
   Trophy,
@@ -40,7 +36,6 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/compone
 import { SetTypeBadge } from '@/components/workout/SetTypeModal';
 import { rpeToRir } from '@/components/workout/RpeSelector';
 import { seriesLabel, exercisesLabel } from '@/components/schedule/WorkoutExerciseList';
-import { tint } from '@/components/profile/profile-ui';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -172,14 +167,6 @@ export default function HistoryDetailPage() {
     };
   }, [workoutLog]);
 
-  const handleBack = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate('/athlete/history');
-    }
-  };
-
   const handleShare = async () => {
     if (!workoutLog) return;
     const dateFormatted = workoutLog.endTime
@@ -271,32 +258,32 @@ export default function HistoryDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto w-full max-w-3xl space-y-6 px-4 pb-16 pt-18 md:px-6 md:pt-8">
+      <div className="page space-y-6">
         <div className="flex items-center gap-3">
           <Skeleton className="h-10 w-10 rounded-full" />
           <Skeleton className="h-6 w-48 rounded-lg" />
         </div>
-        <Skeleton className="h-64 w-full rounded-[1.75rem]" />
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Skeleton className="h-64 w-full rounded-2xl" />
+        <div className="grid grid-cols-2 gap-3">
           <Skeleton className="h-24 w-full rounded-2xl" />
           <Skeleton className="h-24 w-full rounded-2xl" />
           <Skeleton className="h-24 w-full rounded-2xl" />
           <Skeleton className="h-24 w-full rounded-2xl" />
         </div>
-        <Skeleton className="h-80 w-full rounded-[1.75rem]" />
+        <Skeleton className="h-80 w-full rounded-2xl" />
       </div>
     );
   }
 
   if (!workoutLog) {
     return (
-      <div className="mx-auto w-full max-w-3xl px-4 py-24 text-center">
+      <div className="page py-24 text-center">
         <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-secondary">
           <Dumbbell className="h-8 w-8 text-muted-foreground" />
         </span>
         <h2 className="mt-4 font-headline text-2xl font-bold">Nie znaleziono sesji</h2>
         <p className="mb-6 mt-1 text-muted-foreground">Nie można załadować podsumowania treningu lub zostało ono usunięte.</p>
-        <Button className="rounded-full px-6" onClick={() => navigate('/athlete/history')}>
+        <Button className="px-6" onClick={() => navigate('/athlete/history')}>
           Wróć do historii
         </Button>
       </div>
@@ -308,164 +295,116 @@ export default function HistoryDetailPage() {
   const completedDate = workoutLog.endTime ? new Date(workoutLog.endTime) : null;
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-6 px-4 pb-20 pt-18 md:px-6 md:pt-8">
-      {/* Top Navigation & Quick Actions */}
-      <div className="flex items-center justify-between gap-2">
-        <Button
-          onClick={handleBack}
-          variant="ghost"
-          size="sm"
-          className="h-10 gap-2 rounded-full px-3 text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span className="text-sm font-semibold">Historia</span>
-        </Button>
-
-        <div className="flex items-center gap-1.5">
-          <Button
-            onClick={handleShare}
-            variant="outline"
-            size="icon"
-            className="h-9 w-9 rounded-full border-border/60 hover:bg-secondary"
-            title="Udostępnij trening"
-          >
-            <Share2 className="h-4 w-4 text-muted-foreground" />
-          </Button>
-
-          <Button
-            onClick={handleSaveAsTemplate}
-            disabled={isSavingTemplate}
-            variant="outline"
-            size="icon"
-            className="h-9 w-9 rounded-full border-border/60 hover:bg-secondary"
-            title="Zapisz jako szablon treningu"
-          >
-            <Copy className="h-4 w-4 text-muted-foreground" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Main Hero Card */}
-      <section className="relative overflow-hidden rounded-[1.75rem] border border-border/80 bg-card/85 p-5 shadow-soft backdrop-blur-md md:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <Badge className="gap-1.5 rounded-full border-emerald-500/30 bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            Ukończono
-          </Badge>
-
-          {completedDate && (
-            <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-              <Calendar className="h-3.5 w-3.5" />
-              {format(completedDate, 'EEEE, d MMMM yyyy · HH:mm', { locale: pl })}
+    <div className="page space-y-4">
+      {/* Summary */}
+      <section className="rounded-2xl bg-card p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="flex items-center gap-1.5 text-[13px] font-semibold text-volt">
+              <CheckCircle2 className="h-4 w-4" /> Ukończono
             </p>
-          )}
+            <h1 className="mt-1 line-clamp-2 font-display text-[2.75rem] font-bold uppercase leading-[0.95]">{workoutLog.workoutName}</h1>
+          </div>
+          <div className="-mr-1.5 -mt-1.5 flex shrink-0">
+            <Button onClick={handleShare} variant="ghost" size="icon" aria-label="Udostępnij trening">
+              <Share2 className="h-4 w-4" />
+            </Button>
+            <Button onClick={handleSaveAsTemplate} disabled={isSavingTemplate} variant="ghost" size="icon" aria-label="Zapisz jako szablon treningu">
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
-        <h1 className="mt-3 font-headline text-2xl font-black uppercase tracking-tight text-foreground md:text-3xl">
-          {workoutLog.workoutName}
-        </h1>
-
+        {completedDate && (
+          <p className="mt-2 text-sm capitalize text-muted-foreground">
+            {format(completedDate, 'EEEE, d MMMM yyyy · HH:mm', { locale: pl })}
+          </p>
+        )}
         {workoutLog.gymName && (
-          <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-            <MapPin className="h-3.5 w-3.5" />
-            {workoutLog.gymName}
+          <p className="mt-0.5 flex items-center gap-1 text-sm text-muted-foreground">
+            <MapPin className="h-3.5 w-3.5" /> {workoutLog.gymName}
           </p>
         )}
 
         {/* Workout Photo */}
         {photoUrl && (
-          <div
+          <button
+            type="button"
             onClick={() => setIsPhotoOpen(true)}
-            className="group relative mt-4 aspect-video w-full cursor-pointer overflow-hidden rounded-2xl border border-border/60 bg-muted/60 transition-transform active:scale-[0.99] sm:aspect-[21/9]"
+            aria-label="Powiększ zdjęcie"
+            className="relative mt-3 block aspect-video w-full overflow-hidden rounded-xl bg-secondary"
           >
             <img
               src={photoUrl}
               alt={`Zdjęcie z treningu ${workoutLog.workoutName}`}
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              className="absolute inset-0 h-full w-full object-cover"
               loading="lazy"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80" />
-            <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white backdrop-blur-md">
-              <Maximize2 className="h-3.5 w-3.5" />
-              <span>Powiększ zdjęcie</span>
-            </div>
-          </div>
+          </button>
         )}
       </section>
 
       {/* Key Performance Indicators (KPIs) 4-tile grid */}
-      <section className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+      <section className="grid grid-cols-2 gap-2.5">
         {/* Total Volume */}
-        <div
-          className="rounded-2xl p-4 transition-colors"
-          style={{ backgroundColor: tint('#f97316', 10) }}
-        >
-          <div className="flex items-center justify-between text-orange-500">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Tonaż</span>
+        <div className="rounded-2xl bg-card p-4">
+          <div className="flex items-center justify-between text-muted-foreground">
+            <span className="text-xs font-semibold text-muted-foreground">Tonaż</span>
             <Flame className="h-4 w-4" />
           </div>
-          <p className="mt-2 font-display text-2xl font-black leading-none tabular-nums text-foreground">
+          <p className="mt-2 font-display text-[2.25rem] font-bold leading-none tabular-nums">
             {(stats?.totalVolume || 0).toLocaleString('pl-PL')}
-            <span className="ml-1 text-xs font-bold text-muted-foreground">kg</span>
+            <span className="ml-1 font-body text-sm font-semibold text-muted-foreground">kg</span>
           </p>
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <p className="mt-1 text-xs text-muted-foreground">
             {stats?.weightSetsCount || 0} {seriesLabel(stats?.weightSetsCount || 0)} siłowych
           </p>
         </div>
 
         {/* Duration */}
-        <div
-          className="rounded-2xl p-4 transition-colors"
-          style={{ backgroundColor: tint('#0284c7', 10) }}
-        >
-          <div className="flex items-center justify-between text-sky-500">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Czas</span>
+        <div className="rounded-2xl bg-card p-4">
+          <div className="flex items-center justify-between text-muted-foreground">
+            <span className="text-xs font-semibold text-muted-foreground">Czas</span>
             <Clock className="h-4 w-4" />
           </div>
-          <p className="mt-2 font-display text-2xl font-black leading-none tabular-nums text-foreground">
+          <p className="mt-2 font-display text-[2.25rem] font-bold leading-none tabular-nums">
             {formatDuration(stats?.duration)}
           </p>
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <p className="mt-1 text-xs text-muted-foreground">
             {stats?.density ? `${stats.density} kg/min` : 'Łączny czas sesji'}
           </p>
         </div>
 
         {/* Exercises & Sets */}
-        <div
-          className="rounded-2xl p-4 transition-colors"
-          style={{ backgroundColor: tint('#10b981', 10) }}
-        >
-          <div className="flex items-center justify-between text-emerald-500">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Ćwiczenia</span>
+        <div className="rounded-2xl bg-card p-4">
+          <div className="flex items-center justify-between text-muted-foreground">
+            <span className="text-xs font-semibold text-muted-foreground">Ćwiczenia</span>
             <Dumbbell className="h-4 w-4" />
           </div>
-          <p className="mt-2 font-display text-2xl font-black leading-none tabular-nums text-foreground">
+          <p className="mt-2 font-display text-[2.25rem] font-bold leading-none tabular-nums">
             {workoutLog.exercises.length}
-            <span className="ml-1 text-xs font-bold text-muted-foreground">ćw.</span>
+            <span className="ml-1 font-body text-sm font-semibold text-muted-foreground">ćw.</span>
           </p>
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <p className="mt-1 text-xs text-muted-foreground">
             {stats?.totalSets || 0} {seriesLabel(stats?.totalSets || 0)} ({stats?.totalReps || 0} powt.)
           </p>
         </div>
 
         {/* Max Weight / Intensity */}
-        <div
-          className="rounded-2xl p-4 transition-colors"
-          style={{ backgroundColor: tint('#8b5cf6', 10) }}
-        >
-          <div className="flex items-center justify-between text-purple-500">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Szczyt</span>
+        <div className="rounded-2xl bg-card p-4">
+          <div className="flex items-center justify-between text-muted-foreground">
+            <span className="text-xs font-semibold text-muted-foreground">Szczyt</span>
             {stats?.maxWeight && stats.maxWeight > 0 ? (
               <TrendingUp className="h-4 w-4" />
             ) : (
               <Zap className="h-4 w-4" />
             )}
           </div>
-          <p className="mt-2 font-display text-2xl font-black leading-none tabular-nums text-foreground">
+          <p className="mt-2 font-display text-[2.25rem] font-bold leading-none tabular-nums">
             {stats?.maxWeight && stats.maxWeight > 0 ? (
               <>
                 {stats.maxWeight}
-                <span className="ml-1 text-xs font-bold text-muted-foreground">kg</span>
+                <span className="ml-1 font-body text-sm font-semibold text-muted-foreground">kg</span>
               </>
             ) : stats?.avgRpe ? (
               `RPE ${stats.avgRpe}`
@@ -473,7 +412,7 @@ export default function HistoryDetailPage() {
               '-'
             )}
           </p>
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <p className="mt-1 text-xs text-muted-foreground">
             {stats?.peakEstimated1RM && stats.peakEstimated1RM > 0
               ? `Est. 1RM: ~${stats.peakEstimated1RM} kg`
               : stats?.avgRpe
@@ -485,17 +424,14 @@ export default function HistoryDetailPage() {
 
       {/* Personal Records Celebration Banner (Peak Moment) */}
       {workoutLog.newRecords && workoutLog.newRecords.length > 0 && (
-        <section className="relative overflow-hidden rounded-[1.75rem] border border-amber-500/40 bg-gradient-to-br from-amber-500/15 via-yellow-500/10 to-transparent p-5 shadow-glow md:p-6">
+        <section className="rounded-2xl bg-food/15 p-4">
           <div className="flex items-center gap-2.5">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-500 text-white shadow-md">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-food text-black">
               <Trophy className="h-5 w-5" />
             </span>
             <div>
               <div className="flex items-center gap-1.5">
-                <h3 className="font-headline text-lg font-bold text-foreground">
-                  Nowe Rekordy Życiowe!
-                </h3>
-                <Sparkles className="h-4 w-4 text-amber-500" />
+                <h3 className="text-[15px] font-bold">Nowy rekord życiowy</h3>
               </div>
               <p className="text-xs text-muted-foreground">
                 Świetna forma! W tym treningu pobiłeś {workoutLog.newRecords.length}{' '}
@@ -504,21 +440,21 @@ export default function HistoryDetailPage() {
             </div>
           </div>
 
-          <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
+          <div className="mt-4 grid gap-2.5">
             {workoutLog.newRecords.map((record, idx) => (
               <div
                 key={idx}
-                className="flex items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-background/80 p-3 shadow-xs backdrop-blur-xs"
+                className="flex items-center justify-between gap-3 rounded-xl border border-food/30 bg-background/80 p-3 shadow-xs backdrop-blur-xs"
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-bold text-foreground">{record.exerciseName}</p>
-                  <p className="text-[11px] uppercase tracking-wider text-amber-600 dark:text-amber-400 font-semibold">
+                  <p className="text-xs text-food font-semibold">
                     {record.type === 'max_weight' && 'Maksymalny ciężar'}
                     {record.type === 'max_reps' && 'Maksymalna liczba powtórzeń'}
                     {record.type === 'max_duration' && 'Czas maksymalny'}
                   </p>
                 </div>
-                <Badge className="shrink-0 bg-amber-500/20 text-amber-700 dark:text-amber-300 font-mono text-xs font-bold border-amber-500/30">
+                <Badge className="shrink-0 bg-food/20 text-food font-mono text-xs font-bold border-food/30">
                   {record.type === 'max_weight' && `${record.value} kg @ ${record.reps} powt.`}
                   {record.type === 'max_reps' && `${record.value} powt.`}
                   {record.type === 'max_duration' && `${record.value} s`}
@@ -531,9 +467,9 @@ export default function HistoryDetailPage() {
 
       {/* Muscle Groups Distribution */}
       {stats?.muscleGroups && stats.muscleGroups.length > 0 && (
-        <section className="rounded-[1.75rem] border border-border/70 bg-card/70 p-5 shadow-soft">
+        <section className="rounded-2xl border border-border/70 bg-card/70 p-5">
           <div className="flex items-center justify-between">
-            <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            <h3 className="text-xs font-semibold text-muted-foreground">
               Zaangażowane partie mięśniowe
             </h3>
             <span className="text-xs text-muted-foreground">
@@ -544,7 +480,7 @@ export default function HistoryDetailPage() {
           {/* Progress bar split */}
           <div className="mt-3 flex h-2.5 w-full overflow-hidden rounded-full bg-secondary">
             {stats.muscleGroups.map((mg, i) => {
-              const colors = ['bg-primary', 'bg-sky-500', 'bg-amber-500', 'bg-emerald-500', 'bg-purple-500', 'bg-pink-500'];
+              const colors = ['bg-primary', 'bg-run', 'bg-food', 'bg-volt', 'bg-social', 'bg-social'];
               const color = colors[i % colors.length];
               return (
                 <div
@@ -560,7 +496,7 @@ export default function HistoryDetailPage() {
           {/* Muscle chips */}
           <div className="mt-3.5 flex flex-wrap gap-2">
             {stats.muscleGroups.map((mg, i) => {
-              const dotColors = ['bg-primary', 'bg-sky-500', 'bg-amber-500', 'bg-emerald-500', 'bg-purple-500', 'bg-pink-500'];
+              const dotColors = ['bg-primary', 'bg-run', 'bg-food', 'bg-volt', 'bg-social', 'bg-social'];
               const dot = dotColors[i % dotColors.length];
               return (
                 <div
@@ -582,7 +518,7 @@ export default function HistoryDetailPage() {
       {/* Exercise List & Sets Breakdown */}
       <section className="space-y-4">
         <div className="flex items-center justify-between px-1">
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+          <h2 className="text-xs font-semibold text-muted-foreground">
             Ćwiczenia · {exercisesLabel(workoutLog.exercises.length)}
           </h2>
           <span className="text-xs text-muted-foreground">
@@ -605,10 +541,10 @@ export default function HistoryDetailPage() {
             return (
               <article
                 key={exIndex}
-                className="overflow-hidden rounded-[1.5rem] border border-border/70 bg-card/80 shadow-soft"
+                className="overflow-hidden rounded-2xl border border-border/70 bg-card/80"
               >
                 {/* Exercise Header */}
-                <div className="flex flex-col gap-3 border-b border-border/50 bg-secondary/25 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-3 border-b border-border/50 bg-secondary/25 p-4">
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-primary/10 font-headline text-xs font-bold text-primary">
                       {exIndex + 1}
@@ -630,18 +566,18 @@ export default function HistoryDetailPage() {
                     )}
 
                     <div className="min-w-0">
-                      <h4 className="truncate font-semibold text-foreground text-sm sm:text-base">
+                      <h4 className="truncate font-semibold text-foreground text-sm">
                         {exercise?.name || 'Nieznane ćwiczenie'}
                       </h4>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                        <Badge variant="outline" className="h-5 px-1.5 text-[10px] gap-1">
+                        <Badge variant="outline" className="h-5 px-1.5 text-[11px] gap-1">
                           {exType === 'weight' && <Dumbbell className="h-2.5 w-2.5" />}
                           {exType === 'reps' && <Repeat className="h-2.5 w-2.5" />}
                           {exType === 'duration' && <Timer className="h-2.5 w-2.5" />}
                           {exType === 'weight' ? 'Ciężar' : exType === 'reps' ? 'Powt.' : 'Czas'}
                         </Badge>
                         {series.tempo && (
-                          <span className="font-mono text-[10px] text-muted-foreground bg-secondary px-1.5 py-0.5 rounded-sm">
+                          <span className="font-mono text-[11px] text-muted-foreground bg-secondary px-1.5 py-0.5 rounded-sm">
                             Tempo {series.tempo}
                           </span>
                         )}
@@ -649,13 +585,13 @@ export default function HistoryDetailPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between sm:justify-end gap-3 self-end sm:self-auto">
+                  <div className="flex items-center justify-between gap-3 self-end">
                     {exVolume > 0 && (
                       <div className="text-right">
                         <p className="font-mono text-sm font-bold tabular-nums text-foreground">
                           {exVolume.toLocaleString('pl-PL')} kg
                         </p>
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Objętość</p>
+                        <p className="text-xs text-muted-foreground">Objętość</p>
                       </div>
                     )}
                     <Badge variant="secondary" className="h-6 text-xs font-semibold px-2.5">
@@ -694,7 +630,7 @@ export default function HistoryDetailPage() {
                           {est1RM && (
                             <span
                               title="Szacowane 1RM wg wzoru Epleya"
-                              className="hidden sm:inline-flex items-center rounded-md bg-secondary/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                              className="hidden items-center rounded-md bg-secondary/60 px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground"
                             >
                               ~{est1RM} kg 1RM
                             </span>
@@ -704,7 +640,7 @@ export default function HistoryDetailPage() {
                           {set.rpe !== undefined && set.rpe > 0 && (
                             <span
                               title={rpeToRir(set.rpe)}
-                              className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold tabular-nums text-primary"
+                              className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-bold tabular-nums text-primary"
                             >
                               RPE {set.rpe}
                             </span>
@@ -712,7 +648,7 @@ export default function HistoryDetailPage() {
 
                           {/* Rest time */}
                           {set.restTimeSeconds && set.restTimeSeconds > 0 ? (
-                            <span className="hidden md:inline-flex text-[10px] text-muted-foreground">
+                            <span className="hidden text-[11px] text-muted-foreground">
                               {set.restTimeSeconds}s pauzy
                             </span>
                           ) : null}
@@ -744,7 +680,7 @@ export default function HistoryDetailPage() {
 
       {/* Trainer Feedback Section */}
       {workoutLog.feedback && (
-        <section className="rounded-[1.75rem] border border-primary/30 bg-primary/5 p-5 shadow-soft md:p-6">
+        <section className="rounded-2xl border border-primary/30 bg-primary/5 p-5">
           <div className="flex items-center gap-2 text-primary font-semibold text-sm">
             <MessageSquare className="h-4 w-4" />
             <span>Komentarz od Twojego Trenera</span>
@@ -758,11 +694,11 @@ export default function HistoryDetailPage() {
       )}
 
       {/* Bottom Actions Card / Thumb Zone */}
-      <section className="sticky bottom-4 z-20 rounded-2xl border border-border/80 bg-background/90 p-3 shadow-lg backdrop-blur-md">
+      <section className="sticky bottom-4 z-20 rounded-2xl border border-border/80 bg-background/90 p-3 backdrop-blur-md">
         <div className="flex items-center gap-2.5">
           <Button
             onClick={handleRepeatWorkout}
-            className="flex-1 h-12 gap-2 rounded-xl text-sm font-bold shadow-md"
+            className="flex-1 h-12 gap-2 rounded-xl text-sm font-bold"
           >
             <RotateCcw className="h-4 w-4" />
             Powtórz ten trening
@@ -775,8 +711,8 @@ export default function HistoryDetailPage() {
             className="h-12 gap-2 rounded-xl text-sm font-medium border-border/70"
           >
             <Copy className="h-4 w-4" />
-            <span className="hidden sm:inline">Zapisz jako szablon</span>
-            <span className="sm:hidden">Szablon</span>
+            <span className="sr-only">Zapisz jako szablon</span>
+            <span >Szablon</span>
           </Button>
         </div>
       </section>

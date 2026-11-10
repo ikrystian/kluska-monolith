@@ -45,42 +45,42 @@ export function SummaryStep({ data, onSubmit, onPrev, onEdit, isSubmitting }: Su
       label: 'Imię',
       value: data.name,
       editStep: 1,
-      color: 'from-blue-500 to-blue-600',
+      color: 'bg-run',
     },
     {
       icon: User,
       label: 'Płeć',
       value: data.gender ? genderLabels[data.gender] : '-',
       editStep: 2,
-      color: 'from-pink-500 to-pink-600',
+      color: 'bg-social',
     },
     {
       icon: Calendar,
       label: 'Wiek',
       value: age ? `${age} lat` : '-',
       editStep: 3,
-      color: 'from-orange-500 to-red-500',
+      color: 'bg-primary',
     },
     {
       icon: Ruler,
       label: 'Wzrost',
       value: data.height ? `${data.height} cm` : '-',
       editStep: 4,
-      color: 'from-green-500 to-emerald-600',
+      color: 'bg-volt',
     },
     {
       icon: Weight,
       label: 'Waga',
       value: data.weight ? `${data.weight} kg` : '-',
       editStep: 5,
-      color: 'from-amber-500 to-orange-600',
+      color: 'bg-food',
     },
     {
       icon: Trophy,
       label: 'Poziom',
       value: data.trainingLevel ? trainingLevelLabels[data.trainingLevel] : '-',
       editStep: 6,
-      color: 'from-purple-500 to-indigo-600',
+      color: 'bg-social',
     },
   ];
 
@@ -99,8 +99,8 @@ export function SummaryStep({ data, onSubmit, onPrev, onEdit, isSubmitting }: Su
         transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
         className="relative mb-6"
       >
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-xl">
-          <Check className="w-10 h-10 text-white" />
+        <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center">
+          <Check className="w-10 h-10 text-primary-foreground" />
         </div>
         <motion.div
           animate={{
@@ -114,7 +114,7 @@ export function SummaryStep({ data, onSubmit, onPrev, onEdit, isSubmitting }: Su
           }}
           className="absolute -top-2 -right-2"
         >
-          <Sparkles className="w-8 h-8 text-yellow-400" />
+          <Sparkles className="w-8 h-8 text-food" />
         </motion.div>
       </motion.div>
 
@@ -155,9 +155,9 @@ export function SummaryStep({ data, onSubmit, onPrev, onEdit, isSubmitting }: Su
               className="flex items-center gap-4 p-3 rounded-xl bg-secondary/50 hover:bg-secondary/70 transition-colors group"
             >
               <div
-                className={`w-10 h-10 rounded-full bg-gradient-to-br ${item.color} flex items-center justify-center shrink-0`}
+                className={`w-10 h-10 rounded-full ${item.color} flex items-center justify-center shrink-0`}
               >
-                <Icon className="w-5 h-5 text-white" />
+                <Icon className="w-5 h-5 text-primary-foreground" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-muted-foreground">{item.label}</p>
@@ -185,7 +185,7 @@ export function SummaryStep({ data, onSubmit, onPrev, onEdit, isSubmitting }: Su
           onClick={onSubmit}
           disabled={isSubmitting}
           size="lg"
-          className="w-full h-14 text-lg font-semibold rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg"
+          className="w-full h-14 text-lg font-semibold rounded-xl bg-primary"
         >
           {isSubmitting ? (
             <>

@@ -281,7 +281,7 @@ export default function RegisterPage() {
           {errors.terms && <p className="text-xs font-medium text-destructive">{errors.terms}</p>}
         </div>
 
-        <Button type="submit" className="h-[3.25rem] w-full rounded-2xl text-base font-bold shadow-glow" disabled={isLoading}>
+        <Button type="submit" className="h-[3.25rem] w-full text-base font-bold" disabled={isLoading}>
           {isLoading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />

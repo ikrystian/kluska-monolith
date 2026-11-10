@@ -9,7 +9,7 @@ export function TrainerAvatar({ trainer, className }: { trainer: Pick<UserProfil
       {trainer.avatarUrl ? (
         <img src={resolveMediaUrl(trainer.avatarUrl)} alt="" className="absolute inset-0 h-full w-full object-cover" />
       ) : (
-        <span className="hero-ember absolute inset-0 grid place-items-center font-display text-[1.6em] font-extrabold uppercase text-white">
+        <span className="bg-primary text-primary-foreground absolute inset-0 grid place-items-center font-display text-[1.6em] font-bold uppercase">
           {trainer.name?.charAt(0) ?? '?'}
         </span>
       )}

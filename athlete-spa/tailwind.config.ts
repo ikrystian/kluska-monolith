@@ -13,9 +13,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
-        headline: ['"Space Grotesk"', 'Inter', 'sans-serif'],
-        display: ['Unbounded', '"Space Grotesk"', 'sans-serif'],
+        body: ['"Figtree Variable"', 'system-ui', 'sans-serif'],
+        headline: ['"Figtree Variable"', 'system-ui', 'sans-serif'],
+        display: ['"Barlow Condensed"', '"Figtree Variable"', 'sans-serif'],
         code: ['monospace'],
       },
       fontWeight: {
@@ -61,6 +61,9 @@ export default {
           DEFAULT: 'hsl(var(--volt))',
           foreground: 'hsl(var(--volt-foreground))',
         },
+        run: 'hsl(var(--run))',
+        food: 'hsl(var(--food))',
+        social: 'hsl(var(--social))',
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -71,22 +74,9 @@ export default {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
-        sidebar: {
-          DEFAULT: 'hsl(var(--sidebar))',
-          foreground: 'hsl(var(--sidebar-foreground))',
-          primary: 'hsl(var(--sidebar-primary))',
-          'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-          accent: 'hsl(var(--sidebar-accent))',
-          'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-          border: 'hsl(var(--sidebar-border))',
-          ring: 'hsl(var(--sidebar-ring))',
-        },
       },
       boxShadow: {
-        soft: '0 1px 2px hsl(20 15% 5% / 0.06), 0 4px 16px -4px hsl(20 15% 5% / 0.1)',
-        lifted: '0 2px 4px hsl(20 15% 5% / 0.08), 0 16px 40px -12px hsl(20 15% 5% / 0.3)',
-        glow: '0 8px 40px -8px hsl(var(--primary) / 0.55)',
-        'glow-volt': '0 8px 40px -8px hsl(var(--volt) / 0.45)',
+        lifted: '0 8px 32px -8px hsl(220 20% 2% / 0.4)',
       },
       borderRadius: {
         lg: 'var(--radius)',

@@ -8,14 +8,14 @@ export function TrainerGallery({ images, trainerName }: { images: string[]; trai
 
   return (
     <>
-      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] md:-mx-6 md:px-6 [&::-webkit-scrollbar]:hidden">
+      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {images.map((url, i) => (
           <button
             key={url}
             type="button"
             onClick={() => setIndex(i)}
             aria-label={`Powiększ zdjęcie ${i + 1} z ${images.length}`}
-            className="group relative h-56 w-44 shrink-0 snap-start overflow-hidden rounded-[1.5rem] shadow-soft transition-transform active:scale-[0.97] sm:h-64 sm:w-52"
+            className="group relative h-56 w-44 shrink-0 snap-start overflow-hidden rounded-2xl transition-transform active:scale-[0.97]"
           >
             <img
               src={resolveMediaUrl(url)}

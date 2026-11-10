@@ -1,36 +1,27 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
-import { SidebarTrigger } from './ui/sidebar';
+import { format } from 'date-fns';
+import { pl } from 'date-fns/locale';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
 import { NotificationBell } from './notifications/NotificationBell';
 import { QuickChatWidget } from './chat/QuickChatWidget';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { useUserProfile } from '@/contexts/UserProfileContext';
-import { placeholderImages } from '@/lib/placeholder-images';
-import { resolveMediaUrl } from '@/lib/api-client';
-import { getScreenTitle, isRootPath } from '@/lib/athlete-nav';
+import { getScreenTitle, isRootPath, keepsChromeVisible } from '@/lib/athlete-nav';
 import { haptic } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
 
-function getInitials(name: string | null | undefined) {
-  if (!name) return 'U';
-  return name.split(' ').map(n => n[0]).join('').toUpperCase();
-}
-
 export function AppHeader() {
-  const { userProfile } = useUserProfile();
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
-  const avatarImage = placeholderImages.find(img => img.id === 'avatar-male');
 
-  // Root screens are reachable from the bottom bar, so they get the identity
-  // header. Everywhere else the header has to say where you are and offer a
-  // way up — the hardware/gesture back was previously the only exit.
+  // Root screens are reachable from the bottom bar, so they get a big title.
+  // Everywhere else the header has to say where you are and offer a way up —
+  // the hardware/gesture back was previously the only exit.
   const isRoot = isRootPath(pathname);
   const screenTitle = getScreenTitle(pathname, search);
+  const isToday = pathname === '/athlete/dashboard';
 
   // On the exercise library, keep the header pinned while scrolling (infinite
   // list) — other screens tuck it away to reclaim reading space.
-  const keepHeaderVisible = /^\/athlete\/exercises/.test(pathname);
+  const keepHeaderVisible = keepsChromeVisible(pathname);
 
   const goBack = () => {
     haptic('tap');
@@ -46,59 +37,40 @@ export function AppHeader() {
   return (
     <header
       className={cn(
-        'fixed left-0 right-0 top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-border/50 bg-background/70 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-2xl transition-transform duration-300 ease-out md:h-14 md:px-6',
-        // Mobile chrome tucks away on scroll — but never on the exercise library.
-        keepHeaderVisible
-          ? ''
-          : 'group-data-[chrome=hidden]/chrome:-translate-y-full md:group-data-[chrome=hidden]/chrome:translate-y-0'
+        'app-column fixed inset-x-0 top-0 z-30 h-[var(--app-top)] bg-background/90 pt-[env(safe-area-inset-top)] backdrop-blur-xl transition-transform duration-300 ease-out',
+        !keepHeaderVisible && 'group-data-[chrome=hidden]/chrome:-translate-y-full'
       )}
     >
-      {/* Mobile: identity on root screens, back + title everywhere else */}
-      {isRoot ? (
-        <Link
-          to="/athlete/profile"
-          aria-label="Przejdź do profilu"
-          className="pressable flex min-w-0 items-center gap-3 text-left transition-opacity active:opacity-70 md:hidden"
-        >
-          <span className="relative shrink-0">
-            <Avatar className="h-10 w-10 ring-2 ring-primary/40 ring-offset-2 ring-offset-background">
-              {userProfile?.avatarUrl ? (
-                <AvatarImage src={resolveMediaUrl(userProfile.avatarUrl)} alt="Awatar użytkownika" />
-              ) : avatarImage ? (
-                <AvatarImage src={avatarImage.imageUrl} alt="Awatar użytkownika" />
-              ) : null}
-              <AvatarFallback>{getInitials(userProfile?.name)}</AvatarFallback>
-            </Avatar>
-            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-volt ring-2 ring-background" />
-          </span>
-          <span className="flex min-w-0 flex-col text-gradient-ember">
-            #leniwakluska
-          </span>
-        </Link>
-      ) : (
-        <div className="flex min-w-0 items-center gap-2 md:hidden">
-          <button
-            type="button"
-            onClick={goBack}
-            aria-label="Wstecz"
-            className="-ml-2 grid h-10 w-10 shrink-0 place-items-center rounded-full text-foreground transition-colors active:scale-90 active:bg-secondary"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          {screenTitle && (
-            <h1 className="min-w-0 truncate font-headline text-lg font-bold tracking-tight">
-              {screenTitle}
-            </h1>
-          )}
-        </div>
-      )}
+      <div className="flex h-[var(--header-h)] items-center gap-1 px-4">
+        {isRoot ? (
+          <h1 className="flex min-w-0 items-baseline gap-2">
+            <span className="font-display text-[2rem] font-bold uppercase leading-none">{screenTitle}</span>
+            {isToday && (
+              <span className="truncate text-sm font-medium text-muted-foreground">
+                {format(new Date(), 'EEEE, d MMMM', { locale: pl })}
+              </span>
+            )}
+          </h1>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={goBack}
+              aria-label="Wstecz"
+              className="-ml-2.5 grid h-11 w-11 shrink-0 place-items-center rounded-full text-foreground transition-transform active:scale-90 active:bg-secondary"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+            {screenTitle && <h1 className="min-w-0 truncate text-[17px] font-semibold">{screenTitle}</h1>}
+          </>
+        )}
 
-      {/* Desktop: classic sidebar trigger */}
-      <SidebarTrigger className="hidden text-muted-foreground hover:text-foreground md:flex" />
-
-      <div className="ml-auto flex items-center gap-1">
-        <NotificationBell />
-        <QuickChatWidget />
+        {isRoot && (
+          <div className="-mr-2 ml-auto flex shrink-0 items-center">
+            <NotificationBell />
+            <QuickChatWidget />
+          </div>
+        )}
       </div>
     </header>
   );

@@ -61,8 +61,8 @@ function formatPace(pace: number): string {
 
 const Metric = ({ label, value, unit }: { label: string; value: string; unit?: string }) => (
   <div className="text-center">
-    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">{label}</p>
-    <p className="mt-1 font-display text-3xl font-extrabold tabular-nums leading-none text-white">
+    <p className="text-xs font-semibold text-white/60">{label}</p>
+    <p className="mt-1 font-display text-5xl font-bold tabular-nums leading-none text-white">
       {value}
       {unit && <span className="ml-1 text-sm font-semibold text-white/60">{unit}</span>}
     </p>
@@ -86,7 +86,9 @@ export default function RunRecordPage() {
   const { createDoc, isLoading: isSaving } = useCreateDoc();
   const { mutate: swrMutate } = useSWRConfig();
 
-  const { data: programs } = useCollection<RunningProgram>('runningPrograms', { isActive: true });
+  const { data: programs, isLoading: programsLoading } = useCollection<RunningProgram>('runningPrograms', {
+    isActive: true,
+  });
   const selectedProgram = programs?.find(p => p.id === programId) ?? null;
 
   // Ad-hoc goal for a quick run (no program): either a target distance (km)
@@ -105,7 +107,12 @@ export default function RunRecordPage() {
   const [discardOpen, setDiscardOpen] = useState(false);
   const [idlePosition, setIdlePosition] = useState<TrackPoint | null>(null);
 
-  const { activeCue } = useRunCues(selectedProgram, tracker.duration, tracker.distance, tracker.status);
+  const { activeCue, recorderCues } = useRunCues(
+    selectedProgram,
+    tracker.duration,
+    tracker.distance,
+    tracker.status
+  );
 
   const isActive = tracker.status === 'running' || tracker.status === 'paused';
   useWakeLock(isActive);
@@ -267,7 +274,7 @@ export default function RunRecordPage() {
           <div
             className={cn(
               'flex items-center gap-2 rounded-2xl px-3 py-2 text-white backdrop-blur-md',
-              tracker.error ? 'bg-destructive/80' : 'bg-amber-600/80'
+              tracker.error ? 'bg-destructive/80' : 'bg-food/80'
             )}
           >
             {tracker.error ? (
@@ -275,20 +282,20 @@ export default function RunRecordPage() {
             ) : (
               <Satellite className="h-3.5 w-3.5 shrink-0" />
             )}
-            <p className="text-[11px] font-semibold">
+            <p className="text-xs font-semibold">
               {tracker.error ?? `Słaby sygnał GPS (±${Math.round(tracker.accuracy ?? 0)} m)`}
             </p>
           </div>
         )}
         {tracker.hasRecoverableRun && tracker.duration > 0 && tracker.status === 'paused' && (
           <div className="rounded-2xl bg-primary/80 px-3 py-2 text-white backdrop-blur-md">
-            <p className="text-[11px] font-semibold">Znaleziono przerwany bieg — wznów go lub zapisz.</p>
+            <p className="text-xs font-semibold">Znaleziono przerwany bieg — wznów go lub zapisz.</p>
           </div>
         )}
         {activeCue && (
           <div className="flex items-center gap-2 rounded-2xl bg-primary/80 px-3 py-2 text-white backdrop-blur-md">
             <Megaphone className="h-3.5 w-3.5 shrink-0" />
-            <p className="text-[11px] font-semibold">{activeCue.label}</p>
+            <p className="text-xs font-semibold">{activeCue.label}</p>
           </div>
         )}
       </div>
@@ -296,14 +303,14 @@ export default function RunRecordPage() {
       <div className="flex-1" />
 
       {/* Bottom sheet: stats + controls */}
-      <div className="relative z-10 rounded-t-[2rem] border-t border-white/10 bg-black/70 px-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-6 backdrop-blur-xl">
+      <div className="relative z-10 rounded-t-3xl border-t border-white/10 bg-black/70 px-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-6 backdrop-blur-xl">
         {tracker.status === 'idle' && (
           <div className="space-y-5">
             <div className="text-center">
               {selectedProgram ? (
                 <>
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/60">Trening</p>
-                  <p className="mt-1 font-display text-2xl font-extrabold text-white">{selectedProgram.name}</p>
+                  <p className="text-xs font-semibold text-white/60">Trening</p>
+                  <p className="mt-1 font-display text-4xl font-bold text-white">{selectedProgram.name}</p>
                   <p className="text-sm text-white/60">
                     Cel: {selectedProgram.targetDistanceKm} km
                     {selectedProgram.cues.length > 0 && ` · ${selectedProgram.cues.length} sygnałów dźwiękowych`}
@@ -311,7 +318,7 @@ export default function RunRecordPage() {
                 </>
               ) : (
                 <>
-                  <p className="font-display text-2xl font-extrabold text-white">Szybki bieg</p>
+                  <p className="font-display text-4xl font-bold text-white">Szybki bieg</p>
                   <p className="text-sm text-white/60">
                     {goal
                       ? `Cel: ${goal.type === 'distance' ? `${goal.value} km` : `${goal.value} min`}`
@@ -322,10 +329,12 @@ export default function RunRecordPage() {
             </div>
             <Button
               size="lg"
-              className="h-16 w-full rounded-full text-base font-bold shadow-glow"
+              className="h-16 w-full rounded-full text-base font-bold"
+              // The native recorder takes the training's cues when the run starts.
+              disabled={Boolean(programId) && programsLoading}
               onClick={() => {
                 haptic('impact');
-                tracker.start();
+                tracker.start(recorderCues);
               }}
             >
               <Play className="mr-2 h-6 w-6 fill-current" /> Start
@@ -336,8 +345,8 @@ export default function RunRecordPage() {
         {tracker.status !== 'idle' && tracker.status !== 'finished' && (
           <div className="space-y-6">
             <div className="text-center">
-              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/60">Dystans</p>
-              <p className="mt-1 font-display text-[4rem] font-extrabold leading-none tabular-nums text-white">
+              <p className="text-xs font-semibold text-white/60">Dystans</p>
+              <p className="mt-1 font-display text-[4rem] font-bold leading-none tabular-nums text-white">
                 {km.toFixed(2)}
               </p>
               <p className="text-sm font-semibold text-white/60">km</p>
@@ -354,7 +363,7 @@ export default function RunRecordPage() {
                   <div
                     className={cn(
                       'h-full rounded-full transition-all',
-                      goalProgress.fraction >= 1 ? 'bg-emerald-400' : 'bg-primary'
+                      goalProgress.fraction >= 1 ? 'bg-volt' : 'bg-primary'
                     )}
                     style={{ width: `${Math.min(goalProgress.fraction * 100, 100)}%` }}
                   />
@@ -362,7 +371,7 @@ export default function RunRecordPage() {
                 <p className="flex items-center justify-center gap-1.5 text-center text-xs font-semibold text-white/60">
                   {goalProgress.fraction >= 1 ? (
                     <>
-                      <PartyPopper className="h-3.5 w-3.5 text-emerald-400" />
+                      <PartyPopper className="h-3.5 w-3.5 text-volt" />
                       Cel osiągnięty!
                     </>
                   ) : (
@@ -381,7 +390,7 @@ export default function RunRecordPage() {
                     haptic('impact');
                     tracker.pause();
                   }}
-                  className="grid h-20 w-20 place-items-center rounded-full bg-white text-background shadow-glow active:scale-95"
+                  className="grid h-20 w-20 place-items-center rounded-full bg-white text-background active:scale-95"
                 >
                   <Pause className="h-8 w-8 fill-current" />
                 </button>
@@ -406,9 +415,9 @@ export default function RunRecordPage() {
                   aria-label="Wznów"
                   onClick={() => {
                     haptic('impact');
-                    tracker.resume();
+                    tracker.resume(recorderCues);
                   }}
-                  className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-glow active:scale-95"
+                  className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground active:scale-95"
                 >
                   <Play className="h-8 w-8 fill-current" />
                 </button>

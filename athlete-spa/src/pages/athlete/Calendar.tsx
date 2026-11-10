@@ -6,6 +6,8 @@ import { format, addMinutes, isSameDay, isValid, parse } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { CalendarDays } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/section';
+import { plural } from '@/lib/plural';
 import { useCollection, useUser } from '@/lib/db-hooks';
 import type { PlannedWorkout, WorkoutLog, RunningSession, StravaActivity } from '@/lib/types';
 import { SessionDetailsDialog, type TrainingSessionData } from '@/components/schedule/SessionDetailsDialog';
@@ -202,13 +204,8 @@ export default function CalendarPage() {
     const isLoading = sessionsLoading || plannedLoading || trainingSessionsLoading || runningLoading || stravaLoading;
 
     return (
-        <div className="mx-auto w-full max-w-3xl space-y-5 px-4 pb-5 pt-20 md:px-6 md:pt-8">
-            <header>
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Plan</p>
-                <h1 className="font-headline text-3xl font-bold tracking-tight md:text-4xl">Kalendarz</h1>
-            </header>
-
-            <section className="overflow-hidden rounded-[1.75rem] border border-border/60 bg-card p-3 shadow-soft md:p-4">
+        <div className="page space-y-4">
+            <section className="overflow-hidden rounded-2xl bg-card p-3">
                 {isLoading ? (
                     <Skeleton className="h-28 w-full" />
                 ) : (
@@ -217,32 +214,24 @@ export default function CalendarPage() {
             </section>
 
             <section>
-                <div className="mb-3 flex items-end justify-between gap-3 px-1">
-                    <h2 className="font-headline text-xl font-bold first-letter:uppercase">
+                <div className="mb-2 flex items-end justify-between gap-3 px-1">
+                    <h2 className="text-lg font-bold first-letter:uppercase">
                         {format(selectedDate, 'EEEE, d MMMM', { locale: pl })}
                     </h2>
                     {agenda.length > 0 && (
-                        <span className="text-xs font-semibold text-muted-foreground">{agenda.length} wpisów</span>
+                        <span className="text-[13px] text-muted-foreground">{plural(agenda.length, 'wpis', 'wpisy', 'wpisów')}</span>
                     )}
                 </div>
 
                 {isLoading ? (
                     <div className="space-y-3">
-                        <Skeleton className="h-20 rounded-[1.25rem]" />
-                        <Skeleton className="h-20 rounded-[1.25rem]" />
+                        <Skeleton className="h-20 rounded-2xl" />
+                        <Skeleton className="h-20 rounded-2xl" />
                     </div>
                 ) : agenda.length === 0 ? (
-                    <div className="rounded-[1.75rem] border-2 border-dashed border-border/70 px-6 py-12 text-center">
-                        <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-secondary">
-                            <CalendarDays className="h-6 w-6 text-muted-foreground" />
-                        </span>
-                        <p className="mt-4 font-headline text-lg font-bold">Wolny dzień</p>
-                        <p className="mx-auto mt-1 max-w-xs text-sm text-muted-foreground">
-                            Brak treningów. Czas na odpoczynek lub zaplanowanie czegoś!
-                        </p>
-                    </div>
+                    <EmptyState icon={CalendarDays} title="Wolny dzień" description="Brak treningów. Czas na odpoczynek albo zaplanowanie czegoś." />
                 ) : (
-                    <ul className="space-y-3">
+                    <ul className="space-y-2">
                         {agenda.map(event => (
                             <AgendaCard key={`${event.kind}-${event.id}`} event={event} onOpen={() => setOpenEvent(event)} />
                         ))}
@@ -250,7 +239,7 @@ export default function CalendarPage() {
                 )}
             </section>
 
-            <div className="no-scrollbar flex gap-x-4 gap-y-1 overflow-x-auto px-1 text-[11px] text-muted-foreground">
+            <div className="no-scrollbar flex gap-x-4 gap-y-1 overflow-x-auto px-1 text-xs text-muted-foreground">
                 {(Object.keys(KIND_LABEL) as AgendaEvent['kind'][]).map(kind => (
                     <span key={kind} className="inline-flex shrink-0 items-center gap-1.5">
                         <span className="h-2 w-2 rounded-full" style={{ backgroundColor: KIND_COLOR[kind] }} />

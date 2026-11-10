@@ -89,7 +89,7 @@ export function PostCard({ post, onLike, onEdit, onDelete, onProfileClick }: Pos
   };
 
   return (
-    <article className="overflow-hidden rounded-[1.75rem] border border-border/60 bg-card shadow-soft">
+    <article className="overflow-hidden rounded-2xl bg-card">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pb-3 pt-4">
         <button
@@ -143,7 +143,7 @@ export function PostCard({ post, onLike, onEdit, onDelete, onProfileClick }: Pos
 
       {/* Image */}
       <div className="px-3">
-        <div className="overflow-hidden rounded-[1.25rem] bg-secondary">
+        <div className="overflow-hidden rounded-2xl bg-secondary">
           <img
             src={resolveMediaUrl(resolveStoredImageUrl(post.imageUrl))}
             alt={post.description ? `Zdjęcie: ${post.description}` : 'Zdjęcie z treningu'}

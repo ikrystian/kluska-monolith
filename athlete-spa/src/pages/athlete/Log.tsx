@@ -7,16 +7,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { PlusCircle, Trash2, Save, Loader2, Dumbbell, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, ChevronDown, ChevronUp, Clock, LayoutList, RotateCcw, CheckCircle2, Check, Circle, Timer, AlertCircle, Minus, Plus, X, Camera, Image as ImageIcon, Footprints } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { PlusCircle, Trash2, Save, Loader2, Dumbbell, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, ChevronDown, LayoutList, RotateCcw, Check, Timer, AlertCircle, Minus, Plus, X, Camera, Image as ImageIcon, Footprints, ListChecks, BookOpen } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -56,7 +53,6 @@ import { RpeSelector } from '@/components/workout/RpeSelector';
 import { ExerciseHistoryBadge } from '@/components/workout/ExerciseProgressIndicator';
 import { SpotifyWidget } from '@/components/workout/SpotifyWidget';
 import { AddExerciseSheet } from '@/components/workout/AddExerciseSheet';
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -68,9 +64,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetFooter, SheetClose } from '@/components/ui/sheet';
-import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { EmptyState } from '@/components/ui/section';
+import { MuscleRecovery } from '@/components/workout/MuscleRecovery';
+import { exercisesLabel, setsLabel } from '@/lib/plural';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { CarouselWorkoutView } from '@/components/workout/CarouselWorkoutView';
 import { SetTypeModal } from '@/components/workout/SetTypeModal';
@@ -190,22 +187,17 @@ const describeSetForWidget = (
 };
 
 /**
- * Elapsed-time pill that keeps ticking on its own. Isolated in a tiny
- * component so the 30s interval re-renders just the badge, not the form.
+ * Session clock that keeps ticking on its own. Isolated in a tiny component so
+ * the once-a-second interval re-renders just the clock, not the form.
  */
-function ElapsedBadge({ startTime }: { startTime: Date }) {
+function ElapsedClock({ startTime }: { startTime: Date }) {
   const [, setTick] = useState(0);
   useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 30_000);
+    const id = setInterval(() => setTick(t => t + 1), 1000);
     return () => clearInterval(id);
   }, []);
-  const minutes = Math.max(0, Math.round((Date.now() - startTime.getTime()) / 60_000));
-  return (
-    <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 font-headline text-sm font-bold tabular-nums">
-      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-volt" />
-      {minutes} min
-    </div>
-  );
+  const seconds = Math.max(0, Math.round((Date.now() - startTime.getTime()) / 1000));
+  return <span className="font-display text-[1.875rem] font-bold leading-none tabular-nums">{formatSeconds(seconds)}</span>;
 }
 
 // --- SCHEMA DEFINITIONS ---
@@ -246,7 +238,7 @@ function WorkoutBuilderView({ initialData, onStart, onCancel, allExercises, isLo
     defaultValues: initialData,
   });
 
-  const { fields, append, remove, move } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "exerciseSeries",
   });
@@ -266,88 +258,78 @@ function WorkoutBuilderView({ initialData, onStart, onCancel, allExercises, isLo
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-12rem)] md:h-[calc(100vh-2rem)]  relative">
-      <div className="flex items-center justify-between mb-6">
-        <Button variant="ghost" onClick={onCancel} className="p-0 hover:bg-transparent">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Wróć
-        </Button>
-        <h2 className="text-xl font-bold">Przygotuj Trening</h2>
-        <div className="w-10"></div> {/* Spacer */}
-      </div>
-
-      <FormProvider {...form}>
-        <form onSubmit={form.handleSubmit(onStart)} className="flex flex-col h-full space-y-6">
-          <Card className="hidden">
-            <CardContent>
-              <FormField
-                control={form.control}
-                name="workoutName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nazwa Treningu</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="np. Poniedziałkowa Klata" className="text-lg font-semibold" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
-
-          <div className="flex-1 overflow-y-auto pb-24 scrollbar-hide space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="font-semibold text-lg">Lista Ćwiczeń</h3>
-              <span className="text-sm text-muted-foreground">{fields.length} ćwiczeń</span>
-            </div>
-
-            {fields.length === 0 ? (
-              <div className="flex h-48 flex-col items-center justify-center rounded-[1.75rem] border border-dashed border-border bg-card/50 p-8 text-center">
-                <span className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-secondary text-primary">
-                  <Dumbbell className="h-6 w-6" />
-                </span>
-                <p className="text-sm text-muted-foreground">Brak ćwiczeń. Dodaj pierwsze ćwiczenie!</p>
-              </div>
-            ) : (
-              <div className="space-y-2.5">
-                <AnimatePresence initial={false}>
-                  {fields.map((field, index) => {
-                    const exerciseDetails = allExercises?.find(ex => ex.id === field.exerciseId);
-                    return (
-                      <motion.div key={field.id} {...listItemMotion}>
-                        <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-card p-3.5 shadow-soft">
-                          <div className="flex min-w-0 items-center gap-3">
-                            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary font-headline text-sm font-bold text-primary">
-                              {index + 1}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="line-clamp-2 font-semibold">{exerciseDetails?.name || (isLoadingExercises ? 'Ładowanie...' : 'Nieznane ćwiczenie')}</p>
-                              <p className="truncate text-xs text-muted-foreground">
-                                {exerciseDetails?.mainMuscleGroups?.map(mg => mg.name).join(', ') || 'Ogólnorozwojowe'}
-                              </p>
-                            </div>
-                          </div>
-                          <Button type="button" variant="ghost" size="icon" className="shrink-0" onClick={() => remove(index)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
-              </div>
+    <FormProvider {...form}>
+      <form onSubmit={form.handleSubmit(onStart)} className="flex h-full min-h-0 flex-col">
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            onClick={onCancel}
+            aria-label="Wróć"
+            className="-ml-2 grid h-11 w-11 shrink-0 place-items-center rounded-full active:bg-secondary"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <FormField
+            control={form.control}
+            name="workoutName"
+            render={({ field }) => (
+              <FormItem className="min-w-0 flex-1 space-y-0">
+                <FormControl>
+                  <Input
+                    {...field}
+                    aria-label="Nazwa treningu"
+                    placeholder="Nazwa treningu"
+                    className="h-11 rounded-none bg-transparent px-0 font-display text-[1.875rem] font-bold uppercase leading-none"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
-          </div>
+          />
+        </div>
 
-          <div className="glass fixed inset-x-4 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-lg items-center gap-3 rounded-[2rem] p-3 md:absolute md:inset-x-0 md:bottom-4 md:rounded-2xl">
-            <AddExerciseSheet onAddExercise={handleAddExercise} />
-            <Button type="submit" className="h-12 flex-1 text-base font-bold shadow-glow">
-              <Play className="mr-2 h-4 w-4 fill-current" /> Rozpocznij trening
-            </Button>
-          </div>
-        </form>
-      </FormProvider>
-    </div>
+        <p className="eyebrow mb-2 mt-1 shrink-0 px-1">{exercisesLabel(fields.length)}</p>
+
+        <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto">
+          {fields.length === 0 ? (
+            <EmptyState icon={Dumbbell} title="Brak ćwiczeń" description="Dodaj pierwsze ćwiczenie i ruszaj." />
+          ) : (
+            <div className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card">
+              <AnimatePresence initial={false}>
+                {fields.map((field, index) => {
+                  const exerciseDetails = allExercises?.find(ex => ex.id === field.exerciseId);
+                  return (
+                    <motion.div key={field.id} {...listItemMotion}>
+                      <div className="flex items-center gap-3 py-2.5 pl-3.5 pr-1.5">
+                        <span className="w-5 shrink-0 text-center font-display text-xl font-bold tabular-nums text-muted-foreground">
+                          {index + 1}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="line-clamp-2 text-[15px] font-semibold leading-tight">{exerciseDetails?.name || (isLoadingExercises ? 'Ładowanie...' : 'Nieznane ćwiczenie')}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {exerciseDetails?.mainMuscleGroups?.map(mg => mg.name).join(', ') || 'Ogólnorozwojowe'}
+                          </p>
+                        </div>
+                        <Button type="button" variant="ghost" size="icon" className="shrink-0 text-muted-foreground" aria-label="Usuń ćwiczenie" onClick={() => remove(index)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+          )}
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2 pt-3">
+          <AddExerciseSheet onAddExercise={handleAddExercise} />
+          <Button type="submit" className="flex-1">
+            <Play className="fill-current" /> Rozpocznij trening
+          </Button>
+        </div>
+      </form>
+    </FormProvider>
   );
 }
 
@@ -369,7 +351,7 @@ function ExerciseRail({ statuses, activeIndex, onSelect }: {
   if (statuses.length === 0) return null;
 
   return (
-    <div className="scrollbar-hide -mx-1 mb-1 flex shrink-0 gap-1.5 overflow-x-auto px-1">
+    <div className="no-scrollbar -mx-4 mb-2 flex shrink-0 gap-1.5 overflow-x-auto px-4">
       {statuses.map((status, i) => {
         const isActive = i === activeIndex;
         return (
@@ -381,18 +363,18 @@ function ExerciseRail({ statuses, activeIndex, onSelect }: {
             aria-label={`Ćwiczenie ${i + 1}: ${status.name}`}
             aria-current={isActive}
             className={cn(
-              'flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full border font-headline text-sm font-bold tabular-nums transition-all active:scale-95',
+              'flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full font-display text-lg font-bold tabular-nums transition-colors active:scale-95',
               isActive
-                ? 'border-primary bg-primary px-3.5 text-primary-foreground shadow-glow'
+                ? 'bg-foreground px-3.5 text-background'
                 : status.isComplete
-                  ? 'w-9 border-volt/30 bg-volt/15 text-volt'
-                  : 'w-9 border-border/60 bg-card text-muted-foreground'
+                  ? 'w-9 bg-volt/15 text-volt'
+                  : 'w-9 bg-card text-muted-foreground'
             )}
           >
             {isActive ? (
               <>
                 {i + 1}
-                <span className="max-w-[8rem] truncate text-xs font-semibold normal-case tracking-normal">
+                <span className="max-w-[9rem] truncate font-body text-[13px] font-semibold">
                   {status.name}
                 </span>
               </>
@@ -942,85 +924,86 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
     );
     const elapsedMinutes = Math.round((new Date().getTime() - startTime.getTime()) / (1000 * 60));
 
+    const finishedVolume = finishedSeries.reduce(
+      (acc, series) =>
+        acc + (series.sets ?? []).filter(set => set.completed).reduce((sum, set) => sum + (Number(set.reps) || 0) * (Number(set.weight) || 0), 0),
+      0
+    );
+
     return (
-      <Card className="overflow-hidden rounded-[2rem]">
-        <div className="hero-ember texture-grain relative p-6 text-center text-white">
-          <div aria-hidden className="pointer-events-none absolute -right-10 -top-14 h-36 w-36 rounded-full border-[1rem] border-white/10" />
-          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/75">Dobra robota!</p>
-          <h2 className="mt-1.5 font-display text-2xl font-extrabold uppercase leading-tight">Zakończyć trening?</h2>
-          <p className="mt-1 text-sm text-white/80">Przejrzyj podsumowanie i zapisz swoją sesję.</p>
-        </div>
-        <CardContent className="space-y-4 pt-5 text-center">
-          <div className="grid grid-cols-3 gap-2.5">
-            <div className="rounded-2xl border border-border/60 bg-secondary/40 p-3">
-              <p className="truncate font-headline text-sm font-bold">{form.getValues('workoutName')}</p>
-              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">nazwa</p>
+      <div className="no-scrollbar flex h-full flex-col overflow-y-auto">
+        <div className="flex-1 space-y-3 pt-2">
+          <div className="rounded-2xl bg-primary p-4 text-primary-foreground">
+            <p className="text-[13px] font-semibold opacity-80">Dobra robota!</p>
+            <h2 className="mt-1 line-clamp-2 font-display text-[3rem] font-bold uppercase leading-[0.95]">{form.getValues('workoutName')}</h2>
+          </div>
+
+          <div className="grid grid-cols-3 divide-x divide-border/50 rounded-2xl bg-card py-3.5 text-center">
+            <div>
+              <p className="font-display text-[1.875rem] font-bold leading-none tabular-nums">{elapsedMinutes}</p>
+              <p className="mt-1 text-xs text-muted-foreground">minut</p>
             </div>
-            <div className="rounded-2xl border border-border/60 bg-secondary/40 p-3">
-              <p className="font-headline text-sm font-bold tabular-nums">{form.getValues('exerciseSeries').length}</p>
-              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">ćwiczenia</p>
+            <div>
+              <p className="font-display text-[1.875rem] font-bold leading-none tabular-nums">{loggedSetsCount}</p>
+              <p className="mt-1 text-xs text-muted-foreground">serii</p>
             </div>
-            <div className="rounded-2xl border border-border/60 bg-secondary/40 p-3">
-              <p className="font-headline text-sm font-bold tabular-nums">{elapsedMinutes} min</p>
-              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">czas</p>
+            <div>
+              <p className="font-display text-[1.875rem] font-bold leading-none tabular-nums">{Math.round(finishedVolume).toLocaleString('pl-PL')}</p>
+              <p className="mt-1 text-xs text-muted-foreground">kg objętości</p>
             </div>
           </div>
 
           <DetectedGym status={workoutGym.status} match={workoutGym.match} onDismiss={workoutGym.dismiss} />
 
-          <div className="space-y-3 pt-2">
-            {photoPreview && (
-              <div className="relative w-full aspect-video rounded-md overflow-hidden mb-1">
-                <img src={photoPreview} alt="Podgląd zdjęcia" className="absolute inset-0 w-full h-full object-cover" />
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" className="w-full" onClick={() => cameraInputRef.current?.click()}>
-                <Camera className="mr-2 h-4 w-4" />
-                {photoFile ? 'Zrób nowe' : 'Zrób zdjęcie'}
-              </Button>
-              <Button variant="outline" className="w-full" onClick={() => photoInputRef.current?.click()}>
-                <ImageIcon className="mr-2 h-4 w-4" />
-                {photoFile ? 'Wybierz inne' : 'Z galerii'}
-              </Button>
+          {photoPreview && (
+            <div className="relative aspect-video w-full overflow-hidden rounded-2xl">
+              <img src={photoPreview} alt="Podgląd zdjęcia" className="absolute inset-0 h-full w-full object-cover" />
             </div>
-            {/* `capture` opens the phone camera straight away; the plain input lets
-                the athlete pick an existing shot from the gallery. */}
-            <input type="file" ref={cameraInputRef} accept="image/*" capture="environment" onChange={handlePhotoChange} className="hidden" />
-            <input type="file" ref={photoInputRef} accept="image/*" onChange={handlePhotoChange} className="hidden" />
+          )}
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="secondary" className="w-full" onClick={() => cameraInputRef.current?.click()}>
+              <Camera /> {photoFile ? 'Zrób nowe' : 'Zrób zdjęcie'}
+            </Button>
+            <Button variant="secondary" className="w-full" onClick={() => photoInputRef.current?.click()}>
+              <ImageIcon /> {photoFile ? 'Wybierz inne' : 'Z galerii'}
+            </Button>
           </div>
+          {/* `capture` opens the phone camera straight away; the plain input lets
+              the athlete pick an existing shot from the gallery. */}
+          <input type="file" ref={cameraInputRef} accept="image/*" capture="environment" onChange={handlePhotoChange} className="hidden" />
+          <input type="file" ref={photoInputRef} accept="image/*" onChange={handlePhotoChange} className="hidden" />
+        </div>
 
-        </CardContent>
-        <CardFooter className="flex-col gap-2">
-          <Button onClick={form.handleSubmit(handleSaveWorkout)} className="h-12 w-full text-base font-bold shadow-glow" disabled={isSaving}>
-            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-            Zapisz i Zakończ
+        <div className="space-y-1 pb-2 pt-4">
+          <Button onClick={form.handleSubmit(handleSaveWorkout)} className="w-full" size="lg" disabled={isSaving}>
+            {isSaving ? <Loader2 className="animate-spin" /> : <Save />}
+            Zapisz trening
           </Button>
           <Button onClick={() => setIsFinished(false)} variant="ghost" className="w-full">Wróć do treningu</Button>
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="ghost" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10">Odrzuć trening (bez zapisywania)</Button>
+              <Button variant="ghost" className="w-full text-destructive active:text-destructive">Odrzuć bez zapisywania</Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Odrzucić trening?</AlertDialogTitle>
                 <AlertDialogDescription>
                   {loggedSetsCount > 0
-                    ? `Stracisz bezpowrotnie ${loggedSetsCount} ukończonych serii i ${elapsedMinutes} minut pracy. Tego nie da się cofnąć.`
+                    ? `Stracisz bezpowrotnie ${setsLabel(loggedSetsCount)} i ${elapsedMinutes} minut pracy. Tego nie da się cofnąć.`
                     : 'Sesja zostanie usunięta bez zapisu. Tego nie da się cofnąć.'}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Wróć do treningu</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDiscardWorkout} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  {loggedSetsCount > 0 ? 'Zaryzykuję — odrzuć' : 'Odrzuć'}
+                <AlertDialogAction onClick={handleDiscardWorkout} className="bg-destructive text-destructive-foreground">
+                  {loggedSetsCount > 0 ? 'Zaryzykuję, odrzuć' : 'Odrzuć'}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
     )
   }
 
@@ -1057,106 +1040,86 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
           });
         })} className="flex flex-col h-full">
 
-          {/* Header Section */}
-          <div className="mb-2 px-1 md:mb-3">
-            <div className={cn("flex justify-between gap-2", isHeaderExpanded ? "items-start" : "items-center md:items-start")}>
-              {/* Mobile collapsed trigger */}
+          {/* Session bar: what, how far, how long, and the way out */}
+          <div className="mb-2 shrink-0 pt-2">
+            <div className="flex items-center gap-2.5">
               <button
                 type="button"
                 onClick={() => {
                   haptic('tap');
-                  setIsHeaderExpanded(true);
+                  setIsHeaderExpanded(expanded => !expanded);
                 }}
-                className={cn(
-                  "flex min-w-0 flex-1 items-center gap-1.5 py-1 text-left active:opacity-70 md:hidden",
-                  isHeaderExpanded && "hidden"
-                )}
-                aria-label="Rozwiń nagłówek treningu"
+                className="min-w-0 flex-1 text-left active:opacity-70"
+                aria-expanded={isHeaderExpanded}
+                aria-label="Ustawienia treningu"
               >
-                <span className="truncate font-headline text-base font-bold text-foreground">
-                  {watchedWorkoutName || 'Trening'}
+                <span className="flex items-center gap-1">
+                  <span className="truncate text-[15px] font-semibold leading-tight">{watchedWorkoutName || 'Trening'}</span>
+                  <ChevronDown className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform', isHeaderExpanded && 'rotate-180')} />
                 </span>
-                <span className="shrink-0 text-xs font-semibold text-muted-foreground tabular-nums">
-                  ({completedSets}/{totalSets})
+                <span className="block text-xs tabular-nums text-muted-foreground">
+                  {completedSets}/{totalSets} serii · {fields.length} ćw.
                 </span>
-                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
               </button>
+              <ElapsedClock startTime={startTime} />
+              <Button type="submit" size="sm" disabled={fields.length === 0}>
+                Zakończ
+              </Button>
+            </div>
 
-              {/* Full editable header on desktop or when expanded on mobile */}
-              <div className={cn("min-w-0 flex-1", !isHeaderExpanded && "hidden md:block")}>
-                <div className="flex items-center gap-2">
-                  <FormField
-                    control={form.control}
-                    name="workoutName"
-                    render={({ field }) => (
-                      <FormItem className="min-w-0 flex-1">
-                        <FormControl>
-                          <Input {...field} className="h-auto rounded-none border-0 bg-transparent p-0 font-headline text-xl font-bold shadow-none focus-visible:ring-0" />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
+            {/* One segment per exercise, so the whole session's shape is visible at a glance. */}
+            <div className="mt-2 flex gap-1" aria-hidden>
+              {watchedSeries.map((series, i) => {
+                const total = series.sets?.length ?? 0;
+                const done = series.sets?.filter(set => set.completed).length ?? 0;
+                return (
+                  <span key={i} className="h-1 flex-1 overflow-hidden rounded-full bg-secondary">
+                    <span
+                      className={cn('block h-full rounded-full transition-[width] duration-300', total > 0 && done === total ? 'bg-volt' : 'bg-primary')}
+                      style={{ width: `${total > 0 ? (done / total) * 100 : 0}%` }}
+                    />
+                  </span>
+                );
+              })}
+            </div>
+
+            {isHeaderExpanded && (
+              <div className="mt-2.5 flex items-center gap-2">
+                <FormField
+                  control={form.control}
+                  name="workoutName"
+                  render={({ field }) => (
+                    <FormItem className="min-w-0 flex-1 space-y-0">
+                      <FormControl>
+                        <Input {...field} aria-label="Nazwa treningu" className="h-10 text-[15px] font-semibold" />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <div className="flex h-10 shrink-0 items-center rounded-xl bg-secondary p-1">
                   <button
                     type="button"
-                    onClick={() => {
-                      haptic('tap');
-                      setIsHeaderExpanded(false);
-                    }}
-                    className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:hidden"
-                    aria-label="Zwiń nagłówek"
+                    aria-label="Widok listy"
+                    aria-pressed={viewMode === 'list'}
+                    onClick={() => handleViewModeChange('list')}
+                    className={cn('grid h-8 w-9 place-items-center rounded-lg transition-colors', viewMode === 'list' ? 'bg-background text-foreground' : 'text-muted-foreground')}
                   >
-                    <ChevronUp className="h-4 w-4" />
+                    <LayoutList className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Widok karuzeli"
+                    aria-pressed={viewMode === 'carousel'}
+                    onClick={() => handleViewModeChange('carousel')}
+                    className={cn('grid h-8 w-9 place-items-center rounded-lg transition-colors', viewMode === 'carousel' ? 'bg-background text-foreground' : 'text-muted-foreground')}
+                  >
+                    <Timer className="h-4 w-4" />
                   </button>
                 </div>
-                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                  {format(startTime, 'HH:mm')} · {fields.length} ćw. · <span className="tabular-nums">{completedSets}/{totalSets}</span> serii
-                </p>
               </div>
+            )}
 
-              <div className="flex shrink-0 items-center gap-2">
-                <ElapsedBadge startTime={startTime} />
-                <Button type="submit" size="sm" disabled={fields.length === 0}>
-                  Zakończ
-                </Button>
-              </div>
-            </div>
-
-            <div className={cn("mt-3 flex items-center gap-3", !isHeaderExpanded && "hidden md:flex")}>
-              {viewMode === 'list' ? (
-                <Progress
-                  value={totalSets > 0 ? (completedSets / totalSets) * 100 : 0}
-                  className="h-1.5 flex-1"
-                />
-              ) : (
-                <div className="flex-1" />
-              )}
-              <div className="flex shrink-0 items-center rounded-full bg-secondary/60 p-0.5">
-                <button
-                  type="button"
-                  aria-label="Widok listy"
-                  onClick={() => handleViewModeChange('list')}
-                  className={cn(
-                    'grid h-7 w-9 place-items-center rounded-full transition-colors',
-                    viewMode === 'list' ? 'bg-background text-primary shadow-soft' : 'text-muted-foreground'
-                  )}
-                >
-                  <LayoutList className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Widok karuzeli"
-                  onClick={() => handleViewModeChange('carousel')}
-                  className={cn(
-                    'grid h-7 w-9 place-items-center rounded-full transition-colors',
-                    viewMode === 'carousel' ? 'bg-background text-primary shadow-soft' : 'text-muted-foreground'
-                  )}
-                >
-                  <Timer className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            {spotifyWidgetVisible && <SpotifyWidget className="mt-3" />}
+            {spotifyWidgetVisible && <SpotifyWidget className="mt-2.5" />}
           </div>
 
           {/* Main Content - Conditional based on view mode */}
@@ -1178,7 +1141,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
               />
 
               {/* List View - Scrollable */}
-              <div className="flex-1 overflow-y-auto pb-0 px-1 scrollbar-hide">
+              <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-24">
                 {currentExercise ? (
                   <div className={newExerciseId === currentExercise.exerciseId ? 'animate-slide-in-up' : ''}>
                     <ExerciseCard
@@ -1192,68 +1155,76 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
                     />
                   </div>
                 ) : (
-                  <div className="flex h-64 flex-col items-center justify-center rounded-[1.75rem] border border-dashed border-border bg-card/50 p-8 text-center">
-                    <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-secondary text-primary">
-                      <Dumbbell className="h-7 w-7" />
-                    </span>
-                    <h3 className="mt-4 font-headline text-lg font-bold">Rozpocznij trening</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">Dodaj pierwsze ćwiczenie, aby zacząć.</p>
-                  </div>
+                  <EmptyState icon={Dumbbell} title="Pusty trening" description="Dodaj pierwsze ćwiczenie, aby zacząć." className="mt-4" />
                 )}
-
-                {/* Spacer for bottom bar */}
-                <div className="h-24"></div>
               </div>
 
-              {/* Bottom Navigation Bar - Only for list view */}
-              <div className="glass fixed inset-x-4 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-lg items-center justify-between rounded-[2rem] px-4 py-3 md:relative md:inset-x-auto md:bottom-auto md:rounded-2xl">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  disabled={activeExerciseIndex === 0 || fields.length === 0}
-                  onClick={() => setActiveExerciseIndex(prev => prev - 1)}
-                >
-                  <ArrowLeft className="h-6 w-6" />
-                </Button>
+              {/* Docked controls: thumb reach, always in the same place. */}
+              <div className="app-column fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl">
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon"
+                    aria-label="Poprzednie ćwiczenie"
+                    disabled={activeExerciseIndex === 0 || fields.length === 0}
+                    onClick={() => setActiveExerciseIndex(prev => prev - 1)}
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
 
-                <div className="-mt-8">
                   <AddExerciseSheet onAddExercise={handleAddExercise} />
-                </div>
 
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  disabled={activeExerciseIndex === fields.length - 1 || fields.length === 0}
-                  onClick={() => setActiveExerciseIndex(prev => prev + 1)}
-                >
-                  <ArrowRight className="h-6 w-6" />
-                </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    aria-label="Następne ćwiczenie"
+                    disabled={activeExerciseIndex === fields.length - 1 || fields.length === 0}
+                    onClick={() => setActiveExerciseIndex(prev => prev + 1)}
+                    className="h-11 min-w-0 flex-1 justify-between gap-2 px-3 text-sm"
+                  >
+                    <span className="truncate">
+                      {exerciseStatuses[activeExerciseIndex + 1]?.name ?? 'To ostatnie'}
+                    </span>
+                    <ArrowRight className="h-5 w-5 shrink-0" />
+                  </Button>
+                </div>
               </div>
 
-              {/* Transient rest countdown - appears only while resting */}
+              {/* Rest countdown: big enough to read from the bench */}
               <AnimatePresence>
                 {isResting && (
                   <motion.div
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 16 }}
-                    className="fixed inset-x-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-lg items-center gap-3 rounded-full px-4 py-2.5 md:absolute md:inset-x-0 md:bottom-24"
+                    className="app-column fixed inset-x-0 bottom-[calc(3.75rem+env(safe-area-inset-bottom))] z-40 px-2 pb-1.5"
                   >
-                    <Timer className="h-4 w-4 shrink-0 text-volt" />
-                    <span className="shrink-0 font-headline text-sm font-bold tabular-nums">
-                      {formatSeconds(restTimer.timeRemaining)}
-                    </span>
-                    <Progress value={restTimer.progress * 100} className="h-1 flex-1" />
-                    <button
-                      type="button"
-                      onClick={dismissRest}
-                      aria-label="Pomiń przerwę"
-                      className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
+                    <div className="relative overflow-hidden rounded-2xl bg-primary text-primary-foreground">
+                      <div className="absolute inset-y-0 left-0 bg-black/15 transition-[width] duration-1000 ease-linear" style={{ width: `${restTimer.progress * 100}%` }} />
+                      <div className="relative flex items-center gap-2 py-2 pl-4 pr-2">
+                        <span className="font-display text-[2.5rem] font-bold leading-none tabular-nums">
+                          {formatSeconds(restTimer.timeRemaining)}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-[13px] font-semibold opacity-80">Przerwa</span>
+                        <button
+                          type="button"
+                          onClick={() => restTimer.addTime(15)}
+                          aria-label="Wydłuż przerwę o 15 sekund"
+                          className="h-10 shrink-0 rounded-xl bg-black/15 px-3 text-sm font-semibold tabular-nums active:bg-black/25"
+                        >
+                          +15 s
+                        </button>
+                        <button
+                          type="button"
+                          onClick={dismissRest}
+                          aria-label="Pomiń przerwę"
+                          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-black/15 active:bg-black/25"
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -1389,13 +1360,51 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
     fields.forEach((_, i) => setValue(`exerciseSeries.${index}.sets.${i}.restTimeSeconds`, next));
   };
 
+  // Label + input columns differ by exercise type; rows and their heading share one template.
+  const gridColumns =
+    exerciseType === 'weight'
+      ? 'grid-cols-[2.25rem_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.8fr)_2.75rem]'
+      : 'grid-cols-[2.25rem_minmax(0,1fr)_minmax(0,1.6fr)_2.75rem]';
+
+  const inputClass = (isActive: boolean, hasError: boolean, isCompleted: boolean) =>
+    cn(
+      'h-12 rounded-xl px-1 text-center font-display text-[1.625rem] font-bold tabular-nums',
+      isCompleted && 'bg-transparent',
+      isActive && 'bg-background ring-1 ring-primary/60',
+      hasError && 'ring-1 ring-destructive'
+    );
+
+  /** Tap the last result to start from it; most sets repeat or nudge last time's numbers. */
+  const applyPrevious = (setIndex: number) => {
+    const previous = exerciseHistory?.sets[setIndex];
+    if (!previous) return;
+    haptic('tap');
+    if (exerciseType === 'duration') {
+      setValue(`exerciseSeries.${index}.sets.${setIndex}.duration`, previous.duration ?? 0);
+    } else {
+      setValue(`exerciseSeries.${index}.sets.${setIndex}.reps`, previous.reps);
+      if (exerciseType === 'weight') setValue(`exerciseSeries.${index}.sets.${setIndex}.weight`, previous.weight);
+    }
+    clearValidationError(setIndex);
+  };
+
+  const previousLabel = (setIndex: number) => {
+    const previous = exerciseHistory?.sets[setIndex];
+    if (!previous) return '–';
+    if (exerciseType === 'duration') return previous.duration ? `${previous.duration} s` : '–';
+    if (exerciseType === 'reps') return `${previous.reps}×`;
+    return `${previous.weight}×${previous.reps}`;
+  };
+
   return (
-    <Card className="rounded-[1.75rem]">
-      <CardHeader className="flex-row items-start justify-between gap-2 pb-4">
-        <div className="min-w-0">
-          <CardTitle className="font-headline text-lg font-bold text-ellipsis whitespace-nowrap overflow-hidden">{exerciseDetails?.name || (isLoadingExercises ? "Ładowanie..." : "Wybierz ćwiczenie")}</CardTitle>
+    <div>
+      <div className="flex items-start gap-1 pb-3 pt-1">
+        <div className="min-w-0 flex-1">
+          <h2 className="line-clamp-2 font-display text-[2rem] font-bold uppercase leading-[1]">
+            {exerciseDetails?.name || (isLoadingExercises ? 'Ładowanie...' : 'Wybierz ćwiczenie')}
+          </h2>
           {(tempo || exerciseHistory) && (
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted-foreground">
               {tempo && <span>Tempo {tempo}</span>}
               {tempo && exerciseHistory && <span aria-hidden>·</span>}
               {exerciseHistory && (
@@ -1403,286 +1412,298 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
               )}
             </div>
           )}
-          {tip && <p className="text-xs text-muted-foreground mt-1 italic">Wskazówka: {tip}</p>}
+          {tip && <p className="mt-1 text-[13px] italic text-muted-foreground">Wskazówka: {tip}</p>}
         </div>
         {exerciseType === 'weight' && <PlateCalculator targetWeight={heaviestPlannedWeight} />}
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+            <button type="button" aria-label="Usuń ćwiczenie" className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-muted-foreground active:bg-secondary">
+              <Trash2 className="h-4 w-4" />
+            </button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Usuń ćwiczenie</AlertDialogTitle>
+              <AlertDialogTitle>Usunąć ćwiczenie?</AlertDialogTitle>
               <AlertDialogDescription>
-                Czy na pewno chcesz usunąć to ćwiczenie? Wszystkie serie zostaną utracone.
+                Wszystkie serie tego ćwiczenia zostaną utracone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Anuluj</AlertDialogCancel>
-              <AlertDialogAction onClick={onRemoveExercise} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              <AlertDialogAction onClick={onRemoveExercise} className="bg-destructive text-destructive-foreground">
                 Usuń
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          {/* Adding a set stays at the top, above the table: new sets appear
-          right under it (newest first), so it never drifts out of reach. */}
-          <div className="flex items-center gap-2 pb-1">
-            <Button type="button" variant="outline" size="sm" id="add-series-button" className="h-10 flex-1 border-dashed" onClick={handleAddSet}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Dodaj serię
-            </Button>
-            {fields.length > 0 && (
-              <div className="flex h-10 shrink-0 items-center gap-0.5 rounded-lg border border-border/60 bg-secondary/30 px-1" aria-label="Przerwa między seriami">
-                <Timer className="ml-1 h-3.5 w-3.5 text-muted-foreground" />
-                <button
-                  type="button"
-                  aria-label="Skróć przerwę o 15 sekund"
-                  onClick={() => handleRestChange(-15)}
-                  className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors active:bg-secondary"
-                >
-                  <Minus className="h-3.5 w-3.5" />
-                </button>
-                <span className="min-w-[2.75rem] text-center text-xs font-bold tabular-nums">{restSeconds} s</span>
-                <button
-                  type="button"
-                  aria-label="Wydłuż przerwę o 15 sekund"
-                  onClick={() => handleRestChange(15)}
-                  className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors active:bg-secondary"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            )}
-          </div>
-          {/* Column labels - spans mirror the set rows below */}
-          <div className="grid grid-cols-12 items-center gap-1.5 px-1 text-center">
-            <Label className="col-span-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Seria</Label>
-            {exerciseType === 'weight' ? (
-              <>
-                <Label className="col-span-4 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">kg</Label>
-                <Label className="col-span-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Powt.</Label>
-              </>
-            ) : exerciseType === 'reps' ? (
-              <Label className="col-span-7 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Powtórzenia</Label>
-            ) : (
-              <Label className="col-span-7 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Czas (s)</Label>
-            )}
-            <Label className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">✓</Label>
-          </div>
-          <AnimatePresence initial={false}>
-            {/* Newest set on top: only the display order is reversed, setIndex stays
-            the real position so numbering, validation and saved order are unchanged. */}
-            {fields
-              .map((setField, setIndex) => ({ setField, setIndex }))
-              .reverse()
-              .map(({ setField, setIndex }) => {
-              const isCompleted = watch(`exerciseSeries.${index}.sets.${setIndex}.completed`);
-              const sets = watch(`exerciseSeries.${index}.sets`);
-              // Find the first uncompleted set to mark as active
-              const firstUncompletedIndex = sets?.findIndex((s: any) => !s.completed);
-              const isActive = firstUncompletedIndex === setIndex;
+      </div>
 
-              return (
-                <motion.div key={setField.id} {...listItemMotion}>
-                  <div
-                    className={`grid grid-cols-12 items-center gap-1.5 rounded-xl px-1 py-1.5 transition-all ${isCompleted
-                      ? 'opacity-55 bg-volt/[0.06]'
-                      : isActive
-                        ? 'ring-1 ring-primary/60 bg-primary/10 shadow-soft'
-                        : 'bg-transparent'
-                      }`}
+      {/* Adding a set stays at the top, above the table: new sets appear
+      right under it (newest first), so it never drifts out of reach. */}
+      <div className="mb-2 flex items-center gap-2">
+        <Button type="button" variant="secondary" size="sm" id="add-series-button" className="flex-1" onClick={handleAddSet}>
+          <PlusCircle /> Dodaj serię
+        </Button>
+        {fields.length > 0 && (
+          <div className="flex h-10 shrink-0 items-center gap-0.5 rounded-xl bg-secondary px-1" aria-label="Przerwa między seriami">
+            <Timer className="ml-1.5 h-3.5 w-3.5 text-muted-foreground" />
+            <button
+              type="button"
+              aria-label="Skróć przerwę o 15 sekund"
+              onClick={() => handleRestChange(-15)}
+              className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground active:bg-background"
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </button>
+            <span className="min-w-[2.75rem] text-center text-[13px] font-semibold tabular-nums">{restSeconds} s</span>
+            <button
+              type="button"
+              aria-label="Wydłuż przerwę o 15 sekund"
+              onClick={() => handleRestChange(15)}
+              className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground active:bg-background"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-2xl bg-card p-1.5">
+        {/* Column labels mirror the set rows below */}
+        <div className={cn('grid items-center gap-1.5 px-0.5 pb-1 pt-1 text-center text-xs font-medium text-muted-foreground', gridColumns)}>
+          <span>Seria</span>
+          <span>Ostatnio</span>
+          {exerciseType === 'weight' ? (
+            <>
+              <span>kg</span>
+              <span>Powt.</span>
+            </>
+          ) : (
+            <span>{exerciseType === 'reps' ? 'Powtórzenia' : 'Czas (s)'}</span>
+          )}
+          <span className="sr-only">Zaliczona</span>
+        </div>
+
+        <AnimatePresence initial={false}>
+          {/* Newest set on top: only the display order is reversed, setIndex stays
+          the real position so numbering, validation and saved order are unchanged. */}
+          {fields
+            .map((setField, setIndex) => ({ setField, setIndex }))
+            .reverse()
+            .map(({ setField, setIndex }) => {
+            const isCompleted = watch(`exerciseSeries.${index}.sets.${setIndex}.completed`);
+            const sets = watch(`exerciseSeries.${index}.sets`);
+            // Find the first uncompleted set to mark as active
+            const firstUncompletedIndex = sets?.findIndex((s: any) => !s.completed);
+            const isActive = firstUncompletedIndex === setIndex;
+            const hasError = Boolean(validationErrors[setIndex]);
+
+            return (
+              <motion.div key={setField.id} {...listItemMotion}>
+                <div
+                  className={cn(
+                    'grid items-center gap-1.5 rounded-xl px-0.5 py-1 transition-colors',
+                    gridColumns,
+                    isCompleted ? 'bg-volt/10' : isActive ? 'bg-primary/10' : ''
+                  )}
+                >
+                  {/* Set number doubles as the type picker: number = working set,
+                  colored icon = special set. The modal also allows deleting. */}
+                  <FormField
+                    control={control}
+                    name={`exerciseSeries.${index}.sets.${setIndex}.type`}
+                    render={({ field }) => {
+                      const typeConfig = getSetTypeConfig(field.value || SetType.WorkingSet);
+                      const isWorkingSet = (field.value || SetType.WorkingSet) === SetType.WorkingSet;
+                      const TypeIcon = typeConfig.icon;
+                      return (
+                        <FormItem className="space-y-0">
+                          <FormControl>
+                            <SetTypeModal
+                              value={field.value || SetType.WorkingSet}
+                              onChange={field.onChange}
+                              onDeleteSet={() => remove(setIndex)}
+                              renderTrigger={
+                                <button
+                                  type="button"
+                                  aria-label={`Seria ${setIndex + 1}: ${typeConfig.name}`}
+                                  className={cn(
+                                    'flex h-12 w-full items-center justify-center rounded-xl font-display text-xl font-bold tabular-nums',
+                                    isWorkingSet ? 'text-muted-foreground' : cn(typeConfig.bgColorClass, typeConfig.colorClass)
+                                  )}
+                                >
+                                  {isWorkingSet ? setIndex + 1 : <TypeIcon className="h-4 w-4" />}
+                                </button>
+                              }
+                            />
+                          </FormControl>
+                        </FormItem>
+                      );
+                    }}
+                  />
+
+                  <button
+                    type="button"
+                    disabled={!exerciseHistory?.sets[setIndex]}
+                    onClick={() => applyPrevious(setIndex)}
+                    aria-label="Wpisz wynik z poprzedniego treningu"
+                    className="truncate rounded-lg py-1 text-center text-[13px] font-medium tabular-nums text-muted-foreground active:bg-secondary"
                   >
-                    {/* Set number doubles as the type picker: number = working set,
-                    colored icon = special set. The modal also allows deleting. */}
-                    <FormField
-                      control={control}
-                      name={`exerciseSeries.${index}.sets.${setIndex}.type`}
-                      render={({ field }) => {
-                        const typeConfig = getSetTypeConfig(field.value || SetType.WorkingSet);
-                        const isWorkingSet = (field.value || SetType.WorkingSet) === SetType.WorkingSet;
-                        const TypeIcon = typeConfig.icon;
-                        return (
-                          <FormItem className="col-span-3 space-y-0">
-                            <FormControl>
-                              <SetTypeModal
-                                value={field.value || SetType.WorkingSet}
-                                onChange={field.onChange}
-                                onDeleteSet={() => remove(setIndex)}
-                                renderTrigger={
-                                  <button
-                                    type="button"
-                                    aria-label={`Seria ${setIndex + 1}: ${typeConfig.name}`}
-                                    className={cn(
-                                      'flex h-10 w-full items-center justify-center rounded-lg border font-headline text-sm font-bold tabular-nums transition-colors',
-                                      isWorkingSet
-                                        ? 'border-transparent bg-secondary/50 text-muted-foreground'
-                                        : cn(typeConfig.bgColorClass, typeConfig.borderColorClass, typeConfig.colorClass)
-                                    )}
-                                  >
-                                    {isWorkingSet ? setIndex + 1 : <TypeIcon className="h-4 w-4" />}
-                                  </button>
-                                }
-                              />
-                            </FormControl>
-                          </FormItem>
-                        );
-                      }}
-                    />
+                    {previousLabel(setIndex)}
+                  </button>
 
-                    {/* Conditional fields based on exercise type */}
-                    {exerciseType === 'weight' ? (
-                      <>
-                        <FormField
-                          control={control}
-                          name={`exerciseSeries.${index}.sets.${setIndex}.weight`}
-                          render={({ field }) => (
-                            <FormItem className="col-span-4 space-y-0">
-                              <FormControl>
-                                <Input
-                                  type="number"
-                                  inputMode="decimal"
-                                  step="0.5"
-                                  placeholder="0"
-                                  {...field}
-                                  onFocus={selectAllOnFocus}
-                                  onChange={(e) => {
-                                    field.onChange(e);
-                                    clearValidationError(setIndex);
-                                  }}
-                                  className={`h-10 rounded-lg text-center tabular-nums ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (field.value === undefined || field.value === null || field.value === '') ? "border-destructive ring-destructive/20 ring-1" : ""}`}
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={control}
-                          name={`exerciseSeries.${index}.sets.${setIndex}.reps`}
-                          render={({ field }) => (
-                            <FormItem className="col-span-3 space-y-0">
-                              <FormControl>
-                                <Input
-                                  type="number"
-                                  inputMode="numeric"
-                                  placeholder="0"
-                                  {...field}
-                                  onFocus={selectAllOnFocus}
-                                  onChange={(e) => {
-                                    field.onChange(e);
-                                    clearValidationError(setIndex);
-                                  }}
-                                  className={`h-10 rounded-lg text-center tabular-nums ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                      </>
-                    ) : exerciseType === 'reps' ? (
+                  {/* Conditional fields based on exercise type */}
+                  {exerciseType === 'weight' ? (
+                    <>
                       <FormField
                         control={control}
-                        name={`exerciseSeries.${index}.sets.${setIndex}.reps`}
+                        name={`exerciseSeries.${index}.sets.${setIndex}.weight`}
                         render={({ field }) => (
-                          <FormItem className="col-span-7 space-y-0">
+                          <FormItem className="min-w-0 space-y-0">
                             <FormControl>
                               <Input
                                 type="number"
-                                inputMode="numeric"
+                                inputMode="decimal"
+                                step="0.5"
                                 placeholder="0"
+                                aria-label="Ciężar w kilogramach"
                                 {...field}
                                 onFocus={selectAllOnFocus}
                                 onChange={(e) => {
                                   field.onChange(e);
                                   clearValidationError(setIndex);
                                 }}
-                                className={`h-10 rounded-lg text-center tabular-nums ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
+                                className={inputClass(isActive, hasError && (field.value === undefined || field.value === null || (field.value as unknown) === ''), Boolean(isCompleted))}
                               />
                             </FormControl>
                           </FormItem>
                         )}
                       />
-                    ) : (
+
                       <FormField
                         control={control}
-                        name={`exerciseSeries.${index}.sets.${setIndex}.duration`}
+                        name={`exerciseSeries.${index}.sets.${setIndex}.reps`}
                         render={({ field }) => (
-                          <FormItem className="col-span-7 space-y-0">
+                          <FormItem className="min-w-0 space-y-0">
                             <FormControl>
-                              <div className="relative">
-                                <Input
-                                  type="number"
-                                  inputMode="numeric"
-                                  placeholder="0"
-                                  {...field}
-                                  onFocus={selectAllOnFocus}
-                                  onChange={(e) => {
-                                    field.onChange(e);
-                                    clearValidationError(setIndex);
-                                  }}
-                                  className={`h-10 rounded-lg text-center tabular-nums pr-6 ${isActive ? "border-primary font-semibold" : ""} ${validationErrors[setIndex] && (!field.value || field.value <= 0) ? "border-destructive ring-destructive/20 ring-1" : ""}`}
-                                />
-                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
-                              </div>
+                              <Input
+                                type="number"
+                                inputMode="numeric"
+                                placeholder="0"
+                                aria-label="Liczba powtórzeń"
+                                {...field}
+                                onFocus={selectAllOnFocus}
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  clearValidationError(setIndex);
+                                }}
+                                className={inputClass(isActive, hasError && (!field.value || field.value <= 0), Boolean(isCompleted))}
+                              />
                             </FormControl>
                           </FormItem>
                         )}
                       />
-                    )}
-
-                    <div className="col-span-2 flex justify-center">
-                      <FormField
-                        control={control}
-                        name={`exerciseSeries.${index}.sets.${setIndex}.completed`}
-                        render={({ field }) => (
-                          <FormItem className="space-y-0">
-                            <FormControl>
-                              <button
-                                type="button"
-                                aria-label={field.value ? 'Cofnij ukończenie serii' : 'Oznacz serię jako ukończoną'}
-                                onClick={() => handleSetCompletion(setIndex, field.value)}
-                                className={`grid h-10 w-10 place-items-center rounded-full focus:outline-none transition-transform ${isActive ? 'scale-110' : ''} ${validationErrors[setIndex] ? 'animate-shake' : ''}`}
-                              >
-                                {field.value ? (
-                                  <CheckCircle2 className="h-6 w-6 text-volt" />
-                                ) : validationErrors[setIndex] ? (
-                                  <AlertCircle className="h-6 w-6 text-destructive" />
-                                ) : (
-                                  <Circle className={`h-6 w-6 ${isActive ? 'text-primary fill-primary/20' : 'text-muted-foreground'}`} />
-                                )}
-                              </button>
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-
-                  {/* RPE is asked only once the set is done — before that there is
-                  nothing to rate, and it would crowd the row. */}
-                  {isCompleted && (
+                    </>
+                  ) : exerciseType === 'reps' ? (
                     <FormField
                       control={control}
-                      name={`exerciseSeries.${index}.sets.${setIndex}.rpe`}
+                      name={`exerciseSeries.${index}.sets.${setIndex}.reps`}
                       render={({ field }) => (
-                        <FormItem className="space-y-0 px-1 pb-2">
+                        <FormItem className="min-w-0 space-y-0">
                           <FormControl>
-                            <RpeSelector value={field.value} onChange={field.onChange} />
+                            <Input
+                              type="number"
+                              inputMode="numeric"
+                              placeholder="0"
+                              aria-label="Liczba powtórzeń"
+                              {...field}
+                              onFocus={selectAllOnFocus}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                clearValidationError(setIndex);
+                              }}
+                              className={inputClass(isActive, hasError && (!field.value || field.value <= 0), Boolean(isCompleted))}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  ) : (
+                    <FormField
+                      control={control}
+                      name={`exerciseSeries.${index}.sets.${setIndex}.duration`}
+                      render={({ field }) => (
+                        <FormItem className="min-w-0 space-y-0">
+                          <FormControl>
+                            <Input
+                              type="number"
+                              inputMode="numeric"
+                              placeholder="0"
+                              aria-label="Czas w sekundach"
+                              {...field}
+                              onFocus={selectAllOnFocus}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                clearValidationError(setIndex);
+                              }}
+                              className={inputClass(isActive, hasError && (!field.value || field.value <= 0), Boolean(isCompleted))}
+                            />
                           </FormControl>
                         </FormItem>
                       )}
                     />
                   )}
-                </motion.div>
-              )
-            })}
-          </AnimatePresence>
-        </div>
-      </CardContent>
-    </Card>
+
+                  <FormField
+                    control={control}
+                    name={`exerciseSeries.${index}.sets.${setIndex}.completed`}
+                    render={({ field }) => (
+                      <FormItem className="space-y-0">
+                        <FormControl>
+                          <button
+                            type="button"
+                            aria-label={field.value ? 'Cofnij ukończenie serii' : 'Oznacz serię jako ukończoną'}
+                            onClick={() => handleSetCompletion(setIndex, Boolean(field.value))}
+                            className={cn(
+                              'grid h-12 w-11 place-items-center rounded-xl transition-[transform,background-color] active:scale-90',
+                              field.value
+                                ? 'bg-volt text-volt-foreground'
+                                : hasError
+                                  ? 'animate-shake bg-destructive/15 text-destructive'
+                                  : isActive
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-secondary text-muted-foreground'
+                            )}
+                          >
+                            {hasError && !field.value ? <AlertCircle className="h-5 w-5" /> : <Check className="h-5 w-5" strokeWidth={3} />}
+                          </button>
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* RPE is asked only once the set is done — before that there is
+                nothing to rate, and it would crowd the row. */}
+                {isCompleted && (
+                  <FormField
+                    control={control}
+                    name={`exerciseSeries.${index}.sets.${setIndex}.rpe`}
+                    render={({ field }) => (
+                      <FormItem className="space-y-0 px-1.5 pb-2 pt-1">
+                        <FormControl>
+                          <RpeSelector value={field.value} onChange={field.onChange} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </motion.div>
+            )
+          })}
+        </AnimatePresence>
+      </div>
+    </div>
   )
 }
 
@@ -1710,26 +1731,20 @@ const summarizeSets = (sets: WorkoutSet[] | undefined): string | null => {
 
 function WorkoutExercisesPreview({ exerciseSeries }: { exerciseSeries: ExerciseSeries[] | undefined }) {
   if (!exerciseSeries || exerciseSeries.length === 0) {
-    return (
-      <p className="rounded-2xl border border-dashed border-border bg-card/50 p-4 text-center text-sm text-muted-foreground">
-        Ten trening nie ma jeszcze żadnych ćwiczeń.
-      </p>
-    );
+    return <p className="rounded-2xl bg-secondary/60 p-4 text-center text-sm text-muted-foreground">Ten trening nie ma jeszcze żadnych ćwiczeń.</p>;
   }
 
   return (
-    <ol className="max-h-[50vh] space-y-2 overflow-y-auto scrollbar-hide">
+    <ol className="divide-y divide-border/50">
       {exerciseSeries.map((series, i) => {
         const muscles = series.exercise?.mainMuscleGroups?.map(mg => mg.name).filter(Boolean).join(', ');
         const summary = summarizeSets(series.sets);
-        const meta = [muscles, summary].filter(Boolean).join(' · ');
+        const meta = [summary, muscles].filter(Boolean).join(' · ');
         return (
-          <li key={i} className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-3">
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-secondary font-headline text-sm font-bold text-primary">
-              {i + 1}
-            </span>
+          <li key={i} className="flex items-center gap-3 py-2.5">
+            <span className="w-5 shrink-0 text-center font-display text-xl font-bold tabular-nums text-muted-foreground">{i + 1}</span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold">{series.exercise?.name || 'Nieznane ćwiczenie'}</p>
+              <p className="truncate text-[15px] font-semibold leading-tight">{series.exercise?.name || 'Nieznane ćwiczenie'}</p>
               <p className="truncate text-xs text-muted-foreground">{meta || 'Ogólnorozwojowe'}</p>
             </div>
           </li>
@@ -1738,6 +1753,33 @@ function WorkoutExercisesPreview({ exerciseSeries }: { exerciseSeries: ExerciseS
     </ol>
   );
 }
+
+/** "Co mnie czeka": exercises at a glance in a sheet, with the start button under the thumb. */
+function WorkoutPreviewSheet({ trigger, title, description, exerciseSeries, actionLabel, onAction }: { trigger: React.ReactNode; title: string; description: string; exerciseSeries: ExerciseSeries[] | undefined; actionLabel: string; onAction: () => void }) {
+  return (
+    <Sheet>
+      <SheetTrigger asChild>{trigger}</SheetTrigger>
+      <SheetContent side="bottom" className="flex flex-col">
+        <SheetHeader>
+          <SheetTitle className="font-display text-[2rem] font-bold uppercase leading-none">{title}</SheetTitle>
+          <SheetDescription>{description}</SheetDescription>
+        </SheetHeader>
+        <div className="no-scrollbar mt-2 min-h-0 flex-1 overflow-y-auto">
+          <WorkoutExercisesPreview exerciseSeries={exerciseSeries} />
+        </div>
+        <SheetClose asChild>
+          <Button onClick={onAction} size="lg" className="mt-3 w-full shrink-0">
+            <Play className="fill-current" /> {actionLabel}
+          </Button>
+        </SheetClose>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+/** The muscles a template works, for telling "Push A" from "Pull A" at a glance. */
+const templateMuscles = (template: Workout) =>
+  [...new Set(template.exerciseSeries?.flatMap(series => series.exercise?.mainMuscleGroups?.map(mg => mg.name) ?? []) ?? [])].slice(0, 3).join(', ');
 
 // --- SELECTION VIEW COMPONENT ---
 function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder: (data: LogFormValues) => void; allExercises: Exercise[] | null }) {
@@ -1773,7 +1815,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
   const { data: historyLogs, isLoading: historyLoading } = useCollection<WorkoutLog>(
     user?.uid ? 'workoutLogs' : null,
     user?.uid ? { athleteId: user.uid, status: 'completed' } : undefined,
-    { sort: { endTime: -1 }, limit: 10 }
+    { sort: { endTime: -1 }, limit: 15 }
   );
 
   const workoutPlans = useMemo(() => {
@@ -1837,207 +1879,179 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
 
   const isLoading = assignedPlansLoading || myPlansLoading || historyLoading || templatesLoading;
 
+  const lastLog = historyLogs?.[0];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-2.5">
+        <button
+          type="button"
+          onClick={handleStartEmpty}
+          className="flex h-[6.5rem] flex-col justify-between rounded-2xl bg-primary p-3.5 text-left text-primary-foreground transition-transform active:scale-[0.97]"
+        >
+          <Plus className="h-6 w-6" strokeWidth={2.5} />
+          <span>
+            <span className="block font-display text-[1.625rem] font-bold uppercase leading-none">Od zera</span>
+            <span className="mt-1 block text-xs font-medium opacity-80">Pusty trening</span>
+          </span>
+        </button>
+        {supportsGeolocation ? (
+          <button
+            type="button"
+            onClick={() => setStartRunDialogOpen(true)}
+            className="flex h-[6.5rem] flex-col justify-between rounded-2xl bg-run p-3.5 text-left text-primary-foreground transition-transform active:scale-[0.97]"
+          >
+            <Footprints className="h-6 w-6" />
+            <span>
+              <span className="block font-display text-[1.625rem] font-bold uppercase leading-none">Bieg</span>
+              <span className="mt-1 block text-xs font-medium opacity-80">Trasa z GPS</span>
+            </span>
+          </button>
+        ) : null}
+      </div>
+      <StartRunDialog open={startRunDialogOpen} onOpenChange={setStartRunDialogOpen} programs={runningPrograms} />
+
+      {lastLog && (
+        <button
+          type="button"
+          onClick={() => handleRepeatWorkout(lastLog)}
+          className="row-tap flex w-full items-center gap-3 rounded-2xl bg-card px-3.5 py-3 text-left"
+        >
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-secondary text-primary">
+            <RotateCcw className="h-5 w-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[15px] font-semibold leading-tight">Powtórz: {lastLog.workoutName}</span>
+            <span className="block truncate text-xs text-muted-foreground">
+              Ostatnio {format(new Date(lastLog.endTime as unknown as string | number | Date), 'EEEE, d MMMM', { locale: pl })}
+            </span>
+          </span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+        </button>
+      )}
+
+      {historyLogs && <MuscleRecovery logs={historyLogs} />}
+
       <Tabs defaultValue="quick" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="quick">Start</TabsTrigger>
+          <TabsTrigger value="quick">Szablony</TabsTrigger>
           <TabsTrigger value="plans">Plany</TabsTrigger>
           <TabsTrigger value="history">Historia</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="quick" className="space-y-4 mt-4">
-          <button
-            type="button"
-            onClick={handleStartEmpty}
-            className="hero-ember texture-grain group relative flex w-full items-center gap-4 overflow-hidden rounded-[1.75rem] p-5 text-left text-white shadow-glow transition-transform duration-200 active:scale-[0.98]"
-          >
-            <div aria-hidden className="pointer-events-none absolute -right-10 -top-14 h-36 w-36 rounded-full border-[1rem] border-white/10" />
-            <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white text-primary shadow-lg transition-transform duration-200 group-active:scale-95">
-              <PlusCircle className="h-6 w-6" />
-            </span>
-            <span className="relative min-w-0">
-              <span className="block text-[10px] font-bold uppercase tracking-[0.25em] text-white/75">Szybki start</span>
-              <span className="mt-0.5 block font-display text-lg font-extrabold uppercase leading-tight">Pusty trening</span>
-              <span className="block text-xs text-white/80">Stwórz trening od zera</span>
-            </span>
-            <ChevronRight className="relative ml-auto h-5 w-5 shrink-0 text-white/70" />
-          </button>
-
-          {supportsGeolocation && (
-            <button
-              type="button"
-              onClick={() => setStartRunDialogOpen(true)}
-              className="group relative flex w-full items-center gap-4 overflow-hidden rounded-[1.75rem] border border-border/60 bg-card p-5 text-left shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted active:scale-[0.98]"
-            >
-              <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full bg-sky-500/15 text-sky-600 dark:text-sky-400">
-                <Footprints className="h-6 w-6" />
-              </span>
-              <span className="relative min-w-0">
-                <span className="block text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">Szybki start</span>
-                <span className="mt-0.5 block font-display text-lg font-extrabold uppercase leading-tight">Rozpocznij bieg</span>
-                <span className="block text-xs text-muted-foreground">Nagraj trasę GPS na żywo</span>
-              </span>
-              <ChevronRight className="relative ml-auto h-5 w-5 shrink-0 text-muted-foreground" />
-            </button>
-          )}
-          <StartRunDialog open={startRunDialogOpen} onOpenChange={setStartRunDialogOpen} programs={runningPrograms} />
-
-          {/* Workout Templates Section */}
-          {workoutTemplates && workoutTemplates.length > 0 && (
-            <>
-              <p className="mt-6 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Szablony treningowe</p>
-              <div className="space-y-2.5">
-                {workoutTemplates.map(template => (
-                  <AlertDialog key={template.id}>
-                    <AlertDialogTrigger asChild>
-                      <div className="flex cursor-pointer items-center gap-3.5 rounded-2xl border border-border/60 bg-card p-3.5 shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted active:scale-[0.99]">
-                        <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-secondary">
-                          {template.imageUrl ? (
-                            <img
-                              src={template.imageUrl}
-                              alt={template.name}
-                              width={48}
-                              height={48}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <Dumbbell className="h-6 w-6 text-primary" />
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="line-clamp-2 font-semibold">{template.name}</h3>
-                          <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {template.durationMinutes} min
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Dumbbell className="h-3 w-3" />
-                              {template.exerciseSeries?.length || 0} ćwiczeń
-                            </span>
-                            {template.ownerId === 'public' && (
-                              <Badge variant="secondary">Publiczny</Badge>
-                            )}
-                          </div>
-                        </div>
-                        <ChevronRight className="ml-auto h-5 w-5 shrink-0 text-muted-foreground" />
-                      </div>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>{template.name}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {template.exerciseSeries?.length || 0} ćwiczeń · {template.durationMinutes} min. Sprawdź, co Cię czeka, zanim zaczniesz.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <WorkoutExercisesPreview exerciseSeries={template.exerciseSeries} />
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleStartWorkout(template)}>
-                          Rozpocznij
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                ))}
-              </div>
-            </>
-          )}
-        </TabsContent>
-
-
-        <TabsContent value="plans" className="space-y-4 mt-4">
-          {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2].map(i => <div key={i} className="h-24 rounded-lg bg-secondary animate-pulse" />)}
-            </div>
-          ) : workoutPlans.length === 0 ? (
-            <div className="rounded-[1.75rem] border border-dashed border-border bg-card/50 p-8 text-center">
-              <p className="text-sm text-muted-foreground">Nie masz jeszcze żadnych planów.</p>
+        <TabsContent value="quick">
+          {workoutTemplates && workoutTemplates.length > 0 ? (
+            <div className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card">
+              {workoutTemplates.map(template => (
+                <WorkoutPreviewSheet
+                  key={template.id}
+                  title={template.name}
+                  description={`${exercisesLabel(template.exerciseSeries?.length || 0)} · ${template.durationMinutes} min`}
+                  exerciseSeries={template.exerciseSeries}
+                  actionLabel="Rozpocznij"
+                  onAction={() => handleStartWorkout(template)}
+                  trigger={
+                    <button type="button" className="row-tap flex w-full items-center gap-3 px-3.5 py-3 text-left">
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[15px] font-semibold leading-tight">{template.name}</span>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {template.durationMinutes} min · {exercisesLabel(template.exerciseSeries?.length || 0)}
+                          {templateMuscles(template) ? ` · ${templateMuscles(template)}` : ''}
+                        </span>
+                      </span>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+                    </button>
+                  }
+                />
+              ))}
             </div>
           ) : (
+            <EmptyState icon={ListChecks} title="Brak szablonów" description="Zapisz swój stały trening, żeby zaczynać go jednym dotknięciem." />
+          )}
+
+          <div className="mt-2.5 grid grid-cols-2 gap-2.5">
+            <Button asChild variant="secondary" size="sm">
+              <Link to="/athlete/workouts"><ListChecks /> Szablony</Link>
+            </Button>
+            <Button asChild variant="secondary" size="sm">
+              <Link to="/athlete/exercises"><BookOpen /> Ćwiczenia</Link>
+            </Button>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="plans">
+          {isLoading ? (
             <div className="space-y-2.5">
+              {[1, 2].map(i => <div key={i} className="h-16 animate-pulse rounded-2xl bg-card" />)}
+            </div>
+          ) : workoutPlans.length === 0 ? (
+            <EmptyState icon={Calendar} title="Brak planów" description="Gdy trener przypisze Ci program, zobaczysz go tutaj." />
+          ) : (
+            <div className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card">
               {workoutPlans.map(plan => (
                 <Sheet key={plan.id}>
                   <SheetTrigger asChild>
-                    <div className="flex cursor-pointer items-center gap-3.5 rounded-2xl border border-border/60 bg-card p-4 shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted active:scale-[0.99]">
-                      <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-secondary text-primary">
-                        <Calendar className="h-6 w-6" />
-                      </div>
-                      <div className="min-w-0">
-                        <h3 className="line-clamp-2 font-semibold">{plan.name}</h3>
-                        <p className="text-xs text-muted-foreground">{plan.stages?.length || 0} etapów</p>
-                      </div>
-                      <ChevronRight className="ml-auto h-5 w-5 shrink-0 text-muted-foreground" />
-                    </div>
+                    <button type="button" className="row-tap flex w-full items-center gap-3 px-3.5 py-3 text-left">
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[15px] font-semibold leading-tight">{plan.name}</span>
+                        <span className="block text-xs text-muted-foreground">{plan.stages?.length || 0} etapów</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+                    </button>
                   </SheetTrigger>
-                  <SheetContent side="bottom" className="h-[85vh]">
-                    <SheetHeader className="text-left mb-4">
+                  <SheetContent side="bottom" className="h-[85dvh]">
+                    <SheetHeader>
                       <SheetTitle>{plan.name}</SheetTitle>
                       <SheetDescription>Wybierz trening z planu.</SheetDescription>
                     </SheetHeader>
-                    <ScrollArea className="h-full pb-20">
-                      <Accordion type="single" collapsible className="w-full">
-                        {plan.stages?.map((stage, stageIndex) => (
-                          <AccordionItem value={`stage-${stageIndex}`} key={stageIndex}>
-                            <AccordionTrigger className="font-semibold">{stage.name}</AccordionTrigger>
-                            <AccordionContent>
-                              <div className="space-y-4 pl-2">
-                                {stage.weeks?.map((week, weekIndex) => (
-                                  <div key={weekIndex} className="border-l-2 pl-4">
-                                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Tydzień {weekIndex + 1}</h4>
-                                    <div className="grid gap-2">
-                                      {week.days?.map((day, dayIndex) => {
-                                        if (day === 'Rest Day') {
-                                          return (
-                                            <div key={dayIndex} className="p-2 rounded bg-secondary/20 text-sm text-muted-foreground flex justify-between">
-                                              <span>Dzień {dayIndex + 1}</span>
-                                              <span>Rest Day</span>
-                                            </div>
-                                          )
-                                        }
-                                        // It's a Workout object
+                    <Accordion type="single" collapsible className="mt-2 w-full">
+                      {plan.stages?.map((stage, stageIndex) => (
+                        <AccordionItem value={`stage-${stageIndex}`} key={stageIndex}>
+                          <AccordionTrigger>{stage.name}</AccordionTrigger>
+                          <AccordionContent>
+                            <div className="space-y-4">
+                              {stage.weeks?.map((week, weekIndex) => (
+                                <div key={weekIndex}>
+                                  <h4 className="eyebrow mb-1.5">Tydzień {weekIndex + 1}</h4>
+                                  <div className="divide-y divide-border/50 overflow-hidden rounded-xl bg-secondary/50">
+                                    {week.days?.map((day, dayIndex) => {
+                                      if (day === 'Rest Day') {
                                         return (
-                                          <AlertDialog key={dayIndex}>
-                                            <AlertDialogTrigger asChild>
-                                              <Card className="cursor-pointer hover:bg-secondary/50">
-                                                <CardContent className="p-3 flex justify-between items-center">
-                                                  <div>
-                                                    <p className="font-medium text-sm">Dzień {dayIndex + 1}: {day.name}</p>
-                                                    <p className="text-xs text-muted-foreground">{day.exerciseSeries?.length || 0} ćwiczeń</p>
-                                                  </div>
-                                                  <Play className="h-4 w-4 text-primary" />
-                                                </CardContent>
-                                              </Card>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                              <AlertDialogHeader>
-                                                <AlertDialogTitle>{day.name}</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                  Dzień {dayIndex + 1} · {day.exerciseSeries?.length || 0} ćwiczeń. Podejrzyj ćwiczenia przed startem.
-                                                </AlertDialogDescription>
-                                              </AlertDialogHeader>
-                                              <WorkoutExercisesPreview exerciseSeries={day.exerciseSeries} />
-                                              <AlertDialogFooter>
-                                                <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleStartWorkout(day)}>
-                                                  Rozpocznij
-                                                </AlertDialogAction>
-                                              </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                          </AlertDialog>
-                                        )
-                                      })}
-                                    </div>
+                                          <div key={dayIndex} className="flex justify-between px-3 py-2.5 text-sm text-muted-foreground">
+                                            <span>Dzień {dayIndex + 1}</span>
+                                            <span>Odpoczynek</span>
+                                          </div>
+                                        );
+                                      }
+                                      // It's a Workout object
+                                      return (
+                                        <WorkoutPreviewSheet
+                                          key={dayIndex}
+                                          title={day.name}
+                                          description={`Dzień ${dayIndex + 1} · ${exercisesLabel(day.exerciseSeries?.length || 0)}`}
+                                          exerciseSeries={day.exerciseSeries}
+                                          actionLabel="Rozpocznij"
+                                          onAction={() => handleStartWorkout(day)}
+                                          trigger={
+                                            <button type="button" className="row-tap flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left">
+                                              <span className="min-w-0">
+                                                <span className="block truncate text-sm font-semibold">Dzień {dayIndex + 1}: {day.name}</span>
+                                                <span className="block text-xs text-muted-foreground">{exercisesLabel(day.exerciseSeries?.length || 0)}</span>
+                                              </span>
+                                              <Play className="h-4 w-4 shrink-0 text-primary" />
+                                            </button>
+                                          }
+                                        />
+                                      );
+                                    })}
                                   </div>
-                                ))}
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        ))}
-                      </Accordion>
-                    </ScrollArea>
+                                </div>
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
                   </SheetContent>
                 </Sheet>
               ))}
@@ -2045,53 +2059,46 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
           )}
         </TabsContent>
 
-        <TabsContent value="history" className="space-y-4 mt-4">
+        <TabsContent value="history">
           {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2].map(i => <div key={i} className="h-24 rounded-lg bg-secondary animate-pulse" />)}
+            <div className="space-y-2.5">
+              {[1, 2].map(i => <div key={i} className="h-16 animate-pulse rounded-2xl bg-card" />)}
             </div>
           ) : !historyLogs || historyLogs.length === 0 ? (
-            <div className="rounded-[1.75rem] border border-dashed border-border bg-card/50 p-8 text-center">
-              <p className="text-sm text-muted-foreground">Brak historii treningów.</p>
-            </div>
+            <EmptyState icon={Dumbbell} title="Brak historii" description="Twoje ukończone treningi pojawią się tutaj." />
           ) : (
-            <div className="space-y-2.5">
-              {historyLogs.map(log => (
-                <AlertDialog key={log.id}>
-                  <AlertDialogTrigger asChild>
-                    <div className="flex cursor-pointer items-center gap-3.5 rounded-2xl border border-border/60 bg-card p-3.5 shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted active:scale-[0.99]">
-                      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-volt/15 text-volt">
-                        <RotateCcw className="h-5 w-5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="line-clamp-2 font-semibold">{log.workoutName}</h3>
-                        <p className="text-xs text-muted-foreground">{format(new Date(log.endTime as unknown as string | number | Date), 'd MMMM yyyy', { locale: pl })}</p>
-                      </div>
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-primary">Powtórz</span>
-                    </div>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>{log.workoutName}</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        {log.exercises?.length || 0} ćwiczeń · {format(new Date(log.endTime as unknown as string | number | Date), 'd MMMM yyyy', { locale: pl })}. Podejrzyj ćwiczenia przed powtórzeniem.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <WorkoutExercisesPreview exerciseSeries={log.exercises} />
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleRepeatWorkout(log)}>
-                        Powtórz trening
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              ))}
-            </div>
+            <>
+              <div className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card">
+                {historyLogs.map(log => (
+                  <WorkoutPreviewSheet
+                    key={log.id}
+                    title={log.workoutName}
+                    description={`${exercisesLabel(log.exercises?.length || 0)} · ${format(new Date(log.endTime as unknown as string | number | Date), 'd MMMM yyyy', { locale: pl })}`}
+                    exerciseSeries={log.exercises}
+                    actionLabel="Powtórz trening"
+                    onAction={() => handleRepeatWorkout(log)}
+                    trigger={
+                      <button type="button" className="row-tap flex w-full items-center gap-3 px-3.5 py-3 text-left">
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[15px] font-semibold leading-tight">{log.workoutName}</span>
+                          <span className="block truncate text-xs text-muted-foreground">
+                            {format(new Date(log.endTime as unknown as string | number | Date), 'd MMMM yyyy', { locale: pl })}
+                          </span>
+                        </span>
+                        <RotateCcw className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      </button>
+                    }
+                  />
+                ))}
+              </div>
+              <Button asChild variant="secondary" size="sm" className="mt-2.5 w-full">
+                <Link to="/athlete/history">Cała historia</Link>
+              </Button>
+            </>
           )}
         </TabsContent>
       </Tabs>
-    </div >
+    </div>
   );
 }
 
@@ -2270,46 +2277,36 @@ export default function LogWorkoutPage() {
 
   if (view === 'active' && builderData) {
     return (
-      <div className="container mx-auto flex h-full justify-center p-4 pt-18 md:p-8">
-        <div className="flex h-full w-full max-w-lg flex-col">
-          <ActiveWorkoutView
-            initialWorkout={builderData}
-            onFinishWorkout={handleFinishWorkout}
-            allExercises={allExercises}
-            isLoadingExercises={exercisesLoading}
-            initialLogId={activeLogId}
-            sourceWorkoutId={workoutId} // Pass the workout template ID
-            pendingExerciseId={pendingExerciseId}
-          />
-        </div>
+      <div className="h-full px-4">
+        <ActiveWorkoutView
+          initialWorkout={builderData}
+          onFinishWorkout={handleFinishWorkout}
+          allExercises={allExercises}
+          isLoadingExercises={exercisesLoading}
+          initialLogId={activeLogId}
+          sourceWorkoutId={workoutId} // Pass the workout template ID
+          pendingExerciseId={pendingExerciseId}
+        />
       </div>
     )
   }
 
   if (view === 'builder' && builderData) {
     return (
-      <div className="container mx-auto p-4 md:p-8 flex justify-center">
-        <div className="w-full max-w-lg">
-          <WorkoutBuilderView
-            initialData={builderData}
-            onStart={handleStartActive}
-            onCancel={handleCancelBuilder}
-            allExercises={allExercises}
-            isLoadingExercises={exercisesLoading}
-          />
-        </div>
+      <div className="h-full px-4 pb-3">
+        <WorkoutBuilderView
+          initialData={builderData}
+          onStart={handleStartActive}
+          onCancel={handleCancelBuilder}
+          allExercises={allExercises}
+          isLoadingExercises={exercisesLoading}
+        />
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto p-4 md:p-8">
-      <div className="mb-6">
-
-        <h1 className="mt-2 font-display text-3xl font-extrabold uppercase tracking-tight md:text-4xl">
-          Trenuj <span className="text-gradient-ember">teraz</span>
-        </h1>
-      </div>
+    <div className="page">
       <WorkoutSelectionView
         onStartBuilder={handleStartBuilder}
         allExercises={allExercises}

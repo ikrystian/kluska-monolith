@@ -4,88 +4,86 @@
 
 
 /*
- * Design system "Volt Ember" — dark-first.
- * Niemal czarne, ciepłe tło + elektryczny pomarańcz (ember) + neonowa limonka (volt).
- * Jasny motyw: porcelana + atrament + ember. Wszystkie wartości w HSL (bez funkcji),
+ * Design system "Sztanga" — dark-first, mobile-only.
+ * Grafit i kreda jako neutralne tło, jeden mocny akcent (ember) na akcje.
+ * Dziedziny mają kolory talerzy olimpijskich: trening czerwony, bieg niebieski,
+ * jedzenie żółty, nawyki zielony. Wszystkie wartości w HSL (bez funkcji),
  * konsumowane przez tailwind.config.ts. Tokeny --chart-1..5 zwalidowane pod CVD
  * (skill dataviz) — nie podmieniać "na oko".
  */
 @layer base {
   :root {
     color-scheme: light;
-    --background: 36 33% 96%;
-    --foreground: 24 22% 8%;
+    --background: 45 24% 93%;
+    --foreground: 220 13% 9%;
     --card: 0 0% 100%;
-    --card-foreground: 24 22% 8%;
+    --card-foreground: 220 13% 9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 24 22% 8%;
-    --primary: 18 92% 47%;
+    --popover-foreground: 220 13% 9%;
+    --primary: 15 87% 45%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 30 20% 92%;
-    --secondary-foreground: 24 15% 15%;
-    --muted: 30 18% 93%;
-    --muted-foreground: 25 10% 42%;
-    --accent: 22 90% 93%;
-    --accent-foreground: 18 90% 28%;
-    --destructive: 0 74% 46%;
+    --secondary: 44 19% 89%;
+    --secondary-foreground: 218 10% 15%;
+    --muted: 42 22% 91%;
+    --muted-foreground: 215 6% 38%;
+    --accent: 44 19% 89%;
+    --accent-foreground: 220 13% 9%;
+    --destructive: 0 65% 48%;
     --destructive-foreground: 0 0% 100%;
-    --border: 30 15% 88%;
-    --input: 30 12% 84%;
-    --ring: 18 92% 50%;
-    --radius: 1.125rem;
-    --volt: 74 87% 33%;
+    --border: 43 17% 84%;
+    --input: 43 13% 78%;
+    --ring: 15 87% 45%;
+    --radius: 0.875rem;
+    --volt: 79 100% 27%;
     --volt-foreground: 0 0% 100%;
-    --chart-1: 20 88% 48%;
-    --chart-2: 190 85% 36%;
-    --chart-3: 74 87% 33%;
-    --chart-4: 260 66% 58%;
-    --chart-5: 37 94% 40%;
-    --sidebar: 0 0% 100%;
-    --sidebar-foreground: 24 22% 8%;
-    --sidebar-primary: 18 92% 47%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 22 90% 93%;
-    --sidebar-accent-foreground: 18 90% 28%;
-    --sidebar-border: 30 15% 89%;
-    --sidebar-ring: 18 92% 50%;
+    --run: 215 76% 50%;
+    --food: 41 100% 35%;
+    --social: 254 64% 57%;
+    --chart-1: 15 87% 45%;
+    --chart-2: 215 76% 50%;
+    --chart-3: 79 100% 27%;
+    --chart-4: 255 68% 62%;
+    --chart-5: 41 100% 39%;
+
+    /* Wysokości stałych elementów powłoki; #outlet rezerwuje na nie miejsce. */
+    --header-h: 3.25rem;
+    --tabbar-h: 3.75rem;
+    --app-top: calc(var(--header-h) + env(safe-area-inset-top));
+    --app-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+    --font-display-stack: 'Barlow Condensed', 'Figtree Variable', sans-serif;
   }
 
   .dark {
     color-scheme: dark;
-    --background: 24 20% 4%;
-    --foreground: 36 40% 96%;
-    --card: 26 15% 8%;
-    --card-foreground: 36 40% 96%;
-    --popover: 26 15% 7%;
-    --popover-foreground: 36 40% 96%;
-    --primary: 18 100% 58%;
-    --primary-foreground: 20 60% 5%;
-    --secondary: 26 12% 13%;
-    --secondary-foreground: 36 30% 92%;
-    --muted: 26 12% 12%;
-    --muted-foreground: 30 10% 64%;
-    --accent: 26 14% 15%;
-    --accent-foreground: 36 40% 96%;
-    --destructive: 0 78% 58%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 28 14% 15%;
-    --input: 28 12% 19%;
-    --ring: 18 100% 58%;
-    --volt: 74 92% 56%;
-    --volt-foreground: 75 100% 7%;
-    --chart-1: 17 88% 50%;
-    --chart-2: 192 85% 37%;
-    --chart-3: 74 84% 34%;
-    --chart-4: 265 85% 67%;
-    --chart-5: 37 94% 41%;
-    --sidebar: 25 18% 5%;
-    --sidebar-foreground: 36 40% 96%;
-    --sidebar-primary: 18 100% 58%;
-    --sidebar-primary-foreground: 20 60% 5%;
-    --sidebar-accent: 26 14% 13%;
-    --sidebar-accent-foreground: 36 40% 96%;
-    --sidebar-border: 28 14% 12%;
-    --sidebar-ring: 18 100% 58%;
+    --background: 220 10% 6%;
+    --foreground: 44 33% 94%;
+    --card: 216 10% 10%;
+    --card-foreground: 44 33% 94%;
+    --popover: 220 10% 12%;
+    --popover-foreground: 44 33% 94%;
+    --primary: 15 100% 57%;
+    --primary-foreground: 18 63% 5%;
+    --secondary: 217 10% 16%;
+    --secondary-foreground: 44 23% 91%;
+    --muted: 214 10% 14%;
+    --muted-foreground: 214 8% 65%;
+    --accent: 217 10% 16%;
+    --accent-foreground: 44 33% 94%;
+    --destructive: 1 84% 63%;
+    --destructive-foreground: 18 63% 5%;
+    --border: 216 10% 19%;
+    --input: 215 11% 22%;
+    --ring: 15 100% 57%;
+    --volt: 75 86% 58%;
+    --volt-foreground: 77 68% 6%;
+    --run: 216 100% 65%;
+    --food: 43 91% 62%;
+    --social: 257 100% 80%;
+    --chart-1: 16 91% 54%;
+    --chart-2: 217 91% 60%;
+    --chart-3: 77 71% 38%;
+    --chart-4: 255 81% 70%;
+    --chart-5: 42 100% 37%;
   }
 }
 
@@ -96,6 +94,7 @@
   }
 
   html {
+    background: hsl(var(--background));
     scrollbar-color: hsl(var(--border)) transparent;
     -webkit-tap-highlight-color: transparent;
     -webkit-text-size-adjust: 100%;
@@ -103,7 +102,6 @@
 
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     -webkit-font-smoothing: antialiased;
     overscroll-behavior-y: none;
     min-height: 100svh;
@@ -125,24 +123,20 @@
     text-wrap: balance;
   }
 
+  /* Liczby w całej aplikacji trzymają kolumny: timer nie skacze, tabele się zgadzają. */
+  input,
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+
   ::selection {
     background: hsl(var(--primary) / 0.25);
   }
 
+  /* Telefon: paski przewijania nic nie wnoszą, a zabierają szerokość. */
   ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
-    border-radius: 999px;
-    border: 3px solid transparent;
-    background-clip: padding-box;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: transparent;
+    width: 0;
+    height: 0;
   }
 }
 
@@ -158,53 +152,61 @@
   display: none;
 }
 
-/* Frosted glass surface — panels floating over the aurora background */
-.glass {
-  background: hsl(var(--card) / 0.55);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  backdrop-filter: blur(20px) saturate(140%);
-  border: 1px solid hsl(var(--foreground) / 0.08);
+/* Powłoka: kolumna telefonu. Na większym ekranie (podgląd na desktopie) nie rozjeżdża się. */
+.app-column {
+  width: 100%;
+  max-width: 480px;
+  margin-inline: auto;
 }
 
-/* Ember hero surface — electric gradient with a hot top light */
-.hero-ember {
-  background:
-    radial-gradient(120% 140% at 0% 0%, hsl(35 100% 55% / 0.85) 0%, transparent 55%),
-    radial-gradient(120% 160% at 100% 100%, hsl(5 80% 32%) 0%, transparent 60%),
-    linear-gradient(135deg, hsl(20 95% 50%) 0%, hsl(8 90% 42%) 100%);
+/* Ekran pełnoekranowy (rozmowa na czacie): chowa nagłówek i pasek, sam ma swoje. */
+main:has([data-immersive]) > header,
+main:has([data-immersive]) > #bottom-nav {
+  display: none;
 }
 
-.dark .hero-ember {
-  background:
-    radial-gradient(120% 140% at 0% 0%, hsl(40 100% 60% / 0.55) 0%, transparent 55%),
-    radial-gradient(120% 160% at 100% 100%, hsl(4 85% 28%) 0%, transparent 60%),
-    linear-gradient(135deg, hsl(18 100% 55%) 0%, hsl(6 92% 40%) 100%);
+main:has([data-immersive]) > #outlet {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: 0;
 }
 
-/* Display gradient text: ember → amber → volt */
-.text-gradient-ember {
-  background: linear-gradient(92deg, hsl(var(--primary)) 0%, hsl(var(--chart-5)) 55%, hsl(var(--volt)) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+/* Zawartość ekranu: #outlet rezerwuje miejsce na nagłówek i pasek, tu tylko margines. */
+.page {
+  width: 100%;
+  padding: 0.5rem 1rem 1.5rem;
 }
 
-/* Subtle grain so large gradient surfaces don't band */
-.texture-grain::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  opacity: 0.35;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+/* Wielkie liczby i nagłówki: wąski krój z cyframi o stałej szerokości. */
+.num {
+  font-family: var(--font-display-stack);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.005em;
+  line-height: 1;
+}
+
+/* Etykieta nad wartością lub sekcją. */
+.eyebrow {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Tapnięcie w wiersz listy: delikatne podświetlenie zamiast skalowania. */
+.row-tap {
+  transition: background-color 0.12s ease;
+}
+
+.row-tap:active {
+  background-color: hsl(var(--secondary));
 }
 
 /* Staggered section entrance for page loads */
 @keyframes rise-in {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(8px);
   }
 
   to {
@@ -214,7 +216,7 @@
 }
 
 .stagger-rise>* {
-  animation: rise-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: rise-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .stagger-rise>*:nth-child(1) {
@@ -222,31 +224,31 @@
 }
 
 .stagger-rise>*:nth-child(2) {
-  animation-delay: 60ms;
+  animation-delay: 30ms;
 }
 
 .stagger-rise>*:nth-child(3) {
-  animation-delay: 120ms;
+  animation-delay: 60ms;
 }
 
 .stagger-rise>*:nth-child(4) {
-  animation-delay: 180ms;
+  animation-delay: 90ms;
 }
 
 .stagger-rise>*:nth-child(5) {
-  animation-delay: 240ms;
+  animation-delay: 120ms;
 }
 
 .stagger-rise>*:nth-child(6) {
-  animation-delay: 300ms;
+  animation-delay: 150ms;
 }
 
 .stagger-rise>*:nth-child(7) {
-  animation-delay: 360ms;
+  animation-delay: 180ms;
 }
 
 .stagger-rise>*:nth-child(8) {
-  animation-delay: 420ms;
+  animation-delay: 210ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -311,58 +313,6 @@
 
 .animate-fade-in {
   animation: fade-in 0.3s ease-out;
-}
-
-/* Profile page animations */
-@keyframes glow {
-
-  0%,
-  100% {
-    box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
-  }
-
-  50% {
-    box-shadow: 0 0 40px hsl(var(--primary) / 0.6);
-  }
-}
-
-.animate-glow {
-  animation: glow 2s ease-in-out infinite;
-}
-
-@keyframes float {
-
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes gradient-shift {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-.animate-gradient {
-  background-size: 200% 200%;
-  animation: gradient-shift 5s ease infinite;
 }
 
 @keyframes pulse-subtle {
@@ -447,11 +397,6 @@ a.pressable,
 }
 
 
-.container {
-  @media(width < 560px) {
-    padding-inline: 8px;
-  }
-}
 
 /* ?de=true — hide .toAnimate (display: none, no reserved space) until the reveal button is pressed */
 html.de-active:not(.de-revealed) .toAnimate {

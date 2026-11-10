@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Dumbbell, PlusCircle } from 'lucide-react';
+import { Dumbbell, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { ExerciseFilters } from '@/components/shared/exercises/ExerciseFilters';
@@ -104,14 +104,13 @@ export function AddExerciseSheet({ onAddExercise }: { onAddExercise: (exerciseId
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetTrigger asChild>
-        <Button size="icon" className="hero-ember h-12 w-12 rounded-full text-white shadow-glow transition-transform hover:opacity-95 active:scale-90">
-          <PlusCircle className="h-6 w-6" />
-          <span className="absolute bottom-0 text-xs">Dodaj kolejne ćwiczenie</span>
+        <Button type="button" variant="secondary" className="h-11 shrink-0 gap-1.5 px-3 text-sm" aria-label="Dodaj ćwiczenie">
+          <Plus className="h-5 w-5" /> Ćwiczenie
         </Button>
       </SheetTrigger>
       <SheetContent
         side="bottom"
-        className="flex h-[85vh] flex-col gap-3 rounded-t-[2rem] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
+        className="flex h-[88dvh] flex-col gap-3 px-4"
         onEscapeKeyDown={(e) => {
           // Escape (and Android back) leaves the preview before the sheet.
           if (!preview) return;
@@ -119,11 +118,10 @@ export function AddExerciseSheet({ onAddExercise }: { onAddExercise: (exerciseId
           closePreview();
         }}
       >
-        <SheetHeader className="text-left">
-          {/* Right padding keeps the toggle clear of the sheet's close button. */}
-          <div className="flex items-end justify-between gap-3 pr-8">
+        <SheetHeader>
+          <div className="flex items-end justify-between gap-3">
             <div className="min-w-0">
-              <SheetTitle className="font-headline">Wybierz ćwiczenie</SheetTitle>
+              <SheetTitle>Wybierz ćwiczenie</SheetTitle>
               <SheetDescription>Ulubione są na górze listy.</SheetDescription>
             </div>
             <ViewModeToggle value={viewMode} onChange={setViewMode} />

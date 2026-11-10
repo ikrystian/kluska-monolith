@@ -4,9 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useActiveWorkout } from '@/hooks/useActiveWorkout';
 import { Button } from '@/components/ui/button';
-import { Dumbbell, ChevronUp } from 'lucide-react';
 import { haptic } from '@/lib/haptics';
-import { cn } from '@/lib/utils';
 
 function formatElapsed(startTime: Date): string {
   const diffMs = Math.max(0, Date.now() - startTime.getTime());
@@ -22,8 +20,7 @@ function formatElapsed(startTime: Date): string {
  * elsewhere in the app.
  *
  * Sits directly above the bottom bar as a full-width strip — the mini-player
- * pattern — rather than as a floating card in the corner, which overlapped the
- * bottom navigation and any per-page action button underneath it.
+ * pattern — and shows the running clock, the one thing worth a glance mid-rest.
  */
 export function ActiveWorkoutWidget() {
   const { activeWorkout, hasActiveWorkout, isLoading } = useActiveWorkout();
@@ -70,37 +67,26 @@ export function ActiveWorkoutWidget() {
 
   return (
     <div
-      className={cn(
-        'fixed inset-x-4 z-40 mx-auto max-w-md animate-in slide-in-from-bottom-4 fade-in duration-300',
-        // Clears the bottom bar on phones; on desktop there is no bottom bar.
-        'bottom-[calc(5.5rem+env(safe-area-inset-bottom))] md:inset-x-auto md:bottom-4 md:right-4 md:mx-0 md:w-80',
-        // When the bottom bar tucks away on scroll, slide down into its spot (its bottom offset), in step with it.
-        'transition-transform ease-out max-md:group-data-[chrome=hidden]/chrome:translate-y-[calc(5.5rem_+_env(safe-area-inset-bottom)_-_max(0.75rem,env(safe-area-inset-bottom)))]'
-      )}
+      id="mini-player"
+      className="app-column fixed inset-x-0 bottom-[var(--app-bottom)] z-40 animate-in slide-in-from-bottom-4 fade-in duration-300"
     >
-      <div className="overflow-hidden rounded-[1.5rem] border border-primary/25 bg-background/90 shadow-lifted backdrop-blur-2xl">
-        <div className="flex items-center gap-3 p-2.5">
+      <div className="relative mx-2 mb-2 overflow-hidden rounded-2xl bg-primary text-primary-foreground">
+        <div className="flex items-center gap-2 py-2 pl-3 pr-2">
           <button
             type="button"
             onClick={returnToWorkout}
             className="flex min-w-0 flex-1 items-center gap-3 text-left"
             aria-label={`Wróć do treningu ${activeWorkout?.workoutName ?? ''}`}
           >
-            <span className="hero-ember grid h-11 w-11 shrink-0 place-items-center rounded-xl text-white shadow-glow">
-              <Dumbbell className="h-5 w-5" />
-            </span>
+            <span className="font-display text-[1.75rem] font-bold leading-none tabular-nums">{elapsedTime}</span>
             <span className="min-w-0 flex-1">
-              <span className="flex items-center gap-2">
-                <span className="line-clamp-2 font-semibold leading-tight">
-                  {activeWorkout?.workoutName || 'Trening'}
-                </span>
-                <span className="shrink-0 font-mono text-sm tabular-nums text-primary">{elapsedTime}</span>
+              <span className="block truncate text-sm font-semibold leading-tight">
+                {activeWorkout?.workoutName || 'Trening'}
               </span>
-              <span className="mt-0.5 block text-[11px] text-muted-foreground">
+              <span className="block text-xs leading-tight opacity-75">
                 {progress.total > 0 ? `${progress.done}/${progress.total} serii` : 'W trakcie'}
               </span>
             </span>
-            <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
           </button>
 
           <Button
@@ -108,18 +94,17 @@ export function ActiveWorkoutWidget() {
               haptic('impact');
               navigate(`/athlete/log?logId=${activeWorkout?.id}&finish=true`);
             }}
-            variant="secondary"
             size="sm"
-            className="shrink-0 rounded-xl"
+            className="h-9 shrink-0 bg-primary-foreground text-primary active:bg-primary-foreground/85"
           >
             Zakończ
           </Button>
         </div>
 
         {/* Progress rail — flush to the bottom edge, like a player's scrubber */}
-        <div className="h-1 w-full bg-secondary">
+        <div className="absolute inset-x-0 bottom-0 h-0.5 bg-primary-foreground/20">
           <div
-            className="hero-ember h-full transition-[width] duration-500 ease-out"
+            className="h-full bg-primary-foreground transition-[width] duration-500 ease-out"
             style={{ width: `${progress.ratio * 100}%` }}
           />
         </div>

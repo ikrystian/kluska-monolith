@@ -38,23 +38,17 @@ export function OfflineBanner() {
           transition={{ duration: 0.2, ease: 'easeOut' }}
           className={
             isOnline
-              ? 'relative z-20 shrink-0 overflow-hidden border-b border-primary/30 bg-primary/10'
-              : 'relative z-20 shrink-0 overflow-hidden border-b border-amber-500/30 bg-amber-500/10'
+              ? 'app-column fixed inset-x-0 top-[var(--app-top)] z-20 overflow-hidden bg-primary text-primary-foreground'
+              : 'app-column fixed inset-x-0 top-[var(--app-top)] z-20 overflow-hidden bg-food text-black'
           }
         >
           <div className="flex items-center justify-center gap-2 px-4 py-2 text-center">
             {isOnline ? (
-              <UploadCloud className="h-3.5 w-3.5 shrink-0 animate-pulse text-primary" />
+              <UploadCloud className="h-3.5 w-3.5 shrink-0 animate-pulse" />
             ) : (
-              <CloudOff className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+              <CloudOff className="h-3.5 w-3.5 shrink-0" />
             )}
-            <p
-              className={
-                isOnline
-                  ? 'text-[12px] font-semibold leading-tight text-primary'
-                  : 'text-[12px] font-semibold leading-tight text-amber-600 dark:text-amber-400'
-              }
-            >
+            <p className="text-xs font-semibold leading-tight">
               {isOnline
                 ? `Synchronizacja — ${pendingLabel(pending)}`
                 : pending > 0

@@ -27,6 +27,7 @@ To klient bez własnego backendu. Całe API, bazę danych i logikę serwerową d
 | Obszar | Technologie |
 | --- | --- |
 | UI | React 19, Tailwind CSS 4, Radix UI, lucide-react, framer-motion |
+| Fonty | Barlow Condensed (liczby i nagłówki), Figtree (tekst), pakowane przez Fontsource, więc działają offline |
 | Build | Vite 8, TypeScript, alias `@` → `src` |
 | Routing | React Router 7 w trybie **HashRouter** |
 | Dane | SWR z trwałym cache w `localStorage` |
@@ -87,6 +88,17 @@ Zmienne `VITE_*` trafiają do paczki JS, więc nie umieszczaj tu żadnych sekret
 
 ## Jak to działa
 
+### Wygląd i nawigacja
+
+Aplikacja jest tylko mobilna: na większym ekranie renderuje się w kolumnie telefonu (`.app-column`, 480 px) i nie ma widoków desktopowych.
+
+- **Dolny pasek:** Dziś, Trening, „+” (szybkie dodawanie), Ekipa, Ty. Pozostałe ekrany są na zakładce „Ty” (`pages/athlete/You.tsx`), która zbiera też profil, statystyki miesiąca i wyszukiwarkę. Listą ekranów steruje `src/lib/athlete-nav.ts`.
+- **Powłoka:** `#outlet` rezerwuje miejsce na nagłówek i pasek (`--app-top`, `--app-bottom`), więc ekrany używają tylko klasy `.page`. Rozmowa na czacie chowa nagłówek i pasek atrybutem `data-immersive`.
+- **System „Sztanga”** (`src/globals.css`): grafit i kreda jako tło, ember na akcje. Kolory dziedzin to talerze olimpijskie: trening `primary`, bieg `run`, jedzenie `food`, nawyki `volt`. Tokeny `--chart-1..5` są zwalidowane pod kątem daltonizmu, nie zmieniaj ich na oko.
+- **Dialogi:** `Dialog` i `Sheet` to na telefonie ten sam dolny arkusz. Potwierdzenia zostają w `AlertDialog`.
+
+**Sztanga dnia** na ekranie „Dziś” (`components/dashboard/DailyBar.tsx`) zamienia cele dnia na talerze: trening 25 kg, jedzenie 20 kg, białko 15 kg, nawyki 10 kg. Dzień bez planowanego treningu w tygodniu z planem liczy się jako odpoczynek i ładuje talerz treningu.
+
 ### Łączność z backendem
 
 `apiFetch` (`src/lib/api-client.ts`) dokleja `VITE_API_URL` do ścieżki i dołącza `Authorization: Bearer <token>`. Token leży w `localStorage` pod kluczem `athlete-spa:token`. Odpowiedź 401 gdziekolwiek w aplikacji czyści sesję (handler rejestruje `AuthContext`). Adresy mediów backend zwraca jako względne (`/api/images/<id>`), więc przed użyciem w `<img>` przepuszczaj je przez `resolveMediaUrl`.
@@ -103,7 +115,7 @@ Aplikacja używa `HashRouter` (adresy `/#/athlete/dashboard`), bo działa tak sa
 
 ### Wydajność
 
-Każdy ekran to osobny chunk (`React.lazy`); eager ładuje się tylko Dashboard. `vite.config.ts` przypina ciężkie biblioteki do własnych paczek (`vendor-react`, `vendor-radix`, `vendor-charts`, `vendor-mapbox`, `vendor-scanner`, `vendor-forms` i kilka mniejszych), dzięki czemu mapy, wykresy i skaner nie trafiają do pierwszego ładowania.
+Każdy ekran to osobny chunk (`React.lazy`); eager ładuje się tylko ekran „Dziś”. `vite.config.ts` przypina ciężkie biblioteki do własnych paczek (`vendor-react`, `vendor-radix`, `vendor-charts`, `vendor-mapbox`, `vendor-scanner`, `vendor-forms` i kilka mniejszych), dzięki czemu mapy, wykresy i skaner nie trafiają do pierwszego ładowania.
 
 ### Offline
 
@@ -117,7 +129,7 @@ Własne wtyczki Capacitora są w `android/app/src/main/java/com/athlete/spa/` i 
 
 | Wtyczka | Plik JS | Po co |
 | --- | --- | --- |
-| `RunTracking` | `src/lib/run-tracking.ts` | Foreground service z GPS: nagrywanie biegu przy zgaszonym ekranie, powiadomienie na ekranie blokady. `NativeRunBridge` wraca do rekordera, gdy bieg wciąż trwa |
+| `RunTracking` | `src/lib/run-tracking.ts` | Foreground service z GPS: nagrywanie biegu przy zgaszonym ekranie, powiadomienie na ekranie blokady. Sam odtwarza sygnały treningu (czas i dystans), bo zminimalizowany WebView jest zamrożony. `NativeRunBridge` wraca do rekordera, gdy bieg wciąż trwa |
 | `CueAudio` | `src/lib/cue-audio.ts` | Sygnały dźwiękowe (koniec przerwy, interwał) słyszalne w tle, z przyciszeniem muzyki zamiast jej pauzowania |
 | `InstagramShare` | `src/lib/instagram-share.ts` | Udostępnianie obrazka do Story lub posta. Tylko Android |
 | widżet (`SessionWidgetProvider`) | `src/lib/live-widget.ts` | Widżet ekranu głównego: aktywny trening lub bieg, statystyki tygodnia, najbliższe treningi |
@@ -131,7 +143,7 @@ Poza Androidem te moduły mają zamienniki w przeglądarce (np. `HTMLAudioElemen
 
 ### Stan jakości kodu
 
-- `npm run typecheck` zgłasza obecnie 86 błędów typów (m.in. w `PublicProfileDialog`, `Goals`, `Log`, `workout-form`, `Habits`). `vite build` ich nie sprawdza, więc build przechodzi mimo nich.
+- `npm run typecheck` zgłasza obecnie 84 błędy typów (m.in. w `PublicProfileDialog`, `Goals`, `Log`, `workout-form`, `Habits`). `vite build` ich nie sprawdza, więc build przechodzi mimo nich.
 - `npm run lint` nie działa: ESLint 10 wymaga płaskiej konfiguracji (`eslint.config.js`), a projekt jej nie ma.
 - W `package.json` zostały zależności Leaflet, które nie są już importowane (mapy działają na Mapbox).
 

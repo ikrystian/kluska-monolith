@@ -18,8 +18,8 @@ export function SettingsGroup({
 }) {
   return (
     <section>
-      <h2 className="mb-2 px-4 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{title}</h2>
-      <div className="divide-y divide-border/60 overflow-hidden rounded-[1.5rem] border border-border/60 bg-card shadow-soft">
+      <h2 className="mb-2 px-4 text-xs font-semibold text-muted-foreground">{title}</h2>
+      <div className="divide-y divide-border/60 overflow-hidden rounded-2xl bg-card">
         {children}
       </div>
       {footer && <p className="mt-2 px-4 text-xs leading-relaxed text-muted-foreground">{footer}</p>}

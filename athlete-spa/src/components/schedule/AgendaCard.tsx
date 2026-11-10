@@ -41,36 +41,30 @@ function describe(event: AgendaEvent): { title: string; stats: string[] } {
     }
 }
 
-/** Day agenda row: time on the left, one tappable card — details open in a sheet. */
+/** Day agenda row: time, type and what it is. Details open in a sheet. */
 export function AgendaCard({ event, onOpen }: { event: AgendaEvent; onOpen: () => void }) {
     const color = KIND_COLOR[event.kind];
     const Icon = KIND_ICON[event.kind];
     const { title, stats } = describe(event);
 
     return (
-        <li className="flex gap-3">
-            <div className="w-11 shrink-0 pt-4 text-right">
-                <p className="font-display text-sm font-extrabold tabular-nums">{format(event.date, 'HH:mm')}</p>
-            </div>
+        <li>
             <button
                 type="button"
                 onClick={onOpen}
-                className="group relative flex min-w-0 flex-1 items-center gap-3 overflow-hidden rounded-[1.25rem] border border-border/60 bg-card p-3 pl-4 text-left shadow-soft transition-transform active:scale-[0.985]"
+                className="row-tap flex w-full min-w-0 items-center gap-3 rounded-2xl bg-card px-3.5 py-3 text-left"
             >
-                <span aria-hidden className="absolute inset-y-0 left-0 w-1.5" style={{ backgroundColor: color }} />
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl" style={{ backgroundColor: tint(color, 15), color }}>
-                    <Icon className="h-5 w-5" />
+                <span className="w-11 shrink-0 font-display text-[1.375rem] font-bold leading-none tabular-nums">{format(event.date, 'HH:mm')}</span>
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl" style={{ backgroundColor: tint(color, 15), color }}>
+                    <Icon className="h-[18px] w-[18px]" />
                 </span>
                 <span className="min-w-0 flex-1">
-                    <span className="block text-[10px] font-bold uppercase tracking-wider" style={{ color }}>
-                        {KIND_LABEL[event.kind]}
-                    </span>
-                    <span className="block truncate font-headline text-base font-bold leading-snug">{title}</span>
-                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                        {stats.filter(Boolean).join(' · ')}
+                    <span className="block truncate text-[15px] font-semibold leading-tight">{title}</span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                        {KIND_LABEL[event.kind]} · {stats.filter(Boolean).join(' · ')}
                     </span>
                 </span>
-                <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
             </button>
         </li>
     );

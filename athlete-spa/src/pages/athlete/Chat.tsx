@@ -110,8 +110,7 @@ export default function AthleteChatPage() {
                 onSelect={handleSelectConversation}
                 onDelete={(c) => deleteConversation(c.id)}
                 header={
-                    <div className="flex items-center justify-between">
-                        <h1 className="font-headline text-xl font-extrabold tracking-tight">Czat</h1>
+                    <div className="flex items-center justify-end">
                         <NewConversationDialog
                             potentialContacts={potentialContacts}
                             isLoading={trainerLoading}
@@ -120,7 +119,7 @@ export default function AthleteChatPage() {
                     </div>
                 }
             />
-            <main className={`md:col-span-2 xl:col-span-3 ${!selectedConversationId ? 'hidden md:block' : ''}`}>
+            <main className={`h-full ${!selectedConversationId ? 'hidden' : ''}`}>
                 {selectedConversationId && selectedConversation ? (
                     <ChatView
                         conversation={selectedConversation}

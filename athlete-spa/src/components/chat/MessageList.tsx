@@ -24,19 +24,19 @@ export function MessageList({ messages, currentUserId, isLoading }: MessageListP
     }, [messages]);
 
     return (
-        <ScrollArea className="flex-1 p-4">
-            <div className="space-y-4">
+        <ScrollArea className="min-h-0 flex-1 p-4">
+            <div className="space-y-2">
                 {messages?.map(message => {
                     const isMe = message.senderId === currentUserId;
                     return (
                         <div key={message.id} className={cn("flex", isMe ? 'justify-end' : 'justify-start')}>
-                            <div className={cn("max-w-[80%] md:max-w-md lg:max-w-lg px-3.5 py-2.5 shadow-soft",
+                            <div className={cn("max-w-[80%] px-3.5 py-2.5",
                                 isMe
-                                    ? 'hero-ember rounded-2xl rounded-br-md text-white'
-                                    : 'rounded-2xl rounded-bl-md bg-card border border-border/60'
+                                    ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-md'
+                                    : 'rounded-2xl rounded-bl-md bg-card'
                             )}>
-                                <p className="text-sm leading-relaxed">{message.text}</p>
-                                <p className={cn("text-[10px] mt-1", isMe ? 'text-white/70' : 'text-muted-foreground')}>
+                                <p className="text-[15px] leading-snug">{message.text}</p>
+                                <p className={cn("text-[11px] mt-1", isMe ? 'opacity-70' : 'text-muted-foreground')}>
                                     {message.createdAt ? formatDistanceToNow(new Date(message.createdAt), { addSuffix: true, locale: pl }) : 'teraz'}
                                 </p>
                             </div>

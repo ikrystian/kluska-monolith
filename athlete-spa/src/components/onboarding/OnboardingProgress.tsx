@@ -39,7 +39,7 @@ export function OnboardingProgress({
       </div>
       <div className="h-2 bg-secondary rounded-full overflow-hidden">
         <motion.div
-          className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full"
+          className="h-full bg-primary rounded-full"
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
           transition={{ duration: 0.5, ease: 'easeOut' }}

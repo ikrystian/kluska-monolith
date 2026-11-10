@@ -82,9 +82,9 @@ export function StartRunDialog({ open, onOpenChange, programs }: StartRunDialogP
               <button
                 type="button"
                 onClick={() => setStep('goal')}
-                className="flex w-full items-center gap-3.5 rounded-2xl border border-border/60 bg-card p-3.5 text-left shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted active:scale-[0.99]"
+                className="flex w-full items-center gap-3.5 rounded-2xl bg-card p-3.5 text-left transition-all hover:border-primary/30 active:scale-[0.99]"
               >
-                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-sky-500/15 text-sky-600 dark:text-sky-400">
+                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-run/15 text-run">
                   <Footprints className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -98,7 +98,7 @@ export function StartRunDialog({ open, onOpenChange, programs }: StartRunDialogP
                   key={program.id}
                   type="button"
                   onClick={() => handleStartProgram(program.id)}
-                  className="flex w-full items-center justify-between gap-3 rounded-2xl border border-border/60 bg-card p-3.5 text-left shadow-soft transition-all hover:border-primary/30 hover:shadow-lifted active:scale-[0.99]"
+                  className="flex w-full items-center justify-between gap-3 rounded-2xl bg-card p-3.5 text-left transition-all hover:border-primary/30 active:scale-[0.99]"
                 >
                   <div className="min-w-0">
                     <p className="line-clamp-2 font-semibold">{program.name}</p>
@@ -162,7 +162,7 @@ export function StartRunDialog({ open, onOpenChange, programs }: StartRunDialogP
                 </span>
               </div>
             )}
-            <DialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
+            <DialogFooter className="flex-col gap-2">
               <Button
                 className="w-full rounded-xl"
                 onClick={handleConfirmGoal}
