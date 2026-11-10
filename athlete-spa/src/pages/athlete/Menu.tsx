@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, Clock, Search, X } from 'lucide-react';
-import { SectionHeader } from '@/components/ui/section';
+import { ChevronRight, Search, X } from 'lucide-react';
 import { useUserProfile } from '@/contexts/UserProfileContext';
 import { useRecentRoutes } from '@/hooks/useRecentRoutes';
 import {
+  findNavGroup,
   isNavGroup,
   navItemsForRole,
   navLeafColor,
@@ -22,115 +22,175 @@ const tint = (color: string, pct: number) => `color-mix(in srgb, ${color} ${pct}
 const ON_TAB_BAR = ['/athlete/log', '/athlete/social', '/athlete/you'];
 const offTabBar = (leaf: NavLeaf) => !ON_TAB_BAR.includes(leaf.href.split('?')[0]);
 
-/** Rounded square in the destination's domain colour; the same badge on tiles, rows and chips. */
-function LeafIcon({ leaf, size = 'md' }: { leaf: NavLeaf; size?: 'sm' | 'md' }) {
+/** Words that show what the search reaches beyond screen names: settings and features. */
+const SEARCH_HINTS = ['motyw', 'powiadomienia', 'strava', 'waga', 'makro', 'wyloguj'];
+
+const PLATE_SIZES = {
+  lg: { disc: 'h-[3.25rem] w-[3.25rem]', ring: 'inset-[4px]', icon: 'h-[22px] w-[22px]' },
+  md: { disc: 'h-11 w-11', ring: 'inset-[3.5px]', icon: 'h-5 w-5' },
+} as const;
+
+/**
+ * A destination's icon on a disc in its domain colour, with the inner ring of
+ * a weight plate — the same shape as the quick-add button on the tab bar.
+ */
+function Plate({ leaf, size = 'lg' }: { leaf: NavLeaf; size?: keyof typeof PLATE_SIZES }) {
   const Icon = leaf.icon;
   const color = navLeafColor(leaf);
+  const s = PLATE_SIZES[size];
   return (
     <span
-      className={cn('grid shrink-0 place-items-center', size === 'md' ? 'h-10 w-10 rounded-xl' : 'h-6 w-6 rounded-lg')}
-      style={{ backgroundColor: tint(color, 15), color }}
+      className={cn('relative grid shrink-0 place-items-center rounded-full', s.disc)}
+      style={{ backgroundColor: tint(color, 16), color }}
     >
-      <Icon className={size === 'md' ? 'h-5 w-5' : 'h-3.5 w-3.5'} />
+      <span
+        aria-hidden
+        className={cn('pointer-events-none absolute rounded-full border', s.ring)}
+        style={{ borderColor: tint(color, 22) }}
+      />
+      <Icon className={s.icon} />
     </span>
   );
 }
 
-/**
- * One destination as a tile. Two per row, so a section reads at a glance; a
- * section with an odd count lets its first tile span the row instead of
- * leaving a hole.
- */
-function NavTile({ leaf, wide }: { leaf: NavLeaf; wide?: boolean }) {
-  const color = navLeafColor(leaf);
+function GroupTitle({ group }: { group: NavGroup }) {
   return (
-    <Link
-      to={leaf.href}
-      onClick={() => haptic('tap')}
-      className={cn(
-        'pressable relative flex overflow-hidden rounded-2xl bg-card p-3.5',
-        wide ? 'col-span-2 items-center gap-3' : 'flex-col'
-      )}
-    >
-      {/* A soft wash of the domain colour, so a tile is recognisable before it is read. */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full blur-2xl"
-        style={{ backgroundColor: tint(color, 14) }}
-      />
-      <LeafIcon leaf={leaf} />
-      <span className={cn('relative min-w-0', wide ? 'flex-1' : 'mt-2.5')}>
-        <span className="block text-[15px] font-semibold leading-tight">{leaf.label}</span>
-        {leaf.description && (
-          <span className="mt-1 line-clamp-2 block text-xs leading-snug text-muted-foreground">{leaf.description}</span>
-        )}
-      </span>
-      {wide && <ChevronRight className="relative h-4 w-4 shrink-0 text-muted-foreground/60" />}
-    </Link>
+    <h2 className="mb-3 flex items-center gap-1.5 px-1 font-display text-base font-bold uppercase leading-none tracking-wide">
+      <span aria-hidden className="h-3 w-1 rounded-full" style={{ backgroundColor: group.color }} />
+      {group.label}
+    </h2>
   );
 }
 
-function NavSection({ group }: { group: NavGroup }) {
-  const leaves = group.items.filter(offTabBar);
-  if (leaves.length === 0) return null;
-  const odd = leaves.length % 2 === 1;
-
+/**
+ * One section as a half-width card with its screens two abreast, so the four
+ * big sections make a 2×2 block and every screen keeps a fixed place on the
+ * page: found by position and colour, not by reading down a list.
+ */
+function Folder({ group, leaves }: { group: NavGroup; leaves: NavLeaf[] }) {
   return (
-    <section>
-      <SectionHeader title={group.label} />
-      <div className="grid grid-cols-2 gap-2">
-        {leaves.map((leaf, i) => (
-          <NavTile key={leaf.href} leaf={leaf} wide={odd && i === 0} />
+    <section className="rounded-3xl bg-card px-2 pb-3 pt-3.5">
+      <GroupTitle group={group} />
+      <div className="grid grid-cols-2 gap-y-3">
+        {leaves.map(leaf => (
+          <Link
+            key={leaf.href}
+            to={leaf.href}
+            onClick={() => haptic('tap')}
+            className="pressable-sm flex min-w-0 flex-col items-center gap-1.5 text-center"
+          >
+            <Plate leaf={leaf} />
+            <span className="w-full text-balance px-0.5 text-xs font-medium leading-[1.2]">{leaf.label}</span>
+          </Link>
         ))}
       </div>
     </section>
   );
 }
 
-/** Search hit: a full-width row, since results come from every section at once. */
+/** A section too small for a folder (one or two screens): a full-width card with room for the hints. */
+function Shelf({ group, leaves }: { group: NavGroup; leaves: NavLeaf[] }) {
+  return (
+    <section className="col-span-2 rounded-3xl bg-card px-3 pb-3 pt-3.5">
+      <GroupTitle group={group} />
+      <div className={cn('grid gap-2', leaves.length > 1 && 'grid-cols-2')}>
+        {leaves.map(leaf => (
+          <Link
+            key={leaf.href}
+            to={leaf.href}
+            onClick={() => haptic('tap')}
+            className="pressable-sm flex min-w-0 items-center gap-2.5"
+          >
+            <Plate leaf={leaf} size="md" />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold leading-tight">{leaf.label}</span>
+              {leaf.description && (
+                <span className="mt-0.5 block truncate text-xs text-muted-foreground">{leaf.description}</span>
+              )}
+            </span>
+            {leaves.length === 1 && <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />}
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/** A destination as a full-width row, for search hits and recent screens. */
 function LeafRow({ leaf }: { leaf: NavLeaf }) {
   return (
-    <Link to={leaf.href} className="row-tap flex items-center gap-3 px-3.5 py-2.5">
-      <LeafIcon leaf={leaf} />
+    <Link to={leaf.href} onClick={() => haptic('tap')} className="row-tap flex items-center gap-3 px-3 py-2.5">
+      <Plate leaf={leaf} size="md" />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[15px] font-semibold leading-tight">{leaf.label}</span>
         {leaf.description && <span className="block truncate text-xs text-muted-foreground">{leaf.description}</span>}
       </span>
+      <span className="shrink-0 text-xs font-medium text-muted-foreground">{findNavGroup(leaf.href)?.label}</span>
       <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
     </Link>
   );
 }
 
+function LeafList({ title, leaves }: { title?: string; leaves: NavLeaf[] }) {
+  return (
+    <section>
+      {title && <h2 className="eyebrow mb-1.5 px-1">{title}</h2>}
+      <div className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card">
+        {leaves.map(leaf => (
+          <LeafRow key={leaf.href} leaf={leaf} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /**
- * The "Menu" tab: every screen that has no tab of its own, laid out as a few
- * sections of tiles rather than one long list, so a destination is found by
- * its section and colour, not by reading. Search on top reaches settings too.
+ * The "Menu" tab: every screen that has no tab of its own, on one screenful.
+ * Sections are folders in a fixed grid, so nothing moves and nothing needs
+ * scrolling to. Tapping the search opens its own view: the screens opened
+ * lately first, then hits from every section, settings included.
  */
 export default function MenuPage() {
   const { userProfile } = useUserProfile();
   const navigate = useNavigate();
   const recentRoutes = useRecentRoutes();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
+  const [searching, setSearching] = useState(false);
 
   const role = userProfile?.role;
-  const groups = useMemo(() => navItemsForRole(role).filter(isNavGroup), [role]);
+  const sections = useMemo(
+    () =>
+      navItemsForRole(role)
+        .filter(isNavGroup)
+        .map(group => ({ group, leaves: group.items.filter(offTabBar) }))
+        .filter(section => section.leaves.length > 0),
+    [role]
+  );
 
   const results = query.trim() ? searchNavLeaves(query, role) : null;
   const recentLeaves = recentRoutes
     .map(href => navLeavesForRole(role).find(leaf => leaf.href === href))
     .filter((leaf): leaf is NavLeaf => Boolean(leaf));
 
+  const closeSearch = () => {
+    setQuery('');
+    setSearching(false);
+    inputRef.current?.blur();
+  };
+
   return (
-    <div className="page stagger-rise space-y-6">
-      {/* Find: search, then the screens opened lately. */}
-      <div className="space-y-3">
-        <div className="relative">
+    <div className="page space-y-4">
+      <div className="flex items-center gap-1">
+        <div className="relative min-w-0 flex-1">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
+            ref={inputRef}
             type="search"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Szukaj: waga, strava, motyw…"
+            onFocus={() => setSearching(true)}
+            placeholder="Szukaj ekranów i ustawień"
             aria-label="Szukaj w aplikacji"
             enterKeyHint="go"
             onKeyDown={e => {
@@ -141,7 +201,10 @@ export default function MenuPage() {
           {query && (
             <button
               type="button"
-              onClick={() => setQuery('')}
+              onClick={() => {
+                setQuery('');
+                inputRef.current?.focus();
+              }}
               aria-label="Wyczyść wyszukiwanie"
               className="absolute right-1.5 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-muted-foreground active:bg-secondary"
             >
@@ -149,44 +212,59 @@ export default function MenuPage() {
             </button>
           )}
         </div>
-
-        {!results && recentLeaves.length > 0 && (
-          <div>
-            <p className="eyebrow mb-1.5 flex items-center gap-1 px-1">
-              <Clock className="h-3 w-3" /> Ostatnio
-            </p>
-            <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
-              {recentLeaves.map(leaf => (
-                <Link
-                  key={leaf.href}
-                  to={leaf.href}
-                  className="flex shrink-0 items-center gap-1.5 rounded-full bg-card py-1.5 pl-1.5 pr-3 text-sm font-semibold transition-transform active:scale-[0.96]"
-                >
-                  <LeafIcon leaf={leaf} size="sm" />
-                  {leaf.label}
-                </Link>
-              ))}
-            </div>
-          </div>
+        {searching && (
+          <button
+            type="button"
+            onClick={closeSearch}
+            className="h-12 shrink-0 px-2.5 text-sm font-semibold text-primary active:opacity-60"
+          >
+            Anuluj
+          </button>
         )}
       </div>
 
-      {results ? (
-        <section aria-live="polite">
+      {!searching ? (
+        <div className="stagger-rise grid grid-flow-row-dense grid-cols-2 gap-2.5">
+          {sections.map(({ group, leaves }) =>
+            leaves.length > 2 ? (
+              <Folder key={group.label} group={group} leaves={leaves} />
+            ) : (
+              <Shelf key={group.label} group={group} leaves={leaves} />
+            )
+          )}
+        </div>
+      ) : results ? (
+        <div aria-live="polite" className="animate-fade-in">
           {results.length > 0 ? (
-            <div className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card">
-              {results.map(leaf => (
-                <LeafRow key={leaf.href} leaf={leaf} />
-              ))}
-            </div>
+            <LeafList leaves={results} />
           ) : (
             <p className="rounded-2xl bg-card p-6 text-center text-sm text-muted-foreground">
               Nic nie znaleziono dla „{query.trim()}”.
             </p>
           )}
-        </section>
+        </div>
       ) : (
-        groups.map(group => <NavSection key={group.label} group={group} />)
+        <div className="animate-fade-in space-y-5">
+          {recentLeaves.length > 0 && <LeafList title="Ostatnio otwierane" leaves={recentLeaves} />}
+          <section>
+            <h2 className="eyebrow mb-1.5 px-1">Spróbuj wpisać</h2>
+            <div className="flex flex-wrap gap-2">
+              {SEARCH_HINTS.map(hint => (
+                <button
+                  key={hint}
+                  type="button"
+                  onClick={() => {
+                    haptic('tap');
+                    setQuery(hint);
+                  }}
+                  className="pressable-sm h-9 rounded-full bg-card px-3.5 text-sm font-medium"
+                >
+                  {hint}
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
       )}
     </div>
   );
