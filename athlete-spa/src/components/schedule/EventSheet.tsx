@@ -90,7 +90,7 @@ export function EventSheet({ event, onOpenChange, onOpenSession }: EventSheetPro
         );
         actions = (
             <Button asChild className="h-12 w-full text-base">
-                <Link to={`/athlete/history/${event.log.id}`}>
+                <Link to={`/athlete/history/${event.log.id}`} state={{ title: event.log.workoutName }}>
                     Pełne podsumowanie <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
             </Button>

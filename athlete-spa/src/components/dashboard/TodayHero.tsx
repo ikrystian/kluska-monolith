@@ -42,7 +42,11 @@ export function TodayHero({ active, planned, doneToday, lastWorkout }: TodayHero
 
   if (doneToday) {
     return (
-      <Link to={`/athlete/history/${doneToday.id}`} className="block rounded-2xl bg-card p-4 transition-transform active:scale-[0.99]">
+      <Link
+        to={`/athlete/history/${doneToday.id}`}
+        state={{ title: doneToday.workoutName }}
+        className="block rounded-2xl bg-card p-4 transition-transform active:scale-[0.99]"
+      >
         <p className="flex items-center gap-1.5 text-[13px] font-semibold text-volt">
           <Check className="h-4 w-4" strokeWidth={3} /> Dzisiejszy trening zrobiony
         </p>

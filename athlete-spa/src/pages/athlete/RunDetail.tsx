@@ -148,22 +148,14 @@ export default function RunDetailPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Footprints className="h-5 w-5 text-primary" />
-            {runName || session.programName || 'Bieg'}
+            {format(new Date(session.date), 'EEEE, d MMMM yyyy, HH:mm', { locale: pl })}
+            <Button variant="outline" size="sm" className="ml-auto" onClick={handleOpenSummary}>
+              <Sparkles className="mr-2 h-4 w-4" /> Zobacz podsumowanie
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">{session.programName ? 'Trening' : 'Bieg'}</Badge>
-              <span className="text-sm text-muted-foreground">
-                <Calendar className="inline h-4 w-4 mr-1" />
-                {format(new Date(session.date), 'EEEE, d MMMM yyyy, HH:mm', { locale: pl })}
-              </span>
-              <Button variant="outline" size="sm" className="ml-auto" onClick={handleOpenSummary}>
-                <Sparkles className="mr-2 h-4 w-4" /> Zobacz podsumowanie
-              </Button>
-            </div>
 
             {session.notes && <p className="text-sm text-muted-foreground">{session.notes}</p>}
 

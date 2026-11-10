@@ -331,6 +331,7 @@ export default function AthleteDashboardPage() {
         progress: trained || restDay ? 1 : 0,
         tone: 'primary',
         href: doneToday ? `/athlete/history/${doneToday.id}` : '/athlete/log',
+        state: doneToday ? { title: doneToday.workoutName } : undefined,
       },
       goal
         ? {
@@ -459,7 +460,12 @@ export default function AthleteDashboardPage() {
         <SectionHeader title="Ostatnie treningi" href="/athlete/history" linkLabel="Historia" />
         <div className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card">
           {recentWorkouts.slice(0, 3).map(workout => (
-            <Link key={workout.id} to={`/athlete/history/${workout.id}`} className="row-tap flex items-center gap-3 px-3.5 py-3">
+            <Link
+              key={workout.id}
+              to={`/athlete/history/${workout.id}`}
+              state={{ title: workout.workoutName }}
+              className="row-tap flex items-center gap-3 px-3.5 py-3"
+            >
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[15px] font-semibold leading-tight">{workout.workoutName}</span>
                 <span className="block truncate text-xs text-muted-foreground first-letter:uppercase">

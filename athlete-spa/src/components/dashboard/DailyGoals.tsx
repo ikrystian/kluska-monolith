@@ -15,6 +15,7 @@ export interface DailyGoal {
   progress: number;
   tone: DailyGoalTone;
   href: string;
+  state?: unknown;
 }
 
 const TONE: Record<DailyGoalTone, { ring: string; filled: string }> = {
@@ -100,6 +101,7 @@ export function DailyGoals({ goals }: { goals: DailyGoal[] }) {
             <li key={goal.id}>
               <Link
                 to={goal.href}
+                state={goal.state}
                 className="row-tap flex items-center gap-3 rounded-xl px-3 py-2.5"
                 aria-label={`${goal.label}: ${goal.hint}${done ? ', zaliczone' : ''}`}
               >

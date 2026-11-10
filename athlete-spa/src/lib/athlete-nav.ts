@@ -82,6 +82,7 @@ export const athleteNavItems: NavEntry[] = [
     roles: ['trainer'],
     items: [
       { href: '/athlete/trainer-panel', label: 'Panel trenera', icon: LayoutGrid, description: 'Podopieczni, plany i sesje', keywords: ['trener', 'podopieczni', 'klienci', 'zarządzanie', 'coach'] },
+      { href: '/athlete/knowledge-zone/manage', label: 'Zarządzaj artykułami', icon: BookOpen, description: 'Baza wiedzy i publikacje', keywords: ['artykuły', 'porady', 'wiedza', 'publikacje', 'edycja', 'trener'] },
     ],
   },
   {
@@ -89,8 +90,9 @@ export const athleteNavItems: NavEntry[] = [
     icon: Dumbbell,
     color: 'hsl(var(--primary))',
     items: [
-      { href: '/athlete/log', label: 'Trenuj teraz', icon: Play, description: 'Rozpocznij sesję treningową', keywords: ['start', 'sesja', 'siłownia'] },
+      { href: '/athlete/log', label: 'Trenuj teraz', icon: Play, description: 'Rozpocznij sesję treningową', keywords: ['start', 'sesja', 'siłownia', 'trening'] },
       { href: '/athlete/workouts', label: 'Szablony', icon: ClipboardList, description: 'Twoje zapisane treningi', keywords: ['treningi', 'workout', 'rutyna'] },
+      { href: '/athlete/workouts/create', label: 'Nowy trening', icon: ClipboardCheck, description: 'Stwórz własny szablon', keywords: ['kreator', 'nowy', 'stwórz', 'szablon', 'plan'] },
       { href: '/athlete/exercises', label: 'Ćwiczenia', icon: Dumbbell, description: 'Baza z instrukcjami', keywords: ['atlas', 'technika', 'mięśnie', 'baza'] },
       { href: '/athlete/running', label: 'Bieganie', icon: Footprints, color: 'hsl(var(--run))', description: 'Biegi z GPS i Stravy', keywords: ['bieg', 'strava', 'gps', 'trasa', 'wyzwania'] },
       { href: '/athlete/history', label: 'Historia', icon: History, description: 'Ukończone treningi', keywords: ['dziennik', 'log', 'poprzednie'] },
@@ -112,9 +114,10 @@ export const athleteNavItems: NavEntry[] = [
     icon: TrendingUp,
     color: 'hsl(var(--primary))',
     items: [
-      { href: '/athlete/progress', label: 'Wykresy', icon: BarChart3, color: 'hsl(var(--run))', description: 'Objętość, 1RM, waga', keywords: ['postępy', 'progres', 'siła', 'objętość'] },
+      { href: '/athlete/progress', label: 'Wykresy', icon: BarChart3, color: 'hsl(var(--run))', description: 'Objętość, 1RM, waga', keywords: ['postępy', 'progres', 'siła', 'objętość', 'rekordy', '1rm'] },
       { href: '/athlete/measurements', label: 'Pomiary', icon: Ruler, color: 'hsl(var(--volt))', description: 'Waga, obwody i zdjęcia', keywords: ['waga', 'obwody', 'sylwetka', 'zdjęcia'] },
-      { href: '/athlete/goals', label: 'Cele i trofea', icon: Trophy, color: 'hsl(var(--food))', description: 'Cele i osiągnięcia', keywords: ['osiągnięcia', 'odznaki', 'nagrody'] },
+      { href: '/athlete/goals', label: 'Cele i trofea', icon: Trophy, color: 'hsl(var(--food))', description: 'Cele i osiągnięcia', keywords: ['osiągnięcia', 'odznaki', 'nagrody', 'cele'] },
+      { href: '/athlete/gamification', label: 'Grywalizacja i nagrody', icon: Award, color: 'hsl(var(--food))', description: 'Poziomy, FitCoiny i sklep', keywords: ['grywalizacja', 'gamification', 'fitcoins', 'nagrody', 'poziom', 'xp', 'ranking'] },
     ],
   },
   {
@@ -270,7 +273,7 @@ const EXTRA_TITLES: { match: RegExp; title: string }[] = [
   { match: /^\/athlete\/trainers\/[^/]+$/, title: 'Trener' },
   { match: /^\/athlete\/templates$/, title: 'Szablony' },
   { match: /^\/athlete\/gamification$/, title: 'Osiągnięcia' },
-  { match: /^\/athlete\/history\/[^/]+$/, title: 'Szczegóły treningu' },
+  { match: /^\/athlete\/history\/[^/]+$/, title: 'Trening' },
   { match: /^\/athlete\/workouts\/create$/, title: 'Nowy trening' },
   { match: /^\/athlete\/workouts\/[^/]+\/edit$/, title: 'Edycja treningu' },
   { match: /^\/athlete\/workouts\/[^/]+$/, title: 'Trening' },

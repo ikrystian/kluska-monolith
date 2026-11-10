@@ -225,7 +225,7 @@ export default function HistoryPage() {
                     return (
                       <MotionAccordionItem value={log.id} key={log.id} {...listItemMotion}>
                     <div className="flex items-center">
-                      <AccordionTrigger className="hover:no-underline flex-grow" onClick={() => navigate(`/athlete/history/${log.id}`)}>
+                      <AccordionTrigger className="hover:no-underline flex-grow" onClick={() => navigate(`/athlete/history/${log.id}`, { state: { title: log.workoutName } })}>
                         <div className="flex w-full items-center justify-between pr-4">
                           <div className="text-left">
                             <p className="font-semibold">{log.workoutName}</p>

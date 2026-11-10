@@ -39,6 +39,7 @@ import { CoachSummaryDialog } from '@/components/workout/CoachSummaryDialog';
 import { SetTypeBadge } from '@/components/workout/SetTypeModal';
 import { rpeToRir } from '@/components/workout/RpeSelector';
 import { seriesLabel, exercisesLabel } from '@/components/schedule/WorkoutExerciseList';
+import { useHeaderTitle } from '@/contexts/HeaderTitleContext';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -83,6 +84,8 @@ export default function HistoryDetailPage() {
   };
 
   const { data: workoutLog, isLoading } = useDoc<WorkoutLog>('workoutLogs', sessionId);
+
+  useHeaderTitle(workoutLog?.workoutName);
 
   // Derived metrics and statistics
   const stats = useMemo(() => {
