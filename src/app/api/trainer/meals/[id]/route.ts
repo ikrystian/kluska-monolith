@@ -3,16 +3,24 @@ import { SavedMeal } from '@/models/SavedMeal';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/mongodb';
+import { parseSavedMealPayload } from '@/lib/saved-meal-payload';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+type RouteContext = { params: Promise<{ id: string }> };
+
+async function requireTrainer() {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user || session.user.role !== 'trainer') return null;
+    return session.user;
+}
+
+export async function GET(_req: NextRequest, { params }: RouteContext) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session || !session.user || session.user.role !== 'trainer') {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        const user = await requireTrainer();
+        if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+        const { id } = await params;
         await connectToDatabase();
-        const meal = await SavedMeal.findOne({ _id: params.id, trainerId: session.user.id });
+        const meal = await SavedMeal.findOne({ _id: id, trainerId: user.id });
 
         if (!meal) {
             return NextResponse.json({ error: 'Meal not found' }, { status: 404 });
@@ -25,29 +33,22 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: RouteContext) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session || !session.user || session.user.role !== 'trainer') {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const user = await requireTrainer();
+        if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+        const parsed = parseSavedMealPayload(await req.json());
+        if ('error' in parsed) {
+            return NextResponse.json({ error: parsed.error }, { status: 400 });
         }
 
-        const body = await req.json();
-        const { name, ingredients, totalCalories, totalProtein, totalCarbs, totalFat, category } = body;
-
+        const { id } = await params;
         await connectToDatabase();
         const updatedMeal = await SavedMeal.findOneAndUpdate(
-            { _id: params.id, trainerId: session.user.id },
-            {
-                name,
-                ingredients,
-                totalCalories,
-                totalProtein,
-                totalCarbs,
-                totalFat,
-                category: category || 'Breakfast',
-            },
-            { new: true }
+            { _id: id, trainerId: user.id },
+            parsed.data,
+            { new: true, runValidators: true }
         );
 
         if (!updatedMeal) {
@@ -61,15 +62,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, { params }: RouteContext) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session || !session.user || session.user.role !== 'trainer') {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        const user = await requireTrainer();
+        if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+        const { id } = await params;
         await connectToDatabase();
-        const deletedMeal = await SavedMeal.findOneAndDelete({ _id: params.id, trainerId: session.user.id });
+        const deletedMeal = await SavedMeal.findOneAndDelete({ _id: id, trainerId: user.id });
 
         if (!deletedMeal) {
             return NextResponse.json({ error: 'Meal not found' }, { status: 404 });

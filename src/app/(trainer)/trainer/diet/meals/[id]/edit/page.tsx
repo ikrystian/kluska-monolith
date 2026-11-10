@@ -18,14 +18,15 @@ async function getMeal(id: string, trainerId: string) {
     }
 }
 
-export default async function EditMealPage({ params }: { params: { id: string } }) {
+export default async function EditMealPage({ params }: { params: Promise<{ id: string }> }) {
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user || session.user.role !== 'trainer') {
         redirect('/auth/signin');
     }
 
-    const meal = await getMeal(params.id, session.user.id);
+    const { id } = await params;
+    const meal = await getMeal(id, session.user.id);
 
     if (!meal) {
         notFound();

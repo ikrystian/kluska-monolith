@@ -19,7 +19,7 @@ export interface IFoodDiaryEntry {
   fat: number;
   productId?: string;
   barcode?: string;
-  source: 'search' | 'barcode' | 'manual';
+  source: 'search' | 'barcode' | 'manual' | 'meal';
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -38,7 +38,7 @@ const FoodDiaryEntrySchema = new Schema<IFoodDiaryEntry>(
     fat: { type: Number, required: true, min: 0 },
     productId: { type: String },
     barcode: { type: String },
-    source: { type: String, enum: ['search', 'barcode', 'manual'], default: 'search' },
+    source: { type: String, enum: ['search', 'barcode', 'manual', 'meal'], default: 'search' },
   },
   {
     timestamps: true,
@@ -53,6 +53,12 @@ const FoodDiaryEntrySchema = new Schema<IFoodDiaryEntry>(
 );
 
 FoodDiaryEntrySchema.index({ ownerId: 1, date: 1 });
+
+// In dev, HMR re-runs this file but mongoose keeps the old compiled model, so
+// schema changes (e.g. new enum values) would be ignored until a restart.
+if (process.env.NODE_ENV !== 'production' && mongoose.models.FoodDiaryEntry) {
+  mongoose.deleteModel('FoodDiaryEntry');
+}
 
 export const FoodDiaryEntry: Model<IFoodDiaryEntry> =
   mongoose.models.FoodDiaryEntry || mongoose.model<IFoodDiaryEntry>('FoodDiaryEntry', FoodDiaryEntrySchema);

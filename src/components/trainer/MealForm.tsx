@@ -9,6 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { DISH_CATEGORIES, DISH_CATEGORY_LABELS, type DishCategory } from '@/lib/meal-catalog';
 import { Plus, Trash2, Search, Save } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
@@ -22,7 +25,7 @@ interface Ingredient {
     fatSecretId?: string;
     amount: number;
     unit: string;
-    baseValues: {
+    baseValues?: {
         amount: number;
         calories: number;
         protein: number;
@@ -35,15 +38,32 @@ interface MealFormProps {
     initialData?: {
         _id?: string;
         name: string;
+        description?: string;
         ingredients: Ingredient[];
         category?: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
+        dishCategory?: DishCategory;
+        isPublic?: boolean;
     };
+    /** Collection endpoint; edits go to `${apiBase}/${id}`. */
+    apiBase?: string;
+    /** Where to go after saving. */
+    redirectTo?: string;
+    /** Admin-created meals are catalogue meals — public by default. */
+    defaultPublic?: boolean;
 }
 
-export default function MealForm({ initialData }: MealFormProps) {
+export default function MealForm({
+    initialData,
+    apiBase = '/api/trainer/meals',
+    redirectTo = '/trainer/diet/meals',
+    defaultPublic = false,
+}: MealFormProps) {
     const router = useRouter();
     const [mealName, setMealName] = useState(initialData?.name || '');
     const [category, setCategory] = useState<'Breakfast' | 'Lunch' | 'Dinner' | 'Snack'>(initialData?.category || 'Breakfast');
+    const [description, setDescription] = useState(initialData?.description || '');
+    const [dishCategory, setDishCategory] = useState<DishCategory>(initialData?.dishCategory || 'other');
+    const [isPublic, setIsPublic] = useState<boolean>(initialData?.isPublic ?? defaultPublic);
     const [ingredients, setIngredients] = useState<Ingredient[]>(initialData?.ingredients || []);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -164,13 +184,22 @@ export default function MealForm({ initialData }: MealFormProps) {
 
         const newIngredients = [...ingredients];
         const ingredient = newIngredients[index];
-        const ratio = amount / ingredient.baseValues.amount;
+        // baseValues aren't persisted, so meals loaded for editing derive them from the stored values
+        const base = ingredient.baseValues ?? {
+            amount: ingredient.amount || 100,
+            calories: ingredient.calories,
+            protein: ingredient.protein,
+            carbs: ingredient.carbs,
+            fat: ingredient.fat,
+        };
+        ingredient.baseValues = base;
+        const ratio = base.amount > 0 ? amount / base.amount : 0;
 
         ingredient.amount = amount;
-        ingredient.calories = ingredient.baseValues.calories * ratio;
-        ingredient.protein = ingredient.baseValues.protein * ratio;
-        ingredient.carbs = ingredient.baseValues.carbs * ratio;
-        ingredient.fat = ingredient.baseValues.fat * ratio;
+        ingredient.calories = base.calories * ratio;
+        ingredient.protein = base.protein * ratio;
+        ingredient.carbs = base.carbs * ratio;
+        ingredient.fat = base.fat * ratio;
 
         setIngredients(newIngredients);
     };
@@ -200,9 +229,7 @@ export default function MealForm({ initialData }: MealFormProps) {
         }
 
         try {
-            const url = isEdit
-                ? `/api/trainer/meals/${initialData._id}`
-                : '/api/trainer/meals';
+            const url = isEdit ? `${apiBase}/${initialData._id}` : apiBase;
 
             const method = isEdit ? 'PUT' : 'POST';
 
@@ -217,15 +244,19 @@ export default function MealForm({ initialData }: MealFormProps) {
                     totalCarbs: totals.carbs,
                     totalFat: totals.fat,
                     category,
+                    dishCategory,
+                    description,
+                    isPublic,
                 }),
             });
 
             if (res.ok) {
                 toast({ title: 'Sukces', description: `Posiłek ${isEdit ? 'zaktualizowany' : 'zapisany'} pomyślnie` });
-                router.push('/trainer/diet/meals'); // Redirect to list
+                router.push(redirectTo);
                 router.refresh();
             } else {
-                toast({ title: 'Błąd', description: 'Nie udało się zapisać posiłku', variant: 'destructive' });
+                const data = await res.json().catch(() => ({}));
+                toast({ title: 'Błąd', description: data.error || 'Nie udało się zapisać posiłku', variant: 'destructive' });
             }
         } catch (error) {
             console.error('Save error:', error);
@@ -298,15 +329,13 @@ export default function MealForm({ initialData }: MealFormProps) {
 
                                     <div className="space-y-2 max-h-96 overflow-y-auto">
                                         {searchResults.map((item, idx) => (
-                                            <div key={idx} className={`flex justify-between items-center p-3 border rounded hover:bg-accent cursor-pointer ${item.source === 'ai' ? 'bg-blue-50/50 border-blue-200' : 'bg-green-50/50 border-green-200'}`}
+                                            <div key={idx} className={`flex justify-between items-center p-3 border rounded cursor-pointer hover:bg-accent/50`}
                                                 onClick={() => addProductAsIngredient(item)}
                                             >
                                                 <div>
                                                     <div className="flex items-center gap-2">
                                                         <p className="font-medium">{item.food_name}</p>
-                                                        {item.source === 'ai'
-                                                            ? <span className="text-[10px] bg-blue-100 text-blue-800 px-1 rounded">AI</span>
-                                                            : <span className="text-[10px] bg-green-100 text-green-800 px-1 rounded">Moje</span>}
+
                                                     </div>
                                                     <p className="text-sm text-muted-foreground">{item.food_description}</p>
                                                 </div>
@@ -380,7 +409,42 @@ export default function MealForm({ initialData }: MealFormProps) {
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Kategoria</Label>
+                                <Label>Opis (opcjonalnie)</Label>
+                                <Textarea
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    placeholder="Krótki opis dania widoczny dla podopiecznych"
+                                    maxLength={500}
+                                    rows={2}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Kategoria dania</Label>
+                                <Select value={dishCategory} onValueChange={(v) => setDishCategory(v as DishCategory)}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {DISH_CATEGORIES.map((value) => (
+                                            <SelectItem key={value} value={value}>{DISH_CATEGORY_LABELS[value]}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
+                                <div className="space-y-1">
+                                    <Label htmlFor="meal-public">Posiłek publiczny</Label>
+                                    <p className="text-xs text-muted-foreground">
+                                        Publiczny posiłek może wyszukać i dodać do dzienniczka każdy użytkownik. Prywatny widzą tylko Twoi podopieczni.
+                                    </p>
+                                </div>
+                                <Switch id="meal-public" checked={isPublic} onCheckedChange={setIsPublic} />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Pora posiłku</Label>
                                 <Select value={category} onValueChange={(v: any) => setCategory(v)}>
                                     <SelectTrigger>
                                         <SelectValue />

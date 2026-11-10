@@ -32,7 +32,7 @@ async function runFoodPrompt(systemPrompt: string, userContent: string): Promise
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            model: 'google/gemini-3.8-flash',
+            model: 'deepseek/deepseek-v4.1-flash',
             tools: [
                 { type: 'openrouter:web_search', parameters: { search_context_size: 'medium' } },
             ],

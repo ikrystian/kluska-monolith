@@ -3,7 +3,9 @@ import { SavedMeal } from '@/models/SavedMeal';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/mongodb';
+import { parseSavedMealPayload } from '@/lib/saved-meal-payload';
 
+// GET /api/trainer/meals[?include=public] — own meals, optionally plus the public catalogue.
 export async function GET(req: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
@@ -12,7 +14,11 @@ export async function GET(req: NextRequest) {
         }
 
         await connectToDatabase();
-        const meals = await SavedMeal.find({ trainerId: session.user.id }).sort({ createdAt: -1 });
+        const includePublic = req.nextUrl.searchParams.get('include') === 'public';
+        const filter = includePublic
+            ? { $or: [{ trainerId: session.user.id }, { isPublic: true }] }
+            : { trainerId: session.user.id };
+        const meals = await SavedMeal.find(filter).sort({ createdAt: -1 });
         return NextResponse.json({ meals });
     } catch (error) {
         console.error('Error fetching meals:', error);
@@ -27,24 +33,13 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const body = await req.json();
-        const { name, ingredients, totalCalories, totalProtein, totalCarbs, totalFat, category } = body;
-
-        if (!name || !ingredients || ingredients.length === 0) {
-            return NextResponse.json({ error: 'Invalid meal data' }, { status: 400 });
+        const parsed = parseSavedMealPayload(await req.json());
+        if ('error' in parsed) {
+            return NextResponse.json({ error: parsed.error }, { status: 400 });
         }
 
         await connectToDatabase();
-        const newMeal = await SavedMeal.create({
-            name,
-            trainerId: session.user.id,
-            ingredients,
-            totalCalories,
-            totalProtein,
-            totalCarbs,
-            totalFat,
-            category: category || 'Breakfast',
-        });
+        const newMeal = await SavedMeal.create({ ...parsed.data, trainerId: session.user.id });
 
         return NextResponse.json({ meal: newMeal }, { status: 201 });
     } catch (error) {

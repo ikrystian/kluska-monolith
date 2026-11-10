@@ -13,6 +13,7 @@ import {
   Trophy,
   Footprints,
   Salad,
+  ChefHat,
   BookOpen,
   Ruler,
   Building2,
@@ -150,6 +151,7 @@ const adminNavItems = [
   { href: '/admin/gyms', icon: Building2, label: 'Siłownie' },
   { href: '/admin/running-programs', icon: Footprints, label: 'Treningi Biegowe' },
   { href: '/admin/diet-plans', icon: Salad, label: 'Plany Dietetyczne' },
+  { href: '/admin/meals', icon: ChefHat, label: 'Gotowe Posiłki' },
   { href: '/admin/notifications', icon: Bell, label: 'Powiadomienia' },
   { href: '/admin/settings', icon: Settings, label: 'Ustawienia' },
 ]

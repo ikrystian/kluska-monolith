@@ -4,7 +4,7 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { FoodDiaryEntry } from '@/models/FoodDiaryEntry';
 
 // DELETE /api/athlete/nutrition/diary/[id] — removes the athlete's own entry
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const user = await getRequestUser(request);
         if (!user) {
@@ -13,7 +13,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
         await connectToDatabase();
 
-        const deleted = await FoodDiaryEntry.findOneAndDelete({ _id: params.id, ownerId: user.id });
+        const deleted = await FoodDiaryEntry.findOneAndDelete({ _id: (await params).id, ownerId: user.id });
         if (!deleted) {
             return NextResponse.json({ error: 'Entry not found' }, { status: 404 });
         }
@@ -26,7 +26,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 }
 
 // PATCH /api/athlete/nutrition/diary/[id] — updates the eaten amount, rescaling macros
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const user = await getRequestUser(request);
         if (!user) {
@@ -41,7 +41,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
         await connectToDatabase();
 
-        const entry = await FoodDiaryEntry.findOne({ _id: params.id, ownerId: user.id });
+        const entry = await FoodDiaryEntry.findOne({ _id: (await params).id, ownerId: user.id });
         if (!entry) {
             return NextResponse.json({ error: 'Entry not found' }, { status: 404 });
         }

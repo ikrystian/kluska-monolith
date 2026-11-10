@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
-import { FoodDiaryEntry } from '@/models/FoodDiaryEntry';
+import { FoodDiaryEntry, type FoodDiaryMealType } from '@/models/FoodDiaryEntry';
 import { NutritionGoal } from '@/models/NutritionGoal';
+import { SavedMeal } from '@/models/SavedMeal';
+import { User } from '@/models/User';
+import { visibleMealsFilter } from '@/lib/meal-catalog';
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack'] as const;
@@ -75,6 +78,11 @@ export async function POST(request: NextRequest) {
         if (!MEAL_TYPES.includes(mealType)) {
             return NextResponse.json({ error: 'Invalid meal type' }, { status: 400 });
         }
+
+        // Ready-made dish: macros come from the stored meal, scaled by servings.
+        if (body.mealId !== undefined) {
+            return addSavedMeal(user.id, date, mealType, body.mealId, body.servings);
+        }
         if (typeof name !== 'string' || !name.trim()) {
             return NextResponse.json({ error: 'Product name is required' }, { status: 400 });
         }
@@ -126,4 +134,47 @@ export async function POST(request: NextRequest) {
         console.error('Error adding food diary entry:', error);
         return NextResponse.json({ error: 'Failed to add diary entry' }, { status: 500 });
     }
+}
+
+async function addSavedMeal(userId: string, date: string, mealType: FoodDiaryMealType, mealId: unknown, servings: unknown) {
+    if (typeof mealId !== 'string' || !/^[a-f\d]{24}$/i.test(mealId)) {
+        return NextResponse.json({ error: 'Invalid meal id' }, { status: 400 });
+    }
+    const parsedServings = Number(servings ?? 1);
+    if (!Number.isFinite(parsedServings) || parsedServings < 0.25 || parsedServings > 10) {
+        return NextResponse.json({ error: 'Servings must be between 0.25 and 10' }, { status: 400 });
+    }
+
+    await connectToDatabase();
+    const profile = await User.findById(userId, { trainerId: 1 }).lean().catch(() => null);
+    const trainerId = (profile as { trainerId?: string } | null)?.trainerId ?? null;
+    const meal = await SavedMeal.findOne({ _id: mealId, ...visibleMealsFilter(userId, trainerId) });
+    if (!meal) {
+        return NextResponse.json({ error: 'Meal not found' }, { status: 404 });
+    }
+
+    const round1 = (n: number) => Math.round(n * 10) / 10;
+    const entry = await FoodDiaryEntry.create({
+        ownerId: userId,
+        date,
+        mealType,
+        name: meal.name,
+        amount: parsedServings,
+        unit: servingsUnit(parsedServings),
+        calories: Math.round(meal.totalCalories * parsedServings),
+        protein: round1(meal.totalProtein * parsedServings),
+        carbs: round1(meal.totalCarbs * parsedServings),
+        fat: round1(meal.totalFat * parsedServings),
+        productId: mealId,
+        source: 'meal',
+    });
+
+    return NextResponse.json({ entry: entry.toJSON() }, { status: 201 });
+}
+
+/** Polish plural for "serving": 1 porcja, 2–4 porcje, 5+ and fractions porcji. */
+function servingsUnit(n: number): string {
+    if (n === 1) return 'porcja';
+    if (Number.isInteger(n) && n >= 2 && n <= 4) return 'porcje';
+    return 'porcji';
 }

@@ -66,7 +66,7 @@ export default function DietPlanForm({ initialData }: DietPlanFormProps) {
 
     const fetchMeals = async () => {
         try {
-            const res = await fetch('/api/trainer/meals');
+            const res = await fetch('/api/trainer/meals?include=public');
             const data = await res.json();
             if (data.meals) {
                 setSavedMeals(data.meals);

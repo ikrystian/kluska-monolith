@@ -196,7 +196,7 @@ export default function NutritionPage() {
                                                 <div className="min-w-0 flex-1">
                                                     <p className="truncate text-sm font-medium">{entry.name}</p>
                                                     <p className="truncate text-xs tabular-nums text-muted-foreground">
-                                                        {entry.amount} {entry.unit} · B {entry.protein} · W {entry.carbs} · T {entry.fat}
+                                                        {entry.amount.toLocaleString('pl-PL')} {entry.unit} · B {entry.protein} · W {entry.carbs} · T {entry.fat}
                                                     </p>
                                                 </div>
                                                 <span className="shrink-0 font-display text-xl font-bold tabular-nums">{Math.round(entry.calories)}</span>
