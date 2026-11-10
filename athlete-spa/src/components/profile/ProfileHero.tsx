@@ -11,6 +11,7 @@ import { resolveMediaUrl } from '@/lib/api-client';
 import { placeholderImages } from '@/lib/placeholder-images';
 import { haptic } from '@/lib/haptics';
 import { pluralForm } from '@/lib/plural';
+import { fmtNumber } from '@/components/dashboard/summary-visuals';
 import { tint } from './profile-ui';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -30,70 +31,42 @@ const getInitials = (name: string | null | undefined) =>
       .toUpperCase()
     : 'U';
 
-const RING_SIZE = 116;
-const RING_STROKE = 4;
-const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
-const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
-
-/** The avatar sits inside a ring that fills with XP toward the next level. */
-function XpRing({ percent }: { percent: number }) {
-  return (
-    <svg
-      viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
-      className="absolute inset-0 h-full w-full -rotate-90"
-      aria-hidden
-    >
-      <circle
-        cx={RING_SIZE / 2}
-        cy={RING_SIZE / 2}
-        r={RING_RADIUS}
-        fill="none"
-        strokeWidth={RING_STROKE}
-        className="stroke-foreground/10"
-      />
-      <circle
-        cx={RING_SIZE / 2}
-        cy={RING_SIZE / 2}
-        r={RING_RADIUS}
-        fill="none"
-        strokeWidth={RING_STROKE}
-        strokeLinecap="round"
-        strokeDasharray={`${(percent / 100) * RING_LENGTH} ${RING_LENGTH}`}
-        className="stroke-volt transition-[stroke-dasharray] duration-1000 ease-out"
-      />
-    </svg>
-  );
-}
-
-/** One counter of the gamification strip. */
-function StripStat({
+/** One counter under the athlete card; all three open achievements. */
+function StatTile({
   icon: Icon,
   color,
   value,
   label,
+  isLoading,
 }: {
   icon: ComponentType<{ className?: string }>;
   color: string;
   value: number;
   label: string;
+  isLoading: boolean;
 }) {
   return (
-    <div className="flex min-w-0 flex-col items-center gap-1 px-2 py-3">
-      <span className="flex items-center gap-1.5">
-        <span className="grid h-6 w-6 place-items-center rounded-full" style={{ backgroundColor: tint(color, 16), color }}>
-          <Icon className="h-3.5 w-3.5" />
-        </span>
-        <span className="font-display text-xl font-bold leading-none tabular-nums">{value}</span>
+    <Link
+      to="/athlete/gamification"
+      onClick={() => haptic('tap')}
+      className="pressable flex min-w-0 flex-col rounded-2xl bg-card p-3"
+    >
+      <span className="grid h-7 w-7 place-items-center rounded-lg" style={{ backgroundColor: tint(color, 16), color }}>
+        <Icon className="h-4 w-4" />
       </span>
-      <span className="truncate text-[11px] font-medium text-muted-foreground">{label}</span>
-    </div>
+      {isLoading ? (
+        <Skeleton className="mt-3 h-7 w-12" />
+      ) : (
+        <span className="num mt-3 text-[1.75rem]">{fmtNumber(value)}</span>
+      )}
+      <span className="mt-1 truncate text-[11px] font-medium text-muted-foreground">{label}</span>
+    </Link>
   );
 }
 
 /**
- * Top of the "Ty" tab, shared by Profil and Ustawienia: who you are, how far
- * the next level is (the ring around the avatar), and your streak, coins and
- * badges, which open achievements.
+ * Top of the "Ty" tab — the athlete card: photo, level with the XP bar toward
+ * the next one, and tiles for streak, coins and badges that open achievements.
  */
 export function ProfileHero({ onEditProfile, onEditAvatar }: { onEditProfile: () => void; onEditAvatar: () => void }) {
   const { user } = useUser();
@@ -114,99 +87,112 @@ export function ProfileHero({ onEditProfile, onEditAvatar }: { onEditProfile: ()
     { href: userProfile?.socialLinks?.twitter, icon: Twitter, label: 'Twitter / X' },
   ].filter((l): l is { href: string; icon: typeof Instagram; label: string } => Boolean(l.href));
 
+  const role = user?.isGuest ? 'Gość' : ROLE_LABELS[userProfile?.role ?? ''] ?? 'Sportowiec';
+  const statsPending = statsLoading && !stats;
+
   return (
-    <section className="flex flex-col items-center text-center">
-      <div className="relative" style={{ width: RING_SIZE, height: RING_SIZE }}>
-        <XpRing percent={xpPercent} />
-        <Avatar className="absolute inset-[10px] h-auto w-auto">
-          {avatarSrc && <AvatarImage src={avatarSrc} alt="Awatar użytkownika" className="object-cover" />}
-          <AvatarFallback className="bg-secondary font-display text-3xl font-bold">
-            {isLoading ? '' : getInitials(userProfile?.name)}
-          </AvatarFallback>
-        </Avatar>
-        <button
-          type="button"
-          onClick={onEditAvatar}
-          aria-label="Zmień zdjęcie profilowe"
-          className="absolute right-0 top-1 grid h-9 w-9 place-items-center rounded-full bg-card text-foreground shadow-sm ring-4 ring-background transition-transform active:scale-90"
-        >
-          <Camera className="h-4 w-4" />
-        </button>
+    <section className="space-y-2.5">
+      <div className="relative overflow-hidden rounded-3xl bg-card p-4">
+        {/* Barbell plate peeking from the corner — the app's signature shape. */}
+        <svg viewBox="0 0 200 200" aria-hidden className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 text-foreground opacity-[0.05]">
+          <circle cx="100" cy="100" r="96" fill="none" stroke="currentColor" strokeWidth="3" />
+          <circle cx="100" cy="100" r="68" fill="none" stroke="currentColor" strokeWidth="3" />
+          <circle cx="100" cy="100" r="40" fill="none" stroke="currentColor" strokeWidth="3" />
+        </svg>
+
+        <div className="relative flex items-center gap-4">
+          <div className="relative shrink-0">
+            <Avatar className="h-[84px] w-[84px] rounded-[1.5rem]">
+              {avatarSrc && <AvatarImage src={avatarSrc} alt="Awatar użytkownika" className="object-cover" />}
+              <AvatarFallback className="rounded-[1.5rem] bg-secondary font-display text-3xl font-bold">
+                {isLoading ? '' : getInitials(userProfile?.name)}
+              </AvatarFallback>
+            </Avatar>
+            <button
+              type="button"
+              onClick={onEditAvatar}
+              aria-label="Zmień zdjęcie profilowe"
+              className="absolute -bottom-1.5 -right-1.5 grid h-8 w-8 place-items-center rounded-full bg-secondary text-foreground ring-4 ring-card transition-transform active:scale-90"
+            >
+              <Camera className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="min-w-0 flex-1">
+            {isLoading && !userProfile ? (
+              <Skeleton className="h-4 w-28" />
+            ) : (
+              <p className="flex min-w-0 items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                <span className="shrink-0">{role}</span>
+                {userProfile?.location && (
+                  <>
+                    <span aria-hidden>·</span>
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    <span className="truncate">{userProfile.location}</span>
+                  </>
+                )}
+              </p>
+            )}
+            <p className="mt-1.5 flex items-baseline gap-2">
+              <span className="num text-[2.75rem] uppercase">Poziom</span>
+              <span className="num text-[2.75rem] text-volt">{statsPending ? '–' : level}</span>
+            </p>
+          </div>
+        </div>
+
         <Link
           to="/athlete/gamification"
           onClick={() => haptic('tap')}
           aria-label={`Poziom ${level}. Do następnego brakuje ${xpLeft} XP`}
-          className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-2.5 py-1 font-display text-sm font-bold uppercase leading-none tracking-wide text-primary-foreground ring-4 ring-background"
+          className="pressable-lg relative mt-4 block"
         >
-          Poz. {level}
+          <div className="h-2.5 overflow-hidden rounded-full bg-foreground/10">
+            <div
+              className="h-full rounded-full bg-lime transition-[width] duration-1000 ease-out"
+              style={{ width: `${Math.max(xpPercent, xpPercent > 0 ? 3 : 0)}%` }}
+            />
+          </div>
+          <div className="mt-2 flex items-center justify-between gap-3 text-xs tabular-nums">
+            <span className="text-muted-foreground">
+              {statsPending ? ' ' : `${fmtNumber(stats?.currentXP ?? 0)} / ${fmtNumber(stats?.xpForNextLevel ?? 0)} XP`}
+            </span>
+            <span className="flex items-center gap-0.5 font-semibold">
+              {statsPending ? ' ' : `${fmtNumber(xpLeft)} XP do poziomu ${level + 1}`}
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+            </span>
+          </div>
         </Link>
-      </div>
 
-      {isLoading && !userProfile ? (
-        <>
-          <Skeleton className="mt-5 h-8 w-44" />
-          <Skeleton className="mt-2 h-4 w-28" />
-        </>
-      ) : (
-        <>
-          <p className="mt-1.5 flex max-w-full items-center justify-center gap-1.5 text-sm text-muted-foreground">
-            <span className="font-medium">{user?.isGuest ? 'Gość' : ROLE_LABELS[userProfile?.role ?? ''] ?? 'Sportowiec'}</span>
-            {userProfile?.location && (
-              <>
-                <span aria-hidden>·</span>
-                <MapPin className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">{userProfile.location}</span>
-              </>
-            )}
-          </p>
-        </>
-      )}
-
-      <p className="mt-1 text-xs tabular-nums text-muted-foreground/80">
-        {statsLoading && !stats ? ' ' : `${stats?.currentXP ?? 0} / ${stats?.xpForNextLevel ?? 0} XP · ${xpLeft} do poziomu ${level + 1}`}
-      </p>
-
-      <div className="mt-4 flex items-center justify-center gap-2">
-        <button
-          type="button"
-          onClick={onEditProfile}
-          disabled={!userProfile}
-          className="pressable inline-flex h-9 items-center gap-1.5 rounded-full bg-secondary px-4 text-sm font-semibold disabled:opacity-50"
-        >
-          <Pencil className="h-3.5 w-3.5" />
-          Edytuj profil
-        </button>
-        {socialLinks.map(({ href, icon: Icon, label }) => (
-          <a
-            key={label}
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={label}
-            className="pressable grid h-9 w-9 place-items-center rounded-full bg-secondary"
+        <div className="relative mt-4 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onEditProfile}
+            disabled={!userProfile}
+            className="pressable inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-secondary px-4 text-sm font-semibold disabled:opacity-50"
           >
-            <Icon className="h-4 w-4" />
-          </a>
-        ))}
+            <Pencil className="h-3.5 w-3.5" />
+            Edytuj profil
+          </button>
+          {socialLinks.map(({ href, icon: Icon, label }) => (
+            <a
+              key={label}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={label}
+              className="pressable grid h-10 w-10 shrink-0 place-items-center rounded-full bg-secondary"
+            >
+              <Icon className="h-4 w-4" />
+            </a>
+          ))}
+        </div>
       </div>
 
-      <Link
-        to="/athlete/gamification"
-        onClick={() => haptic('tap')}
-        aria-label="Osiągnięcia i nagrody"
-        className="pressable-lg relative mt-5 grid w-full grid-cols-3 divide-x divide-border/60 rounded-2xl bg-card pr-5"
-      >
-        {statsLoading && !stats ? (
-          <Skeleton className="col-span-3 m-3 h-10" />
-        ) : (
-          <>
-            <StripStat icon={Flame} color="hsl(var(--primary))" value={streak} label={`${pluralForm(streak, 'dzień', 'dni', 'dni')} serii`} />
-            <StripStat icon={Coins} color="hsl(var(--food))" value={stats?.currentFitCoins ?? 0} label="FitCoins" />
-            <StripStat icon={Medal} color="hsl(var(--social))" value={badges} label={pluralForm(badges, 'odznaka', 'odznaki', 'odznak')} />
-          </>
-        )}
-        <ChevronRight className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" />
-      </Link>
+      <div className="grid grid-cols-3 gap-2.5">
+        <StatTile icon={Flame} color="hsl(var(--primary))" value={streak} label={`${pluralForm(streak, 'dzień', 'dni', 'dni')} serii`} isLoading={statsPending} />
+        <StatTile icon={Coins} color="hsl(var(--food))" value={stats?.currentFitCoins ?? 0} label="FitCoins" isLoading={statsPending} />
+        <StatTile icon={Medal} color="hsl(var(--social))" value={badges} label={pluralForm(badges, 'odznaka', 'odznaki', 'odznak')} isLoading={statsPending} />
+      </div>
     </section>
   );
 }

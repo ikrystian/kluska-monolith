@@ -17,6 +17,7 @@ import {
   type ActivityEntry,
 } from '@/components/dashboard/summary-visuals';
 import { useCollection, useUser } from '@/lib/db-hooks';
+import { haptic } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
 import type { BodyMeasurement, PersonalRecord, RunningSession, StravaActivity, WorkoutLog } from '@/lib/types';
 
@@ -66,32 +67,49 @@ function longestStreak(keys: Set<string>): number {
 
 /* ---------- UI pieces ---------- */
 
+/** Headline number of the period; the `lead` one is the tall tile of the bento. */
 const HeroStat = ({
   label,
+  icon: Icon,
+  color,
   value,
   digits = 0,
   unit,
   note,
   isLoading,
+  lead,
 }: {
   label: string;
+  icon: LucideIcon;
+  color: string;
   value: number;
   digits?: number;
   unit?: string;
   note?: string;
   isLoading: boolean;
+  lead?: boolean;
 }) => (
-  <div className="flex min-w-0 flex-col px-3 first:pl-0 last:pr-0">
-    <p className="truncate text-[11px] font-semibold uppercase tracking-wider text-primary-foreground/70">{label}</p>
-    {isLoading ? (
-      <Skeleton className="mt-2 h-9 w-16 bg-primary-foreground/20" />
-    ) : (
-      <p className="mt-1 truncate font-display text-[2.1rem] font-bold leading-none tabular-nums">
-        <CountUp value={value} digits={digits} />
-        {unit && <span className="ml-0.5 text-sm font-bold text-primary-foreground/70">{unit}</span>}
-      </p>
-    )}
-    {note && !isLoading && <p className="mt-1.5 text-[11px] font-medium leading-tight text-primary-foreground/80">{note}</p>}
+  <div className={cn('flex min-w-0 flex-col rounded-2xl bg-card p-4', lead && 'row-span-2 justify-between')}>
+    <p className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+      <span
+        className="grid h-7 w-7 shrink-0 place-items-center rounded-lg"
+        style={{ backgroundColor: `color-mix(in srgb, ${color} 16%, transparent)`, color }}
+      >
+        <Icon className="h-4 w-4" />
+      </span>
+      <span className="truncate">{label}</span>
+    </p>
+    <div className={lead ? undefined : 'mt-3'}>
+      {isLoading ? (
+        <Skeleton className={cn('w-20', lead ? 'h-16' : 'h-9')} />
+      ) : (
+        <p className={cn('num truncate', lead ? 'text-[4.5rem]' : 'text-[2.1rem]')} style={lead ? { color } : undefined}>
+          <CountUp value={value} digits={digits} />
+          {unit && <span className="ml-1 text-sm font-bold text-muted-foreground">{unit}</span>}
+        </p>
+      )}
+      {note && !isLoading && <p className="mt-1.5 truncate text-[11px] font-medium text-muted-foreground">{note}</p>}
+    </div>
   </div>
 );
 
@@ -132,14 +150,49 @@ const StatCell = ({
   </div>
 );
 
-/** A card of related numbers (running, gym, form) under a coloured heading. */
-const StatGroup = ({ title, color, children }: { title: string; color: string; children: ReactNode }) => (
+type DetailTab = 'running' | 'strength' | 'form';
+
+const DETAIL_TABS: { key: DetailTab; label: string; color: string }[] = [
+  { key: 'running', label: 'Bieganie', color: SUMMARY_COLORS.running },
+  { key: 'strength', label: 'Siłownia', color: SUMMARY_COLORS.strength },
+  { key: 'form', label: 'Forma', color: SUMMARY_COLORS.workouts },
+];
+
+/** Detailed numbers, one discipline at a time, so the page stays short. */
+const StatTabs = ({
+  active,
+  onChange,
+  children,
+}: {
+  active: DetailTab;
+  onChange: (tab: DetailTab) => void;
+  children: ReactNode;
+}) => (
   <section className="rounded-2xl bg-card p-4">
-    <h3 className="flex items-center gap-2 font-headline text-base font-bold tracking-tight">
-      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-      {title}
-    </h3>
-    <div className="mt-3.5 grid grid-cols-2 gap-x-4 gap-y-4">{children}</div>
+    <div role="tablist" aria-label="Szczegóły" className="grid grid-cols-3 gap-1 rounded-full bg-secondary p-1">
+      {DETAIL_TABS.map(tab => (
+        <button
+          key={tab.key}
+          type="button"
+          role="tab"
+          aria-selected={active === tab.key}
+          onClick={() => {
+            haptic('tap');
+            onChange(tab.key);
+          }}
+          className={cn(
+            'flex h-8 items-center justify-center gap-1.5 rounded-full text-xs font-semibold transition-colors',
+            active === tab.key ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
+          )}
+        >
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: tab.color }} />
+          {tab.label}
+        </button>
+      ))}
+    </div>
+    <div key={active} role="tabpanel" className="mt-4 grid animate-fade-in grid-cols-2 gap-x-4 gap-y-4">
+      {children}
+    </div>
   </section>
 );
 
@@ -183,6 +236,7 @@ export function ProfileSummary() {
 
   const [range, setRangeState] = useState<SummaryRange>(initialRange);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [detailTab, setDetailTab] = useState<DetailTab>('running');
   const setRange = (next: SummaryRange) => {
     setRangeState(next);
     rememberRange(next);
@@ -332,36 +386,36 @@ export function ProfileSummary() {
       </div>
 
       {/* Headline numbers */}
-      <section className="relative overflow-hidden rounded-3xl bg-primary px-4 pb-4 pt-3.5 text-primary-foreground">
-        <svg viewBox="0 0 200 200" aria-hidden className="pointer-events-none absolute -right-24 -top-28 h-56 w-56 opacity-[0.1]">
-          <circle cx="100" cy="100" r="96" fill="none" stroke="currentColor" strokeWidth="2" />
-          <circle cx="100" cy="100" r="70" fill="none" stroke="currentColor" strokeWidth="2" />
-          <circle cx="100" cy="100" r="44" fill="none" stroke="currentColor" strokeWidth="2" />
-        </svg>
-        <div className="relative grid grid-cols-3 divide-x divide-primary-foreground/20">
-          <HeroStat
-            label="Kilometry"
-            value={summary.runKm}
-            digits={1}
-            unit="km"
-            note={equatorPct >= 100 ? `${fmtNumber(equatorPct / 100, 2)}× równik` : `${fmtRatio(equatorPct)}% równika`}
-            isLoading={isLoading}
-          />
-          <HeroStat
-            label="Tony"
-            value={summary.tons}
-            digits={1}
-            unit="t"
-            note={`${fmtRatio(tanks)} × T-55`}
-            isLoading={isLoading}
-          />
-          <HeroStat
-            label="Treningi"
-            value={summary.workoutCount + summary.runCount}
-            note={`${summary.activeDays} ${summary.activeDays === 1 ? 'aktywny dzień' : 'aktywnych dni'}`}
-            isLoading={isLoading}
-          />
-        </div>
+      <section className="grid grid-cols-2 grid-rows-2 gap-2.5">
+        <HeroStat
+          lead
+          label="Treningi"
+          icon={Activity}
+          color="hsl(var(--volt))"
+          value={summary.workoutCount + summary.runCount}
+          note={`${summary.activeDays} ${summary.activeDays === 1 ? 'aktywny dzień' : 'aktywnych dni'}`}
+          isLoading={isLoading}
+        />
+        <HeroStat
+          label="Kilometry"
+          icon={Footprints}
+          color={SUMMARY_COLORS.running}
+          value={summary.runKm}
+          digits={1}
+          unit="km"
+          note={equatorPct >= 100 ? `${fmtNumber(equatorPct / 100, 2)}× równik` : `${fmtRatio(equatorPct)}% równika`}
+          isLoading={isLoading}
+        />
+        <HeroStat
+          label="Tony"
+          icon={Dumbbell}
+          color={SUMMARY_COLORS.strength}
+          value={summary.tons}
+          digits={1}
+          unit="t"
+          note={`${fmtRatio(tanks)} × T-55`}
+          isLoading={isLoading}
+        />
       </section>
 
       {isEmpty ? (
@@ -385,14 +439,17 @@ export function ProfileSummary() {
           <TankCard tons={summary.tons} isLoading={isLoading} />
 
           {/* Detailed stats */}
-          <StatGroup title="Bieganie" color={SUMMARY_COLORS.running}>
+          <StatTabs active={detailTab} onChange={setDetailTab}>
+            {detailTab === 'running' && (
+              <>
             <StatCell label="Biegi" icon={Footprints} accent={SUMMARY_COLORS.running} value={summary.runCount} hint={`${runTime.value} ${runTime.unit} w biegu`} isLoading={isLoading} />
             <StatCell label="Śr. tempo" icon={Timer} accent={SUMMARY_COLORS.running} value={fmtPace(summary.avgPace)} unit="/km" isLoading={isLoading} />
             <StatCell label="Najdłuższy bieg" icon={Flame} accent={SUMMARY_COLORS.running} value={fmtNumber(summary.longestRunKm, 2)} unit="km" isLoading={isLoading} />
             <StatCell label="Przewyższenie" icon={Mountain} accent={SUMMARY_COLORS.running} value={fmtNumber(summary.elevation)} unit="m" hint="ze Stravy" isLoading={isLoading} />
-          </StatGroup>
-
-          <StatGroup title="Siłownia" color={SUMMARY_COLORS.strength}>
+              </>
+            )}
+            {detailTab === 'strength' && (
+              <>
             <StatCell label="Serie" icon={Layers} accent={SUMMARY_COLORS.strength} value={fmtNumber(summary.sets)} hint={`${fmtNumber(summary.reps)} powtórzeń`} isLoading={isLoading} />
             <StatCell label="Czas na siłowni" icon={Dumbbell} accent={SUMMARY_COLORS.strength} value={strengthTime.value} unit={strengthTime.unit} hint={`${summary.workoutCount} treningów`} isLoading={isLoading} />
             <div className="col-span-2 flex items-center gap-3 rounded-xl bg-secondary/60 p-3">
@@ -420,9 +477,10 @@ export function ProfileSummary() {
                 </p>
               )}
             </div>
-          </StatGroup>
-
-          <StatGroup title="Forma" color={SUMMARY_COLORS.workouts}>
+              </>
+            )}
+            {detailTab === 'form' && (
+              <>
             <StatCell
               label="Aktywne dni"
               icon={CalendarDays}
@@ -449,7 +507,9 @@ export function ProfileSummary() {
               hint={summary.weightChange === null ? 'za mało pomiarów' : 'pierwszy → ostatni pomiar'}
               isLoading={measurementsLoading}
             />
-          </StatGroup>
+              </>
+            )}
+          </StatTabs>
         </>
       )}
 

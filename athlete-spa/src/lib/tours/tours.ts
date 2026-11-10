@@ -188,7 +188,7 @@ export const TOURS: TourDef[] = [
       {
         target: 'you-hero',
         title: 'Twoja wizytówka',
-        body: 'Zdjęcie, poziom i najważniejsze liczby. Pierścień wokół zdjęcia pokazuje, ile XP brakuje do kolejnego poziomu.',
+        body: 'Zdjęcie, poziom i najważniejsze liczby. Pasek pod poziomem pokazuje, ile XP brakuje do kolejnego.',
       },
       {
         target: 'you-profile',
