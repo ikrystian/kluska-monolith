@@ -179,6 +179,8 @@ main:has([data-immersive])>#bottom-nav {
 main:has([data-immersive])>#outlet {
   padding-top: env(safe-area-inset-top);
   padding-bottom: 0;
+  /* Brak paska na dole, więc ekran nie dostaje też odstępu na końcu. */
+  --outlet-clearance: 0px;
 }
 
 /* Zawartość ekranu: #outlet rezerwuje miejsce na nagłówek i pasek, tu tylko margines. */

@@ -147,21 +147,28 @@ function AthleteLayoutContent() {
           <OfflineBanner />
           <PullToRefreshIndicator ref={indicatorRef} />
           {/* The padding belongs to the scroller, so content slides under the
-              frosted header and tab bar instead of stopping at their edge. */}
+              frosted header and tab bar instead of stopping at their edge.
+              --outlet-clearance is what the bottom bars cover: the tab bar,
+              plus the mini-player while a workout runs elsewhere. */}
           <div
             ref={scrollRef}
             id="outlet"
             className={cn(
-              'relative z-10 min-h-0 flex-1 overflow-y-auto overflow-x-hidden',
+              'relative z-10 min-h-0 flex-1 overflow-y-auto overflow-x-hidden pb-[var(--outlet-clearance)]',
               isActiveWorkoutSession
-                ? 'pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)]'
-                : 'pb-[var(--app-bottom)] pt-[var(--app-top)] has-[~#mini-player]:pb-[calc(var(--app-bottom)+4rem)]'
+                ? 'pt-[env(safe-area-inset-top)] [--outlet-clearance:env(safe-area-inset-bottom)]'
+                : 'pt-[var(--app-top)] [--outlet-clearance:var(--app-bottom)] has-[~#mini-player]:[--outlet-clearance:calc(var(--app-bottom)+4rem)]'
             )}
           >
             {/* h-full so pages that build their own internal scroll region
                 (ExercisesListView's virtualized list, Log's builder) resolve
-                a real height off #outlet instead of collapsing to content. */}
-            <AnimatedOutlet className="h-full" />
+                a real height off #outlet instead of collapsing to content.
+                A screen taller than that fixed height overflows it, and a
+                scroller's bottom padding is not added after overflowing
+                content, so the same clearance is repeated as a spacer that
+                ends the screen itself. Screens that fit are unaffected: the
+                spacer overflows by exactly the padding already reserved. */}
+            <AnimatedOutlet className="h-full after:block after:h-[var(--outlet-clearance)] after:content-['']" />
           </div>
           <BottomNav />
           <ActiveWorkoutWidget />
