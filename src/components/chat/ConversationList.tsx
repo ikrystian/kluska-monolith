@@ -1,32 +1,30 @@
-import React from 'react';
-import Link from 'next/link';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
-import { Trash2, Users } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { format, isToday, isYesterday } from 'date-fns';
+import { pl } from 'date-fns/locale';
+import { Check, CheckCheck, Search, Users } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { Conversation } from '@/lib/chat/types';
-import { placeholderImages } from '@/lib/placeholder-images';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { chatRoleLabel, type Conversation } from '@/lib/chat/types';
+import { ChatAvatar } from './ChatAvatar';
+
+export function formatChatTime(value: string | Date | null | undefined): string {
+    if (!value) return '';
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return '';
+    if (isToday(date)) return format(date, 'HH:mm');
+    if (isYesterday(date)) return 'Wczoraj';
+    return format(date, 'd MMM', { locale: pl });
+}
 
 interface ConversationListProps {
     conversations: Conversation[];
+    /** Document id of the open conversation, for highlighting. */
     selectedId: string | null;
     currentUserId: string;
-    userRole: 'trainer' | 'athlete';
     isLoading: boolean;
-    onSelect: (id: string) => void;
-    onDelete: (conversation: Conversation) => void;
+    /** Hide on small screens while a conversation is open. */
+    collapsed: boolean;
+    onSelect: (conversation: Conversation) => void;
     header?: React.ReactNode;
 }
 
@@ -34,100 +32,107 @@ export function ConversationList({
     conversations,
     selectedId,
     currentUserId,
-    userRole,
     isLoading,
+    collapsed,
     onSelect,
-    onDelete,
-    header
+    header,
 }: ConversationListProps) {
-    const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : '?';
+    const [search, setSearch] = useState('');
+
+    const filtered = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        if (!q) return conversations;
+        return conversations.filter(
+            c => c.contact.name.toLowerCase().includes(q) || (c.lastMessage?.text ?? '').toLowerCase().includes(q)
+        );
+    }, [conversations, search]);
 
     return (
-        <aside className={cn(
-            "flex flex-col border-r h-full",
-            selectedId && "hidden md:flex"
-        )}>
-            {header && <header className="p-4 border-b">{header}</header>}
-            <ScrollArea className="flex-1">
-                {conversations?.map(convo => {
-                    const otherParticipantName = userRole === 'trainer' ? convo.athleteName : convo.trainerName;
-                    const hasUnread = (convo.unreadCount?.[currentUserId] || 0) > 0;
+        <aside className={cn('flex h-full min-h-0 flex-col border-r', collapsed && 'hidden md:flex')}>
+            {header && <header className="space-y-3 border-b p-4">{header}</header>}
+            {conversations.length > 3 && (
+                <div className="relative border-b p-3">
+                    <Search className="pointer-events-none absolute left-6 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        placeholder="Szukaj rozmowy…"
+                        className="h-9 pl-9"
+                    />
+                </div>
+            )}
+            <div className="min-h-0 flex-1 overflow-y-auto">
+                {isLoading && conversations.length === 0 &&
+                    [0, 1, 2].map(i => (
+                        <div key={i} className="flex items-center gap-3 border-b p-4">
+                            <span className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-secondary" />
+                            <div className="flex-1 space-y-2">
+                                <span className="block h-3 w-1/3 animate-pulse rounded bg-secondary" />
+                                <span className="block h-2.5 w-2/3 animate-pulse rounded bg-secondary" />
+                            </div>
+                        </div>
+                    ))}
+
+                {filtered.map(convo => {
+                    const { contact } = convo;
+                    const hasUnread = convo.unread > 0;
+                    const isMeLast = convo.lastMessage?.senderId === currentUserId;
 
                     return (
-                        <div key={convo.id} className="relative group">
-                            <div
-                                onClick={() => onSelect(convo.id)}
-                                className={cn(
-                                    "block p-4 border-b hover:bg-secondary/50 cursor-pointer transition-colors",
-                                    selectedId === convo.id && 'bg-secondary'
-                                )}
-                            >
-                                <div className="flex items-center gap-3">
-                                    {hasUnread && (
-                                        <div className="absolute left-2 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-primary" />
-                                    )}
-                                    <Avatar className="ml-4">
-                                        <AvatarImage src={placeholderImages.find(p => p.id === 'avatar-male')?.imageUrl} />
-                                        <AvatarFallback>{getInitials(otherParticipantName)}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1 overflow-hidden">
-                                        <div className="flex justify-between items-center mb-1">
-                                            <p className={cn("font-semibold truncate", hasUnread && "text-primary")}>
-                                                {otherParticipantName}
-                                            </p>
-                                            {convo.lastMessage && (
-                                                <span className="text-xs text-muted-foreground">
-                                                    {/* Date formatting will be handled by parent or utility */}
-                                                </span>
+                        <button
+                            key={convo.id}
+                            type="button"
+                            onClick={() => onSelect(convo)}
+                            className={cn(
+                                'flex w-full items-center gap-3 border-b p-4 text-left transition-colors hover:bg-secondary/50',
+                                selectedId === convo.id && 'bg-secondary'
+                            )}
+                        >
+                            <ChatAvatar contact={contact} />
+                            <div className="min-w-0 flex-1">
+                                <div className="mb-1 flex items-center justify-between gap-2">
+                                    <p className={cn('truncate font-semibold', hasUnread && 'text-primary')}>{contact.name}</p>
+                                    <span className={cn('shrink-0 text-xs', hasUnread ? 'font-semibold text-primary' : 'text-muted-foreground')}>
+                                        {formatChatTime(convo.lastMessage?.createdAt ?? convo.updatedAt)}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between gap-2">
+                                    <p className={cn('flex min-w-0 items-center gap-1 text-sm', hasUnread ? 'font-medium text-foreground' : 'text-muted-foreground')}>
+                                        {isMeLast &&
+                                            (convo.unreadByContact === 0 ? (
+                                                <CheckCheck className="h-3.5 w-3.5 shrink-0 text-primary" aria-label="Przeczytane" />
+                                            ) : (
+                                                <Check className="h-3.5 w-3.5 shrink-0" aria-label="Wysłane" />
+                                            ))}
+                                        <span className="truncate">
+                                            {isMeLast && 'Ty: '}
+                                            {convo.lastMessage?.text ?? (
+                                                <span className="italic">{chatRoleLabel(contact.role)} · brak wiadomości</span>
                                             )}
-                                        </div>
-                                        <p className={cn("text-sm truncate", hasUnread ? "text-foreground font-medium" : "text-muted-foreground")}>
-                                            {convo.lastMessage?.text || 'Brak wiadomości'}
-                                        </p>
-                                    </div>
+                                        </span>
+                                    </p>
+                                    {hasUnread && (
+                                        <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                                            {convo.unread > 99 ? '99+' : convo.unread}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
-
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Czy na pewno chcesz usunąć ten czat?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            Tej operacji nie można cofnąć. Spowoduje to trwałe usunięcie całej konwersacji z <span className="font-bold">{otherParticipantName}</span>.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                                        <AlertDialogAction
-                                            className="bg-destructive hover:bg-destructive/90"
-                                            onClick={() => onDelete(convo)}
-                                        >
-                                            Usuń
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </div>
-                    )
+                        </button>
+                    );
                 })}
-                {!isLoading && conversations?.length === 0 && (
+
+                {!isLoading && conversations.length === 0 && (
                     <div className="p-8 text-center text-muted-foreground">
-                        <Users className="mx-auto h-12 w-12 mb-4" />
+                        <Users className="mx-auto mb-4 h-12 w-12" />
                         <h3 className="font-semibold">Brak konwersacji</h3>
                         <p className="text-sm">Rozpocznij czat z jednym ze swoich kontaktów.</p>
                     </div>
                 )}
-            </ScrollArea>
+                {conversations.length > 0 && filtered.length === 0 && (
+                    <p className="p-8 text-center text-sm text-muted-foreground">Nie znaleziono rozmów.</p>
+                )}
+            </div>
         </aside>
     );
 }

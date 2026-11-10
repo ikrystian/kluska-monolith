@@ -69,6 +69,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCollection } from '@/lib/db-hooks';
 import { Loader2 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useUnreadChatCount } from '@/components/chat/hooks/useConversations';
 
 export const athleteNavItems = [
   { href: '/athlete/dashboard', icon: LayoutDashboard, label: 'Panel' },
@@ -176,9 +177,7 @@ export function AppNav() {
     userProfile?.role === 'admin' ? 'users' : null
   );
 
-  // For now, conversations are not implemented in MongoDB
-  // This will need to be updated when conversations are migrated
-  const totalUnreadCount = 0;
+  const totalUnreadCount = useUnreadChatCount();
 
   // Unanswered collaboration inquiries from athletes (trainers only).
   const { data: pendingInquiries } = useCollection<{ id: string }>(

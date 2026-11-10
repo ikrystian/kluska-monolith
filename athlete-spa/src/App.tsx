@@ -55,6 +55,7 @@ const RunRecordPage = lazy(() => import('@/pages/athlete/RunRecord'));
 const RunDetailPage = lazy(() => import('@/pages/athlete/RunDetail'));
 const RunDetailStravaPage = lazy(() => import('@/pages/athlete/RunDetailStrava'));
 const SocialPage = lazy(() => import('@/pages/athlete/Social'));
+const PublicProfilePage = lazy(() => import('@/pages/athlete/PublicProfile'));
 const ChallengesPage = lazy(() => import('@/pages/athlete/Challenges'));
 const ChallengeDetailPage = lazy(() => import('@/pages/athlete/ChallengeDetail'));
 const SettingsPage = lazy(() => import('@/pages/athlete/Settings'));
@@ -142,6 +143,7 @@ export default function App() {
                   <Route path="chat" element={<ChatPage />} />
                   <Route path="check-in" element={<CheckInPage />} />
                   <Route path="social" element={<SocialPage />} />
+                  <Route path="social/profile/:userId" element={<PublicProfilePage />} />
                   <Route path="challenges" element={<ChallengesPage />} />
                   <Route path="challenges/:challengeId" element={<ChallengeDetailPage />} />
                 </Route>

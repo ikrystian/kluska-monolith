@@ -15,7 +15,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import type { Goal } from '@/lib/types';
-import { blobToBase64, renderGoalShareImage, SHARE_SIZES, type ShareFormat } from '@/lib/goal-share-image';
+import { renderGoalShareImage } from '@/lib/goal-share-image';
+import { blobToBase64, SHARE_SIZES, type ShareFormat } from '@/lib/share-canvas';
 import {
   instagramShareErrorCode,
   isInstagramInstalled,

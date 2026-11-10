@@ -1,266 +1,240 @@
-import { useMemo, useEffect, useCallback, useState } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { useUser, useDoc, useCollection, useCreateDoc } from '@/lib/db-hooks';
-import { UserProfile } from '@/lib/chat/types';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import { Loader2, MessageSquareOff } from 'lucide-react';
+import { useCollection, useDoc, useUser } from '@/lib/db-hooks';
+import type { ChatContact, UserProfile } from '@/lib/chat/types';
+import { LEAD_TRAINER_ID } from '@/lib/chat/constants';
 import { ChatLayout } from '@/components/chat/ChatLayout';
 import { ConversationList } from '@/components/chat/ConversationList';
 import { ChatView } from '@/components/chat/ChatView';
 import { NewConversationDialog } from '@/components/chat/NewConversationDialog';
 import { useChat } from '@/components/chat/hooks/useChat';
-import { Compass, MessageSquare, Sparkles, Zap } from 'lucide-react';
-import { TrainerAvatar } from '@/components/trainers/TrainerAvatar';
 import { Button } from '@/components/ui/button';
-import { haptic } from '@/lib/haptics';
 
-const LEAD_TRAINER_ID = '6a5cf516f9fe894c859bb9af';
+const CHAT_PATH = '/athlete/chat';
 
+function toContact(profile: UserProfile): ChatContact {
+  return { id: profile.id, name: profile.name || 'Użytkownik', avatarUrl: profile.avatarUrl, role: profile.role };
+}
+
+function CenteredLoader({ label }: { label: string }) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center p-6 text-center">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <p className="mt-3 text-xs text-muted-foreground">{label}</p>
+    </div>
+  );
+}
+
+function ChatNotFound({ title, onBack }: { title: string; onBack: () => void }) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
+      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary text-muted-foreground">
+        <MessageSquareOff className="h-7 w-7" />
+      </span>
+      <h2 className="font-display text-xl font-bold uppercase tracking-tight text-foreground">{title}</h2>
+      <p className="max-w-xs text-xs text-muted-foreground">
+        Mogła zostać usunięta albo link jest nieaktualny.
+      </p>
+      <Button variant="outline" className="rounded-xl" onClick={onBack}>
+        Wróć do wiadomości
+      </Button>
+    </div>
+  );
+}
+
+/**
+ * /athlete/chat                       → conversation list
+ * /athlete/chat?conversationId=<id>   → an open conversation (document id or legacy `a_b` key)
+ * /athlete/chat?userId=<id>           → the conversation with that user, or a draft of it;
+ *                                       nothing is saved until the first message is sent
+ *
+ * The URL is the only source of truth for what is open. The signed-in user is
+ * never offered as a contact, and a link to their own id is dropped.
+ */
 export default function AthleteChatPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { createDoc } = useCreateDoc();
+  const { user } = useUser();
+  const me = user?.uid ?? '';
+
+  const selectedId = searchParams.get('conversationId');
+  const userIdParam = searchParams.get('userId');
+  const isSelfLink = Boolean(userIdParam && me && userIdParam === me);
 
   const {
     conversations,
+    conversationsLoading,
     selectedConversation,
-    selectedConversationId,
-    setSelectedConversationId,
     messages,
-    isLoading,
+    messagesLoading,
     sendMessage,
-    createConversation,
+    startConversation,
     deleteConversation,
-    currentUser,
-    refetchConversations,
-  } = useChat();
+  } = useChat(selectedId);
 
-  const { data: userProfile } = useDoc<UserProfile>('users', currentUser?.uid || null);
-
-  // Lead Trainer profile (6a5cf516f9fe894c859bb9af)
-  const { data: leadTrainer } = useDoc<UserProfile>('users', LEAD_TRAINER_ID);
-
-  // All trainers collection for potential contacts
-  const { data: allTrainers, isLoading: trainersLoading } = useCollection<UserProfile>('users', {
+  const isLeadTrainer = me === LEAD_TRAINER_ID;
+  const { data: userProfile } = useDoc<UserProfile>('users', me || null);
+  const { data: leadTrainer } = useDoc<UserProfile>('users', me && !isLeadTrainer ? LEAD_TRAINER_ID : null);
+  const { data: allTrainers, isLoading: trainersLoading } = useCollection<UserProfile>(me ? 'users' : null, {
     role: 'trainer',
   });
+  const assignedTrainerId = userProfile?.trainerId && userProfile.trainerId !== me ? userProfile.trainerId : null;
+  const { data: myTrainer } = useDoc<UserProfile>('users', assignedTrainerId);
 
-  // Athlete's assigned trainer if any
-  const { data: myTrainerProfile } = useDoc<UserProfile>(
-    'users',
-    userProfile?.role === 'athlete' && userProfile.trainerId ? userProfile.trainerId : null
+  // ── Navigation ────────────────────────────────────────────────────────────
+  const openConversation = useCallback(
+    (id: string, opts: { replace?: boolean } = {}) =>
+      navigate(`${CHAT_PATH}?conversationId=${encodeURIComponent(id)}`, {
+        replace: opts.replace,
+        state: opts.replace ? location.state : { fromList: true },
+      }),
+    [navigate, location.state]
   );
 
-  // Existing conversation participant IDs
-  const existingParticipantIds = useMemo(() => {
-    const ids = new Set<string>();
-    conversations?.forEach(c => {
-      c.participants.forEach(p => {
-        if (p !== currentUser?.uid) ids.add(p);
-      });
-    });
-    return ids;
-  }, [conversations, currentUser?.uid]);
-
-  // Potential contacts for new message dialog:
-  // Combines assigned trainer, lead trainer, and all other trainers not yet in conversation
-  const potentialContacts = useMemo(() => {
-    if (!currentUser) return [];
-    const list: UserProfile[] = [];
-
-    // Assigned trainer first
-    if (myTrainerProfile && !existingParticipantIds.has(myTrainerProfile.id)) {
-      list.push(myTrainerProfile);
-    }
-
-    // Lead trainer second
-    if (leadTrainer && !existingParticipantIds.has(leadTrainer.id) && !list.some(c => c.id === leadTrainer.id)) {
-      list.push(leadTrainer);
-    }
-
-    // Other trainers from collection
-    (allTrainers ?? []).forEach(t => {
-      if (t.id !== currentUser.uid && !existingParticipantIds.has(t.id) && !list.some(c => c.id === t.id)) {
-        list.push(t);
-      }
-    });
-
-    return list;
-  }, [currentUser, myTrainerProfile, leadTrainer, allTrainers, existingParticipantIds]);
-
-  const handleSelectConversation = useCallback(
-    (id: string) => {
-      setSelectedConversationId(id);
-      navigate(`/athlete/chat?conversationId=${id}`, { replace: true });
-    },
-    [navigate, setSelectedConversationId]
+  const openDraft = useCallback(
+    (userId: string) => navigate(`${CHAT_PATH}?userId=${encodeURIComponent(userId)}`, { state: { fromList: true } }),
+    [navigate]
   );
 
-  const handleBackToList = useCallback(() => {
-    setSelectedConversationId(null);
-    navigate('/athlete/chat', { replace: true });
-  }, [navigate, setSelectedConversationId]);
+  const backToList = useCallback(() => {
+    if ((location.state as { fromList?: boolean } | null)?.fromList) navigate(-1);
+    else navigate(CHAT_PATH, { replace: true });
+  }, [navigate, location.state]);
 
-  // Robust create conversation handler that works with any trainer
-  const handleCreateConversation = useCallback(
-    async (targetUserId: string, initialMessage?: string) => {
-      if (!currentUser) return;
-
-      // Check if conversation already exists
-      const existing = conversations?.find(c => c.participants.includes(targetUserId));
-      if (existing) {
-        handleSelectConversation(existing.id || existing.conversationId);
-        if (initialMessage) {
-          await sendMessage(initialMessage);
-        }
-        return;
-      }
-
-      // Determine target user details
-      const targetUser =
-        targetUserId === LEAD_TRAINER_ID
-          ? leadTrainer
-          : allTrainers?.find(t => t.id === targetUserId) ||
-            (targetUserId === myTrainerProfile?.id ? myTrainerProfile : null);
-
-      const targetName = targetUser?.name || (targetUserId === LEAD_TRAINER_ID ? 'Krystian' : 'Trener');
-      const myName = userProfile?.name || 'Sportowiec';
-      const conversationId = [currentUser.uid, targetUserId].sort().join('_');
-      const now = new Date();
-
-      const newConvData = {
-        conversationId,
-        participants: [currentUser.uid, targetUserId],
-        trainerId: targetUserId,
-        athleteId: currentUser.uid,
-        trainerName: targetName,
-        athleteName: myName,
-        lastMessage: initialMessage
-          ? {
-              text: initialMessage,
-              senderId: currentUser.uid,
-              createdAt: now,
-            }
-          : null,
-        updatedAt: now,
-        unreadCount: {
-          [currentUser.uid]: 0,
-          [targetUserId]: initialMessage ? 1 : 0,
-        },
-      };
-
-      const created = (await createConversation(newConvData)) as any;
-      const targetId = created?.id || created?._id || conversationId;
-
-      if (initialMessage) {
-        try {
-          await createDoc('messages', {
-            conversationId: targetId,
-            senderId: currentUser.uid,
-            text: initialMessage,
-            createdAt: now,
-          });
-        } catch (e) {
-          console.error('Failed to save initial message:', e);
-        }
-      }
-
-      refetchConversations();
-      handleSelectConversation(targetId);
-    },
-    [
-      currentUser,
-      conversations,
-      leadTrainer,
-      allTrainers,
-      myTrainerProfile,
-      userProfile,
-      createConversation,
-      createDoc,
-      refetchConversations,
-      handleSelectConversation,
-      sendMessage,
-    ]
-  );
-
-  // Sync from URL search params: conversationId or userId
+  // A link to yourself (e.g. a trainer opening their own "Napisz" button).
   useEffect(() => {
-    const conversationIdFromUrl = searchParams.get('conversationId');
-    const userIdFromUrl = searchParams.get('userId');
+    if (!isSelfLink) return;
+    toast('To Twoje konto — wybierz innego rozmówcę.', { id: 'chat-self' });
+    navigate(CHAT_PATH, { replace: true });
+  }, [isSelfLink, navigate]);
 
-    if (conversationIdFromUrl) {
-      setSelectedConversationId(conversationIdFromUrl);
-    } else if (userIdFromUrl && currentUser && !isLoading) {
-      // Find existing or start conversation with user
-      const existing = conversations?.find(c => c.participants.includes(userIdFromUrl));
-      if (existing) {
-        handleSelectConversation(existing.id || existing.conversationId);
-      } else {
-        handleCreateConversation(userIdFromUrl);
+  // ── ?userId= → existing conversation or a draft ──────────────────────────
+  const draftUserId = userIdParam && !isSelfLink && me ? userIdParam : null;
+  const existingForDraft = draftUserId ? conversations?.find(c => c.contact.id === draftUserId) ?? null : null;
+
+  useEffect(() => {
+    if (existingForDraft) openConversation(existingForDraft.id, { replace: true });
+  }, [existingForDraft, openConversation]);
+
+  const trainerFromDirectory = useMemo(() => {
+    if (!draftUserId) return null;
+    return [myTrainer, leadTrainer, ...(allTrainers ?? [])].find(t => t?.id === draftUserId) ?? null;
+  }, [draftUserId, myTrainer, leadTrainer, allTrainers]);
+
+  const needsDraftProfile = Boolean(draftUserId && conversations && !existingForDraft && !trainerFromDirectory);
+  const { data: draftProfile, isLoading: draftProfileLoading } = useDoc<UserProfile>(
+    'users',
+    needsDraftProfile ? draftUserId : null
+  );
+  const draftSource = trainerFromDirectory ?? draftProfile;
+  const draftContact = draftSource && draftSource.id !== me ? toContact(draftSource) : null;
+
+  const starting = useRef(false);
+  const startWith = useCallback(
+    async (userId: string, text?: string) => {
+      if (starting.current || userId === me) return;
+      starting.current = true;
+      try {
+        const conversation = await startConversation(userId, text);
+        openConversation(conversation.id, { replace: true });
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Nie udało się rozpocząć rozmowy.', { id: 'chat-send' });
+        throw error;
+      } finally {
+        starting.current = false;
       }
-    } else {
-      setSelectedConversationId(null);
-    }
-  }, [searchParams, currentUser, isLoading, conversations, setSelectedConversationId, handleSelectConversation, handleCreateConversation]);
-
-  // Handler for starting chat with Lead Trainer (6a5cf516f9fe894c859bb9af)
-  const handleStartWithLeadTrainer = useCallback(
-    async (initialMessage?: string) => {
-      await handleCreateConversation(LEAD_TRAINER_ID, initialMessage);
     },
-    [handleCreateConversation]
+    [me, startConversation, openConversation]
   );
 
-  const otherParticipantId = useMemo(() => {
-    return selectedConversation?.participants.find(id => id !== currentUser?.uid);
-  }, [selectedConversation, currentUser]);
+  // ── Contacts for "Nowa rozmowa": trainers you don't talk to yet, never yourself ──
+  const potentialContacts = useMemo(() => {
+    if (!me) return [];
+    const taken = new Set([me, ...(conversations ?? []).map(c => c.contact.id)]);
+    const list: UserProfile[] = [];
+    for (const candidate of [myTrainer, leadTrainer, ...(allTrainers ?? [])]) {
+      if (!candidate || taken.has(candidate.id)) continue;
+      taken.add(candidate.id);
+      list.push(candidate);
+    }
+    return list;
+  }, [me, conversations, myTrainer, leadTrainer, allTrainers]);
 
-  const { data: otherParticipantProfile } = useDoc<UserProfile>('users', otherParticipantId || null);
+  const handleDelete = useCallback(
+    async (conversationId: string) => {
+      try {
+        await deleteConversation(conversationId);
+        navigate(CHAT_PATH, { replace: true });
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Nie udało się usunąć rozmowy.');
+      }
+    },
+    [deleteConversation, navigate]
+  );
 
-  return (
-    <ChatLayout>
+  // ── Render ────────────────────────────────────────────────────────────────
+  let content: React.ReactNode;
+
+  if (selectedId) {
+    if (!conversations) {
+      content = <CenteredLoader label="Wczytywanie rozmowy…" />;
+    } else if (selectedConversation) {
+      content = (
+        <ChatView
+          contact={selectedConversation.contact}
+          messages={messages}
+          currentUserId={me}
+          unreadByContact={selectedConversation.unreadByContact}
+          isLoadingMessages={messagesLoading}
+          onSendMessage={sendMessage}
+          onBack={backToList}
+          onDelete={() => handleDelete(selectedConversation.id)}
+        />
+      );
+    } else {
+      content = <ChatNotFound title="Nie znaleziono rozmowy" onBack={backToList} />;
+    }
+  } else if (draftUserId) {
+    if (!conversations || existingForDraft || (needsDraftProfile && draftProfileLoading)) {
+      content = <CenteredLoader label="Otwieranie rozmowy…" />;
+    } else if (draftContact) {
+      content = (
+        <ChatView
+          contact={draftContact}
+          messages={[]}
+          currentUserId={me}
+          unreadByContact={0}
+          isLoadingMessages={false}
+          onSendMessage={text => startWith(draftContact.id, text)}
+          onBack={backToList}
+        />
+      );
+    } else {
+      content = <ChatNotFound title="Nie znaleziono użytkownika" onBack={backToList} />;
+    }
+  } else {
+    content = (
       <ConversationList
-        conversations={conversations || []}
-        selectedId={selectedConversationId}
-        currentUserId={currentUser?.uid || ''}
-        userRole={userProfile?.role === 'trainer' ? 'trainer' : 'athlete'}
-        isLoading={isLoading}
-        leadTrainer={leadTrainer}
-        onSelect={handleSelectConversation}
-        onDelete={c => deleteConversation(c.id)}
-        onStartWithLeadTrainer={handleStartWithLeadTrainer}
+        conversations={conversations ?? []}
+        currentUserId={me}
+        isLoading={conversationsLoading || isSelfLink}
+        leadTrainer={isLeadTrainer ? null : leadTrainer}
+        showLeadTrainerOffer={Boolean(me) && !isLeadTrainer}
+        onSelect={c => openConversation(c.id)}
+        onStartWithLeadTrainer={text => (text ? startWith(LEAD_TRAINER_ID, text) : openDraft(LEAD_TRAINER_ID))}
         header={
           <NewConversationDialog
             potentialContacts={potentialContacts}
             isLoading={trainersLoading}
-            onStartConversation={handleCreateConversation}
+            onStartConversation={async userId => openDraft(userId)}
           />
         }
       />
+    );
+  }
 
-      <main className={`h-full ${!selectedConversationId ? 'hidden' : ''}`}>
-        {selectedConversationId && selectedConversation ? (
-          <ChatView
-            conversation={selectedConversation}
-            messages={messages || []}
-            currentUserId={currentUser?.uid || ''}
-            otherParticipant={otherParticipantProfile || null}
-            isLoadingMessages={isLoading}
-            onSendMessage={sendMessage}
-            onBack={handleBackToList}
-          />
-        ) : (
-          <div className="flex h-full flex-col items-center justify-center p-8 text-center text-muted-foreground">
-            <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <MessageSquare className="h-8 w-8" />
-            </span>
-            <h2 className="font-display text-2xl font-bold uppercase tracking-tight text-foreground">
-              Wybierz konwersację
-            </h2>
-            <p className="mt-1 max-w-xs text-xs text-muted-foreground">
-              Wybierz rozmowę z listy po lewej stronie lub rozpocznij nowy czat z certyfikowanym trenerem.
-            </p>
-          </div>
-        )}
-      </main>
-    </ChatLayout>
-  );
+  return <ChatLayout>{content}</ChatLayout>;
 }

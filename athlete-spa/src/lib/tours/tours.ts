@@ -176,7 +176,7 @@ export const TOURS: TourDef[] = [
       {
         target: 'menu-directory',
         title: 'Wszystkie ekrany',
-        body: 'Reszta aplikacji pogrupowana tematycznie. Kolor ikony jest ten sam co kolor działu w całej aplikacji.',
+        body: 'Reszta aplikacji pogrupowana tematycznie, zawsze w tej samej kolejności. Konto, ustawienia i motyw znajdziesz na samym dole.',
       },
     ],
   },

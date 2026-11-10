@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useUser, useCollection } from '@/lib/db-hooks';
 import { useFriends } from '@/lib/friends';
@@ -10,7 +10,6 @@ import { NicknameSetup } from '@/components/social/NicknameSetup';
 import { FriendsFeed } from '@/components/social/FriendsFeed';
 import { DiscoverGrid } from '@/components/social/DiscoverGrid';
 import { PeopleTab } from '@/components/social/PeopleTab';
-import { PublicProfileDialog } from '@/components/social/PublicProfileDialog';
 
 const SOCIAL_TABS = ['feed', 'discover', 'people'] as const;
 type SocialTab = (typeof SOCIAL_TABS)[number];
@@ -40,7 +39,8 @@ export default function AthleteSocialPage() {
   const tabParam = searchParams.get('tab');
   const legacyTab = tabParam ? LEGACY_TABS[tabParam] : undefined;
   const activeTab: SocialTab = isSocialTab(tabParam) ? tabParam : legacyTab ?? DEFAULT_TAB;
-  const [profileUserId, setProfileUserId] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const openProfile = (userId: string) => navigate(`/athlete/social/profile/${userId}`);
 
   const { data: friendsData } = useFriends(Boolean(user?.uid));
   const incomingCount = friendsData?.incoming.length ?? 0;
@@ -110,21 +110,15 @@ export default function AthleteSocialPage() {
         </TabsList>
 
         <TabsContent value="feed" className="mt-4">
-          <FriendsFeed onProfileClick={setProfileUserId} onOpenPeople={() => setActiveTab('people')} />
+          <FriendsFeed onProfileClick={openProfile} onOpenPeople={() => setActiveTab('people')} />
         </TabsContent>
         <TabsContent value="discover" className="mt-4">
-          <DiscoverGrid onProfileClick={setProfileUserId} />
+          <DiscoverGrid onProfileClick={openProfile} />
         </TabsContent>
         <TabsContent value="people" className="mt-4">
-          <PeopleTab onProfileClick={setProfileUserId} />
+          <PeopleTab onProfileClick={openProfile} />
         </TabsContent>
       </Tabs>
-
-      <PublicProfileDialog
-        open={profileUserId !== null}
-        onOpenChange={open => !open && setProfileUserId(null)}
-        userId={profileUserId}
-      />
     </div>
   );
 }

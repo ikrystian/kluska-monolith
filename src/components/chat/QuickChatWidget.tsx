@@ -10,32 +10,26 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
-import { useChat } from './hooks/useChat';
+import { useUser } from '@/lib/db-hooks';
+import { useConversations } from './hooks/useConversations';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ChatAvatar } from './ChatAvatar';
 import { formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 export function QuickChatWidget() {
     const router = useRouter();
-    const { conversations, currentUser } = useChat();
+    const { user: currentUser } = useUser();
+    const { conversations } = useConversations();
 
-    const unreadCount = useMemo(() => {
-        if (!conversations || !currentUser) return 0;
-        return conversations.reduce((acc, conv) => {
-            return acc + (conv.unreadCount?.[currentUser.uid] || 0);
-        }, 0);
-    }, [conversations, currentUser]);
+    const unreadCount = useMemo(
+        () => (conversations ?? []).reduce((acc, conv) => acc + (conv.unread || 0), 0),
+        [conversations]
+    );
 
-    const sortedConversations = useMemo(() => {
-        if (!conversations) return [];
-        return [...conversations].sort((a, b) => {
-            const dateA = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
-            const dateB = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
-            return dateB - dateA;
-        }).slice(0, 5); // Show only top 5 recent
-    }, [conversations]);
+    // Already newest first; show the 5 most recent.
+    const sortedConversations = useMemo(() => (conversations ?? []).slice(0, 5), [conversations]);
 
     const handleSelectConversation = (conversationId: string) => {
         const role = currentUser?.role === 'trainer' ? 'trainer' : 'athlete';
@@ -59,7 +53,9 @@ export function QuickChatWidget() {
                 >
                     <MessageSquare className="h-5 w-5" />
                     {unreadCount > 0 && (
-                        <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-600 ring-2 ring-background" />
+                        <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground ring-2 ring-background">
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
                     )}
                 </Button>
             </PopoverTrigger>
@@ -76,27 +72,23 @@ export function QuickChatWidget() {
                     {sortedConversations.length > 0 ? (
                         <div className="flex flex-col">
                             {sortedConversations.map((conversation) => {
-                                const otherParticipantId = conversation.participants.find(id => id !== currentUser.uid);
-                                const isTrainer = currentUser.role === 'trainer';
-                                const otherParticipantName = isTrainer ? conversation.athleteName : conversation.trainerName;
-                                const unread = (conversation.unreadCount?.[currentUser.uid] || 0) > 0;
+                                const { contact } = conversation;
+                                const unread = conversation.unread > 0;
 
                                 return (
                                     <button
                                         key={conversation.id}
-                                        onClick={() => handleSelectConversation(conversation.conversationId)}
+                                        onClick={() => handleSelectConversation(conversation.id)}
                                         className={cn(
                                             "flex items-start gap-3 p-3 text-left transition-colors hover:bg-muted/50",
                                             unread && "bg-muted/20"
                                         )}
                                     >
-                                        <Avatar className="h-8 w-8 mt-1">
-                                            <AvatarFallback>{otherParticipantName?.charAt(0).toUpperCase()}</AvatarFallback>
-                                        </Avatar>
+                                        <ChatAvatar contact={contact} className="mt-1 h-8 w-8" />
                                         <div className="flex-1 overflow-hidden">
                                             <div className="flex items-center justify-between">
-                                                <span className={cn("text-sm font-medium", unread && "font-bold")}>
-                                                    {otherParticipantName}
+                                                <span className={cn("truncate text-sm font-medium", unread && "font-bold")}>
+                                                    {contact.name}
                                                 </span>
                                                 {conversation.lastMessage && (
                                                     <span className="text-xs text-muted-foreground">

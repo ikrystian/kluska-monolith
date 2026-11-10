@@ -6,6 +6,7 @@ import { format, differenceInMinutes } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import {
   Activity,
+  Aperture,
   Award,
   CheckCircle2,
   Clock,
@@ -36,6 +37,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { CoachSummaryDialog } from '@/components/workout/CoachSummaryDialog';
+import { ShareWorkoutDialog } from '@/components/workout/ShareWorkoutDialog';
+import type { WorkoutShareData } from '@/lib/workout-share-image';
 import { SetTypeBadge } from '@/components/workout/SetTypeModal';
 import { rpeToRir } from '@/components/workout/RpeSelector';
 import { seriesLabel, exercisesLabel } from '@/components/schedule/WorkoutExerciseList';
@@ -73,6 +76,7 @@ export default function HistoryDetailPage() {
   const { createDoc } = useCreateDoc();
 
   const [isPhotoOpen, setIsPhotoOpen] = useState(false);
+  const [isStoryOpen, setIsStoryOpen] = useState(false);
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
   // Finishing a workout lands here with ?summary=1 so the coach's take opens straight away.
   const [searchParams] = useSearchParams();
@@ -180,6 +184,24 @@ export default function HistoryDetailPage() {
       muscleGroups,
     };
   }, [workoutLog]);
+
+  // What the Instagram story card prints over the photo.
+  const storyData = useMemo<WorkoutShareData | null>(() => {
+    if (!workoutLog || !stats) return null;
+    return {
+      workoutName: workoutLog.workoutName,
+      completedAt: workoutLog.endTime ? new Date(workoutLog.endTime) : null,
+      gymName: workoutLog.gymName,
+      recordsCount: workoutLog.newRecords?.length ?? 0,
+      stats: {
+        totalVolume: stats.totalVolume,
+        totalReps: stats.totalReps,
+        totalSets: stats.totalSets,
+        exerciseCount: workoutLog.exercises.length,
+        durationMinutes: stats.duration,
+      },
+    };
+  }, [workoutLog, stats]);
 
   const handleShare = async () => {
     if (!workoutLog) return;
@@ -350,19 +372,29 @@ export default function HistoryDetailPage() {
 
           {/* Workout Photo */}
           {photoUrl && (
-            <button
-              type="button"
-              onClick={() => setIsPhotoOpen(true)}
-              aria-label="Powiększ zdjęcie"
-              className="relative block aspect-[3/4] w-36 shrink-0 self-start overflow-hidden rounded-xl bg-secondary"
-            >
-              <img
-                src={photoUrl}
-                alt={`Zdjęcie z treningu ${workoutLog.workoutName}`}
-                className="absolute inset-0 h-full w-full object-cover"
-                loading="lazy"
-              />
-            </button>
+            <div className="relative aspect-[3/4] w-36 shrink-0 self-start overflow-hidden rounded-xl bg-secondary">
+              <button
+                type="button"
+                onClick={() => setIsPhotoOpen(true)}
+                aria-label="Powiększ zdjęcie"
+                className="absolute inset-0 block"
+              >
+                <img
+                  src={photoUrl}
+                  alt={`Zdjęcie z treningu ${workoutLog.workoutName}`}
+                  className="absolute inset-0 h-full w-full object-cover"
+                  loading="lazy"
+                />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsStoryOpen(true)}
+                aria-label="Udostępnij zdjęcie jako Story na Instagramie"
+                className="absolute inset-x-2 bottom-2 flex h-9 items-center justify-center gap-1.5 rounded-full bg-black/60 text-xs font-semibold text-white backdrop-blur-md transition-transform active:scale-95"
+              >
+                <Aperture className="h-3.5 w-3.5" /> Story
+              </button>
+            </div>
           )}
         </div>
 
@@ -757,6 +789,15 @@ export default function HistoryDetailPage() {
         open={isSummaryOpen}
         onOpenChange={handleSummaryOpenChange}
       />
+
+      {photoUrl && storyData && (
+        <ShareWorkoutDialog
+          open={isStoryOpen}
+          onClose={() => setIsStoryOpen(false)}
+          photoUrl={photoUrl}
+          workout={storyData}
+        />
+      )}
 
       {/* Photo Lightbox Dialog */}
       <Dialog open={isPhotoOpen} onOpenChange={setIsPhotoOpen}>

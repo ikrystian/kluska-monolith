@@ -11,11 +11,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Plus, Search, Sparkles, UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { UserProfile } from '@/lib/chat/types';
+import type { UserProfile } from '@/lib/chat/types';
+import { LEAD_TRAINER_ID } from '@/lib/chat/constants';
 import { TrainerAvatar } from '@/components/trainers/TrainerAvatar';
 import { haptic } from '@/lib/haptics';
-
-const LEAD_TRAINER_ID = '6a5cf516f9fe894c859bb9af';
 
 interface NewConversationDialogProps {
   potentialContacts: UserProfile[];
@@ -37,7 +36,7 @@ export function NewConversationDialog({
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (potentialContacts ?? []).filter(
-      c => !q || c.name.toLowerCase().includes(q) || (c.role && c.role.toLowerCase().includes(q))
+      c => !q || (c.name || '').toLowerCase().includes(q)
     );
   }, [potentialContacts, search]);
 

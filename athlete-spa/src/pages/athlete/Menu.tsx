@@ -261,10 +261,10 @@ function HintChips({ onPick }: { onPick: (hint: string) => void }) {
  *
  * Top to bottom: search, four shortcuts, then the nav groups in their fixed
  * order as a two-column directory, and the account — profile, settings, theme,
- * logout. A workout left running is the layout's mini-player, not a row here. Icons stay one quiet colour so the names
- * do the talking; search results keep the one-line hints the directory drops.
- * Groups come from `athlete-nav`, so a new screen added there shows up here
- * and in search without touching this file.
+ * logout. A workout left running is the layout's mini-player, not a row here.
+ * Icons stay one quiet colour so the names do the talking; search results keep
+ * the one-line hints the directory drops. Groups come from `athlete-nav`, so a
+ * new screen added there shows up here and in search without touching this file.
  */
 export default function MenuPage() {
   const { userProfile } = useUserProfile();

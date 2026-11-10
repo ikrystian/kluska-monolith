@@ -10,11 +10,10 @@ import {
     DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { UserProfile } from '@/lib/chat/types';
-import { placeholderImages } from '@/lib/placeholder-images';
+import { chatRoleLabel, type UserProfile } from '@/lib/chat/types';
+import { ChatAvatar } from './ChatAvatar';
 
 interface NewConversationDialogProps {
     potentialContacts: UserProfile[];
@@ -67,13 +66,10 @@ export function NewConversationDialog({
                                 )}
                                 onClick={() => setSelectedUserId(contact.id)}
                             >
-                                <Avatar>
-                                    <AvatarImage src={placeholderImages.find(p => p.id === 'avatar-male')?.imageUrl} />
-                                    <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
+                                <ChatAvatar contact={contact} />
                                 <div>
                                     <p className="font-semibold">{contact.name}</p>
-                                    <p className="text-sm text-muted-foreground capitalize">{contact.role}</p>
+                                    <p className="text-sm text-muted-foreground">{chatRoleLabel(contact.role)}</p>
                                 </div>
                             </div>
                         )) : <p className="text-center text-muted-foreground">Brak nowych osób do rozpoczęcia rozmowy.</p>

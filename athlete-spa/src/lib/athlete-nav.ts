@@ -276,6 +276,7 @@ export function keepsChromeVisible(pathname: string): boolean {
 /** Titles for screens that aren't nav destinations (details, editors). */
 const EXTRA_TITLES: { match: RegExp; title: string }[] = [
   { match: /^\/athlete\/trainers\/[^/]+$/, title: 'Trener' },
+  { match: /^\/athlete\/social\/profile\/[^/]+$/, title: 'Profil' },
   { match: /^\/athlete\/challenges\/[^/]+$/, title: 'Wyzwanie' },
   { match: /^\/athlete\/templates$/, title: 'Szablony' },
   { match: /^\/athlete\/gamification$/, title: 'Osiągnięcia' },

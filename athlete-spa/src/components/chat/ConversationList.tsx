@@ -2,39 +2,27 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
+  Check,
   CheckCheck,
   Compass,
+  Inbox,
   MessageSquare,
   Search,
   ShieldCheck,
   Sparkles,
-  Trash2,
   Users,
   X,
   Zap,
 } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { TrainerAvatar } from '@/components/trainers/TrainerAvatar';
 import { cn } from '@/lib/utils';
-import { Conversation, UserProfile } from '@/lib/chat/types';
+import type { Conversation, UserProfile } from '@/lib/chat/types';
+import { LEAD_TRAINER_ID } from '@/lib/chat/constants';
 import { haptic } from '@/lib/haptics';
-
-const LEAD_TRAINER_ID = '6a5cf516f9fe894c859bb9af';
 
 const ICEBREAKERS = [
   '👋 Cześć Krystian! Chcę skonsultować mój aktualny plan treningowy.',
@@ -55,28 +43,31 @@ function formatChatTime(dateInput: Date | string | number | undefined | null): s
   return format(date, 'd MMM', { locale: pl });
 }
 
+function roleLabel(role: string): string {
+  if (role === 'trainer') return 'Trener personalny';
+  if (role === 'admin') return 'Zespół Leniwej Kluski';
+  return 'Sportowiec';
+}
+
 interface ConversationListProps {
   conversations: Conversation[];
-  selectedId: string | null;
   currentUserId: string;
-  userRole: 'trainer' | 'athlete';
   isLoading: boolean;
   leadTrainer?: UserProfile | null;
-  onSelect: (id: string) => void;
-  onDelete: (conversation: Conversation) => void;
-  onStartWithLeadTrainer?: (initialMessage?: string) => Promise<void>;
+  /** Offer the head coach when there are no conversations (never to the head coach themself). */
+  showLeadTrainerOffer: boolean;
+  onSelect: (conversation: Conversation) => void;
+  onStartWithLeadTrainer?: (initialMessage?: string) => Promise<void> | void;
   header?: React.ReactNode;
 }
 
 export function ConversationList({
   conversations,
-  selectedId,
   currentUserId,
-  userRole,
   isLoading,
   leadTrainer,
+  showLeadTrainerOffer,
   onSelect,
-  onDelete,
   onStartWithLeadTrainer,
   header,
 }: ConversationListProps) {
@@ -84,42 +75,40 @@ export function ConversationList({
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [isStartingLead, setIsStartingLead] = useState(false);
 
-  const totalUnread = useMemo(() => {
-    return (conversations ?? []).reduce(
-      (sum, c) => sum + (c.unreadCount?.[currentUserId] || 0),
-      0
-    );
-  }, [conversations, currentUserId]);
+  const totalUnread = useMemo(
+    () => (conversations ?? []).reduce((sum, c) => sum + (c.unread || 0), 0),
+    [conversations]
+  );
 
   const filteredConversations = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (conversations ?? [])
       .filter(c => {
-        if (filter === 'unread') {
-          return (c.unreadCount?.[currentUserId] || 0) > 0;
-        }
+        if (filter === 'unread') return c.unread > 0;
         return true;
       })
       .filter(c => {
         if (!q) return true;
-        const otherName = (userRole === 'trainer' ? c.athleteName : c.trainerName) || '';
-        const lastMsg = c.lastMessage?.text || '';
-        return otherName.toLowerCase().includes(q) || lastMsg.toLowerCase().includes(q);
+        const name = c.contact.name.toLowerCase();
+        const lastMsg = (c.lastMessage?.text || '').toLowerCase();
+        return name.includes(q) || lastMsg.includes(q);
       });
-  }, [conversations, search, filter, userRole, currentUserId]);
+  }, [conversations, search, filter]);
 
   const handleStartLead = async (msg?: string) => {
     if (!onStartWithLeadTrainer || isStartingLead) return;
     setIsStartingLead(true);
     try {
       await onStartWithLeadTrainer(msg);
+    } catch {
+      // The page already told the user what went wrong.
     } finally {
       setIsStartingLead(false);
     }
   };
 
   return (
-    <aside className={cn('flex h-full flex-col bg-background', selectedId && 'hidden')}>
+    <aside className="flex h-full flex-col bg-background">
       {/* Top Header Bar */}
       <div className="shrink-0 space-y-3 px-4 pt-3 pb-2 border-b border-border/40">
         <div className="flex items-center justify-between gap-2">
@@ -192,120 +181,101 @@ export function ConversationList({
       </div>
 
       {/* Main List / Empty State */}
-      <ScrollArea className="min-h-0 flex-1">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <div className="p-3 space-y-1.5">
+          {isLoading && conversations.length === 0 &&
+            [0, 1, 2].map(i => (
+              <div key={i} className="flex items-center gap-3.5 rounded-2xl bg-card/60 p-3">
+                <span className="h-12 w-12 shrink-0 animate-pulse rounded-full bg-secondary" />
+                <div className="flex-1 space-y-2">
+                  <span className="block h-3 w-1/3 animate-pulse rounded bg-secondary" />
+                  <span className="block h-2.5 w-2/3 animate-pulse rounded bg-secondary" />
+                </div>
+              </div>
+            ))}
+
           {filteredConversations.map(convo => {
-            const otherParticipantName = userRole === 'trainer' ? convo.athleteName : convo.trainerName;
-            const otherParticipantRole = userRole === 'trainer' ? 'Sportowiec' : 'Trener personalny';
-            const unreadCount = convo.unreadCount?.[currentUserId] || 0;
-            const hasUnread = unreadCount > 0;
+            const { contact } = convo;
+            const hasUnread = convo.unread > 0;
             const isMeLast = convo.lastMessage?.senderId === currentUserId;
-            const isSelected = selectedId === convo.id || selectedId === convo.conversationId;
+            const readByContact = isMeLast && convo.unreadByContact === 0;
 
             return (
-              <div key={convo.id} className="relative group">
-                <div
-                  onClick={() => {
-                    haptic('tap');
-                    onSelect(convo.id);
-                  }}
-                  className={cn(
-                    'flex items-center gap-3.5 rounded-2xl p-3 cursor-pointer transition-all active:scale-[0.99] border',
-                    isSelected
-                      ? 'border-primary bg-primary/10 shadow-sm'
-                      : hasUnread
-                      ? 'border-primary/30 bg-card shadow-sm hover:border-primary/50'
-                      : 'border-transparent bg-card/60 hover:bg-secondary/70'
+              <button
+                key={convo.id}
+                type="button"
+                onClick={() => {
+                  haptic('tap');
+                  onSelect(convo);
+                }}
+                className={cn(
+                  'flex w-full items-center gap-3.5 rounded-2xl border p-3 text-left transition-all active:scale-[0.99]',
+                  hasUnread
+                    ? 'border-primary/30 bg-card shadow-sm'
+                    : 'border-transparent bg-card/60 active:bg-secondary/70'
+                )}
+              >
+                <div className="relative shrink-0">
+                  <TrainerAvatar trainer={contact} className="h-12 w-12 text-lg ring-2 ring-background shadow-xs" />
+                  {hasUnread && (
+                    <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-primary ring-2 ring-card" />
                   )}
-                >
-                  {/* Avatar with Online/Unread Marker */}
-                  <div className="relative shrink-0">
-                    <TrainerAvatar
-                      trainer={{ name: otherParticipantName, avatarUrl: (convo as any).athleteAvatarUrl }}
-                      className="h-12 w-12 text-lg ring-2 ring-background shadow-xs"
-                    />
-                    {hasUnread ? (
-                      <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-primary ring-2 ring-card animate-pulse" />
-                    ) : (
-                      <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-volt ring-2 ring-card" />
-                    )}
-                  </div>
-
-                  {/* Text details */}
-                  <div className="min-w-0 flex-1 pr-6">
-                    <div className="flex items-center justify-between gap-1 mb-0.5">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <p className={cn('truncate text-sm font-bold', hasUnread ? 'text-foreground' : 'text-foreground/90')}>
-                          {otherParticipantName}
-                        </p>
-                        {userRole === 'athlete' && (
-                          <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-volt" />
-                        )}
-                      </div>
-                      <span className={cn('text-[11px] shrink-0 font-medium', hasUnread ? 'text-primary font-bold' : 'text-muted-foreground')}>
-                        {formatChatTime(convo.lastMessage?.createdAt || convo.updatedAt)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-2">
-                      <p
-                        className={cn(
-                          'truncate text-xs',
-                          hasUnread ? 'text-foreground font-semibold' : 'text-muted-foreground'
-                        )}
-                      >
-                        {isMeLast && <span className="font-normal text-muted-foreground">Ty: </span>}
-                        {convo.lastMessage?.text || 'Brak wiadomości'}
-                      </p>
-
-                      {hasUnread && (
-                        <span className="shrink-0 grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
-                          {unreadCount}
-                        </span>
-                      )}
-                    </div>
-                  </div>
                 </div>
 
-                {/* Delete conversation dialog */}
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Usuń rozmowę"
-                      className="absolute right-2 top-1/2 h-8 w-8 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                      onClick={e => e.stopPropagation()}
+                <div className="min-w-0 flex-1">
+                  <div className="mb-0.5 flex items-center justify-between gap-1">
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <p className={cn('truncate text-sm font-bold', hasUnread ? 'text-foreground' : 'text-foreground/90')}>
+                        {contact.name}
+                      </p>
+                      {contact.role === 'trainer' && <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-volt" />}
+                    </div>
+                    <span
+                      className={cn(
+                        'shrink-0 text-[11px] font-medium',
+                        hasUnread ? 'font-bold text-primary' : 'text-muted-foreground'
+                      )}
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="rounded-3xl p-6">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle className="font-display text-xl font-bold uppercase">
-                        Czy na pewno chcesz usunąć tę rozmowę?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription className="text-xs text-muted-foreground">
-                        Spowoduje to trwałe usunięcie wszystkich wiadomości z <span className="font-bold text-foreground">{otherParticipantName}</span>.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="mt-4">
-                      <AlertDialogCancel className="rounded-xl">Anuluj</AlertDialogCancel>
-                      <AlertDialogAction
-                        className="bg-destructive text-destructive-foreground rounded-xl"
-                        onClick={() => onDelete(convo)}
-                      >
-                        Usuń rozmowę
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
+                      {formatChatTime(convo.lastMessage?.createdAt || convo.updatedAt)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <p className={cn('flex min-w-0 items-center gap-1 truncate text-xs', hasUnread ? 'font-semibold text-foreground' : 'text-muted-foreground')}>
+                      {isMeLast &&
+                        (readByContact ? (
+                          <CheckCheck className="h-3.5 w-3.5 shrink-0 text-primary" aria-label="Przeczytane" />
+                        ) : (
+                          <Check className="h-3.5 w-3.5 shrink-0" aria-label="Wysłane" />
+                        ))}
+                      <span className="truncate">
+                        {isMeLast && <span className="font-normal">Ty: </span>}
+                        {convo.lastMessage?.text || <span className="italic">{roleLabel(contact.role)} · brak wiadomości</span>}
+                      </span>
+                    </p>
+
+                    {hasUnread && (
+                      <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                        {convo.unread > 99 ? '99+' : convo.unread}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </button>
             );
           })}
 
+          {/* No conversations, and you are the head coach (or the offer is off): plain inbox state */}
+          {!isLoading && conversations.length === 0 && !showLeadTrainerOffer && (
+            <div className="space-y-2 py-16 text-center text-xs text-muted-foreground">
+              <Inbox className="mx-auto h-9 w-9 text-muted-foreground/60" />
+              <p className="font-semibold text-foreground">Brak rozmów</p>
+              <p className="mx-auto max-w-[16rem]">Gdy ktoś do Ciebie napisze albo zaczniesz nową rozmowę, pojawi się tutaj.</p>
+            </div>
+          )}
+
           {/* Empty State when 0 conversations exist: PROPOSE LEAD TRAINER 6a5cf516f9fe894c859bb9af */}
-          {!isLoading && conversations?.length === 0 && (
+          {!isLoading && conversations.length === 0 && showLeadTrainerOffer && (
             <div className="py-2 space-y-4">
               {/* Proposal Hero Card */}
               <div className="relative overflow-hidden rounded-3xl border border-primary/40 bg-gradient-to-br from-primary/10 via-card to-card p-5 shadow-sm space-y-4">
@@ -424,7 +394,7 @@ export function ConversationList({
           )}
 
           {/* If there are conversations, but search yielded 0 */}
-          {!isLoading && conversations?.length > 0 && filteredConversations.length === 0 && (
+          {!isLoading && conversations.length > 0 && filteredConversations.length === 0 && (
             <div className="py-12 text-center text-xs text-muted-foreground space-y-2">
               <Users className="mx-auto h-8 w-8 text-muted-foreground/60" />
               <p className="font-semibold text-foreground">Nie znaleziono rozmów</p>
@@ -443,7 +413,7 @@ export function ConversationList({
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
     </aside>
   );
 }

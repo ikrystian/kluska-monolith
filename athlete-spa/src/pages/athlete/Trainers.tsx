@@ -260,9 +260,7 @@ export default function AthleteTrainersPage() {
             </span>
           )}
         </div>
-        <h1 className="font-display text-3xl font-bold uppercase tracking-tight text-foreground">
-          Znajdź swojego trenera
-        </h1>
+
         <p className="text-xs text-muted-foreground">
           Certyfikowani trenerzy personalni, którzy dopasują plan, dietę i technikę do Twoich celów.
         </p>

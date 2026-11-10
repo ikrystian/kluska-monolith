@@ -58,7 +58,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { UserProfile, WorkoutLog, Exercise, TrainingPlan } from '@/lib/types';
-import { useChat } from '@/components/chat/hooks/useChat';
 
 interface Survey {
   id: string;
@@ -350,47 +349,10 @@ export default function AthleteProfilePage() {
     };
   }, [workoutHistory]);
 
-  const { createConversation, conversations } = useChat();
-
-  const handleStartConversation = async () => {
-    if (!trainerUser || !athleteProfile) return;
-
-    const conversationId = [trainerUser.uid, athleteProfile.id].sort().join('_');
-    const existingConversation = conversations?.find(c => c.conversationId === conversationId);
-
-    if (!existingConversation) {
-      try {
-        // Create new conversation
-        const trainerProfileResponse = await fetch(`/api/db/users/${trainerUser.uid}`);
-        const trainerProfileData = await trainerProfileResponse.json();
-        const trainerProfile = trainerProfileData.data;
-
-        await createConversation({
-          conversationId: conversationId,
-          participants: [trainerUser.uid, athleteProfile.id],
-          trainerId: trainerUser.uid,
-          athleteId: athleteProfile.id,
-          trainerName: trainerProfile.name,
-          athleteName: athleteProfile.name,
-          lastMessage: null,
-          updatedAt: new Date(),
-          unreadCount: {
-            [trainerUser.uid]: 0,
-            [athleteProfile.id]: 0,
-          },
-        });
-      } catch (e) {
-        console.error(e);
-        toast({
-          title: "Błąd",
-          description: "Nie udało się rozpocząć konwersacji.",
-          variant: "destructive"
-        });
-        return;
-      }
-    }
-
-    router.push(`/trainer/chat?conversationId=${conversationId}`);
+  // Opens the existing chat, or a draft that is saved with the first message.
+  const handleStartConversation = () => {
+    if (!athleteProfile) return;
+    router.push(`/trainer/chat?userId=${athleteProfile.id}`);
   };
 
   const chartConfig = {

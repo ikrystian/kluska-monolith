@@ -11,9 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useConversations } from '@/components/chat/hooks/useConversations';
 import { useCollection, useUpdateDoc, useUser } from '@/lib/db-hooks';
-import { useUserProfile } from '@/contexts/UserProfileContext';
 import { useToast } from '@/hooks/use-toast';
 import type { TrainerRequest } from '@/lib/types';
 
@@ -80,11 +78,9 @@ function InquiryCard({
 
 export function InquiriesInbox() {
   const { user } = useUser();
-  const { userProfile } = useUserProfile();
   const { toast } = useToast();
   const router = useRouter();
   const { updateDoc } = useUpdateDoc();
-  const { conversations, createConversation } = useConversations();
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const { data: requests, isLoading, refetch } = useCollection<TrainerRequest>(
@@ -139,28 +135,9 @@ export function InquiriesInbox() {
     }
   };
 
-  const openChat = async (request: TrainerRequest) => {
-    if (!user) return;
-    const conversationId = [user.uid, request.athleteId].sort().join('_');
-    if (!conversations?.some((c) => c.conversationId === conversationId)) {
-      try {
-        await createConversation({
-          conversationId,
-          participants: [user.uid, request.athleteId],
-          trainerId: user.uid,
-          athleteId: request.athleteId,
-          trainerName: userProfile?.name || 'Trener',
-          athleteName: request.athleteName,
-          lastMessage: null,
-          updatedAt: new Date(),
-          unreadCount: { [user.uid]: 0, [request.athleteId]: 0 },
-        });
-      } catch {
-        toast({ title: 'Błąd', description: 'Nie udało się otworzyć czatu.', variant: 'destructive' });
-        return;
-      }
-    }
-    router.push(`/trainer/chat?conversationId=${conversationId}`);
+  // Opens the existing chat, or a draft that is saved with the first message.
+  const openChat = (request: TrainerRequest) => {
+    router.push(`/trainer/chat?userId=${request.athleteId}`);
   };
 
   const renderList = (items: TrainerRequest[], empty: string) =>

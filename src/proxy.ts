@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isAllowedOrigin } from '@/lib/allowed-origins';
 
 /**
- * CORS for /api/* only. The existing Next.js web app calls the API
- * same-origin and is unaffected; this exists so the athlete SPA (served from
- * a different origin, e.g. Vite on :5173) can call this backend directly.
+ * CORS for /api/* and the uploaded media under /upload-data/*. The existing
+ * Next.js web app calls the API same-origin and is unaffected; this exists so
+ * the athlete SPA (served from a different origin, e.g. Vite on :5173) can
+ * call this backend directly. Media needs it too: the SPA draws uploaded
+ * photos onto a canvas (Instagram share cards), which only exports when the
+ * image was fetched with CORS.
  */
 function applyCorsHeaders(response: NextResponse, origin: string | null) {
   if (origin && isAllowedOrigin(origin)) {
@@ -28,5 +31,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/api/:path*'],
+  matcher: ['/api/:path*', '/upload-data/:path*'],
 };

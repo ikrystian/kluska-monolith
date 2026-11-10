@@ -105,14 +105,14 @@ interface DietPlan {
   name: string;
 }
 
-import { useChat } from '@/components/chat/hooks/useChat';
+import { useConversations } from '@/components/chat/hooks/useConversations';
 import { MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export default function MyAthletesPage() {
   const { toast } = useToast();
   const { user } = useUser();
-  const { conversations, createConversation } = useChat();
+  const { conversations } = useConversations();
 
   const [foundUser, setFoundUser] = useState<FoundUser | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -224,49 +224,13 @@ export default function MyAthletesPage() {
     }
   };
 
-  const handleChat = async (athlete: UserProfile) => {
-    if (!user) return;
-
-    const conversationId = [user.uid, athlete.id].sort().join('_');
-    const existingConversation = conversations?.find(c => c.conversationId === conversationId);
-
-    if (!existingConversation) {
-      // Create if not exists
-      try {
-        await createConversation({
-          conversationId: conversationId,
-          participants: [user.uid, athlete.id],
-          trainerId: user.uid,
-          athleteId: athlete.id,
-          trainerName: userProfile?.name || 'Trener',
-          athleteName: athlete.name,
-          lastMessage: null,
-          updatedAt: new Date(),
-          unreadCount: {
-            [user.uid]: 0,
-            [athlete.id]: 0,
-          }
-        });
-      } catch (e) {
-        console.error("Failed to create conversation", e);
-        toast({
-          title: "Błąd",
-          description: "Nie udało się otworzyć czatu.",
-          variant: "destructive"
-        });
-        return;
-      }
-    }
-
-    router.push(`/trainer/chat?conversationId=${conversationId}`);
+  // Opens the existing chat, or a draft that is saved with the first message.
+  const handleChat = (athlete: UserProfile) => {
+    router.push(`/trainer/chat?userId=${athlete.id}`);
   };
 
-  const getUnreadCount = (athleteId: string) => {
-    if (!user || !conversations) return 0;
-    const conversationId = [user.uid, athleteId].sort().join('_');
-    const conversation = conversations.find(c => c.conversationId === conversationId);
-    return conversation?.unreadCount?.[user.uid] || 0;
-  };
+  const getUnreadCount = (athleteId: string) =>
+    conversations?.find(c => c.contact.id === athleteId)?.unread ?? 0;
 
 
 

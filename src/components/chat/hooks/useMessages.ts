@@ -1,83 +1,52 @@
-import { useState, useEffect } from 'react';
-import { useCollection, useCreateDoc, useUpdateDoc } from '@/lib/db-hooks';
-import { Message } from '@/lib/chat/types';
-import { useUser } from '@/lib/db-hooks';
+'use client';
 
+import { useCallback } from 'react';
+import useSWR from 'swr';
+import { chatFetcher, messagesKey, postMessage } from '@/lib/chat/client';
+import type { Message } from '@/lib/chat/types';
+
+/** Messages of one conversation (by document id), polled while it is open. */
 export function useMessages(conversationId: string | null) {
-    const { user } = useUser();
-    const { createDoc } = useCreateDoc();
-    const { updateDoc } = useUpdateDoc();
-
-    const { data: messages, isLoading, refetch } = useCollection<Message>(
-        conversationId ? 'messages' : null,
-        { conversationId },
-        { sort: { createdAt: 1 } }
+    const { data, isLoading, mutate } = useSWR<Message[]>(
+        conversationId ? messagesKey(conversationId) : null,
+        chatFetcher,
+        { refreshInterval: 3_000 }
     );
 
-    // Polling for new messages (temporary until SSE)
-    useEffect(() => {
-        if (!conversationId) return;
-
-        const interval = setInterval(() => {
-            refetch();
-        }, 3000);
-
-        return () => clearInterval(interval);
-    }, [conversationId, refetch]);
-
-    const sendMessage = async (text: string, otherParticipantId: string) => {
-        if (!user || !conversationId) return;
-
-        const now = new Date();
-        const messageData = {
-            conversationId,
-            senderId: user.uid,
-            text,
-            createdAt: now,
-        };
-
-        await createDoc('messages', messageData);
-
-        // Fetch conversation to get current unread count
-        // Note: This is not atomic and prone to race conditions, but better than setting to total messages.
-        // In a production environment, use atomic $inc or a backend endpoint.
-        let currentUnread = 0;
-        try {
-            const convRes = await fetch(`/api/db/conversations/${conversationId}`);
-            if (convRes.ok) {
-                const convData = await convRes.json();
-                currentUnread = convData.data?.unreadCount?.[otherParticipantId] || 0;
-            }
-        } catch (e) {
-            console.error("Failed to fetch conversation for unread count", e);
-        }
-
-        // Update conversation last message and unread count
-        await updateDoc('conversations', conversationId, {
-            lastMessage: {
+    /** Sends `text`, showing it at once; resolves to the saved message, or throws (and drops it). */
+    const send = useCallback(
+        async (text: string, senderId: string): Promise<Message> => {
+            if (!conversationId) throw new Error('Brak rozmowy');
+            const temp: Message = {
+                id: `pending-${Date.now()}`,
+                conversationId,
+                senderId,
                 text,
-                senderId: user.uid,
-                createdAt: now,
-            },
-            updatedAt: now,
-            [`unreadCount.${otherParticipantId}`]: currentUnread + 1
-        });
-
-        // Since we can't easily do atomic updates with this client hook abstraction without verifying the backend support,
-        // we will assume the backend handles it or we accept a race condition for now.
-        // Re-reading the previous code: it used $inc. I should probably stick to that if the backend supports it.
-        // But `updateDoc` from `db-hooks` might just be a wrapper around firestore/mongo set.
-        // I'll stick to a simple update for now to be safe, or try to replicate the previous behavior.
-
-        // Let's assume we can't do $inc easily here without more info. 
-        // I'll just trigger a refetch.
-        refetch();
-    };
+                createdAt: new Date().toISOString(),
+                pending: true,
+            };
+            const request = postMessage(conversationId, text);
+            // The updater gets the list as it was before the optimistic bubble.
+            await mutate(
+                async committed => {
+                    const saved = await request;
+                    return [...(committed ?? []).filter(m => m.id !== saved.id), saved];
+                },
+                {
+                    optimisticData: current => [...(current ?? []), temp],
+                    rollbackOnError: true,
+                    populateCache: true,
+                    revalidate: false,
+                }
+            );
+            return request;
+        },
+        [conversationId, mutate]
+    );
 
     return {
-        messages,
-        isLoading,
-        sendMessage,
-        refetch
+        messages: data ?? null,
+        isLoading: Boolean(conversationId) && isLoading && !data,
+        send,
     };
 }

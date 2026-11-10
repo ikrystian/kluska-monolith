@@ -60,7 +60,7 @@ const NEVER_STALE = [
 ];
 
 /** Chat is self-contained and polled; a workout write must not reload it (and vice versa). */
-const CHAT_PREFIXES = ['/api/db/conversations', '/api/db/messages'];
+const CHAT_PREFIXES = ['/api/conversations', '/api/db/conversations', '/api/db/messages'];
 
 /** Which cached reads can a write to `path` have changed? `null` = none. */
 export function staleKeyMatcher(path: string): KeyMatcher | null {

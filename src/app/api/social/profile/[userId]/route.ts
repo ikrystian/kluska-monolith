@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { SocialProfile, SocialPost, PersonalRecord } from '@/models';
+import { getUserSummaries } from '@/lib/friends';
 
 export async function GET(
   request: NextRequest,
@@ -12,7 +13,7 @@ export async function GET(
     await connectToDatabase();
 
     // Independent lookups run in parallel — each one is a full round trip to Atlas.
-    const [profile, posts, records] = await Promise.all([
+    const [profile, posts, records, summaries] = await Promise.all([
       SocialProfile.findOne({ userId }).exec(),
       SocialPost.find({ authorId: userId }).sort({ createdAt: -1 }).exec(),
       // Personal records (top 5 by achievement date)
@@ -20,6 +21,8 @@ export async function GET(
         .sort({ achievedAt: -1 })
         .limit(5)
         .exec(),
+      // Public identity (display name, location) — no email or other private data.
+      getUserSummaries([userId]),
     ]);
 
     if (!profile) {
@@ -34,6 +37,7 @@ export async function GET(
 
     return NextResponse.json({
       profile: profile.toJSON(),
+      user: summaries.get(userId) ?? null,
       stats: {
         postsCount: posts.length,
         totalLikes

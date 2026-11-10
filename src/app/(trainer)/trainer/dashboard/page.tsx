@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useUser, useCollection } from '@/lib/db-hooks';
+import { useConversations } from '@/components/chat/hooks/useConversations';
 import {
   Users,
   MessageSquare,
@@ -61,17 +62,6 @@ interface Athlete {
   name: string;
   email: string;
   avatarUrl?: string;
-}
-
-interface Conversation {
-  id: string;
-  athleteName: string;
-  athleteAvatarUrl?: string;
-  lastMessage?: {
-    text: string;
-    createdAt: string;
-  };
-  unreadCount?: Record<string, number>;
 }
 
 interface BodyMeasurement {
@@ -398,11 +388,9 @@ export default function TrainerDashboardPage() {
   );
 
   // Fetch conversations - only when user is available
-  const { data: conversations, isLoading: conversationsLoading } = useCollection<Conversation>(
-    user?.uid ? 'conversations' : null,
-    { trainerId: user?.uid },
-    { sort: { updatedAt: -1 }, limit: 5 }
-  );
+  // Each carries `contact` — the other participant, never the trainer themself.
+  const { conversations: allConversations, isLoading: conversationsLoading } = useConversations();
+  const conversations = useMemo(() => allConversations?.slice(0, 5) ?? null, [allConversations]);
 
   // Fetch recent workout logs from all athletes - only when we have athletes
   const athleteIds = athletes?.map((a) => a.id) || [];
@@ -445,9 +433,7 @@ export default function TrainerDashboardPage() {
   const stats = useMemo(() => {
     const totalAthletes = athletes?.length || 0;
     const totalPlans = workoutPlans?.length || 0;
-    const unreadMessages = conversations?.reduce((sum: number, conv: any) => {
-      return sum + (conv.unreadCount?.[user?.uid || ''] || 0);
-    }, 0) || 0;
+    const unreadMessages = allConversations?.reduce((sum, conv) => sum + (conv.unread || 0), 0) || 0;
     const recentWorkoutsCount = recentWorkouts?.filter((w: any) => {
       const workoutDate = new Date(w.endTime);
       const weekAgo = new Date();
@@ -461,7 +447,7 @@ export default function TrainerDashboardPage() {
       unreadMessages,
       recentWorkoutsCount,
     };
-  }, [athletes, workoutPlans, conversations, recentWorkouts, user]);
+  }, [athletes, workoutPlans, allConversations, recentWorkouts]);
 
   const isLoading = athletesLoading || conversationsLoading || workoutsLoading || plansLoading || measurementsLoading || ccLoading || checkInsLoading;
 
@@ -840,23 +826,23 @@ export default function TrainerDashboardPage() {
             <CardContent>
               {conversations && conversations.length > 0 ? (
                 <div className="space-y-4">
-                  {conversations.map((conv: any) => {
-                    const unreadCount = conv.unreadCount?.[user?.uid || ''] || 0;
+                  {conversations.map(conv => {
+                    const unreadCount = conv.unread;
                     return (
                       <Link
                         key={conv.id}
                         href={`/trainer/chat?conversationId=${conv.id}`}
                         className="flex items-center justify-between border-b pb-3 last:border-0 hover:bg-accent/50 rounded p-2 transition-colors"
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex min-w-0 items-center gap-3">
                           <Avatar className="h-8 w-8">
-                            <AvatarImage src={conv.athleteAvatarUrl} alt={conv.athleteName || 'Athlete'} />
+                            <AvatarImage src={conv.contact.avatarUrl} alt={conv.contact.name} />
                             <AvatarFallback>
-                              {conv.athleteName?.charAt(0) || 'A'}
+                              {conv.contact.name.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
-                          <div>
-                            <p className="text-sm font-medium">{conv.athleteName}</p>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium">{conv.contact.name}</p>
                             <p className="text-xs text-muted-foreground line-clamp-1">
                               {conv.lastMessage?.text || 'Brak wiadomości'}
                             </p>
