@@ -1,42 +1,14 @@
 import { useMemo } from 'react';
-import { differenceInHours } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { WorkoutLog } from '@/lib/types';
-
-/** How the app's many muscle names map onto what an athlete actually plans around. */
-const MUSCLE_AREAS: { label: string; muscles: string[] }[] = [
-  { label: 'Klatka', muscles: ['Klatka piersiowa'] },
-  { label: 'Plecy', muscles: ['Plecy', 'Kaptury', 'Dolny odcinek pleców'] },
-  { label: 'Barki', muscles: ['Barki', 'Tylne aktony barków'] },
-  { label: 'Ramiona', muscles: ['Biceps', 'Triceps', 'Przedramiona'] },
-  { label: 'Nogi', muscles: ['Czworogłowe uda', 'Dwugłowe uda', 'Pośladki', 'Łydki', 'Przywodziciele', 'Odwodziciele', 'Biodra', 'Piszczele'] },
-  { label: 'Brzuch', muscles: ['Brzuch'] },
-];
-
-/** A muscle group is usually ready to train hard again after about three days. */
-const RECOVERY_HOURS = 72;
-
-function lastTrained(logs: WorkoutLog[], muscles: string[]): Date | null {
-  for (const log of logs) {
-    const hit = log.exercises?.some(series => series.exercise?.mainMuscleGroups?.some(group => muscles.includes(group.name)));
-    if (hit) return new Date(log.endTime);
-  }
-  return null;
-}
+import { areaReadiness } from '@/lib/muscle-areas';
 
 /**
  * Which muscles are ready, worked out from the last few sessions. Answers the
  * question behind every "what should I train today?" without another screen.
  */
 export function MuscleRecovery({ logs }: { logs: WorkoutLog[] }) {
-  const areas = useMemo(() => {
-    const now = new Date();
-    return MUSCLE_AREAS.map(area => {
-      const date = lastTrained(logs, area.muscles);
-      const hours = date ? differenceInHours(now, date) : RECOVERY_HOURS;
-      return { label: area.label, ready: Math.min(1, hours / RECOVERY_HOURS), hours, trained: Boolean(date) };
-    });
-  }, [logs]);
+  const areas = useMemo(() => areaReadiness(logs), [logs]);
 
   if (logs.length === 0) return null;
 

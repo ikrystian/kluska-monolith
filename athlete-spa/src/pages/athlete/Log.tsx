@@ -7,14 +7,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { PlusCircle, Trash2, Save, Loader2, Dumbbell, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, ChevronDown, LayoutList, RotateCcw, Check, Timer, AlertCircle, Minus, Plus, X, Camera, Image as ImageIcon, Footprints, ListChecks, BookOpen, House } from 'lucide-react';
+import { PlusCircle, Trash2, Save, Loader2, Dumbbell, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, ChevronDown, LayoutList, RotateCcw, Check, Timer, AlertCircle, Minus, Plus, X, Camera, Image as ImageIcon, Footprints, BookOpen, House } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import {
   type TrainingPlan,
@@ -67,7 +66,7 @@ import {
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { EmptyState } from '@/components/ui/section';
 import { MuscleRecovery } from '@/components/workout/MuscleRecovery';
-import { exercisesLabel, setsLabel } from '@/lib/plural';
+import { exercisesLabel, plural, setsLabel } from '@/lib/plural';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { CarouselWorkoutView } from '@/components/workout/CarouselWorkoutView';
 import { SetTypeModal } from '@/components/workout/SetTypeModal';
@@ -76,6 +75,11 @@ import { AnimatePresence, motion, listItemMotion } from '@/components/motion';
 import { cn } from '@/lib/utils';
 import { useSWRConfig } from 'swr';
 import { purgePersistedEntries } from '@/lib/swr-cache';
+import { Skeleton } from '@/components/ui/skeleton';
+import { FeaturedTemplate, NewTemplateTile, TemplateTile, WorkoutExercisesPreview } from '@/components/workout/TemplateCards';
+import { FOCUS_META, FOCUS_ORDER, lastSessionOf, recommendTemplate, templateFocus, type TemplateFocus } from '@/components/workout/template-meta';
+import gymPhoto from '@/assets/auth-gym.jpg';
+import runCover from '@/assets/workout-covers/run.svg';
 
 /**
  * Every locally-held `workoutLogs` list read (the active-workout lookup, the
@@ -1714,53 +1718,6 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
   )
 }
 
-// --- WORKOUT EXERCISES PREVIEW ---
-// Short "what's inside" list shown before the athlete commits to a training,
-// so they can peek at the exercises without entering the builder first.
-const summarizeSets = (sets: WorkoutSet[] | undefined): string | null => {
-  if (!sets || sets.length === 0) return null;
-  const count = sets.length;
-  const reps = sets.map(s => Number(s.reps)).filter(r => Number.isFinite(r) && r > 0);
-  const durations = sets.map(s => Number(s.duration)).filter(d => Number.isFinite(d) && d > 0);
-
-  let detail = '';
-  if (reps.length) {
-    const min = Math.min(...reps);
-    const max = Math.max(...reps);
-    detail = ` × ${min === max ? min : `${min}-${max}`}`;
-  } else if (durations.length) {
-    const min = Math.min(...durations);
-    const max = Math.max(...durations);
-    detail = ` × ${min === max ? `${min}s` : `${min}-${max}s`}`;
-  }
-  return `${count} ${count === 1 ? 'seria' : 'serii'}${detail}`;
-};
-
-function WorkoutExercisesPreview({ exerciseSeries }: { exerciseSeries: ExerciseSeries[] | undefined }) {
-  if (!exerciseSeries || exerciseSeries.length === 0) {
-    return <p className="rounded-2xl bg-secondary/60 p-4 text-center text-sm text-muted-foreground">Ten trening nie ma jeszcze żadnych ćwiczeń.</p>;
-  }
-
-  return (
-    <ol className="divide-y divide-border/50">
-      {exerciseSeries.map((series, i) => {
-        const muscles = series.exercise?.mainMuscleGroups?.map(mg => mg.name).filter(Boolean).join(', ');
-        const summary = summarizeSets(series.sets);
-        const meta = [summary, muscles].filter(Boolean).join(' · ');
-        return (
-          <li key={i} className="flex items-center gap-3 py-2.5">
-            <span className="w-5 shrink-0 text-center font-display text-xl font-bold tabular-nums text-muted-foreground">{i + 1}</span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[15px] font-semibold leading-tight">{series.exercise?.name || 'Nieznane ćwiczenie'}</p>
-              <p className="truncate text-xs text-muted-foreground">{meta || 'Ogólnorozwojowe'}</p>
-            </div>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
-
 /** "Co mnie czeka": exercises at a glance in a sheet, with the start button under the thumb. */
 function WorkoutPreviewSheet({ trigger, title, description, exerciseSeries, actionLabel, onAction }: { trigger: React.ReactNode; title: string; description: string; exerciseSeries: ExerciseSeries[] | undefined; actionLabel: string; onAction: () => void }) {
   return (
@@ -1784,17 +1741,64 @@ function WorkoutPreviewSheet({ trigger, title, description, exerciseSeries, acti
   );
 }
 
-/** The muscles a template works, for telling "Push A" from "Pull A" at a glance. */
-const templateMuscles = (template: Workout) =>
-  [...new Set(template.exerciseSeries?.flatMap(series => series.exercise?.mainMuscleGroups?.map(mg => mg.name) ?? []) ?? [])].slice(0, 3).join(', ');
+function SectionHeader({ title, count, action }: { title: string; count?: number; action?: React.ReactNode }) {
+  return (
+    <div className="mb-2.5 flex items-end justify-between gap-3">
+      <h2 className="font-display text-[1.75rem] font-bold uppercase leading-none">
+        {title}
+        {count ? <span className="ml-1.5 text-muted-foreground/60">{count}</span> : null}
+      </h2>
+      {action}
+    </div>
+  );
+}
+
+/** Small start tile: picture or plain card behind, icon chip on top, label at the bottom. */
+function QuickTile({ image, icon: Icon, iconClassName, title, subtitle, onClick, to }: { image?: string; icon: typeof Plus; iconClassName: string; title: string; subtitle: string; onClick?: () => void; to?: string }) {
+  const className = cn(
+    'relative flex h-[6.5rem] min-w-0 flex-col justify-between overflow-hidden rounded-2xl p-3 text-left transition-transform duration-150 active:scale-[0.97]',
+    image ? 'bg-[#111316] text-white' : 'bg-card text-foreground'
+  );
+  const body = (
+    <>
+      {image && (
+        <>
+          <img src={image} alt="" loading="lazy" decoding="async" draggable={false} className="absolute inset-0 h-full w-full select-none object-cover" />
+          <span className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/5" />
+        </>
+      )}
+      <span className={cn('relative grid h-8 w-8 place-items-center rounded-full', iconClassName)}>
+        <Icon className="h-4 w-4" strokeWidth={2.5} />
+      </span>
+      <span className="relative block min-w-0">
+        <span className="block font-display text-[1.375rem] font-bold uppercase leading-none">{title}</span>
+        <span className={cn('mt-0.5 block truncate text-[11px] font-medium', image ? 'text-white/75' : 'text-muted-foreground')}>{subtitle}</span>
+      </span>
+    </>
+  );
+  return to ? (
+    <Link to={to} className={className}>{body}</Link>
+  ) : (
+    <button type="button" onClick={onClick} className={className}>{body}</button>
+  );
+}
+
+type TemplateFilter = 'all' | 'mine' | TemplateFocus;
+
+/** Tiles shown before "Pokaż wszystkie". */
+const TEMPLATE_PAGE_SIZE = 6;
+
+const isOwnTemplate = (template: Workout) => Boolean(template.ownerId && template.ownerId !== 'public');
 
 // --- SELECTION VIEW COMPONENT ---
 function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder: (data: LogFormValues) => void; allExercises: Exercise[] | null }) {
   const { user } = useUser();
   const supportsGeolocation = typeof navigator !== 'undefined' && 'geolocation' in navigator;
   const [startRunDialogOpen, setStartRunDialogOpen] = useState(false);
+  const [templateFilter, setTemplateFilter] = useState<TemplateFilter>('all');
+  const [showAllTemplates, setShowAllTemplates] = useState(false);
 
-  // Trainer-prepared running programs, offered from the "Rozpocznij bieg" quick-start tile
+  // Trainer-prepared running programs, offered from the "Bieg" quick-start tile
   const { data: runningPrograms } = useCollection<RunningProgram>(
     supportsGeolocation ? 'runningPrograms' : null,
     { isActive: true }
@@ -1819,7 +1823,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
   );
 
   // Fetch history logs
-  const { data: historyLogs, isLoading: historyLoading } = useCollection<WorkoutLog>(
+  const { data: historyLogs } = useCollection<WorkoutLog>(
     user?.uid ? 'workoutLogs' : null,
     user?.uid ? { athleteId: user.uid, status: 'completed' } : undefined,
     { sort: { endTime: -1 }, limit: 15 }
@@ -1831,6 +1835,38 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
     myPlans?.forEach(plan => plansMap.set(plan.id, plan));
     return Array.from(plansMap.values());
   }, [assignedPlans, myPlans]);
+
+  // Own templates first, then the ones used most recently, then A–Z.
+  const templates = useMemo(() => {
+    const lastUsed = (t: Workout) => {
+      const log = lastSessionOf(t, historyLogs);
+      return log ? new Date(log.endTime).getTime() : 0;
+    };
+    return [...(workoutTemplates ?? [])].sort((a, b) =>
+      Number(isOwnTemplate(b)) - Number(isOwnTemplate(a)) ||
+      lastUsed(b) - lastUsed(a) ||
+      a.name.localeCompare(b.name, 'pl')
+    );
+  }, [workoutTemplates, historyLogs]);
+
+  const focusById = useMemo(() => new Map(templates.map(t => [t.id, templateFocus(t.exerciseSeries)])), [templates]);
+
+  const filterChips = useMemo(() => {
+    const chips: { id: TemplateFilter; label: string }[] = [{ id: 'all', label: 'Wszystkie' }];
+    if (templates.some(isOwnTemplate) && templates.some(t => !isOwnTemplate(t))) chips.push({ id: 'mine', label: 'Moje' });
+    const present = new Set(focusById.values());
+    for (const focus of FOCUS_ORDER) if (present.has(focus)) chips.push({ id: focus, label: FOCUS_META[focus].label });
+    return chips;
+  }, [templates, focusById]);
+
+  const filteredTemplates = useMemo(
+    () => templates.filter(t => templateFilter === 'all' || (templateFilter === 'mine' ? isOwnTemplate(t) : focusById.get(t.id) === templateFilter)),
+    [templates, templateFilter, focusById]
+  );
+  const visibleTemplates = showAllTemplates ? filteredTemplates : filteredTemplates.slice(0, TEMPLATE_PAGE_SIZE);
+  const hiddenCount = filteredTemplates.length - visibleTemplates.length;
+
+  const recommendation = useMemo(() => recommendTemplate(templates, historyLogs), [templates, historyLogs]);
 
   const handleStartWorkout = (workout: Workout) => {
     const workoutData: LogFormValues = {
@@ -1884,124 +1920,118 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
     });
   }
 
-  const isLoading = assignedPlansLoading || myPlansLoading || historyLoading || templatesLoading;
-
+  const plansLoading = assignedPlansLoading || myPlansLoading;
+  const templatesPending = templatesLoading && !workoutTemplates;
   const lastLog = historyLogs?.[0];
+  const logDate = (log: WorkoutLog) => new Date(log.endTime as unknown as string | number | Date);
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-2.5">
-        <button
-          type="button"
-          onClick={handleStartEmpty}
-          className="flex h-[6.5rem] flex-col justify-between rounded-2xl bg-primary p-3.5 text-left text-primary-foreground transition-transform active:scale-[0.97]"
-        >
-          <Plus className="h-6 w-6" strokeWidth={2.5} />
-          <span>
-            <span className="block font-display text-[1.625rem] font-bold uppercase leading-none">Od zera</span>
-            <span className="mt-1 block text-xs font-medium opacity-80">Pusty trening</span>
-          </span>
-        </button>
-        {supportsGeolocation ? (
-          <button
-            type="button"
-            onClick={() => setStartRunDialogOpen(true)}
-            className="flex h-[6.5rem] flex-col justify-between rounded-2xl bg-run p-3.5 text-left text-primary-foreground transition-transform active:scale-[0.97]"
-          >
-            <Footprints className="h-6 w-6" />
-            <span>
-              <span className="block font-display text-[1.625rem] font-bold uppercase leading-none">Bieg</span>
-              <span className="mt-1 block text-xs font-medium opacity-80">Trasa z GPS</span>
-            </span>
-          </button>
-        ) : null}
+    <div className="stagger-rise space-y-6">
+      {templatesPending ? (
+        <Skeleton className="h-[16.5rem] rounded-3xl" />
+      ) : recommendation ? (
+        <FeaturedTemplate
+          template={recommendation.template}
+          reason={recommendation.reason}
+          lastSession={lastSessionOf(recommendation.template, historyLogs)}
+          onStart={() => handleStartWorkout(recommendation.template)}
+        />
+      ) : null}
+
+      <div className={cn('grid gap-2', supportsGeolocation ? 'grid-cols-3' : 'grid-cols-2')}>
+        <QuickTile image={gymPhoto} icon={Plus} iconClassName="bg-primary text-primary-foreground" title="Od zera" subtitle="Pusty trening" onClick={handleStartEmpty} />
+        {supportsGeolocation && (
+          <QuickTile image={runCover} icon={Footprints} iconClassName="bg-run text-white" title="Bieg" subtitle="Trasa z GPS" onClick={() => setStartRunDialogOpen(true)} />
+        )}
+        {lastLog ? (
+          <QuickTile icon={RotateCcw} iconClassName="bg-secondary text-primary" title="Powtórz" subtitle={lastLog.workoutName} onClick={() => handleRepeatWorkout(lastLog)} />
+        ) : (
+          <QuickTile icon={BookOpen} iconClassName="bg-secondary text-primary" title="Atlas" subtitle="Ćwiczenia" to="/athlete/exercises" />
+        )}
       </div>
       <StartRunDialog open={startRunDialogOpen} onOpenChange={setStartRunDialogOpen} programs={runningPrograms} />
 
-      {lastLog && (
-        <button
-          type="button"
-          onClick={() => handleRepeatWorkout(lastLog)}
-          className="row-tap flex w-full items-center gap-3 rounded-2xl bg-card px-3.5 py-3 text-left"
-        >
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-secondary text-primary">
-            <RotateCcw className="h-5 w-5" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[15px] font-semibold leading-tight">Powtórz: {lastLog.workoutName}</span>
-            <span className="block truncate text-xs text-muted-foreground">
-              Ostatnio {format(new Date(lastLog.endTime as unknown as string | number | Date), 'EEEE, d MMMM', { locale: pl })}
-            </span>
-          </span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
-        </button>
-      )}
+      <section>
+        <SectionHeader
+          title="Szablony"
+          count={templates.length}
+          action={<Link to="/athlete/workouts" className="pb-0.5 text-sm font-semibold text-primary">Zarządzaj</Link>}
+        />
 
-      {historyLogs && <MuscleRecovery logs={historyLogs} />}
-
-      <Tabs defaultValue="quick" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="quick">Szablony</TabsTrigger>
-          <TabsTrigger value="plans">Plany</TabsTrigger>
-          <TabsTrigger value="history">Historia</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="quick">
-          {workoutTemplates && workoutTemplates.length > 0 ? (
-            <div className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card">
-              {workoutTemplates.map(template => (
-                <WorkoutPreviewSheet
-                  key={template.id}
-                  title={template.name}
-                  description={`${exercisesLabel(template.exerciseSeries?.length || 0)} · ${template.durationMinutes} min`}
-                  exerciseSeries={template.exerciseSeries}
-                  actionLabel="Rozpocznij"
-                  onAction={() => handleStartWorkout(template)}
-                  trigger={
-                    <button type="button" className="row-tap flex w-full items-center gap-3 px-3.5 py-3 text-left">
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[15px] font-semibold leading-tight">{template.name}</span>
-                        <span className="block truncate text-xs text-muted-foreground">
-                          {template.durationMinutes} min · {exercisesLabel(template.exerciseSeries?.length || 0)}
-                          {templateMuscles(template) ? ` · ${templateMuscles(template)}` : ''}
-                        </span>
-                      </span>
-                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
-                    </button>
-                  }
-                />
-              ))}
-            </div>
-          ) : (
-            <EmptyState icon={ListChecks} title="Brak szablonów" description="Zapisz swój stały trening, żeby zaczynać go jednym dotknięciem." />
-          )}
-
-          <div className="mt-2.5 grid grid-cols-2 gap-2.5">
-            <Button asChild variant="secondary" size="sm">
-              <Link to="/athlete/workouts"><ListChecks /> Szablony</Link>
-            </Button>
-            <Button asChild variant="secondary" size="sm">
-              <Link to="/athlete/exercises"><BookOpen /> Ćwiczenia</Link>
-            </Button>
+        {filterChips.length > 2 && (
+          <div className="no-scrollbar -mx-4 mb-3 flex gap-1.5 overflow-x-auto px-4" role="tablist" aria-label="Filtr szablonów">
+            {filterChips.map(chip => (
+              <button
+                key={chip.id}
+                type="button"
+                role="tab"
+                aria-selected={templateFilter === chip.id}
+                onClick={() => { setTemplateFilter(chip.id); setShowAllTemplates(false); }}
+                className={cn(
+                  'inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold transition-colors',
+                  templateFilter === chip.id ? 'bg-foreground text-background' : 'bg-card text-muted-foreground'
+                )}
+              >
+                {chip.id !== 'all' && chip.id !== 'mine' && (
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: FOCUS_META[chip.id].accent }} />
+                )}
+                {chip.label}
+              </button>
+            ))}
           </div>
-        </TabsContent>
+        )}
 
-        <TabsContent value="plans">
-          {isLoading ? (
+        {templatesPending ? (
+          <div className="grid grid-cols-2 gap-2.5">
+            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-[13.5rem] rounded-2xl" />)}
+          </div>
+        ) : templates.length === 0 ? (
+          <div className="overflow-hidden rounded-2xl bg-card">
+            <img src={FOCUS_META.fullbody.cover} alt="" className="aspect-[2/1] w-full object-cover" />
+            <div className="p-5 text-center">
+              <p className="text-[15px] font-semibold">Brak szablonów</p>
+              <p className="mx-auto mt-1 max-w-[17rem] text-sm text-muted-foreground">Zapisz swój stały trening, żeby zaczynać go jednym dotknięciem.</p>
+              <Button asChild size="sm" className="mt-4">
+                <Link to="/athlete/workouts/create"><Plus /> Nowy szablon</Link>
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-2.5">
+              {visibleTemplates.map(template => (
+                <TemplateTile key={template.id} template={template} logs={historyLogs} onStart={() => handleStartWorkout(template)} />
+              ))}
+              {hiddenCount === 0 && (templateFilter === 'all' || templateFilter === 'mine') && <NewTemplateTile />}
+            </div>
+            {filteredTemplates.length > TEMPLATE_PAGE_SIZE && (
+              <Button variant="secondary" size="sm" className="mt-2.5 w-full" onClick={() => setShowAllTemplates(v => !v)}>
+                {showAllTemplates ? 'Pokaż mniej' : `Pokaż wszystkie (${filteredTemplates.length})`}
+              </Button>
+            )}
+          </>
+        )}
+      </section>
+
+      {(plansLoading || workoutPlans.length > 0) && (
+        <section>
+          <SectionHeader title="Plany" count={workoutPlans.length} />
+          {plansLoading && workoutPlans.length === 0 ? (
             <div className="space-y-2.5">
               {[1, 2].map(i => <div key={i} className="h-16 animate-pulse rounded-2xl bg-card" />)}
             </div>
-          ) : workoutPlans.length === 0 ? (
-            <EmptyState icon={Calendar} title="Brak planów" description="Gdy trener przypisze Ci program, zobaczysz go tutaj." />
           ) : (
             <div className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card">
               {workoutPlans.map(plan => (
                 <Sheet key={plan.id}>
                   <SheetTrigger asChild>
                     <button type="button" className="row-tap flex w-full items-center gap-3 px-3.5 py-3 text-left">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-secondary text-primary">
+                        <Calendar className="h-5 w-5" />
+                      </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[15px] font-semibold leading-tight">{plan.name}</span>
-                        <span className="block text-xs text-muted-foreground">{plan.stages?.length || 0} etapów</span>
+                        <span className="block text-xs text-muted-foreground">{plural(plan.stages?.length || 0, 'etap', 'etapy', 'etapów')}</span>
                       </span>
                       <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
                     </button>
@@ -2064,47 +2094,41 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
               ))}
             </div>
           )}
-        </TabsContent>
+        </section>
+      )}
 
-        <TabsContent value="history">
-          {isLoading ? (
-            <div className="space-y-2.5">
-              {[1, 2].map(i => <div key={i} className="h-16 animate-pulse rounded-2xl bg-card" />)}
-            </div>
-          ) : !historyLogs || historyLogs.length === 0 ? (
-            <EmptyState icon={Dumbbell} title="Brak historii" description="Twoje ukończone treningi pojawią się tutaj." />
-          ) : (
-            <>
-              <div className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card">
-                {historyLogs.map(log => (
-                  <WorkoutPreviewSheet
-                    key={log.id}
-                    title={log.workoutName}
-                    description={`${exercisesLabel(log.exercises?.length || 0)} · ${format(new Date(log.endTime as unknown as string | number | Date), 'd MMMM yyyy', { locale: pl })}`}
-                    exerciseSeries={log.exercises}
-                    actionLabel="Powtórz trening"
-                    onAction={() => handleRepeatWorkout(log)}
-                    trigger={
-                      <button type="button" className="row-tap flex w-full items-center gap-3 px-3.5 py-3 text-left">
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[15px] font-semibold leading-tight">{log.workoutName}</span>
-                          <span className="block truncate text-xs text-muted-foreground">
-                            {format(new Date(log.endTime as unknown as string | number | Date), 'd MMMM yyyy', { locale: pl })}
-                          </span>
-                        </span>
-                        <RotateCcw className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      </button>
-                    }
-                  />
-                ))}
-              </div>
-              <Button asChild variant="secondary" size="sm" className="mt-2.5 w-full">
-                <Link to="/athlete/history">Cała historia</Link>
-              </Button>
-            </>
-          )}
-        </TabsContent>
-      </Tabs>
+      {historyLogs && <MuscleRecovery logs={historyLogs} />}
+
+      {historyLogs && historyLogs.length > 0 && (
+        <section>
+          <SectionHeader
+            title="Ostatnie"
+            action={<Link to="/athlete/history" className="pb-0.5 text-sm font-semibold text-primary">Cała historia</Link>}
+          />
+          <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto scroll-px-4 px-4 pb-1">
+            {historyLogs.slice(0, 8).map(log => (
+              <WorkoutPreviewSheet
+                key={log.id}
+                title={log.workoutName}
+                description={`${exercisesLabel(log.exercises?.length || 0)} · ${format(logDate(log), 'd MMMM yyyy', { locale: pl })}`}
+                exerciseSeries={log.exercises}
+                actionLabel="Powtórz trening"
+                onAction={() => handleRepeatWorkout(log)}
+                trigger={
+                  <button type="button" className="flex w-[10.5rem] shrink-0 snap-start flex-col rounded-2xl bg-card p-3.5 text-left transition-transform duration-150 active:scale-[0.97]">
+                    <span className="eyebrow capitalize">{format(logDate(log), 'EEE, d MMM', { locale: pl })}</span>
+                    <span className="mt-1 line-clamp-2 font-display text-xl font-bold uppercase leading-[1.02]">{log.workoutName}</span>
+                    <span className="mt-auto flex items-center justify-between gap-2 pt-2 text-xs text-muted-foreground">
+                      <span className="truncate">{exercisesLabel(log.exercises?.length || 0)}</span>
+                      <RotateCcw className="h-3.5 w-3.5 shrink-0 text-primary" />
+                    </span>
+                  </button>
+                }
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
