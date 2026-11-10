@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { SWRConfig, useSWRConfig } from 'swr';
 import { bindCacheInvalidation, trackActiveKeys } from '@/lib/cache-invalidation';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -46,9 +46,9 @@ const KnowledgeZoneManagePage = lazy(() => import('@/pages/athlete/KnowledgeZone
 const LogPage = lazy(() => import('@/pages/athlete/Log'));
 const MapPage = lazy(() => import('@/pages/athlete/Map'));
 const MeasurementsPage = lazy(() => import('@/pages/athlete/Measurements'));
+const MenuPage = lazy(() => import('@/pages/athlete/Menu'));
 const NutritionPage = lazy(() => import('@/pages/athlete/Nutrition'));
 const OnboardingPage = lazy(() => import('@/pages/athlete/Onboarding'));
-const ProfilePage = lazy(() => import('@/pages/athlete/Profile'));
 const ProgressPage = lazy(() => import('@/pages/athlete/Progress'));
 const RunningPage = lazy(() => import('@/pages/athlete/Running'));
 const RunRecordPage = lazy(() => import('@/pages/athlete/RunRecord'));
@@ -79,6 +79,12 @@ function CacheInvalidationBinder() {
     return () => bindCacheInvalidation(null);
   }, [mutate, cache]);
   return null;
+}
+
+/** `/athlete/profile` from before the "Ty" tab split; query params (OAuth results, `tab`) ride along. */
+function LegacyProfileRedirect() {
+  const { search } = useLocation();
+  return <Navigate to={{ pathname: '/athlete/you', search }} replace />;
 }
 
 /** Seasonal overlay; a component of its own because the SWR hook needs the provider above it. */
@@ -149,7 +155,9 @@ export default function App() {
                 <Route path="map" element={<MapPage />} />
                 <Route path="nutrition" element={<NutritionPage />} />
                 <Route path="measurements" element={<MeasurementsPage />} />
-                <Route path="profile" element={<ProfilePage />} />
+                <Route path="menu" element={<MenuPage />} />
+                {/* Profile and settings moved into the "Ty" tab; old links keep working. */}
+                <Route path="profile" element={<LegacyProfileRedirect />} />
                 <Route path="progress" element={<ProgressPage />} />
                 <Route path="running" element={<RunningPage />} />
                 <Route path="running/record" element={<RunRecordPage />} />

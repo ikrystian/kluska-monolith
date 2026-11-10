@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Dumbbell, House, Plus, Users, type LucideIcon } from 'lucide-react';
+import { Dumbbell, House, LayoutGrid, Plus, Users, type LucideIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { QuickAddSheet } from '@/components/quick-add-sheet';
@@ -26,7 +26,7 @@ function TabLink({ href, label, icon: Icon, isActive, children }: { href: string
         <motion.span
           layoutId="tab-indicator"
           transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-          className="absolute inset-x-5 top-0 h-0.5 rounded-b-full bg-primary"
+          className="absolute inset-x-4 top-0 h-0.5 rounded-b-full bg-primary"
         />
       )}
       {Icon ? <Icon className="h-[22px] w-[22px]" strokeWidth={isActive ? 2.4 : 2} /> : children}
@@ -48,6 +48,7 @@ export function BottomNav() {
   }
 
   const youActive = pathname === '/athlete/you' || pathname === '/athlete/profile';
+  const menuActive = pathname === '/athlete/menu';
   // Slides away with the header on scroll (same chrome state, same pinned screens).
   const keepNavVisible = keepsChromeVisible(pathname);
 
@@ -60,7 +61,7 @@ export function BottomNav() {
           !keepNavVisible && 'group-data-[chrome=hidden]/chrome:translate-y-full'
         )}
       >
-        <div className="grid h-[var(--tabbar-h)] grid-cols-5">
+        <div className="grid h-[var(--tabbar-h)] grid-cols-6">
           <TabLink href="/athlete/dashboard" label="Dziś" icon={House} isActive={pathname === '/athlete/dashboard'} />
           <TabLink href="/athlete/log" label="Trening" icon={Dumbbell} isActive={pathname.startsWith('/athlete/log')} />
 
@@ -82,6 +83,7 @@ export function BottomNav() {
           </div>
 
           <TabLink href="/athlete/social" label="Ekipa" icon={Users} isActive={pathname.startsWith('/athlete/social')} />
+          <TabLink href="/athlete/menu" label="Menu" icon={LayoutGrid} isActive={menuActive} />
           <TabLink href="/athlete/you" label="Ty" isActive={youActive}>
             <Avatar className={cn('h-[22px] w-[22px]', youActive && 'ring-2 ring-foreground ring-offset-1 ring-offset-background')}>
               {userProfile?.avatarUrl && <AvatarImage src={resolveMediaUrl(userProfile.avatarUrl)} alt="" />}

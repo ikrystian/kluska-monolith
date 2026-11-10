@@ -9,8 +9,11 @@ const EXCLUDED = new Set([
   '/athlete/dashboard',
   '/athlete/log',
   '/athlete/social',
+  '/athlete/menu',
   '/athlete/you',
   '/athlete/onboarding',
+  // Redirects to `/athlete/you`; only an old link lands here.
+  '/athlete/profile',
 ]);
 
 function read(): string[] {
@@ -24,7 +27,7 @@ function read(): string[] {
 }
 
 /**
- * Most-recently-visited screens, so the "Ty" tab can surface what this
+ * Most-recently-visited screens, so the "Menu" tab can surface what this
  * athlete actually uses instead of making them re-scan the full list.
  *
  * Only exact top-level athlete routes are recorded — detail screens like

@@ -21,8 +21,10 @@ import {
   NotebookPen,
   Play,
   Ruler,
+  SlidersHorizontal,
   TrendingUp,
   Trophy,
+  User,
   UserCheck,
   Users,
   UtensilsCrossed,
@@ -65,7 +67,7 @@ export function isNavGroup(entry: NavEntry): entry is NavGroup {
 
 /**
  * Single source of truth for the athlete section's navigation, shared by the
- * "Ty" tab and the header's screen title.
+ * "Menu" tab and the header's screen title.
  *
  * Colours are the domain tokens, so a destination reads the same here as on
  * the screen behind it: training is ember, running blue, food amber, habits
@@ -144,6 +146,17 @@ export const athleteNavItems: NavEntry[] = [
     items: [
       { href: '/athlete/knowledge-zone', label: 'Strefa wiedzy', icon: BookOpen, color: 'hsl(var(--run))', description: 'Artykuły i porady', keywords: ['artykuły', 'porady', 'blog', 'wiedza'] },
       { href: '/athlete/map', label: 'Mapa siłowni', icon: Map, color: 'hsl(var(--primary))', description: 'Siłownie w okolicy', keywords: ['siłownie', 'gym', 'mapa'] },
+    ],
+  },
+  {
+    // The "Ty" tab is on the bottom bar, so the menu draws no tiles for it —
+    // it is listed so the menu search can still find profile and settings.
+    label: 'Ty',
+    icon: User,
+    color: 'hsl(var(--muted-foreground))',
+    items: [
+      { href: '/athlete/you', label: 'Profil', icon: User, color: 'hsl(var(--primary))', description: 'Poziom, statystyki, dane profilu', keywords: ['konto', 'awatar', 'zdjęcie', 'imię', 'email', 'siłownie', 'poziom', 'xp', 'równik'] },
+      { href: '/athlete/you?tab=settings', label: 'Ustawienia', icon: SlidersHorizontal, description: 'Motyw, powiadomienia, integracje', keywords: ['motyw', 'ciemny', 'jasny', 'powiadomienia', 'push', 'strava', 'spotify', 'integracje', 'wibracje', 'przerwa', 'gps', 'lokalizacja', 'aparat', 'offline', 'wyloguj'] },
     ],
   },
 ];
@@ -237,7 +250,8 @@ export const ROOT_TITLES: Record<string, string> = {
   '/athlete/dashboard': '#leniwakluska',
   '/athlete/log': 'Trening',
   '/athlete/social': 'Ekipa',
-  '/athlete/you': 'Menu',
+  '/athlete/menu': 'Menu',
+  '/athlete/you': 'Ty',
 };
 
 export const ROOT_PATHS = Object.keys(ROOT_TITLES);
@@ -251,9 +265,8 @@ export function keepsChromeVisible(pathname: string): boolean {
   return /^\/athlete\/exercises/.test(pathname);
 }
 
-/** Titles for screens that aren't nav destinations (details, editors, profile). */
+/** Titles for screens that aren't nav destinations (details, editors). */
 const EXTRA_TITLES: { match: RegExp; title: string }[] = [
-  { match: /^\/athlete\/profile$/, title: 'Profil i ustawienia' },
   { match: /^\/athlete\/trainers\/[^/]+$/, title: 'Trener' },
   { match: /^\/athlete\/templates$/, title: 'Szablony' },
   { match: /^\/athlete\/gamification$/, title: 'Osiągnięcia' },
