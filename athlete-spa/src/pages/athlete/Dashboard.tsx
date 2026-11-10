@@ -104,7 +104,7 @@ function AgendaRow({ date, title, meta, href }: { date: Date; title: string; met
         <span className="block font-display text-[1.625rem] font-bold leading-none tabular-nums">{format(date, 'd')}</span>
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[15px] font-semibold leading-tight">{title}1</span>
+        <span className="block truncate text-[15px] font-semibold leading-tight">{title}</span>
         <span className="block truncate text-xs text-muted-foreground">{meta}</span>
       </span>
       <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />

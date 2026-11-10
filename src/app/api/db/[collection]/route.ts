@@ -4,6 +4,7 @@ import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { jsonWithEtag } from '@/lib/http-cache';
 import { describeFinishedActivity, notifyFriendsOfActivity } from '@/lib/friends';
+import { refreshUserChallenges } from '@/lib/challenges';
 import { AccessContext, AccessError, isPublicCollection, sanitizeBody, scopeRead } from '@/lib/db-access';
 import { linkWorkoutLogExercises } from '@/lib/workout-log-exercises';
 import { onActivityLogged, onRunLogged, onWorkoutCompleted } from '@/lib/gamification';
@@ -207,6 +208,8 @@ export async function POST(
       }
     } else if (collection === 'runningSessions' && doc.ownerId) {
       void onRunLogged(doc.ownerId, doc.toObject());
+      // A run may decide a challenge (or take the lead in one) — settle it now, not on the next read.
+      void refreshUserChallenges(doc.ownerId);
     } else if (collection === 'bodyMeasurements' && doc.ownerId) {
       void onActivityLogged(doc.ownerId);
     }

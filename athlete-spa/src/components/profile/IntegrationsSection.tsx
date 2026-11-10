@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
-import { App } from '@capacitor/app';
 import { Activity, LayoutPanelTop, Loader2, Music2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,13 +16,27 @@ const SPOTIFY_COLOR = '#1DB954';
 
 type Provider = 'strava' | 'spotify';
 
+const PROVIDER_LABEL: Record<Provider, string> = { strava: 'Strava', spotify: 'Spotify' };
+
+function isProvider(value: string | null): value is Provider {
+  return value === 'strava' || value === 'spotify';
+}
+
+/**
+ * Starts the OAuth flow on the backend. In the Capacitor app it runs in an
+ * in-app browser tab and comes back through the `leniwakluska.com://app/...`
+ * deep link (NativeDeepLinks navigates to the settings tab); in a browser the
+ * backend sends this page back to `returnTo`. Either way the result arrives as
+ * `?integration=…&result=connected|error&reason=…` on this route.
+ */
 async function openConnect(provider: Provider) {
-  const token = encodeURIComponent(getStoredToken() ?? '');
-  const url = `${getApiBaseUrl()}/api/${provider}/connect?token=${token}`;
+  const params = new URLSearchParams({ token: getStoredToken() ?? '' });
   if (Capacitor.isNativePlatform()) {
-    await Browser.open({ url: `${url}&platform=capacitor` });
+    params.set('platform', 'capacitor');
+    await Browser.open({ url: `${getApiBaseUrl()}/api/${provider}/connect?${params}` });
   } else {
-    window.location.href = url;
+    params.set('returnTo', `${window.location.origin}${window.location.pathname}`);
+    window.location.assign(`${getApiBaseUrl()}/api/${provider}/connect?${params}`);
   }
 }
 
@@ -30,7 +44,21 @@ async function closeBrowserSheet() {
   try {
     await Browser.close();
   } catch {
-    // Browser sheet might already be closed
+    // Browser sheet might already be closed (or, on Android, closes itself)
+  }
+}
+
+function failureMessage(label: string, reason: string | null): string {
+  switch (reason) {
+    case 'access_denied':
+      return `Anulowano łączenie z ${label}.`;
+    case 'unauthorized':
+      return 'Sesja wygasła — zaloguj się ponownie i spróbuj jeszcze raz.';
+    case 'expired':
+    case 'invalid_state':
+      return 'Łączenie trwało zbyt długo. Spróbuj ponownie.';
+    default:
+      return `Nie udało się połączyć z ${label}.`;
   }
 }
 
@@ -75,47 +103,55 @@ export function IntegrationsSection({
     void refetchSpotifyStatus();
   }, [refetchSpotifyStatus]);
 
-  // Native OAuth returns through a deep link into the app; the web flow reloads the page instead.
+  const onStravaChangedRef = useRef(onStravaChanged);
+  onStravaChangedRef.current = onStravaChanged;
+
+  // OAuth result: the deep link (native) or the backend redirect (web) lands
+  // on this route with the outcome in the query. Report it once and drop it
+  // from the URL so a refresh or back navigation doesn't repeat the toast.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const integration = searchParams.get('integration');
+  const result = searchParams.get('result');
+  const reason = searchParams.get('reason');
+
+  useEffect(() => {
+    if (!isProvider(integration) || !result) return;
+    const label = PROVIDER_LABEL[integration];
+
+    void closeBrowserSheet();
+    if (result === 'connected') {
+      if (integration === 'strava') void onStravaChangedRef.current();
+      else void refetchSpotifyStatus();
+      toast({ title: 'Sukces!', description: `Połączono z kontem ${label}.` });
+    } else {
+      toast({ title: 'Błąd!', description: failureMessage(label, reason), variant: 'destructive' });
+    }
+
+    setSearchParams(
+      prev => {
+        const next = new URLSearchParams(prev);
+        ['integration', 'result', 'reason'].forEach(key => next.delete(key));
+        return next;
+      },
+      { replace: true }
+    );
+  }, [integration, result, reason, refetchSpotifyStatus, setSearchParams, toast]);
+
+  // Closing the browser tab by hand (back button / "Done") gives no result —
+  // re-read both statuses in case the connection went through anyway.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
-
-    const handleUrlOpen = async ({ url }: { url: string }) => {
-      const result =
-        url.includes('strava-callback') || url.includes('strava_connected')
-          ? { ok: true, label: 'Strava' }
-          : url.includes('strava_error')
-            ? { ok: false, label: 'Strava' }
-            : url.includes('spotify-callback') || url.includes('spotify_connected')
-              ? { ok: true, label: 'Spotify' }
-              : url.includes('spotify_error')
-                ? { ok: false, label: 'Spotify' }
-                : null;
-      if (!result) return;
-
-      await closeBrowserSheet();
-      if (result.ok) {
-        if (result.label === 'Strava') onStravaChanged();
-        else void refetchSpotifyStatus();
-        toast({ title: 'Sukces!', description: `Połączono z kontem ${result.label}.` });
-      } else {
-        toast({ title: 'Błąd!', description: `Nie udało się połączyć z ${result.label}.`, variant: 'destructive' });
-      }
-    };
-
-    const appListener = App.addListener('appUrlOpen', handleUrlOpen);
-    const browserListener = Browser.addListener('browserFinished', () => {
-      onStravaChanged();
+    const listener = Browser.addListener('browserFinished', () => {
+      void onStravaChangedRef.current();
       void refetchSpotifyStatus();
     });
-
     return () => {
-      appListener.then(l => l.remove());
-      browserListener.then(l => l.remove());
+      void listener.then(l => l.remove());
     };
-  }, [onStravaChanged, refetchSpotifyStatus, toast]);
+  }, [refetchSpotifyStatus]);
 
   const handleDisconnect = async (provider: Provider) => {
-    const label = provider === 'strava' ? 'Strava' : 'Spotify';
+    const label = PROVIDER_LABEL[provider];
     setDisconnecting(provider);
     try {
       const response = await apiFetch(`/api/${provider}/disconnect`, { method: 'POST' });

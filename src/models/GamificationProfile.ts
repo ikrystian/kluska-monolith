@@ -13,6 +13,7 @@ export const POINT_SOURCES = [
   'goal_completion',
   'workout_completion',
   'run_completion',
+  'challenge_win',
   'personal_record',
   'quest',
   'streak_bonus',

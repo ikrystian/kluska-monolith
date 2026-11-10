@@ -18,11 +18,12 @@ export interface DailyGoal {
   state?: unknown;
 }
 
-const TONE: Record<DailyGoalTone, { ring: string; filled: string }> = {
-  primary: { ring: 'stroke-primary', filled: 'bg-primary text-primary-foreground' },
-  run: { ring: 'stroke-run', filled: 'bg-run text-white' },
-  food: { ring: 'stroke-food', filled: 'bg-food text-white' },
-  volt: { ring: 'stroke-volt', filled: 'bg-volt text-volt-foreground' },
+/** The ring wears the goal's domain color while it fills; a ticked-off goal is always lime. */
+const RING: Record<DailyGoalTone, string> = {
+  primary: 'stroke-primary',
+  run: 'stroke-run',
+  food: 'stroke-food',
+  volt: 'stroke-volt',
 };
 
 const SIZE = 36;
@@ -43,7 +44,7 @@ function GoalRing({ progress, tone, done }: { progress: number; tone: DailyGoalT
         initial={reduceMotion ? false : { scale: 0.6 }}
         animate={{ scale: 1 }}
         transition={spring}
-        className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-full', TONE[tone].filled)}
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-lime text-lime-foreground"
       >
         <Check className="h-[18px] w-[18px]" strokeWidth={3.5} />
       </motion.span>
@@ -66,7 +67,7 @@ function GoalRing({ progress, tone, done }: { progress: number; tone: DailyGoalT
           initial={false}
           animate={{ strokeDashoffset: CIRCUMFERENCE * (1 - fraction) }}
           transition={spring}
-          className={TONE[tone].ring}
+          className={RING[tone]}
         />
       )}
     </svg>

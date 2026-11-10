@@ -250,7 +250,9 @@ const policies: Record<string, CollectionPolicy> = {
   // Two-party documents
   trainerRequests: between('athleteId', 'trainerId'),
   trainingSessions: between('trainerId', 'athleteId'),
-  challenges: between('challengerId', 'challengedId'),
+  // Read-only here: progress, status and the winner are settled by /api/challenges
+  // (lib/challenges) — through this API a runner could hand themselves the win.
+  challenges: { ...between('challengerId', 'challengedId'), write: async () => null },
   conversations: {
     read: async ctx => ({ participants: ctx.user!.id }),
     write: async ctx => ({ participants: ctx.user!.id }),

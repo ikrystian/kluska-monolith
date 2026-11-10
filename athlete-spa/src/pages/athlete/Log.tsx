@@ -1066,7 +1066,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
                 </span>
               </button>
               <ElapsedClock startTime={startTime} />
-              <Button type="submit" size="sm" disabled={fields.length === 0}>
+              <Button type="submit" size="sm" variant="volt" disabled={fields.length === 0}>
                 Zakończ
               </Button>
             </div>

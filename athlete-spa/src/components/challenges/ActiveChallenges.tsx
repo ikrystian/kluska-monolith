@@ -1,356 +1,96 @@
-'use client';
-
-import { apiFetch } from '@/lib/api-client';
-import { useState, useMemo, useEffect, useCallback } from 'react';
-import { format, differenceInDays, isPast } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import type { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
+import { ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useUser } from '@/lib/db-hooks';
+import { SectionHeader } from '@/components/ui/section';
+import { SocialAvatar, socialName } from '@/components/social/SocialAvatar';
 import {
-    Footprints,
-    Trophy,
-    Clock,
-    CheckCircle,
-    XCircle,
-    Loader2,
-    User,
-    Target,
-    Calendar,
-} from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useToast } from '@/hooks/use-toast';
-import useSWR from 'swr';
-import { useUser, swrFetcher } from '@/lib/db-hooks';
-import type { Challenge } from '@/lib/types';
-import { Skeleton } from '@/components/ui/skeleton';
+  challengeBucket,
+  challengeHref,
+  challengeSides,
+  formatChallengeKm,
+  useChallenges,
+  type ChallengeView,
+} from '@/lib/challenges';
+import { ChallengeCard } from './ChallengeCard';
+import { LEAD_TONE_CLASS, RaceBars, leadLine, timeLeftLabel } from './challenge-ui';
 
-export function ActiveChallenges() {
-    const { toast } = useToast();
-    const { user } = useUser();
-    const [actionLoading, setActionLoading] = useState<string | null>(null);
-    const { data: challengesData, isLoading, mutate } = useSWR<Challenge[]>(
-        user ? '/api/challenges' : null,
-        swrFetcher
-    );
-    const challenges = challengesData ?? [];
-    const fetchChallenges = useCallback(() => { void mutate(); }, [mutate]);
+const MAX_SHOWN = 3;
 
-    // Separate pending, active, and completed challenges
-    const { pendingChallenges, activeChallenges, completedChallenges } = useMemo(() => {
-        if (!challenges || !user) return { pendingChallenges: [], activeChallenges: [], completedChallenges: [] };
+/**
+ * Open running challenges for the dashboard and the running screen:
+ * invitations to answer first, then live races. Renders nothing when there
+ * are none, so the screen it sits on stays quiet for people who don't race.
+ */
+export function ActiveChallenges({
+  title = 'Wyzwania biegowe',
+  emptyFallback = null,
+}: {
+  title?: string;
+  /** Shown instead of nothing once the list has loaded empty. */
+  emptyFallback?: ReactNode;
+}) {
+  const { user } = useUser();
+  const { data: challenges } = useChallenges(Boolean(user && !user.isGuest));
+  const myId = user?.uid ?? '';
 
-        const pending = challenges.filter(
-            c => c.status === 'pending' && c.challengedId === user.uid
-        );
-        const active = challenges.filter(
-            c => c.status === 'accepted' || (c.status === 'pending' && c.challengerId === user.uid)
-        );
-        const completed = challenges.filter(
-            c => c.status === 'completed'
-        );
+  const invites = (challenges ?? []).filter(c => challengeBucket(c, myId) === 'invite');
+  const races = (challenges ?? [])
+    .filter(c => challengeBucket(c, myId) === 'active')
+    .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
 
-        return { pendingChallenges: pending, activeChallenges: active, completedChallenges: completed };
-    }, [challenges, user]);
+  if (!user || user.isGuest || !challenges) return null;
+  if (invites.length + races.length === 0) return <>{emptyFallback}</>;
 
-    const handleAction = async (challengeId: string, action: 'accept' | 'decline') => {
-        setActionLoading(challengeId);
-        try {
-            const response = await apiFetch(`/api/challenges/${challengeId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action }),
-            });
+  const shownInvites = invites.slice(0, MAX_SHOWN);
+  const shownRaces = races.slice(0, Math.max(0, MAX_SHOWN - shownInvites.length));
 
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.error);
-            }
+  return (
+    <section>
+      <SectionHeader title={title} href="/athlete/challenges" />
+      <div className="space-y-3">
+        {shownInvites.length > 0 && (
+          <ul className="space-y-3">
+            {shownInvites.map(c => (
+              <ChallengeCard key={c.id} challenge={c} myId={myId} />
+            ))}
+          </ul>
+        )}
+        {shownRaces.length > 0 && (
+          <ul className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card">
+            {shownRaces.map(c => (
+              <RaceRow key={c.id} challenge={c} myId={myId} />
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
+  );
+}
 
-            toast({
-                title: action === 'accept' ? 'Wyzwanie zaakceptowane! 🏃' : 'Wyzwanie odrzucone',
-                description: action === 'accept'
-                    ? 'Powodzenia w rywalizacji!'
-                    : 'Wyzwanie zostało odrzucone',
-            });
-
-            fetchChallenges();
-        } catch (error) {
-            toast({
-                title: 'Błąd',
-                description: error instanceof Error ? error.message : 'Coś poszło nie tak',
-                variant: 'destructive',
-            });
-        } finally {
-            setActionLoading(null);
-        }
-    };
-
-    const getInitials = (name: string) => {
-        return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-    };
-
-    if (isLoading) {
-        return (
-            <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline flex items-center gap-2">
-                        <Footprints className="h-5 w-5 text-run" />
-                        Wyzwania biegowe
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-3">
-                        <Skeleton className="h-24 w-full" />
-                        <Skeleton className="h-24 w-full" />
-                    </div>
-                </CardContent>
-            </Card>
-        );
-    }
-
-    if (!pendingChallenges.length && !activeChallenges.length && !completedChallenges.length) {
-        return null;
-    }
-
-    return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-secondary text-run">
-                        <Footprints className="h-5 w-5" />
-                    </div>
-                    <div>
-                        <CardTitle>Wyzwania biegowe</CardTitle>
-                        <CardDescription>Aktywne i zaproszenia</CardDescription>
-                    </div>
-                </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                {/* Pending challenges (invitations) */}
-                {pendingChallenges.length > 0 && (
-                    <div className="space-y-3">
-                        <h4 className="text-sm font-medium text-muted-foreground">Zaproszenia</h4>
-                        {pendingChallenges.map((challenge) => (
-                            <div
-                                key={challenge.id}
-                                className="rounded-xl bg-secondary/60 p-3"
-                            >
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-3">
-                                        <Avatar className="h-10 w-10">
-                                            <AvatarImage src={challenge.challengerAvatarUrl} />
-                                            <AvatarFallback>{getInitials(challenge.challengerName)}</AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <p className="font-semibold">{challenge.challengerName}</p>
-                                            <p className="text-sm text-muted-foreground">zaprasza Cię do wyzwania</p>
-                                        </div>
-                                    </div>
-                                    <Badge variant="outline" className="border-food/40 text-food">
-                                        Oczekuje
-                                    </Badge>
-                                </div>
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                                    <div className="flex items-center gap-1">
-                                        <Target className="h-4 w-4" />
-                                        <span>{challenge.targetKm} km</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <Calendar className="h-4 w-4" />
-                                        <span>do {format(new Date(challenge.endDate), 'd MMM yyyy', { locale: pl })}</span>
-                                    </div>
-                                </div>
-                                <div className="flex gap-2">
-                                    <Button
-                                        size="sm"
-                                        onClick={() => handleAction(challenge.id, 'accept')}
-                                        disabled={actionLoading === challenge.id}
-                                        className="flex-1"
-                                    >
-                                        {actionLoading === challenge.id ? (
-                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                        ) : (
-                                            <>
-                                                <CheckCircle className="h-4 w-4 mr-1" />
-                                                Akceptuj
-                                            </>
-                                        )}
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => handleAction(challenge.id, 'decline')}
-                                        disabled={actionLoading === challenge.id}
-                                        className="flex-1"
-                                    >
-                                        <XCircle className="h-4 w-4 mr-1" />
-                                        Odrzuć
-                                    </Button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {/* Active challenges */}
-                {activeChallenges.length > 0 && (
-                    <div className="space-y-3">
-                        {pendingChallenges.length > 0 && (
-                            <h4 className="text-sm font-medium text-muted-foreground">Aktywne wyzwania</h4>
-                        )}
-                        {activeChallenges.map((challenge) => {
-                            const isChallenger = challenge.challengerId === user?.uid;
-                            const opponentName = isChallenger ? challenge.challengedName : challenge.challengerName;
-                            const opponentAvatar = isChallenger ? challenge.challengedAvatarUrl : challenge.challengerAvatarUrl;
-                            const myProgress = isChallenger ? challenge.challengerProgress : challenge.challengedProgress;
-                            const opponentProgress = isChallenger ? challenge.challengedProgress : challenge.challengerProgress;
-                            const myPercentage = Math.min((myProgress / challenge.targetKm) * 100, 100);
-                            const opponentPercentage = Math.min((opponentProgress / challenge.targetKm) * 100, 100);
-                            const daysLeft = differenceInDays(new Date(challenge.endDate), new Date());
-                            const isEnded = isPast(new Date(challenge.endDate));
-                            const isPending = challenge.status === 'pending';
-
-                            return (
-                                <div
-                                    key={challenge.id}
-                                    className={`rounded-xl bg-secondary/60 p-3 ${isEnded ? 'opacity-70' : ''}`}
-                                >
-                                    <div className="flex items-center justify-between mb-3">
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-10 w-10">
-                                                <AvatarImage src={opponentAvatar} />
-                                                <AvatarFallback>{getInitials(opponentName)}</AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                                <p className="font-semibold">vs {opponentName}</p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Cel: {challenge.targetKm} km
-                                                </p>
-                                            </div>
-                                        </div>
-                                        {isPending ? (
-                                            <Badge variant="outline" className="border-run/40 text-run">
-                                                Wysłane
-                                            </Badge>
-                                        ) : isEnded ? (
-                                            <Badge className="bg-muted-foreground">
-                                                Zakończone
-                                            </Badge>
-                                        ) : (
-                                            <Badge variant="secondary">
-                                                <Clock className="h-3 w-3 mr-1" />
-                                                {daysLeft} dni
-                                            </Badge>
-                                        )}
-                                    </div>
-
-                                    {!isPending && (
-                                        <div className="space-y-3">
-                                            {/* My progress */}
-                                            <div>
-                                                <div className="flex justify-between text-sm mb-1">
-                                                    <span className="font-medium">Ty</span>
-                                                    <span>{myProgress.toLocaleString('pl-PL', { maximumFractionDigits: 1 })} / {challenge.targetKm} km</span>
-                                                </div>
-                                                <Progress
-                                                    value={myPercentage}
-                                                    className="h-2 [&>div]:bg-run"
-                                                />
-                                            </div>
-
-                                            {/* Opponent progress */}
-                                            <div>
-                                                <div className="flex justify-between text-sm mb-1">
-                                                    <span className="font-medium">{opponentName}</span>
-                                                    <span>{opponentProgress.toLocaleString('pl-PL', { maximumFractionDigits: 1 })} / {challenge.targetKm} km</span>
-                                                </div>
-                                                <Progress
-                                                    value={opponentPercentage}
-                                                    className="h-2 [&>div]:bg-muted-foreground"
-                                                />
-                                            </div>
-
-                                            {isEnded && challenge.winnerId && (
-                                                <div className="flex items-center justify-center gap-2 pt-2 text-sm">
-                                                    <Trophy className="h-4 w-4 text-food" />
-                                                    <span className="font-medium">
-                                                        {challenge.winnerId === user?.uid ? 'Wygrałeś!' : `Wygrał ${opponentName}`}
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-
-                {/* Completed challenges */}
-                {completedChallenges.length > 0 && (
-                    <div className="space-y-3">
-                        {(pendingChallenges.length > 0 || activeChallenges.length > 0) && (
-                            <h4 className="text-sm font-medium text-muted-foreground pt-2">Zakończone wyzwania</h4>
-                        )}
-                        {completedChallenges.map((challenge) => {
-                            const isChallenger = challenge.challengerId === user?.uid;
-                            const opponentName = isChallenger ? challenge.challengedName : challenge.challengerName;
-                            const opponentAvatar = isChallenger ? challenge.challengedAvatarUrl : challenge.challengerAvatarUrl;
-                            const myProgress = isChallenger ? challenge.challengerProgress : challenge.challengedProgress;
-                            const opponentProgress = isChallenger ? challenge.challengedProgress : challenge.challengerProgress;
-                            const isWinner = challenge.winnerId === user?.uid;
-                            const isDraw = !challenge.winnerId;
-
-                            return (
-                                <div
-                                    key={challenge.id}
-                                    className="rounded-xl bg-secondary/40 p-3"
-                                >
-                                    <div className="flex items-center justify-between mb-3">
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-10 w-10 grayscale">
-                                                <AvatarImage src={opponentAvatar} />
-                                                <AvatarFallback>{getInitials(opponentName)}</AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                                <p className="font-semibold text-muted-foreground">vs {opponentName}</p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Zakończone {format(new Date(challenge.endDate), 'd MMM yyyy', { locale: pl })}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <Badge variant="outline" className={isWinner ? "bg-food/10 text-food border-food/30" : "bg-muted text-muted-foreground"}>
-                                            {isWinner ? (
-                                                <>
-                                                    <Trophy className="h-3 w-3 mr-1" />
-                                                    Wygrana
-                                                </>
-                                            ) : isDraw ? (
-                                                'Remis'
-                                            ) : (
-                                                'Przegrana'
-                                            )}
-                                        </Badge>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4 text-sm">
-                                        <div>
-                                            <p className="text-muted-foreground mb-1">Ty</p>
-                                            <p className="font-medium">{myProgress.toFixed(1)} km</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-muted-foreground mb-1">{opponentName}</p>
-                                            <p className="font-medium">{opponentProgress.toFixed(1)} km</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    );
+function RaceRow({ challenge, myId }: { challenge: ChallengeView; myId: string }) {
+  const sides = challengeSides(challenge, myId);
+  const lead = leadLine(sides);
+  return (
+    <li>
+      <Link to={challengeHref(challenge.id)} className="row-tap block px-3.5 py-3">
+        <div className="flex items-center gap-3">
+          <SocialAvatar user={sides.opponent.user} className="h-9 w-9" />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[15px] font-semibold leading-tight">
+              vs {socialName(sides.opponent.user)}
+            </span>
+            <span className={cn('block truncate text-xs font-semibold', LEAD_TONE_CLASS[lead.tone])}>{lead.text}</span>
+          </span>
+          <span className="shrink-0 text-right text-xs text-muted-foreground">
+            <span className="block font-semibold text-foreground">{formatChallengeKm(challenge.targetKm)} km</span>
+            {timeLeftLabel(challenge.endDate)}
+          </span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+        </div>
+        <RaceBars sides={sides} targetKm={challenge.targetKm} className="mt-2.5" />
+      </Link>
+    </li>
+  );
 }

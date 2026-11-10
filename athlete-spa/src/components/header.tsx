@@ -3,6 +3,7 @@ import { ChevronLeft, Settings } from 'lucide-react';
 import { NotificationBell } from './notifications/NotificationBell';
 import { QuickChatWidget } from './chat/QuickChatWidget';
 import { useHeaderTitle } from '@/contexts/HeaderTitleContext';
+import { useUserProfile } from '@/contexts/UserProfileContext';
 import { getScreenTitle, isRootPath, keepsChromeVisible } from '@/lib/athlete-nav';
 import { haptic } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
@@ -11,13 +12,14 @@ export function AppHeader() {
   const { pathname, search, state } = useLocation();
   const navigate = useNavigate();
   const { customTitle } = useHeaderTitle();
+  const { userProfile } = useUserProfile();
 
   const isSettingsTab = pathname === '/athlete/you' && new URLSearchParams(search).get('tab') === 'settings';
   // Root screens are reachable from the bottom bar, so they get a big title.
   // Everywhere else the header has to say where you are and offer a way up.
   const isRoot = isRootPath(pathname) && !isSettingsTab;
   const stateTitle = (state as { title?: string } | null)?.title;
-  const screenTitle = customTitle ?? stateTitle ?? getScreenTitle(pathname, search);
+  const screenTitle = customTitle ?? stateTitle ?? getScreenTitle(pathname, search, userProfile?.name);
   const isToday = pathname === '/athlete/dashboard';
 
   // On the exercise library, keep the header pinned while scrolling (infinite
@@ -61,7 +63,16 @@ export function AppHeader() {
 
         <h1 className={cn('flex min-w-0 flex-1 items-baseline gap-2', isRoot && 'pl-2')}>
           {screenTitle && (
-            <span className="truncate font-display text-[1.75rem] font-bold uppercase leading-none">{screenTitle}</span>
+            <span className="truncate font-display text-[1.75rem] font-bold uppercase leading-none">
+              {screenTitle.startsWith('#') ? (
+                <>
+                  <span className="text-volt">#</span>
+                  {screenTitle.slice(1)}
+                </>
+              ) : (
+                screenTitle
+              )}
+            </span>
           )}
         </h1>
 

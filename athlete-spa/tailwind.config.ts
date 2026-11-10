@@ -61,6 +61,10 @@ export default {
           DEFAULT: 'hsl(var(--volt))',
           foreground: 'hsl(var(--volt-foreground))',
         },
+        lime: {
+          DEFAULT: 'hsl(var(--lime))',
+          foreground: 'hsl(var(--lime-foreground))',
+        },
         run: 'hsl(var(--run))',
         food: 'hsl(var(--food))',
         social: 'hsl(var(--social))',

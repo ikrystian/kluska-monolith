@@ -78,7 +78,7 @@ export function WeeklySummary({ runs, isLoading }: { runs: RunActivity[]; isLoad
                 <div
                   className={cn(
                     'absolute inset-x-0 bottom-0 rounded-lg transition-[height] duration-500',
-                    km > 0 ? 'bg-run' : 'bg-secondary'
+                    km > 0 ? 'bg-volt' : 'bg-secondary'
                   )}
                   style={{ height: km > 0 ? `${Math.max(12, (km / week.maxKm) * 100)}%` : '6px' }}
                 />

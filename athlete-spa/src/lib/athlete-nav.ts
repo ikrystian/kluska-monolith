@@ -139,6 +139,7 @@ export const athleteNavItems: NavEntry[] = [
       { href: '/athlete/social', label: 'Aktywność znajomych', icon: Newspaper, description: 'Treningi, biegi i statusy', keywords: ['social', 'feed', 'znajomi', 'tablica'] },
       { href: '/athlete/social?tab=discover', label: 'Odkrywaj', icon: Images, description: 'Zdjęcia społeczności', keywords: ['posty', 'zdjęcia', 'tablica', 'social'] },
       { href: '/athlete/social?tab=people', label: 'Ludzie', icon: UserCheck, description: 'Znajomi, zaproszenia, okolica', keywords: ['przyjaciele', 'zaproszenia', 'blisko', 'okolica', 'social'] },
+      { href: '/athlete/challenges', label: 'Wyzwania', icon: Footprints, color: 'hsl(var(--run))', description: 'Biegowe wyścigi ze znajomymi', keywords: ['wyzwanie', 'wyzwania', 'rywalizacja', 'wyścig', 'bieg', 'znajomi', 'pojedynek', 'challenge'] },
     ],
   },
   {
@@ -271,6 +272,7 @@ export function keepsChromeVisible(pathname: string): boolean {
 /** Titles for screens that aren't nav destinations (details, editors). */
 const EXTRA_TITLES: { match: RegExp; title: string }[] = [
   { match: /^\/athlete\/trainers\/[^/]+$/, title: 'Trener' },
+  { match: /^\/athlete\/challenges\/[^/]+$/, title: 'Wyzwanie' },
   { match: /^\/athlete\/templates$/, title: 'Szablony' },
   { match: /^\/athlete\/gamification$/, title: 'Osiągnięcia' },
   { match: /^\/athlete\/history\/[^/]+$/, title: 'Trening' },
@@ -285,7 +287,7 @@ const EXTRA_TITLES: { match: RegExp; title: string }[] = [
 ];
 
 /** Label for the current screen, or undefined when there is nothing sensible to show. */
-export function getScreenTitle(pathname: string, search = ''): string | undefined {
+export function getScreenTitle(pathname: string, search = '', userName?: string): string | undefined {
   // Tab links (`/athlete/you?tab=settings`, `/athlete/social?tab=people`) title their own tab, not the screen's default one.
   if (search) {
     const activeLeafWithQuery = athleteNavLeaves.find(
@@ -293,6 +295,7 @@ export function getScreenTitle(pathname: string, search = ''): string | undefine
     );
     if (activeLeafWithQuery) return activeLeafWithQuery.label;
   }
+  if (pathname === '/athlete/you' && userName?.trim()) return userName.trim();
   if (ROOT_TITLES[pathname]) return ROOT_TITLES[pathname];
   const activeLeaf = athleteNavLeaves.find(leaf => isNavLeafActive(leaf.href, pathname, search));
   return activeLeaf?.label ?? findNavLeaf(pathname)?.label ?? EXTRA_TITLES.find(e => e.match.test(pathname))?.title;

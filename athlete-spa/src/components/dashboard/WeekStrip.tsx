@@ -22,7 +22,7 @@ export function WeekStrip({ days, doneCount, target, streak }: { days: WeekDay[]
               className={cn(
                 'grid h-10 w-10 place-items-center rounded-full font-display text-xl font-bold leading-none tabular-nums',
                 day.done
-                  ? 'bg-primary text-primary-foreground'
+                  ? 'bg-lime text-lime-foreground'
                   : day.isToday
                     ? 'bg-foreground text-background'
                     : day.planned
@@ -37,7 +37,7 @@ export function WeekStrip({ days, doneCount, target, streak }: { days: WeekDay[]
       </div>
       <p className="mt-2.5 flex items-center justify-between px-1 text-[13px] text-muted-foreground">
         <span>
-          W tym tygodniu <span className="font-semibold text-foreground tabular-nums">{doneCount}/{target}</span>
+          W tym tygodniu <span className="font-semibold text-volt tabular-nums">{doneCount}/{target}</span>
         </span>
         {streak ? (
           <span className="flex items-center gap-1">

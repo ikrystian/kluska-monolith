@@ -1,0 +1,217 @@
+{
+  "name": "Kluska – wpis do Bazy Wiedzy (OpenRouter Gemini)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "b1f0c1a0-0001-4000-8000-000000000001",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1-temat",
+              "name": "temat",
+              "value": "Przerwy między seriami a hipertrofia",
+              "type": "string"
+            },
+            {
+              "id": "a2-userId",
+              "name": "userId",
+              "value": "6a5cf516f9fe894c859bb9af",
+              "type": "string"
+            },
+            {
+              "id": "a3-model",
+              "name": "model",
+              "value": "google/gemini-2.5-flash",
+              "type": "string"
+            },
+            {
+              "id": "a4-kluskaApiKey",
+              "name": "kluskaApiKey",
+              "value": "kluska-external-posts-secret-token",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b1f0c1a0-0002-4000-8000-000000000002",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a5-systemPrompt",
+              "name": "systemPrompt",
+              "value": "=Jesteś doświadczonym trenerem przygotowania motorycznego, dietetykiem sportowym i autorem z wieloletnim stażem na sali treningowej. Piszesz dla sportowców i osób trenujących na co dzień z aplikacją Kluska.\n\nTwoim celem jest przygotowanie merytorycznego, konkretnego wpisu do Bazy Wiedzy na zadany temat, popartego badaniami naukowymi (fizjologia, biochemia wysiłku, biomechanika) oraz realną praktyką trenerską.\n\nZASADY ANTY-AI (KRYTYCZNIE WAŻNE):\n1. ZAKAZ banałów wstępnych: NIGDY nie zaczynaj od zdań typu: \"W dzisiejszym zabieganym świecie...\", \"Wielu z nas zastanawia się...\", \"Trening to nie tylko pot, ale i...\", \"Zanurzmy się w świat...\". Zacznij od razu od problemu, mechanizmu fizjologicznego lub mocnej tezy.\n2. ZAKAZ pustosłowia i słów-wytrychów: Nie używaj słów: \"kluczowy\", \"fundamentalny\", \"holistyczny\", \"game-changer\", \"warto pamiętać\", \"podsumowując\", \"rekapitulując\", \"w pigułce\", \"nieodłączny element\".\n3. Styl i rytm:\n   - Pisz jak człowiek do człowieka: prosto, ale z użyciem precyzyjnej terminologii (np. \"resynteza fosfokreatyny\", \"przekrój poprzeczny włókna (CSA)\", \"napięcie mechaniczne w fazie ekscentrycznej\").\n   - Mieszaj krótkie, dosadne zdania z bardziej złożonymi.\n   - Pisz w pierwszej osobie liczby pojedynczej lub mnogiej praktyka (np. \"Na siłowni najczęściej widzę...\", \"W praktyce sprawdza się...\", \"Zamiast dokładać kolejną serię...\").\n4. Konkrety zamiast ogólników:\n   - Podawaj liczby, widełki i zakresy (np. \"1.6–2.2 g białka na kg masy ciała\", \"RPE 7-8\", \"2-3 minuty przerwy między seriami roboczymi\"), a nie \"jedz odpowiednią ilość białka\" czy \"odpoczywaj wystarczająco długo\".\n   - Podawaj mechanizmy: dlaczego dane rozwiązanie działa, a co jest powszechnym mitem.\n5. Formatowanie treści (HTML):\n   - Treść wpisu w polu \"content\" MUSI być poprawnym kodem HTML (tagi: <h3>, <p>, <ul>, <li>, <strong>, <blockquote>).\n   - Nie używaj tagu <h1> ani <h2> wewnątrz content (tytuł wpisu wyświetla aplikacja).\n   - Dziel tekst na zwięzłe akapity (2-4 zdania).\n\nFORMAT ODPOWIEDZI:\nZwróć WYŁĄCZNIE poprawny, surowy obiekt JSON (bez znaczników ```json i bez żadnego komentarza przed ani po).\nFormat JSON:\n{\n  \"userId\": \"{{ $json.userId }}\",\n  \"title\": \"Konkretny, intrygujący, specjalistyczny tytuł bez taniego clickbaitu\",\n  \"category\": \"Trening | Dieta i Suplementacja | Regeneracja | Motywacja\",\n  \"coverImageUrl\": \"URL do zdjęcia na Unsplash pasującego tematycznie\",\n  \"status\": \"published\",\n  \"content\": \"<p>Treść wpisu w formacie HTML...</p>\"\n}",
+              "type": "string"
+            },
+            {
+              "id": "a6-userPrompt",
+              "name": "userPrompt",
+              "value": "=Przygotuj wpis do Bazy Wiedzy na poniższy temat:\n\nTEMAT: {{ $json.temat }}\nGRUPA DOCELOWA: Osoby trenujące siłowo / biegacze szukający realnych wskazówek, a nie teorii z marketingu suplementów.\nID AUTORA: {{ $json.userId }}\n\nWymagania dla tego wpisu:\n1. Rozpraw się z co najmniej jednym powszechnym mitem na ten temat.\n2. Wyjaśnij mechanizm działania (fizjologia/biomechanika).\n3. Podaj 3 konkretne, możliwe do wdrożenia od zaraz zalecenia z dokładnymi liczbami/parametrami.\n4. Dobierz pasującą kategorię (wybierz jedną: \"Trening\", \"Dieta i Suplementacja\", \"Regeneracja\", \"Motywacja\").\n5. Podaj tematyczny URL do zdjęcia z Unsplash (np. https://images.unsplash.com/photo-...).",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "b1f0c1a0-0003-4000-8000-000000000003",
+      "name": "Prompty",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: $json.model, temperature: 0.8, response_format: { type: 'json_object' }, messages: [ { role: 'system', content: $json.systemPrompt }, { role: 'user', content: $json.userPrompt } ] }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "b1f0c1a0-0004-4000-8000-000000000004",
+      "name": "OpenRouter (Gemini)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "notes": "Credential: Header Auth → Name: Authorization, Value: Bearer sk-or-..."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Wyciąga JSON z odpowiedzi modelu i składa body dla Kluska API.\nconst cfg = $('Prompty').first().json;\nconst raw = $input.first().json.choices?.[0]?.message?.content;\nif (!raw || typeof raw !== 'string') {\n  throw new Error('OpenRouter nie zwrócił treści: ' + JSON.stringify($input.first().json).slice(0, 500));\n}\n\n// Model czasem mimo zakazu owija JSON w ```json ... ``` albo dopisuje komentarz.\nconst start = raw.indexOf('{');\nconst end = raw.lastIndexOf('}');\nif (start === -1 || end <= start) {\n  throw new Error('Brak obiektu JSON w odpowiedzi modelu: ' + raw.slice(0, 500));\n}\nlet post;\ntry {\n  post = JSON.parse(raw.slice(start, end + 1));\n} catch (e) {\n  throw new Error('Niepoprawny JSON od modelu (' + e.message + '): ' + raw.slice(0, 500));\n}\n\nif (!post.title || !post.content) {\n  throw new Error('Model nie zwrócił title/content');\n}\n\nconst allowed = ['Trening', 'Dieta i Suplementacja', 'Regeneracja', 'Motywacja'];\nconst cat = String(post.category || '');\nconst category = allowed.find((c) => c === cat.trim()) || allowed.find((c) => cat.includes(c)) || 'Trening';\n\n// Modele często zmyślają ID zdjęć z Unsplash — sprawdzamy, czy URL faktycznie działa.\nlet coverImageUrl = typeof post.coverImageUrl === 'string' ? post.coverImageUrl.trim() : '';\nif (!coverImageUrl.startsWith('https://images.unsplash.com/')) {\n  coverImageUrl = '';\n} else if (this.helpers?.httpRequest) {\n  try {\n    await this.helpers.httpRequest({ method: 'HEAD', url: coverImageUrl, timeout: 10000 });\n  } catch (e) {\n    coverImageUrl = '';\n  }\n}\n\nconst body = {\n  userId: cfg.userId, // zawsze z konfiguracji, nie z odpowiedzi modelu\n  title: String(post.title).trim(),\n  content: String(post.content).trim(),\n  category,\n  status: 'published',\n};\nif (coverImageUrl) body.coverImageUrl = coverImageUrl;\n\nreturn [{ json: { body, kluskaApiKey: cfg.kluskaApiKey } }];"
+      },
+      "id": "b1f0c1a0-0005-4000-8000-000000000005",
+      "name": "Parsuj wpis",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://kluska.sandbox-ai.pl/api/external/posts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $json.kluskaApiKey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "b1f0c1a0-0006-4000-8000-000000000006",
+      "name": "Kluska – opublikuj wpis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Prompty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prompty": {
+      "main": [
+        [
+          {
+            "node": "OpenRouter (Gemini)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter (Gemini)": {
+      "main": [
+        [
+          {
+            "node": "Parsuj wpis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsuj wpis": {
+      "main": [
+        [
+          {
+            "node": "Kluska – opublikuj wpis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}

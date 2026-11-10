@@ -31,6 +31,7 @@ import { StartRunDialog } from '@/components/running/StartRunDialog';
 import { ManualRunSheet } from '@/components/running/ManualRunSheet';
 import { WeeklySummary } from '@/components/running/WeeklySummary';
 import { RunHistoryList, STRAVA_COLOR } from '@/components/running/RunHistoryList';
+import { ActiveChallenges } from '@/components/challenges/ActiveChallenges';
 import {
   formatHours,
   formatKm,
@@ -224,7 +225,7 @@ export default function RunningPage() {
         <button
           type="button"
           onClick={openPrimary}
-          className="group flex min-w-0 items-center justify-between gap-3 rounded-2xl bg-run p-4 text-left text-primary-foreground transition-transform active:scale-[0.98]"
+          className="group flex min-w-0 items-center justify-between gap-3 rounded-2xl bg-lime p-4 text-left text-lime-foreground transition-transform active:scale-[0.98]"
         >
           <span className="min-w-0">
             <span className="block text-[13px] font-semibold opacity-75">
@@ -234,7 +235,7 @@ export default function RunningPage() {
               {supportsGeolocation ? 'Biegnij' : 'Dodaj bieg'}
             </span>
           </span>
-          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-primary-foreground text-run">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-lime-foreground text-lime">
             {supportsGeolocation ? <Play className="h-5 w-5 fill-current" /> : <Plus className="h-5 w-5" />}
           </span>
         </button>
@@ -266,6 +267,28 @@ export default function RunningPage() {
 
       <WeeklySummary runs={runs} isLoading={isLoading} />
 
+      {/* Races with friends: live ones, or a way in for people who haven't tried. */}
+      {user && !user.isGuest && (
+        <ActiveChallenges
+          title="Wyzwania"
+          emptyFallback={
+            <Link to="/athlete/challenges" className="row-tap flex items-center gap-3 rounded-2xl bg-card px-4 py-3.5">
+              <span
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl"
+                style={{ backgroundColor: tint('hsl(var(--run))', 15), color: 'hsl(var(--run))' }}
+              >
+                <Trophy className="h-5 w-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[15px] font-semibold leading-tight">Ścigaj się ze znajomymi</span>
+                <span className="block truncate text-xs text-muted-foreground">Kto pierwszy przebiegnie 50 km? Rzuć wyzwanie.</span>
+              </span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+            </Link>
+          }
+        />
+      )}
+
       {supportsGeolocation && runningPrograms && runningPrograms.length > 0 && (
         <section>
           <SectionTitle>Treningi od trenera</SectionTitle>
@@ -282,7 +305,7 @@ export default function RunningPage() {
                     {formatKm(program.targetDistanceKm, program.targetDistanceKm % 1 ? 1 : 0)}
                     <span className="ml-1 font-body text-sm font-semibold text-muted-foreground">km</span>
                   </span>
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-run text-primary-foreground">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-lime text-lime-foreground">
                     <Play className="h-4 w-4 fill-current" />
                   </span>
                 </div>

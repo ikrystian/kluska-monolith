@@ -69,7 +69,7 @@ function ProfileCompleteness({ steps }: { steps: ProfileStep[] }) {
       <div className="mt-3 flex items-center gap-2.5">
         <div className="flex h-1.5 flex-1 gap-1">
           {steps.map(s => (
-            <span key={s.key} className={cn('flex-1 rounded-full', s.done ? 'bg-primary' : 'bg-foreground/10')} />
+            <span key={s.key} className={cn('flex-1 rounded-full', s.done ? 'bg-volt' : 'bg-foreground/10')} />
           ))}
         </div>
         <span className="text-xs font-semibold tabular-nums text-muted-foreground">
@@ -84,7 +84,7 @@ function ProfileCompleteness({ steps }: { steps: ProfileStep[] }) {
               key={key}
               className="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-muted-foreground"
             >
-              <Check className="h-3.5 w-3.5 text-primary" />
+              <Check className="h-3.5 w-3.5 text-volt" />
               {label}
             </span>
           ) : (

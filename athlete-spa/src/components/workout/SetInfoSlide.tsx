@@ -286,6 +286,7 @@ export function SetInfoSlide({
           <Button
             type="button"
             size="lg"
+            variant="volt"
             className="w-full h-12 text-base font-semibold"
             onClick={onConfirm}
           >

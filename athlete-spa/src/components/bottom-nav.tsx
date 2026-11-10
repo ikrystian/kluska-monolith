@@ -26,11 +26,11 @@ function TabLink({ href, label, icon: Icon, isActive, children }: { href: string
         <motion.span
           layoutId="tab-indicator"
           transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-          className="absolute inset-x-4 top-0 h-0.5 rounded-b-full bg-primary"
+          className="absolute inset-x-4 top-0 h-[3px] rounded-b-full bg-volt"
         />
       )}
       {Icon ? <Icon className="h-[22px] w-[22px]" strokeWidth={isActive ? 2.4 : 2} /> : children}
-      <span className={cn('text-[11px] leading-none', isActive ? 'font-semibold' : 'font-medium')}>{label}</span>
+      <span className={cn('max-w-full truncate px-0.5 text-[11px] leading-none', isActive ? 'font-semibold' : 'font-medium')}>{label}</span>
     </Link>
   );
 }
@@ -52,6 +52,9 @@ export function BottomNav() {
   const dietActive = pathname.startsWith('/athlete/diet') || pathname.startsWith('/athlete/nutrition');
   // Slides away with the header on scroll (same chrome state, same pinned screens).
   const keepNavVisible = keepsChromeVisible(pathname);
+
+  const userName = userProfile?.name?.trim();
+  const youLabel = userName ? userName.split(/\s+/)[0] : 'Ty';
 
   return (
     <>
@@ -86,7 +89,7 @@ export function BottomNav() {
 
           <TabLink href="/athlete/social" label="Ekipa" icon={Users} isActive={pathname.startsWith('/athlete/social')} />
           <TabLink href="/athlete/menu" label="Menu" icon={LayoutGrid} isActive={menuActive} />
-          <TabLink href="/athlete/you" label="Ty" isActive={youActive}>
+          <TabLink href="/athlete/you" label={youLabel} isActive={youActive}>
             <Avatar className={cn('h-[22px] w-[22px]', youActive && 'ring-2 ring-foreground ring-offset-1 ring-offset-background')}>
               {userProfile?.avatarUrl && <AvatarImage src={resolveMediaUrl(userProfile.avatarUrl)} alt="" />}
               <AvatarFallback className="bg-secondary text-[10px] font-semibold">

@@ -10,6 +10,8 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground active:bg-primary/85",
+        // Lime: the action that closes something off (finish a set, finish the workout).
+        volt: "bg-lime text-lime-foreground active:bg-lime/85",
         destructive:
           "bg-destructive text-destructive-foreground active:bg-destructive/85",
         outline:

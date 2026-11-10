@@ -36,6 +36,7 @@ import {
   type FriendStatusPost,
   type SocialUserSummary,
 } from '@/lib/friends';
+import { ChallengesBanner } from '@/components/challenges/ChallengesBanner';
 import { SocialAvatar, socialName } from './SocialAvatar';
 import { dayLabel, formatDuration, pluralPl, timeAgo } from './social-format';
 
@@ -123,6 +124,8 @@ export function FriendsFeed({ onProfileClick, onOpenPeople }: FriendsFeedProps) 
           <ChevronRight className="h-4 w-4 shrink-0 text-primary" />
         </button>
       )}
+
+      {friends.length > 0 && <ChallengesBanner />}
 
       <StatusComposer />
 

@@ -3,6 +3,7 @@ import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { User } from '@/models/User';
 import { StravaActivity } from '@/models/StravaActivity';
+import { refreshUserChallenges } from '@/lib/challenges';
 
 const STRAVA_CLIENT_ID = process.env.STRAVA_CLIENT_ID;
 const STRAVA_CLIENT_SECRET = process.env.STRAVA_CLIENT_SECRET;
@@ -157,6 +158,9 @@ export async function POST(request: NextRequest) {
                 console.error(`Failed to save activity ${activity.id}:`, error);
             }
         }
+
+        // Synced runs count towards running challenges.
+        if (syncedCount > 0) await refreshUserChallenges(user.id);
 
         return NextResponse.json({
             success: true,

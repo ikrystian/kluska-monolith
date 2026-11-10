@@ -1,29 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/api-auth';
+import { createOAuthState, getOAuthRedirectUri, oauthConnectFailure } from '@/lib/oauth-connect';
 
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
-const REDIRECT_URI = `${process.env.NEXTAUTH_URL}/api/spotify/callback`;
 const SCOPES = 'user-read-playback-state user-modify-playback-state user-read-currently-playing';
 
 export async function GET(request: NextRequest) {
+    const { searchParams } = new URL(request.url);
     try {
         const user = await getRequestUser(request);
 
         if (!user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            return oauthConnectFailure('spotify', searchParams, 'unauthorized');
         }
 
         if (!SPOTIFY_CLIENT_ID) {
-            return NextResponse.json({ error: 'Spotify client ID not configured' }, { status: 500 });
+            return oauthConnectFailure('spotify', searchParams, 'config_error');
         }
 
-        const { searchParams } = new URL(request.url);
-        const platform = searchParams.get('platform');
-        const state = platform ? `${user.id}:${platform}` : user.id;
+        const state = createOAuthState(user.id, 'spotify', searchParams);
 
         const authUrl = new URL('https://accounts.spotify.com/authorize');
         authUrl.searchParams.append('client_id', SPOTIFY_CLIENT_ID);
-        authUrl.searchParams.append('redirect_uri', REDIRECT_URI);
+        authUrl.searchParams.append('redirect_uri', getOAuthRedirectUri('spotify'));
         authUrl.searchParams.append('response_type', 'code');
         authUrl.searchParams.append('scope', SCOPES);
         authUrl.searchParams.append('state', state);
@@ -31,9 +30,6 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(authUrl.toString());
     } catch (error) {
         console.error('Error initiating Spotify OAuth:', error);
-        return NextResponse.json(
-            { error: 'Failed to initiate Spotify connection' },
-            { status: 500 }
-        );
+        return oauthConnectFailure('spotify', searchParams, 'server_error');
     }
 }

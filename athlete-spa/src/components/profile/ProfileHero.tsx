@@ -22,12 +22,12 @@ const ROLE_LABELS: Record<string, string> = {
 const getInitials = (name: string | null | undefined) =>
   name
     ? name
-        .split(' ')
-        .filter(Boolean)
-        .map(n => n[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase()
+      .split(' ')
+      .filter(Boolean)
+      .map(n => n[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase()
     : 'U';
 
 const RING_SIZE = 116;
@@ -59,7 +59,7 @@ function XpRing({ percent }: { percent: number }) {
         strokeWidth={RING_STROKE}
         strokeLinecap="round"
         strokeDasharray={`${(percent / 100) * RING_LENGTH} ${RING_LENGTH}`}
-        className="stroke-primary transition-[stroke-dasharray] duration-1000 ease-out"
+        className="stroke-volt transition-[stroke-dasharray] duration-1000 ease-out"
       />
     </svg>
   );
@@ -149,9 +149,6 @@ export function ProfileHero({ onEditProfile, onEditAvatar }: { onEditProfile: ()
         </>
       ) : (
         <>
-          <h2 className="mt-5 line-clamp-2 max-w-full break-words font-display text-[2rem] font-bold uppercase leading-[0.95]">
-            {userProfile?.name || 'Twój profil'}
-          </h2>
           <p className="mt-1.5 flex max-w-full items-center justify-center gap-1.5 text-sm text-muted-foreground">
             <span className="font-medium">{user?.isGuest ? 'Gość' : ROLE_LABELS[userProfile?.role ?? ''] ?? 'Sportowiec'}</span>
             {userProfile?.location && (

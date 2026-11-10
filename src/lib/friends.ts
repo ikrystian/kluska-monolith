@@ -58,12 +58,40 @@ export async function getUserSummaries(userIds: string[]): Promise<Map<string, S
   return result;
 }
 
-/** In-app notification for friend events; failures never break the request that triggered it. */
-export async function notifyUser(userId: string, title: string, message: string, link: string) {
+/** Push to every registered device of `userIds`, dropping subscriptions the push service rejects. */
+export async function pushToUsers(userIds: string[], payload: { title: string; body: string; url: string }) {
+  if (userIds.length === 0) return;
+  const subscriptions = await PushSubscription.find({ userId: { $in: userIds } });
+  const results = await Promise.all(
+    subscriptions.map(sub =>
+      sub.platform === 'web'
+        ? sendWebPush({ endpoint: sub.endpoint!, keys: sub.keys! }, payload).then(r => ({
+            stale: r.shouldDelete,
+            id: sub._id,
+          }))
+        : sendNativePush(sub.token!, payload).then(r => ({ stale: r.shouldDelete, id: sub._id }))
+    )
+  );
+  const staleIds = results.filter(r => r.stale).map(r => r.id);
+  if (staleIds.length > 0) await PushSubscription.deleteMany({ _id: { $in: staleIds } });
+}
+
+/**
+ * In-app notification for social events, optionally pushed to the user's
+ * devices too. Failures never break the request that triggered it.
+ */
+export async function notifyUser(
+  userId: string,
+  title: string,
+  message: string,
+  link: string,
+  options: { push?: boolean } = {}
+) {
   try {
     await Notification.create({ userId, type: 'info', title, message, link, isRead: false });
+    if (options.push) await pushToUsers([userId], { title, body: message, url: link });
   } catch (error) {
-    console.error('Failed to create friend notification:', error);
+    console.error('Failed to notify user:', error);
   }
 }
 
@@ -86,19 +114,7 @@ export async function notifyFriendsOfActivity(userId: string, message: string) {
       friendIds.map(id => ({ userId: id, type: 'info', title, message: body, link: url, isRead: false }))
     );
 
-    const subscriptions = await PushSubscription.find({ userId: { $in: friendIds } });
-    const results = await Promise.all(
-      subscriptions.map(sub =>
-        sub.platform === 'web'
-          ? sendWebPush({ endpoint: sub.endpoint!, keys: sub.keys! }, { title, body, url }).then(r => ({
-              stale: r.shouldDelete,
-              id: sub._id,
-            }))
-          : sendNativePush(sub.token!, { title, body, url }).then(r => ({ stale: r.shouldDelete, id: sub._id }))
-      )
-    );
-    const staleIds = results.filter(r => r.stale).map(r => r.id);
-    if (staleIds.length > 0) await PushSubscription.deleteMany({ _id: { $in: staleIds } });
+    await pushToUsers(friendIds, { title, body, url });
   } catch (error) {
     console.error('Failed to notify friends of activity:', error);
   }

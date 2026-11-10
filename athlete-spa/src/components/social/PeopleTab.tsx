@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { Check, Loader2, MapPin, MoreHorizontal, Search, User, UserMinus, Users, X } from 'lucide-react';
+import { Check, Footprints, Loader2, MapPin, MoreHorizontal, Search, User, UserMinus, Users, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -29,6 +29,7 @@ import {
   type FriendEntry,
   type SocialUserSummary,
 } from '@/lib/friends';
+import { ChallengeSheet } from '@/components/challenges/ChallengeSheet';
 import { FriendButton } from './FriendButton';
 import { SocialAvatar, socialName } from './SocialAvatar';
 import { timeAgo } from './social-format';
@@ -46,6 +47,7 @@ export function PeopleTab({ onProfileClick }: PeopleTabProps) {
   const [search, setSearch] = useState('');
   const [showAllOthers, setShowAllOthers] = useState(false);
   const [removing, setRemoving] = useState<FriendEntry | null>(null);
+  const [challenging, setChallenging] = useState<string | null>(null);
 
   const friends = friendsData?.friends ?? [];
   const incoming = friendsData?.incoming ?? [];
@@ -210,6 +212,10 @@ export function PeopleTab({ onProfileClick }: PeopleTabProps) {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setChallenging(friend.user.userId)}>
+                          <Footprints className="mr-2 h-4 w-4" />
+                          Rzuć wyzwanie biegowe
+                        </DropdownMenuItem>
                         {friend.user.nickname && (
                           <DropdownMenuItem onClick={() => onProfileClick(friend.user.userId)}>
                             <User className="mr-2 h-4 w-4" />
@@ -274,6 +280,12 @@ export function PeopleTab({ onProfileClick }: PeopleTabProps) {
           )}
         </>
       )}
+
+      <ChallengeSheet
+        open={challenging !== null}
+        onOpenChange={open => !open && setChallenging(null)}
+        friendId={challenging}
+      />
 
       <AlertDialog open={!!removing} onOpenChange={open => !open && setRemoving(null)}>
         <AlertDialogContent>

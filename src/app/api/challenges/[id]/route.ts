@@ -1,192 +1,177 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
-import { Challenge, RunningSession, StravaActivity } from '@/models';
+import { notifyUser } from '@/lib/friends';
+import {
+  challengeLink,
+  formatKm,
+  getChallengeRuns,
+  onChallengeSettled,
+  refreshChallenge,
+  toChallengeViews,
+} from '@/lib/challenges';
+import { Challenge, type IChallenge } from '@/models';
 
-// Helper function to calculate running progress
-async function calculateProgress(userId: string, startDate: Date, endDate: Date): Promise<number> {
-    const dateFilter = { $gte: startDate, $lte: endDate };
+type Params = { params: Promise<{ id: string }> };
 
-    // Get manual running sessions
-    const runningSessions = await RunningSession.find({
-        ownerId: userId,
-        date: dateFilter
-    });
-
-    // Get Strava activities (running only)
-    const stravaActivities = await StravaActivity.find({
-        ownerId: userId,
-        type: 'Run',
-        date: dateFilter
-    });
-
-    // Calculate total km
-    let totalKm = 0;
-
-    // Add manual sessions (distance is in km)
-    totalKm += runningSessions.reduce((sum, session) => sum + session.distance, 0);
-
-    // Add Strava activities (distance is in meters, convert to km)
-    totalKm += stravaActivities.reduce((sum, activity) => sum + (activity.distance / 1000), 0);
-
-    return totalKm;
+async function findOwnChallenge(id: string, userId: string): Promise<IChallenge | null> {
+  if (!mongoose.isValidObjectId(id)) return null;
+  return Challenge.findOne({ _id: id, $or: [{ challengerId: userId }, { challengedId: userId }] });
 }
 
-// GET - Get challenge details with calculated progress
-export async function GET(
-    request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    try {
-        const user = await getRequestUser(request);
-
-        if (!user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        await connectToDatabase();
-
-        const { id } = await params;
-
-        const challenge = await Challenge.findById(id);
-
-        if (!challenge) {
-            return NextResponse.json({ error: 'Challenge not found' }, { status: 404 });
-        }
-
-        // Check if user is involved in this challenge
-        if (challenge.challengerId !== user.id && challenge.challengedId !== user.id) {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-        }
-
-        // Calculate progress if challenge is accepted and not yet completed
-        if (challenge.status === 'accepted' && challenge.startDate) {
-            const now = new Date();
-            const endDate = challenge.endDate < now ? challenge.endDate : now;
-
-            const [challengerProgress, challengedProgress] = await Promise.all([
-                calculateProgress(challenge.challengerId, challenge.startDate, endDate),
-                calculateProgress(challenge.challengedId, challenge.startDate, endDate)
-            ]);
-
-            // Update cached progress
-            challenge.challengerProgress = challengerProgress;
-            challenge.challengedProgress = challengedProgress;
-
-            // Check if challenge is completed (past end date)
-            if (challenge.endDate < now) {
-                challenge.status = 'completed';
-                // Determine winner
-                if (challengerProgress >= challenge.targetKm && challengedProgress >= challenge.targetKm) {
-                    // Both completed - higher km wins
-                    challenge.winnerId = challengerProgress > challengedProgress
-                        ? challenge.challengerId
-                        : challenge.challengedId;
-                } else if (challengerProgress >= challenge.targetKm) {
-                    challenge.winnerId = challenge.challengerId;
-                } else if (challengedProgress >= challenge.targetKm) {
-                    challenge.winnerId = challenge.challengedId;
-                }
-                // If neither completed target, no winner
-            }
-
-            await challenge.save();
-        }
-
-        return NextResponse.json({ data: challenge.toJSON() });
-    } catch (error) {
-        console.error('GET /api/challenges/[id] error:', error);
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        );
-    }
+/** Runs that counted (or count) towards the race, newest first. */
+async function countedRuns(challenge: IChallenge) {
+  if (!challenge.startDate || !['accepted', 'completed'].includes(challenge.status)) return [];
+  const now = new Date();
+  const candidates = [challenge.endDate, now, challenge.completedAt].filter((d): d is Date => Boolean(d));
+  const end = new Date(Math.min(...candidates.map(d => d.getTime())));
+  const runs = await getChallengeRuns([challenge.challengerId, challenge.challengedId], challenge.startDate, end);
+  return runs.reverse().map(run => ({
+    id: run.id,
+    userId: run.userId,
+    date: run.date,
+    distanceKm: Math.round(run.distanceKm * 100) / 100,
+    source: run.source,
+    title: run.title,
+  }));
 }
 
-// PATCH - Accept or decline challenge
-export async function PATCH(
-    request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    try {
-        const user = await getRequestUser(request);
-
-        if (!user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        await connectToDatabase();
-
-        const { id } = await params;
-        const body = await request.json();
-        const { action } = body;
-
-        if (!action || !['accept', 'decline', 'cancel'].includes(action)) {
-            return NextResponse.json(
-                { error: 'Invalid action. Use: accept, decline, or cancel' },
-                { status: 400 }
-            );
-        }
-
-        const challenge = await Challenge.findById(id);
-
-        if (!challenge) {
-            return NextResponse.json({ error: 'Challenge not found' }, { status: 404 });
-        }
-
-        // Validate permissions based on action
-        if (action === 'accept' || action === 'decline') {
-            // Only the challenged user can accept or decline
-            if (challenge.challengedId !== user.id) {
-                return NextResponse.json(
-                    { error: 'Only the challenged user can accept or decline' },
-                    { status: 403 }
-                );
-            }
-
-            if (challenge.status !== 'pending') {
-                return NextResponse.json(
-                    { error: 'Challenge is no longer pending' },
-                    { status: 400 }
-                );
-            }
-        }
-
-        if (action === 'cancel') {
-            // Only the challenger can cancel a pending challenge
-            if (challenge.challengerId !== user.id) {
-                return NextResponse.json(
-                    { error: 'Only the challenger can cancel' },
-                    { status: 403 }
-                );
-            }
-
-            if (challenge.status !== 'pending') {
-                return NextResponse.json(
-                    { error: 'Can only cancel pending challenges' },
-                    { status: 400 }
-                );
-            }
-        }
-
-        // Update status
-        if (action === 'accept') {
-            challenge.status = 'accepted';
-            challenge.startDate = new Date(); // Challenge starts now
-        } else if (action === 'decline') {
-            challenge.status = 'declined';
-        } else if (action === 'cancel') {
-            challenge.status = 'cancelled';
-        }
-
-        await challenge.save();
-
-        return NextResponse.json({ data: challenge.toJSON() });
-    } catch (error) {
-        console.error('PATCH /api/challenges/[id] error:', error);
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        );
+// GET - One challenge with both runners' counted runs.
+export async function GET(request: NextRequest, { params }: Params) {
+  try {
+    const user = await getRequestUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    await connectToDatabase();
+
+    const { id } = await params;
+    const found = await findOwnChallenge(id, user.id);
+    if (!found) {
+      return NextResponse.json({ error: 'Nie znaleziono wyzwania.' }, { status: 404 });
+    }
+
+    const challenge = await refreshChallenge(found);
+    const [[view], runs] = await Promise.all([toChallengeViews([challenge]), countedRuns(challenge)]);
+
+    return NextResponse.json({ data: { ...view, runs } });
+  } catch (error) {
+    console.error('GET /api/challenges/[id] error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+const ACTIONS = ['accept', 'decline', 'cancel', 'forfeit'] as const;
+type Action = (typeof ACTIONS)[number];
+
+// PATCH - { action }: accept / decline (challenged, while pending), cancel (challenger,
+// while pending) or forfeit (either runner, during the race — the other one wins).
+export async function PATCH(request: NextRequest, { params }: Params) {
+  try {
+    const user = await getRequestUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json().catch(() => null);
+    const action = body?.action as Action;
+    if (!ACTIONS.includes(action)) {
+      return NextResponse.json({ error: 'Nieznana akcja.' }, { status: 400 });
+    }
+
+    await connectToDatabase();
+
+    const { id } = await params;
+    const found = await findOwnChallenge(id, user.id);
+    if (!found) {
+      return NextResponse.json({ error: 'Nie znaleziono wyzwania.' }, { status: 404 });
+    }
+
+    // Settle first: an invitation past its deadline can no longer be accepted, a decided race not forfeited.
+    const challenge = await refreshChallenge(found);
+    const isChallenger = challenge.challengerId === user.id;
+    const link = challengeLink(String(challenge._id));
+    const target = formatKm(challenge.targetKm);
+    const now = new Date();
+
+    const transition = async (from: IChallenge['status'], set: Record<string, unknown>) =>
+      Challenge.findOneAndUpdate({ _id: challenge._id, status: from }, { $set: set }, { returnDocument: 'after' });
+
+    let updated: IChallenge | null = null;
+
+    switch (action) {
+      case 'accept':
+      case 'decline': {
+        if (isChallenger) {
+          return NextResponse.json({ error: 'Tylko wyzwana osoba może odpowiedzieć.' }, { status: 403 });
+        }
+        if (challenge.status !== 'pending') {
+          return NextResponse.json({ error: 'To wyzwanie nie czeka już na odpowiedź.' }, { status: 409 });
+        }
+        updated = await transition(
+          'pending',
+          action === 'accept' ? { status: 'accepted', startDate: now } : { status: 'declined' }
+        );
+        if (updated) {
+          await notifyUser(
+            challenge.challengerId,
+            action === 'accept' ? 'Wyzwanie przyjęte! 🏁' : 'Wyzwanie odrzucone',
+            action === 'accept'
+              ? `${challenge.challengedName} przyjmuje wyzwanie na ${target} km. Start — liczą się biegi od teraz!`
+              : `${challenge.challengedName} odrzuca wyzwanie na ${target} km.`,
+            link,
+            { push: action === 'accept' }
+          );
+        }
+        break;
+      }
+
+      case 'cancel': {
+        if (!isChallenger) {
+          return NextResponse.json({ error: 'Tylko autor może wycofać wyzwanie.' }, { status: 403 });
+        }
+        if (challenge.status !== 'pending') {
+          return NextResponse.json({ error: 'Wycofać można tylko wyzwanie bez odpowiedzi.' }, { status: 409 });
+        }
+        updated = await transition('pending', { status: 'cancelled' });
+        if (updated) {
+          await notifyUser(
+            challenge.challengedId,
+            'Wyzwanie wycofane',
+            `${challenge.challengerName} wycofuje wyzwanie na ${target} km.`,
+            link
+          );
+        }
+        break;
+      }
+
+      case 'forfeit': {
+        if (challenge.status !== 'accepted') {
+          return NextResponse.json({ error: 'Poddać można tylko trwające wyzwanie.' }, { status: 409 });
+        }
+        const winnerId = isChallenger ? challenge.challengedId : challenge.challengerId;
+        updated = await transition('accepted', {
+          status: 'completed',
+          outcome: 'forfeit',
+          winnerId,
+          completedAt: now,
+          rewardPoints: 0,
+        });
+        if (updated) await onChallengeSettled(updated, { forfeitedBy: user.id });
+        break;
+      }
+    }
+
+    if (!updated) {
+      return NextResponse.json({ error: 'Wyzwanie zmieniło się w międzyczasie. Odśwież.' }, { status: 409 });
+    }
+
+    const [view] = await toChallengeViews([updated]);
+    return NextResponse.json({ data: view });
+  } catch (error) {
+    console.error('PATCH /api/challenges/[id] error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

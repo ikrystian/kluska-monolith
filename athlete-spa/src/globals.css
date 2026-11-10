@@ -5,9 +5,16 @@
 
 /*
  * Design system "Sztanga" — dark-first, mobile-only.
- * Grafit i kreda jako neutralne tło, jeden mocny akcent (ember) na akcje.
- * Dziedziny mają kolory talerzy olimpijskich: trening czerwony, bieg niebieski,
- * jedzenie żółty, nawyki zielony. Wszystkie wartości w HSL (bez funkcji),
+ * Grafit i kreda jako neutralne tło i dwa kontrastowe akcenty, które powtarzają się
+ * na każdym ekranie:
+ *   ember (pomarańcz, --primary) — akcje: CTA, przycisk dodawania, rzeczy zaplanowane;
+ *   limonka (oklch(89.2% .203 123), --lime/--volt) — wynik: postęp, zrobione,
+ *     rekordy, aktywna zakładka, Ty w rywalizacji.
+ * --lime to sama limonka jako wypełnienie (zawsze z ciemnym --lime-foreground),
+ * --volt to limonka jako tekst/kreska — w jasnym motywie przyciemniona do oliwki,
+ * bo jasna limonka na kremowym tle jest nieczytelna.
+ * Kolory dziedzin (bieg niebieski, jedzenie żółty, ekipa fiolet) zostają do
+ * małych ikon i serii na wykresach, nie do dużych powierzchni. Wszystkie wartości w HSL (bez funkcji),
  * konsumowane przez tailwind.config.ts. Tokeny --chart-1..5 zwalidowane pod CVD
  * (skill dataviz) — nie podmieniać "na oko".
  */
@@ -36,6 +43,8 @@
     --radius: 0.875rem;
     --volt: 79 100% 27%;
     --volt-foreground: 0 0% 100%;
+    --lime: 74.6 85.9% 57.8%;
+    --lime-foreground: 77 68% 6%;
     --run: 215 76% 50%;
     --food: 41 100% 35%;
     --social: 254 64% 57%;
@@ -74,8 +83,10 @@
     --border: 216 10% 19%;
     --input: 215 11% 22%;
     --ring: 15 100% 57%;
-    --volt: 75 86% 58%;
+    --volt: 74.6 85.9% 57.8%;
     --volt-foreground: 77 68% 6%;
+    --lime: 74.6 85.9% 57.8%;
+    --lime-foreground: 77 68% 6%;
     --run: 216 100% 65%;
     --food: 43 91% 62%;
     --social: 257 100% 80%;

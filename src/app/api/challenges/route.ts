@@ -1,192 +1,151 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
-import { Challenge, User, RunningSession, StravaActivity } from '@/models';
+import { getUserSummaries, notifyUser } from '@/lib/friends';
+import {
+  CHALLENGE_LIMITS,
+  areFriends,
+  challengeLink,
+  formatDeadline,
+  formatKm,
+  refreshChallenge,
+  toChallengeViews,
+} from '@/lib/challenges';
+import { Challenge } from '@/models';
 
-// Helper function to calculate running progress
-async function calculateProgress(userId: string, startDate: Date, endDate: Date): Promise<number> {
-    const dateFilter = { $gte: startDate, $lte: endDate };
+const MAX_LISTED = 100;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
-    // Get manual running sessions
-    const runningSessions = await RunningSession.find({
-        ownerId: userId,
-        date: dateFilter
-    });
-
-    // Get Strava activities (running only)
-    const stravaActivities = await StravaActivity.find({
-        ownerId: userId,
-        type: 'Run',
-        date: dateFilter
-    });
-
-    // Calculate total km
-    let totalKm = 0;
-
-    // Add manual sessions (distance is in km)
-    totalKm += runningSessions.reduce((sum, session) => sum + session.distance, 0);
-
-    // Add Strava activities (distance is in meters, convert to km)
-    totalKm += stravaActivities.reduce((sum, activity) => sum + (activity.distance / 1000), 0);
-
-    return totalKm;
-}
-
-// GET - Fetch user's challenges (as challenger or challenged) with calculated progress
+// GET - The caller's challenges (sent and received), recounted and settled where due.
 export async function GET(request: NextRequest) {
-    try {
-        const user = await getRequestUser(request);
-
-        if (!user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        await connectToDatabase();
-
-        const userId = user.id;
-
-        // Get all challenges where user is involved
-        const challenges = await Challenge.find({
-            $or: [
-                { challengerId: userId },
-                { challengedId: userId }
-            ]
-        }).sort({ createdAt: -1 });
-
-        // Calculate progress for each accepted challenge
-        const now = new Date();
-        const challengesWithProgress = await Promise.all(
-            challenges.map(async (challenge) => {
-                if (challenge.status === 'accepted' && challenge.startDate) {
-                    const endDate = challenge.endDate < now ? challenge.endDate : now;
-
-                    const [challengerProgress, challengedProgress] = await Promise.all([
-                        calculateProgress(challenge.challengerId, challenge.startDate, endDate),
-                        calculateProgress(challenge.challengedId, challenge.startDate, endDate)
-                    ]);
-
-                    // Update cached progress in database
-                    challenge.challengerProgress = challengerProgress;
-                    challenge.challengedProgress = challengedProgress;
-
-                    // Check if someone reached the target or end date passed
-                    const someoneReachedTarget = challengerProgress >= challenge.targetKm || challengedProgress >= challenge.targetKm;
-                    const endDatePassed = challenge.endDate < now;
-
-                    if ((someoneReachedTarget || endDatePassed) && challenge.status === 'accepted') {
-                        challenge.status = 'completed';
-
-                        // Determine winner - first to reach target wins, or higher km if end date passed
-                        if (challengerProgress >= challenge.targetKm && challengedProgress >= challenge.targetKm) {
-                            // Both reached target - first one wins (higher km at completion)
-                            challenge.winnerId = challengerProgress > challengedProgress
-                                ? challenge.challengerId
-                                : challenge.challengedId;
-                        } else if (challengerProgress >= challenge.targetKm) {
-                            challenge.winnerId = challenge.challengerId;
-                        } else if (challengedProgress >= challenge.targetKm) {
-                            challenge.winnerId = challenge.challengedId;
-                        }
-                        // If neither reached target and time is up, no winner
-                    }
-
-                    await challenge.save();
-                }
-                return challenge.toJSON();
-            })
-        );
-
-        return NextResponse.json({ data: challengesWithProgress });
-    } catch (error) {
-        console.error('GET /api/challenges error:', error);
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        );
+  try {
+    const user = await getRequestUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    await connectToDatabase();
+
+    const challenges = await Challenge.find({
+      $or: [{ challengerId: user.id }, { challengedId: user.id }],
+    })
+      .sort({ createdAt: -1 })
+      .limit(MAX_LISTED);
+
+    const now = new Date();
+    const fresh = await Promise.all(challenges.map(challenge => refreshChallenge(challenge, now)));
+
+    return NextResponse.json({ data: await toChallengeViews(fresh) });
+  } catch (error) {
+    console.error('GET /api/challenges error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }
 
-// POST - Create new challenge
+// POST - Challenge a friend: { challengedId, targetKm, endDate, message? }
 export async function POST(request: NextRequest) {
-    try {
-        const user = await getRequestUser(request);
-
-        if (!user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        await connectToDatabase();
-
-        const body = await request.json();
-        const { challengedId, targetKm, endDate } = body;
-
-        if (!challengedId || !targetKm || !endDate) {
-            return NextResponse.json(
-                { error: 'Missing required fields: challengedId, targetKm, endDate' },
-                { status: 400 }
-            );
-        }
-
-        // Cannot challenge yourself
-        if (challengedId === user.id) {
-            return NextResponse.json(
-                { error: 'Cannot challenge yourself' },
-                { status: 400 }
-            );
-        }
-
-        // Get both user profiles
-        const [challenger, challenged] = await Promise.all([
-            User.findById(user.id),
-            User.findById(challengedId)
-        ]);
-
-        if (!challenger) {
-            return NextResponse.json({ error: 'Challenger not found' }, { status: 404 });
-        }
-
-        if (!challenged) {
-            return NextResponse.json({ error: 'Challenged user not found' }, { status: 404 });
-        }
-
-        // Check for existing active challenge between these users
-        const existingChallenge = await Challenge.findOne({
-            $or: [
-                { challengerId: user.id, challengedId, status: { $in: ['pending', 'accepted'] } },
-                { challengerId: challengedId, challengedId: user.id, status: { $in: ['pending', 'accepted'] } }
-            ]
-        });
-
-        if (existingChallenge) {
-            return NextResponse.json(
-                { error: 'An active challenge already exists between you and this user' },
-                { status: 400 }
-            );
-        }
-
-        // Create challenge
-        const challenge = new Challenge({
-            challengerId: user.id,
-            challengedId,
-            challengerName: challenger.name,
-            challengedName: challenged.name,
-            challengerAvatarUrl: challenger.avatarUrl,
-            challengedAvatarUrl: challenged.avatarUrl,
-            targetKm,
-            endDate: new Date(endDate),
-            status: 'pending',
-            challengerProgress: 0,
-            challengedProgress: 0,
-        });
-
-        await challenge.save();
-
-        return NextResponse.json({ data: challenge.toJSON() }, { status: 201 });
-    } catch (error) {
-        console.error('POST /api/challenges error:', error);
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        );
+  try {
+    const user = await getRequestUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    if (user.isGuest) {
+      return NextResponse.json({ error: 'Wyzwania są dostępne po założeniu konta.' }, { status: 403 });
+    }
+
+    const body = await request.json().catch(() => null);
+    const challengedId = body?.challengedId;
+    const targetKm = Math.round(Number(body?.targetKm) * 10) / 10;
+    const endDate = new Date(body?.endDate);
+    const message = typeof body?.message === 'string' ? body.message.trim() : '';
+    const now = Date.now();
+
+    if (typeof challengedId !== 'string' || !mongoose.isValidObjectId(challengedId)) {
+      return NextResponse.json({ error: 'Wybierz znajomego.' }, { status: 400 });
+    }
+    if (challengedId === user.id) {
+      return NextResponse.json({ error: 'Nie możesz wyzwać samego siebie.' }, { status: 400 });
+    }
+    if (!Number.isFinite(targetKm) || targetKm < CHALLENGE_LIMITS.minKm || targetKm > CHALLENGE_LIMITS.maxKm) {
+      return NextResponse.json(
+        { error: `Cel musi mieć od ${CHALLENGE_LIMITS.minKm} do ${CHALLENGE_LIMITS.maxKm} km.` },
+        { status: 400 }
+      );
+    }
+    if (Number.isNaN(endDate.getTime()) || endDate.getTime() <= now + 60 * 60 * 1000) {
+      return NextResponse.json({ error: 'Termin musi być w przyszłości.' }, { status: 400 });
+    }
+    // One day of slack: the client sends the end of the chosen day in its own time zone.
+    if (endDate.getTime() > now + (CHALLENGE_LIMITS.maxDays + 1) * DAY_MS) {
+      return NextResponse.json(
+        { error: `Wyzwanie może trwać najwyżej ${CHALLENGE_LIMITS.maxDays} dni.` },
+        { status: 400 }
+      );
+    }
+    if (message.length > CHALLENGE_LIMITS.messageMaxLength) {
+      return NextResponse.json(
+        { error: `Wiadomość może mieć najwyżej ${CHALLENGE_LIMITS.messageMaxLength} znaków.` },
+        { status: 400 }
+      );
+    }
+
+    await connectToDatabase();
+
+    if (!(await areFriends(user.id, challengedId))) {
+      return NextResponse.json({ error: 'Wyzwania można wysyłać tylko znajomym.' }, { status: 403 });
+    }
+
+    const existing = await Challenge.findOne({
+      status: { $in: ['pending', 'accepted'] },
+      $or: [
+        { challengerId: user.id, challengedId },
+        { challengerId: challengedId, challengedId: user.id },
+      ],
+    });
+    // A stale one (deadline passed) is settled here and no longer blocks a new challenge.
+    if (existing && ['pending', 'accepted'].includes((await refreshChallenge(existing)).status)) {
+      return NextResponse.json(
+        { error: 'Masz już otwarte wyzwanie z tą osobą. Dokończcie je najpierw.' },
+        { status: 409 }
+      );
+    }
+
+    const summaries = await getUserSummaries([user.id, challengedId]);
+    const me = summaries.get(user.id);
+    const friend = summaries.get(challengedId);
+    if (!me || !friend) {
+      return NextResponse.json({ error: 'Nie znaleziono użytkownika.' }, { status: 404 });
+    }
+
+    const challenge = await Challenge.create({
+      challengerId: user.id,
+      challengedId,
+      challengerName: me.displayName,
+      challengedName: friend.displayName,
+      challengerAvatarUrl: me.avatarUrl,
+      challengedAvatarUrl: friend.avatarUrl,
+      targetKm,
+      message: message || undefined,
+      endDate,
+      status: 'pending',
+      challengerProgress: 0,
+      challengedProgress: 0,
+    });
+
+    const note = message ? ` „${message}”` : '';
+    await notifyUser(
+      challengedId,
+      'Wyzwanie biegowe 🏃',
+      `${me.displayName} rzuca Ci wyzwanie: kto pierwszy przebiegnie ${formatKm(targetKm)} km (do ${formatDeadline(endDate)}).${note}`,
+      challengeLink(String(challenge._id)),
+      { push: true }
+    );
+
+    const [view] = await toChallengeViews([challenge]);
+    return NextResponse.json({ data: view }, { status: 201 });
+  } catch (error) {
+    console.error('POST /api/challenges error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

@@ -45,16 +45,16 @@ export function TodayHero({ active, planned, doneToday, lastWorkout }: TodayHero
       <Link
         to={`/athlete/history/${doneToday.id}`}
         state={{ title: doneToday.workoutName }}
-        className="block rounded-2xl bg-card p-4 transition-transform active:scale-[0.99]"
+        className="block rounded-2xl bg-lime p-4 text-lime-foreground transition-transform active:scale-[0.99]"
       >
-        <p className="flex items-center gap-1.5 text-[13px] font-semibold text-volt">
+        <p className="flex items-center gap-1.5 text-[13px] font-semibold opacity-80">
           <Check className="h-4 w-4" strokeWidth={3} /> Dzisiejszy trening zrobiony
         </p>
         <div className="mt-1 flex items-end justify-between gap-3">
           <h2 className="line-clamp-2 min-w-0 font-display text-[2.75rem] font-bold uppercase leading-[0.95]">{doneToday.workoutName}</h2>
-          <ChevronRight className="mb-1 h-5 w-5 shrink-0 text-muted-foreground" />
+          <ChevronRight className="mb-1 h-5 w-5 shrink-0 opacity-60" />
         </div>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-2 text-sm font-medium opacity-75">
           {doneToday.duration ? `${doneToday.duration} min · ` : ''}
           {setsLabel(setCountOf(doneToday))} · {Math.round(volumeOf(doneToday)).toLocaleString('pl-PL')} kg
         </p>
