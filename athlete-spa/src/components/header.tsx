@@ -14,10 +14,10 @@ export function AppHeader() {
   const { customTitle } = useHeaderTitle();
   const { userProfile } = useUserProfile();
 
-  const isSettingsTab = pathname === '/athlete/you' && new URLSearchParams(search).get('tab') === 'settings';
+  const isSettings = pathname === '/athlete/settings' || (pathname === '/athlete/you' && new URLSearchParams(search).get('tab') === 'settings');
   // Root screens are reachable from the bottom bar, so they get a big title.
   // Everywhere else the header has to say where you are and offer a way up.
-  const isRoot = isRootPath(pathname) && !isSettingsTab;
+  const isRoot = isRootPath(pathname) && !isSettings;
   const stateTitle = (state as { title?: string } | null)?.title;
   const screenTitle = customTitle ?? stateTitle ?? getScreenTitle(pathname, search, userProfile?.name);
   const isToday = pathname === '/athlete/dashboard';
@@ -32,7 +32,7 @@ export function AppHeader() {
     // pop, which would otherwise leave the button dead.
     if (window.history.state?.idx > 0) {
       navigate(-1);
-    } else if (isSettingsTab) {
+    } else if (isSettings) {
       navigate('/athlete/you');
     } else {
       navigate('/athlete/dashboard');
@@ -73,12 +73,12 @@ export function AppHeader() {
           <NotificationBell />
           <QuickChatWidget />
           <Link
-            to={isSettingsTab ? '/athlete/you' : '/athlete/you?tab=settings'}
+            to={isSettings ? '/athlete/you' : '/athlete/settings'}
             onClick={() => haptic('tap')}
-            aria-label={isSettingsTab ? 'Wróć do profilu' : 'Ustawienia'}
+            aria-label={isSettings ? 'Wróć do profilu' : 'Ustawienia'}
             className={cn(
               'relative grid h-11 w-11 place-items-center rounded-full transition-transform active:scale-90 active:bg-secondary',
-              isSettingsTab ? 'text-primary bg-secondary' : 'text-foreground'
+              isSettings ? 'text-primary bg-secondary' : 'text-foreground'
             )}
           >
             <Settings className="h-[22px] w-[22px]" />

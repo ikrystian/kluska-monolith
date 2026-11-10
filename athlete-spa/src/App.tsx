@@ -57,6 +57,7 @@ const RunDetailStravaPage = lazy(() => import('@/pages/athlete/RunDetailStrava')
 const SocialPage = lazy(() => import('@/pages/athlete/Social'));
 const ChallengesPage = lazy(() => import('@/pages/athlete/Challenges'));
 const ChallengeDetailPage = lazy(() => import('@/pages/athlete/ChallengeDetail'));
+const SettingsPage = lazy(() => import('@/pages/athlete/Settings'));
 const YouPage = lazy(() => import('@/pages/athlete/You'));
 const TemplatesPage = lazy(() => import('@/pages/athlete/Templates'));
 const TrainersPage = lazy(() => import('@/pages/athlete/Trainers'));
@@ -82,9 +83,15 @@ function CacheInvalidationBinder() {
   return null;
 }
 
-/** `/athlete/profile` from before the "Ty" tab split; query params (OAuth results, `tab`) ride along. */
+/** `/athlete/profile` from before the split; query params (OAuth results, `tab`) route to the right screen. */
 function LegacyProfileRedirect() {
   const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  if (params.get('tab') === 'settings') {
+    params.delete('tab');
+    const qs = params.toString();
+    return <Navigate to={{ pathname: '/athlete/settings', search: qs ? `?${qs}` : '' }} replace />;
+  }
   return <Navigate to={{ pathname: '/athlete/you', search }} replace />;
 }
 
@@ -177,6 +184,7 @@ export default function App() {
                 </Route>
 
                 <Route path="workout-plans" element={<WorkoutPlansPage />} />
+                <Route path="settings" element={<SettingsPage />} />
                 <Route path="you" element={<YouPage />} />
 
                 <Route path="workouts" element={<WorkoutsPage />} />

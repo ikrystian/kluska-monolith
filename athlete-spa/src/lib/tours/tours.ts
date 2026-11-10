@@ -183,7 +183,7 @@ export const TOURS: TourDef[] = [
   {
     id: 'you',
     version: 1,
-    match: (pathname, search) => pathname === '/athlete/you' && search.get('tab') !== 'settings',
+    match: at('/athlete/you'),
     steps: [
       {
         target: 'you-hero',
@@ -191,9 +191,20 @@ export const TOURS: TourDef[] = [
         body: 'Zdjęcie, poziom i najważniejsze liczby. Pierścień wokół zdjęcia pokazuje, ile XP brakuje do kolejnego poziomu.',
       },
       {
-        target: 'you-tabs',
-        title: 'Profil i ustawienia',
-        body: 'W <strong>Ustawieniach</strong> zmienisz motyw, powiadomienia i integracje, a także włączysz te wskazówki od nowa.',
+        target: 'you-profile',
+        title: 'Twój profil',
+        body: 'W tym miejscu sprawdzisz podsumowanie, zaktualizujesz dane profilu i ulubione siłownie.',
+      },
+    ],
+  },
+  {
+    id: 'settings',
+    version: 1,
+    match: at('/athlete/settings'),
+    steps: [
+      {
+        title: 'Ustawienia aplikacji',
+        body: 'Dostosuj motyw, dźwięki przerw, powiadomienia, pobierz dane offline oraz połącz konto ze Stravą i Spotify.',
       },
     ],
   },

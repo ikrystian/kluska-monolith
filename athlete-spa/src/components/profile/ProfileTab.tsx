@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Camera, Check, Dumbbell, MapPin, Plus, Share2, UserPen, UserPlus, X, type LucideIcon } from 'lucide-react';
+import { Camera, Check, Dumbbell, MapPin, Plus, Settings, Share2, UserPen, UserPlus, X, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProfileSummary } from '@/components/dashboard/ProfileSummary';
 import { useUserProfile } from '@/contexts/UserProfileContext';
@@ -162,23 +162,32 @@ export function ProfileTab({
 
       <ProfileSummary />
 
-      <SettingsGroup title="Twój profil">
-        <SettingsLinkRow
-          icon={UserPen}
-          color="hsl(var(--primary))"
-          title="Dane profilu"
-          description={userProfile?.email || 'Imię, email, miasto, social media'}
-          onClick={() => userProfile && onEditProfile()}
-        />
-        <SettingsLinkRow
-          icon={Dumbbell}
-          color="hsl(var(--volt))"
-          title="Ulubione siłownie"
-          description="Miejsca, w których trenujesz"
-          value={isLoading && !userProfile ? undefined : favoriteGymsCount || 'Brak'}
-          onClick={() => userProfile && onEditGyms()}
-        />
-      </SettingsGroup>
+      <div data-tour="you-profile">
+        <SettingsGroup title="Twój profil">
+          <SettingsLinkRow
+            icon={UserPen}
+            color="hsl(var(--primary))"
+            title="Dane profilu"
+            description={userProfile?.email || 'Imię, email, miasto, social media'}
+            onClick={() => userProfile && onEditProfile()}
+          />
+          <SettingsLinkRow
+            icon={Dumbbell}
+            color="hsl(var(--volt))"
+            title="Ulubione siłownie"
+            description="Miejsca, w których trenujesz"
+            value={isLoading && !userProfile ? undefined : favoriteGymsCount || 'Brak'}
+            onClick={() => userProfile && onEditGyms()}
+          />
+          <SettingsLinkRow
+            icon={Settings}
+            color="hsl(var(--muted-foreground))"
+            title="Ustawienia aplikacji"
+            description="Motyw, powiadomienia, integracje"
+            to="/athlete/settings"
+          />
+        </SettingsGroup>
+      </div>
     </div>
   );
 }

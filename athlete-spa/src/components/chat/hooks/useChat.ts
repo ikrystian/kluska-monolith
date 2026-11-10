@@ -17,21 +17,25 @@ export function useChat() {
         markAsRead
     } = useConversations();
 
+    const selectedConversation = conversations?.find(
+        c => c.id === selectedConversationId || c.conversationId === selectedConversationId
+    );
+
+    const effectiveConversationId = selectedConversation?.id || selectedConversationId;
+
     const {
         messages,
         isLoading: messagesLoading,
         sendMessage: sendMessageInternal,
         refetch: refetchMessages
-    } = useMessages(selectedConversationId);
-
-    const selectedConversation = conversations?.find(c => c.id === selectedConversationId);
+    } = useMessages(effectiveConversationId);
 
     // Mark as read when entering conversation
     useEffect(() => {
-        if (selectedConversationId && user && selectedConversation) {
+        if (selectedConversation && user) {
             const unreadCount = selectedConversation.unreadCount?.[user.uid] || 0;
             if (unreadCount > 0) {
-                markAsRead(selectedConversationId, user.uid);
+                markAsRead(selectedConversation.id, user.uid);
                 // Optimistically update local state if needed, or just wait for refetch
                 refetchConversations();
             }

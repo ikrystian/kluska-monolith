@@ -21,7 +21,7 @@ interface ExercisePreviewPagerProps {
   exercises: Exercise[];
   index: number;
   onIndexChange: (index: number) => void;
-  onAdd: (exerciseId: string) => void;
+  onAdd: (exerciseId: string, exercise: Exercise) => void;
   onClose: () => void;
   /** Total matching the filters, which may exceed the pages loaded so far. */
   totalCount?: number;
@@ -136,7 +136,7 @@ export function ExercisePreviewPager({
       </div>
 
       <div className="shrink-0 border-t border-border/60 bg-background/90 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur">
-        <Button type="button" className="h-12 w-full text-base" onClick={() => onAdd(exercise.id)}>
+        <Button type="button" className="h-12 w-full text-base" onClick={() => onAdd(exercise.id, exercise)}>
           <PlusCircle className="mr-2 h-5 w-5" />
           Dodaj do treningu
         </Button>

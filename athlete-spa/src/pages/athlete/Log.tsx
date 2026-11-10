@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { PlusCircle, Trash2, Save, Loader2, Dumbbell, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, ChevronDown, LayoutList, RotateCcw, Check, Timer, AlertCircle, Minus, Plus, X, Camera, Image as ImageIcon, Footprints, BookOpen, House } from 'lucide-react';
+import { PlusCircle, Trash2, Save, Loader2, Dumbbell, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, ChevronDown, LayoutList, GalleryHorizontal, RotateCcw, Check, Timer, AlertCircle, Minus, Plus, X, Camera, Image as ImageIcon, Footprints, BookOpen, House } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
@@ -420,9 +420,11 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
 
   const [activeExerciseIndex, setActiveExerciseIndex] = useState(0);
   const [newExerciseId, setNewExerciseId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>(() =>
-    localStorage.getItem('athlete-log-view-mode') === 'carousel' ? 'carousel' : 'list'
-  );
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    const urlMode = searchParams.get('mode') || searchParams.get('view');
+    if (urlMode === 'carousel' || urlMode === 'list') return urlMode;
+    return localStorage.getItem('athlete-log-view-mode') === 'carousel' ? 'carousel' : 'list';
+  });
   const [isHeaderExpanded, setIsHeaderExpanded] = useState(false);
 
   const [spotifyWidgetVisible, setSpotifyWidgetVisible] = useState(false);
@@ -1047,7 +1049,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
 
           {/* Session bar: what, how far, how long, and the way out */}
           <div className="mb-2 shrink-0 pt-2">
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => {
@@ -1066,6 +1068,34 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
                   {completedSets}/{totalSets} serii · {fields.length} ćw.
                 </span>
               </button>
+
+              <div className="flex h-8 shrink-0 items-center rounded-xl bg-secondary/80 p-0.5 border border-border/40" role="tablist" aria-label="Przełącznik widoku">
+                <button
+                  type="button"
+                  aria-label="Widok listy"
+                  aria-pressed={viewMode === 'list'}
+                  onClick={() => handleViewModeChange('list')}
+                  className={cn(
+                    'grid h-7 w-7.5 place-items-center rounded-lg transition-colors',
+                    viewMode === 'list' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  <LayoutList className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Widok karuzeli"
+                  aria-pressed={viewMode === 'carousel'}
+                  onClick={() => handleViewModeChange('carousel')}
+                  className={cn(
+                    'grid h-7 w-7.5 place-items-center rounded-lg transition-colors',
+                    viewMode === 'carousel' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  <GalleryHorizontal className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
               <ElapsedClock startTime={startTime} />
               <Button type="submit" size="sm" variant="volt" disabled={fields.length === 0}>
                 Zakończ
@@ -1118,7 +1148,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
                     onClick={() => handleViewModeChange('carousel')}
                     className={cn('grid h-8 w-9 place-items-center rounded-lg transition-colors', viewMode === 'carousel' ? 'bg-background text-foreground' : 'text-muted-foreground')}
                   >
-                    <Timer className="h-4 w-4" />
+                    <GalleryHorizontal className="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -1129,11 +1159,16 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
 
           {/* Main Content - Conditional based on view mode */}
           {viewMode === 'carousel' ? (
-            <div className="flex-1 overflow-hidden pb-2">
+            <div className="flex-1 min-h-0 overflow-hidden pb-1">
               <CarouselWorkoutView
                 allExercises={allExercises}
                 isLoadingExercises={isLoadingExercises}
                 onSetComplete={handleSetComplete}
+                onAddExercise={handleAddExercise}
+                onRemoveExercise={handleRemoveExercise}
+                userId={user?.uid || null}
+                workoutName={watchedWorkoutName}
+                onFinishWorkout={() => setIsFinished(true)}
               />
             </div>
           ) : (
@@ -2158,14 +2193,18 @@ export default function LogWorkoutPage() {
   // Ćwiczenie przyjęte z kodu QR na maszynie (/athlete/exercise/:id → /athlete/log?addExercise=)
   const pendingExerciseId = searchParams.get('addExercise');
   const { data: preselectedWorkout, isLoading: isLoadingPreselected } = useDoc<Workout>('workouts', workoutId);
+  const { data: specificWorkoutLog } = useDoc<WorkoutLog>('workoutLogs', logId);
   const { toast } = useToast();
 
   // Handle Active Workout Resume
   useEffect(() => {
-    if (activeWorkouts && activeWorkouts.length > 0) {
-      const activeLog = logId
-        ? activeWorkouts.find(l => l.id === logId) || activeWorkouts[0]
-        : activeWorkouts[0];
+    const activeLog = (logId && specificWorkoutLog)
+      ? specificWorkoutLog
+      : (activeWorkouts && activeWorkouts.length > 0
+          ? (logId ? activeWorkouts.find(l => l.id === logId) || activeWorkouts[0] : activeWorkouts[0])
+          : null);
+
+    if (activeLog) {
 
       // If user tried to start a new workout via URL but has an active one
       if (workoutId && activeLog.id !== workoutId) { // Note: workoutId param is a Workout ID, activeLog.id is Log ID. We can't easily compare, but existence of activeLog takes precedence.
@@ -2206,7 +2245,7 @@ export default function LogWorkoutPage() {
       setBuilderData({ ...resumedData, startTime: activeLog.startTime } as any); // Type assertion if we don't update schema yet
       setView('active');
     }
-  }, [activeWorkouts, workoutId, view]);
+  }, [activeWorkouts, specificWorkoutLog, logId, workoutId, view]);
 
   // Auto-start builder if workoutId is present and workout is loaded AND NO ACTIVE WORKOUT
   useEffect(() => {

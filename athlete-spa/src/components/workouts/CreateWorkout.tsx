@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm, useFieldArray, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -39,8 +39,7 @@ import { useWorkoutDraft } from '@/hooks/useWorkoutDraft';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/workout/UnsavedChangesDialog';
 import { SET_TEMPLATES, SetTemplate } from '@/lib/set-templates';
-import { ExerciseSelector } from '@/components/workout/ExerciseSelector';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AddExerciseSheet } from '@/components/workout/AddExerciseSheet';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -160,17 +159,27 @@ export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
     const navigate = useNavigate();
     const { createDoc, isLoading: isCreating } = useCreateDoc();
     const { data: exercises, isLoading: exercisesLoading } = useCollection<Exercise>('exercises');
+    const [knownExercises, setKnownExercises] = useState<Record<string, Exercise>>({});
     const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
     const [openExerciseIndex, setOpenExerciseIndex] = useState<number | null>(0);
     const [confirm, setConfirm] = useState<ConfirmState | null>(null);
-    // Index of a freshly added exercise whose picker dialog should open automatically.
-    const [autoPickIndex, setAutoPickIndex] = useState<number | null>(null);
     const [extrasOpen, setExtrasOpen] = useState(false);
+
+    const registerKnownExercise = useCallback((exercise: Exercise) => {
+        setKnownExercises(prev => ({ ...prev, [exercise.id]: exercise }));
+    }, []);
+
+    const allExercises = useMemo(() => {
+        const map = new Map<string, Exercise>();
+        exercises?.forEach(e => map.set(e.id, e));
+        Object.values(knownExercises).forEach(e => map.set(e.id, e));
+        return Array.from(map.values());
+    }, [exercises, knownExercises]);
 
     const { draft, lastAutoSave, saveToLocal, clearDraft } = useWorkoutDraft<WorkoutFormValues>('create-workout-draft');
 
     const form = useForm<WorkoutFormValues>({
-        resolver: zodResolver(workoutSchema),
+        resolver: zodResolver(workoutSchema) as any,
         defaultValues: {
             name: '',
             imageUrl: '',
@@ -275,7 +284,7 @@ export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
 
         try {
             const fullExerciseSeries = data.exerciseSeries.map(series => {
-                const exercise = exercises?.find(e => e.id === series.exerciseId);
+                const exercise = allExercises.find(e => e.id === series.exerciseId);
                 if (!exercise) throw new Error(`Exercise not found: ${series.exerciseId}`);
 
                 return {
@@ -343,24 +352,25 @@ export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
         });
     };
 
-    const handleAddExercise = () => {
-        const series = form.getValues('exerciseSeries');
-        const lastIndex = series.length - 1;
-        if (lastIndex >= 0 && !series[lastIndex].exerciseId) {
-            toast({
-                title: 'Najpierw wybierz ćwiczenie',
-                description: 'Uzupełnij poprzednią pozycję przed dodaniem kolejnej.',
-                variant: 'destructive',
-            });
-            setOpenExerciseIndex(lastIndex);
-            setAutoPickIndex(lastIndex);
-            return;
+    const handleAddExercise = (exerciseId: string, exercise?: Exercise) => {
+        if (exercise) {
+            registerKnownExercise(exercise);
         }
+        const exerciseDef = exercise || allExercises.find(e => e.id === exerciseId);
+        const exType = exerciseDef?.type || 'weight';
+        const defaultSets = exType === 'duration'
+            ? [{ type: SetType.WorkingSet, duration: 30, restTimeSeconds: 60 }]
+            : exType === 'reps'
+            ? [{ type: SetType.WorkingSet, reps: 10, restTimeSeconds: 60 }]
+            : [{ type: SetType.WorkingSet, reps: 10, weight: 0, weightUnit: 'kg' as const, restTimeSeconds: 60 }];
 
-        appendExercise({ exerciseId: '', sets: [{ type: SetType.WorkingSet, reps: 10, weight: 0, restTimeSeconds: 60 }] });
-        // Open the new exercise and jump straight into the picker — one tap less.
+        appendExercise({
+            exerciseId,
+            sets: defaultSets,
+            tempo: '',
+            tip: '',
+        });
         setOpenExerciseIndex(exerciseFields.length);
-        setAutoPickIndex(exerciseFields.length);
     };
 
     const handleRemoveExercise = (index: number) => {
@@ -518,9 +528,14 @@ export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
                                 <p className="font-semibold">Brak ćwiczeń</p>
                                 <p className="text-sm text-muted-foreground">Dodaj pierwsze ćwiczenie, aby ułożyć trening.</p>
                             </div>
-                            <Button type="button" onClick={handleAddExercise} className="h-12 w-full max-w-xs text-base">
-                                <Plus className="mr-2 h-5 w-5" /> Dodaj ćwiczenie
-                            </Button>
+                            <AddExerciseSheet
+                                onAddExercise={handleAddExercise}
+                                trigger={
+                                    <Button type="button" className="h-12 w-full max-w-xs text-base">
+                                        <Plus className="mr-2 h-5 w-5" /> Dodaj ćwiczenie
+                                    </Button>
+                                }
+                            />
                         </CardContent>
                     </Card>
                 ) : (
@@ -535,24 +550,27 @@ export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
                                         move={moveExercise}
                                         isFirst={index === 0}
                                         isLast={index === exerciseFields.length - 1}
-                                        exercises={exercises || []}
+                                        exercises={allExercises}
+                                        onExerciseSelected={registerKnownExercise}
                                         isOpen={openExerciseIndex === index}
                                         onToggle={() => setOpenExerciseIndex(openExerciseIndex === index ? null : index)}
                                         onConfirmRequest={setConfirm}
-                                        autoOpenPicker={autoPickIndex === index}
-                                        onPickerAutoOpened={() => setAutoPickIndex(null)}
                                     />
                                 </motion.div>
                             ))}
                         </AnimatePresence>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={handleAddExercise}
-                            className="h-12 w-full border-dashed text-base"
-                        >
-                            <Plus className="mr-2 h-5 w-5" /> Dodaj ćwiczenie
-                        </Button>
+                        <AddExerciseSheet
+                            onAddExercise={handleAddExercise}
+                            trigger={
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="h-12 w-full border-dashed text-base"
+                                >
+                                    <Plus className="mr-2 h-5 w-5" /> Dodaj ćwiczenie
+                                </Button>
+                            }
+                        />
                     </>
                 )}
             </div>
@@ -628,11 +646,10 @@ function ExerciseSeriesItem({
     isFirst,
     isLast,
     exercises,
+    onExerciseSelected,
     isOpen,
     onToggle,
     onConfirmRequest,
-    autoOpenPicker,
-    onPickerAutoOpened,
 }: {
     index: number,
     form: any,
@@ -641,13 +658,11 @@ function ExerciseSeriesItem({
     isFirst: boolean,
     isLast: boolean,
     exercises: Exercise[],
+    onExerciseSelected?: (exercise: Exercise) => void,
     isOpen: boolean,
     onToggle: () => void,
     onConfirmRequest: (confirm: ConfirmState) => void,
-    autoOpenPicker: boolean,
-    onPickerAutoOpened: () => void,
 }) {
-    const [exerciseDialogOpen, setExerciseDialogOpen] = useState(false);
     const { toast } = useToast();
     const { fields: setFields, append: appendSet, remove: removeSet } = useFieldArray({
         control: form.control,
@@ -669,12 +684,6 @@ function ExerciseSeriesItem({
     const setsErrorMessage: string | undefined = setsErrors?.message ?? setsErrors?.root?.message
         ?? (setsErrors ? 'Sprawdź wartości serii.' : undefined);
 
-    useEffect(() => {
-        if (autoOpenPicker) {
-            setExerciseDialogOpen(true);
-            onPickerAutoOpened();
-        }
-    }, [autoOpenPicker, onPickerAutoOpened]);
 
     const handleChangeWeightUnit = (unit: 'kg' | 'rpe') => {
         setWeightUnit(unit);
@@ -789,8 +798,15 @@ function ExerciseSeriesItem({
                 <CollapsibleContent>
                     <CardContent className="space-y-4 p-3 pt-0">
                         <div>
-                            <Dialog open={exerciseDialogOpen} onOpenChange={setExerciseDialogOpen}>
-                                <DialogTrigger asChild>
+                            <AddExerciseSheet
+                                onAddExercise={(newExerciseId, exercise) => {
+                                    if (exercise) {
+                                        onExerciseSelected?.(exercise);
+                                    }
+                                    form.setValue(`exerciseSeries.${index}.exerciseId`, newExerciseId, { shouldValidate: true, shouldDirty: true });
+                                }}
+                                title="Zmień ćwiczenie"
+                                trigger={
                                     <Button
                                         type="button"
                                         variant="outline"
@@ -805,21 +821,8 @@ function ExerciseSeriesItem({
                                         </span>
                                         <Search className="ml-2 h-5 w-5 shrink-0 opacity-60" />
                                     </Button>
-                                </DialogTrigger>
-                                <DialogContent className="flex flex-col gap-3 p-4 h-dvh max-w-none rounded-none border-0 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
-                                    <DialogHeader className="text-left">
-                                        <DialogTitle>Wybierz ćwiczenie</DialogTitle>
-                                    </DialogHeader>
-                                    <ExerciseSelector
-                                        exercises={exercises}
-                                        selectedId={selectedExerciseId}
-                                        onSelect={(val) => {
-                                            form.setValue(`exerciseSeries.${index}.exerciseId`, val, { shouldValidate: true, shouldDirty: true });
-                                            setExerciseDialogOpen(false);
-                                        }}
-                                    />
-                                </DialogContent>
-                            </Dialog>
+                                }
+                            />
                             {exerciseError && <p className="mt-1 text-xs text-destructive">{exerciseError}</p>}
                         </div>
 

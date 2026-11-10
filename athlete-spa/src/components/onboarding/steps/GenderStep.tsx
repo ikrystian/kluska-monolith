@@ -25,10 +25,10 @@ const VenusIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const options: { value: Gender; label: string; icon: React.FC<{ className?: string }> }[] = [
+const options: { value: Gender; disabled?: boolean; label: string; icon: React.FC<{ className?: string }> }[] = [
   { value: 'female', label: 'Kobieta', icon: VenusIcon },
   { value: 'male', label: 'Mężczyzna', icon: MarsIcon },
-  { value: 'other', label: 'Inna', icon: CircleDashed },
+  { value: 'other', disabled: true, label: 'Inna', icon: CircleDashed },
 ];
 
 export function GenderStep({ value, onChange }: GenderStepProps) {
@@ -42,12 +42,14 @@ export function GenderStep({ value, onChange }: GenderStepProps) {
             key={option.value}
             type="button"
             role="radio"
+            disabled={option.disabled}
             aria-checked={selected}
-            onClick={() => onChange(option.value)}
+            onClick={() => !option.disabled && onChange(option.value)}
             className={cn(
               'relative flex flex-col items-start justify-between gap-6 rounded-2xl bg-card p-4 text-left transition-[box-shadow,background-color,transform] duration-200 active:scale-[0.98]',
               option.value === 'other' && 'col-span-2 flex-row items-center justify-start gap-3',
               selected ? 'bg-primary/10 ring-2 ring-primary' : 'ring-1 ring-border',
+              option.disabled && 'cursor-not-allowed opacity-50 active:scale-100',
             )}
           >
             <span

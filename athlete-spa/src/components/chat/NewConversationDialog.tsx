@@ -1,92 +1,158 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-    DialogClose,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, PlusCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Loader2, Plus, Search, Sparkles, UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserProfile } from '@/lib/chat/types';
-import { placeholderImages } from '@/lib/placeholder-images';
+import { TrainerAvatar } from '@/components/trainers/TrainerAvatar';
+import { haptic } from '@/lib/haptics';
+
+const LEAD_TRAINER_ID = '6a5cf516f9fe894c859bb9af';
 
 interface NewConversationDialogProps {
-    potentialContacts: UserProfile[];
-    isLoading: boolean;
-    onStartConversation: (userId: string) => Promise<void>;
+  potentialContacts: UserProfile[];
+  isLoading: boolean;
+  onStartConversation: (userId: string) => Promise<void>;
+  trigger?: React.ReactNode;
 }
 
 export function NewConversationDialog({
-    potentialContacts,
-    isLoading,
-    onStartConversation
+  potentialContacts,
+  isLoading,
+  onStartConversation,
+  trigger,
 }: NewConversationDialogProps) {
-    const [open, setOpen] = useState(false);
-    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-    const [isCreating, setIsCreating] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
 
-    const handleStart = async () => {
-        if (!selectedUserId) return;
-        setIsCreating(true);
-        try {
-            await onStartConversation(selectedUserId);
-            setOpen(false);
-            setSelectedUserId(null);
-        } finally {
-            setIsCreating(false);
-        }
-    };
-
-    return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Nowa Wiadomość
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Rozpocznij nową konwersację</DialogTitle>
-                    <DialogDescription>Wybierz osobę, z którą chcesz porozmawiać.</DialogDescription>
-                </DialogHeader>
-                <div className="py-4 space-y-3 max-h-64 overflow-y-auto">
-                    {isLoading ? <Loader2 className="mx-auto h-6 w-6 animate-spin" /> :
-                        potentialContacts.length > 0 ? potentialContacts.map(contact => (
-                            <div
-                                key={contact.id}
-                                className={cn(
-                                    "flex items-center gap-3 p-3 rounded-md border cursor-pointer hover:bg-secondary",
-                                    selectedUserId === contact.id && "bg-secondary border-primary"
-                                )}
-                                onClick={() => setSelectedUserId(contact.id)}
-                            >
-                                <Avatar>
-                                    <AvatarImage src={placeholderImages.find(p => p.id === 'avatar-male')?.imageUrl} />
-                                    <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="font-semibold">{contact.name}</p>
-                                    <p className="text-sm text-muted-foreground capitalize">{contact.role}</p>
-                                </div>
-                            </div>
-                        )) : <p className="text-center text-muted-foreground">Brak nowych osób do rozpoczęcia rozmowy.</p>
-                    }
-                </div>
-                <DialogFooter>
-                    <DialogClose asChild><Button type="button" variant="secondary" disabled={isCreating}>Anuluj</Button></DialogClose>
-                    <Button onClick={handleStart} disabled={!selectedUserId || isCreating}>
-                        {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Rozpocznij Czat
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (potentialContacts ?? []).filter(
+      c => !q || c.name.toLowerCase().includes(q) || (c.role && c.role.toLowerCase().includes(q))
     );
+  }, [potentialContacts, search]);
+
+  const handleSelect = async (userId: string) => {
+    haptic('tap');
+    setSubmittingId(userId);
+    try {
+      await onStartConversation(userId);
+      setOpen(false);
+      setSearch('');
+    } finally {
+      setSubmittingId(null);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        {trigger ? (
+          trigger
+        ) : (
+          <Button size="sm" className="h-9 gap-1.5 rounded-full px-3.5 text-xs font-semibold shadow-sm">
+            <Plus className="h-4 w-4" />
+            <span>Nowa rozmowa</span>
+          </Button>
+        )}
+      </DialogTrigger>
+      <DialogContent className="max-w-md rounded-3xl p-5 sm:p-6">
+        <DialogHeader className="text-left space-y-1">
+          <DialogTitle className="font-display text-2xl font-bold uppercase tracking-tight">
+            Nowa wiadomość
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            Wybierz trenera, z którym chcesz rozpocząć bezpośrednią rozmowę.
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Search */}
+        {potentialContacts.length > 3 && (
+          <div className="relative mt-2">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Szukaj trenera po nazwisku…"
+              className="h-10 rounded-xl pl-9 text-xs"
+            />
+          </div>
+        )}
+
+        {/* List of Contacts */}
+        <div className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin]">
+          {isLoading ? (
+            <div className="flex h-36 items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : filtered.length > 0 ? (
+            filtered.map(contact => {
+              const isLead = contact.id === LEAD_TRAINER_ID;
+              const isSubmitting = submittingId === contact.id;
+
+              return (
+                <button
+                  key={contact.id}
+                  type="button"
+                  disabled={submittingId !== null}
+                  onClick={() => handleSelect(contact.id)}
+                  className={cn(
+                    'w-full flex items-center justify-between gap-3 rounded-2xl border p-3 text-left transition-all active:scale-[0.98]',
+                    isLead
+                      ? 'border-primary/40 bg-primary/5 hover:bg-primary/10'
+                      : 'border-border/60 bg-card hover:bg-secondary/70'
+                  )}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="relative shrink-0">
+                      <TrainerAvatar trainer={contact} className="h-11 w-11 text-base ring-2 ring-background" />
+                      {isLead && (
+                        <span className="absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-primary text-[8px] font-black text-primary-foreground">
+                          ★
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className="truncate text-sm font-bold text-foreground">{contact.name}</p>
+                        {isLead && (
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-primary/20 px-1.5 py-0.2 text-[10px] font-bold text-primary">
+                            <Sparkles className="h-2.5 w-2.5" /> Polecany
+                          </span>
+                        )}
+                      </div>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {contact.role === 'trainer' ? 'Trener personalny' : 'Sportowiec'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="shrink-0">
+                    {isSubmitting ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    ) : (
+                      <span className="text-xs font-semibold text-primary">Rozpocznij</span>
+                    )}
+                  </div>
+                </button>
+              );
+            })
+          ) : (
+            <div className="py-8 text-center text-xs text-muted-foreground">
+              Nie znaleziono kontaktów do rozpoczęcia rozmowy.
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }

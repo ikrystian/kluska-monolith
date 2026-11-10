@@ -11,6 +11,7 @@ const EXCLUDED = new Set([
   '/athlete/social',
   '/athlete/menu',
   '/athlete/you',
+  '/athlete/settings',
   '/athlete/onboarding',
   // Redirect to `/athlete/you`; only an old link lands here.
   '/athlete/profile',

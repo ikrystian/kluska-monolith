@@ -20,18 +20,37 @@ const muscleGroupOptions = Object.values(MuscleGroupName).map(name => ({ label: 
 
 const noop = () => undefined;
 
+export interface AddExerciseSheetProps {
+  onAddExercise: (exerciseId: string, exercise?: Exercise) => void;
+  trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  title?: string;
+  description?: string;
+}
+
 /**
  * Picker for adding an exercise to the workout. It looks and filters like the
  * exercise library screen (same cards, list/grid toggle, favourites first),
  * loading 30 exercises at a time as the list scrolls. Tapping a result opens
  * its details first; it is added from there.
  */
-export function AddExerciseSheet({ onAddExercise }: { onAddExercise: (exerciseId: string) => void }) {
+export function AddExerciseSheet({
+  onAddExercise,
+  trigger,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+  title = 'Wybierz ćwiczenie',
+  description = 'Ulubione na górze, potem najpopularniejsze.',
+}: AddExerciseSheetProps) {
   const { user } = useUser();
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>('users', user?.uid || null);
   const { favoriteIds, favoriteSet, toggleFavorite } = useFavoriteExercises();
 
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+
   const [filters, setFilters] = useState(EMPTY_EXERCISE_FILTERS);
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [viewMode, setViewMode] = useExerciseViewMode();
@@ -65,7 +84,11 @@ export function AddExerciseSheet({ onAddExercise }: { onAddExercise: (exerciseId
     useExerciseLibrary(libraryFilters, open && !!user?.uid && !isProfileLoading, scope, favoriteIds);
 
   const handleOpenChange = (next: boolean) => {
-    setOpen(next);
+    if (isControlled) {
+      controlledOnOpenChange?.(next);
+    } else {
+      setInternalOpen(next);
+    }
     if (!next) {
       setFilters(EMPTY_EXERCISE_FILTERS);
       setDebouncedSearch('');
@@ -73,8 +96,9 @@ export function AddExerciseSheet({ onAddExercise }: { onAddExercise: (exerciseId
     }
   };
 
-  const pickExercise = (exerciseId: string) => {
-    onAddExercise(exerciseId);
+  const pickExercise = (exerciseId: string, exercise?: Exercise) => {
+    const resolvedExercise = exercise || preview?.list.find(e => e.id === exerciseId) || exercises.find(e => e.id === exerciseId);
+    onAddExercise(exerciseId, resolvedExercise);
     handleOpenChange(false);
   };
 
@@ -103,11 +127,15 @@ export function AddExerciseSheet({ onAddExercise }: { onAddExercise: (exerciseId
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetTrigger asChild>
-        <Button type="button" variant="secondary" className="h-11 shrink-0 gap-1.5 px-3 text-sm" aria-label="Dodaj ćwiczenie">
-          <Plus className="h-5 w-5" /> Ćwiczenie
-        </Button>
-      </SheetTrigger>
+      {trigger !== undefined ? (
+        trigger ? <SheetTrigger asChild>{trigger}</SheetTrigger> : null
+      ) : (
+        <SheetTrigger asChild>
+          <Button type="button" variant="secondary" className="h-11 shrink-0 gap-1.5 px-3 text-sm" aria-label="Dodaj ćwiczenie">
+            <Plus className="h-5 w-5" /> Ćwiczenie
+          </Button>
+        </SheetTrigger>
+      )}
       <SheetContent
         side="bottom"
         className="flex h-[88dvh] flex-col gap-3 px-4"
@@ -121,8 +149,8 @@ export function AddExerciseSheet({ onAddExercise }: { onAddExercise: (exerciseId
         <SheetHeader>
           <div className="flex items-end justify-between gap-3">
             <div className="min-w-0">
-              <SheetTitle>Wybierz ćwiczenie</SheetTitle>
-              <SheetDescription>Ulubione na górze, potem najpopularniejsze.</SheetDescription>
+              <SheetTitle>{title}</SheetTitle>
+              {description && <SheetDescription>{description}</SheetDescription>}
             </div>
             <ViewModeToggle value={viewMode} onChange={setViewMode} />
           </div>

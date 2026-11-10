@@ -36,7 +36,7 @@ const STATE_MAX_AGE = 15 * 60; // the user has 15 minutes to finish the consent 
 /** Deep link prefix handled by the app (see NativeDeepLinks in the SPA). */
 const APP_DEEP_LINK = 'leniwakluska.com://app';
 /** SPA route with the integrations section. */
-const SETTINGS_ROUTE = '/athlete/you?tab=settings';
+const SETTINGS_ROUTE = '/athlete/settings';
 
 export function getOAuthRedirectUri(provider: OAuthProvider): string {
   return `${process.env.NEXTAUTH_URL}/api/${provider}/callback`;
@@ -98,11 +98,11 @@ export function oauthResultRedirect(state: OAuthState | null, provider: OAuthPro
     // schemes over to the app when the navigation comes from a redirect chain
     // the user started. The app's singleTask activity comes to the front and
     // the Custom Tab is closed with it.
-    return NextResponse.redirect(`${APP_DEEP_LINK}${SETTINGS_ROUTE}&${result}`, 302);
+    return NextResponse.redirect(`${APP_DEEP_LINK}${SETTINGS_ROUTE}?${result}`, 302);
   }
 
   if (state?.returnTo) {
-    return NextResponse.redirect(`${state.returnTo}#${SETTINGS_ROUTE}&${result}`, 302);
+    return NextResponse.redirect(`${state.returnTo}#${SETTINGS_ROUTE}?${result}`, 302);
   }
 
   if (!state) return expiredStatePage(provider);
@@ -119,7 +119,7 @@ export function oauthResultRedirect(state: OAuthState | null, provider: OAuthPro
 function expiredStatePage(provider: OAuthProvider): NextResponse {
   const label = provider === 'strava' ? 'Strava' : 'Spotify';
   const color = provider === 'strava' ? '#FC4C02' : '#1DB954';
-  const appLink = `${APP_DEEP_LINK}${SETTINGS_ROUTE}&integration=${provider}&result=error&reason=expired`;
+  const appLink = `${APP_DEEP_LINK}${SETTINGS_ROUTE}?integration=${provider}&result=error&reason=expired`;
   const html = `<!DOCTYPE html>
 <html lang="pl">
 <head>

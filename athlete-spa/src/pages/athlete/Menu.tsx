@@ -37,7 +37,7 @@ const APP_VERSION = '0.9.3';
 /** The nav group the menu draws at the bottom as "Konto", next to the theme and logout. */
 const SETTINGS_GROUP = 'Ustawienia';
 const PROFILE_HREF = '/athlete/you';
-const SETTINGS_HREF = '/athlete/you?tab=settings';
+const SETTINGS_HREF = '/athlete/settings';
 
 /** How many shortcuts the top strip holds: one row, never more. */
 const SHORTCUT_COUNT = 4;

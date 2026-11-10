@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -25,8 +25,7 @@ import { FormProgressIndicator } from '@/components/workout/FormProgressIndicato
 import { SetTemplateSelector } from '@/components/workout/SetTemplateSelector';
 import { QuickSetActions } from '@/components/workout/QuickSetActions';
 import { SetTemplate } from '@/lib/set-templates';
-import { ExerciseSelector } from '@/components/workout/ExerciseSelector';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AddExerciseSheet } from '@/components/workout/AddExerciseSheet';
 import { Skeleton } from '@/components/ui/skeleton';
 
 // --- SCHEMA ---
@@ -108,11 +107,23 @@ export function EditWorkout({ workoutId, onSuccess, redirectPath }: EditWorkoutP
     const { updateDoc, isLoading: isUpdating } = useUpdateDoc();
     const { data: workout, isLoading: workoutLoading, error: workoutError } = useDoc<Workout>('workouts', workoutId);
     const { data: exercises, isLoading: exercisesLoading } = useCollection<Exercise>('exercises');
+    const [knownExercises, setKnownExercises] = useState<Record<string, Exercise>>({});
     const [openExerciseIndex, setOpenExerciseIndex] = useState<number | null>(0);
     const [isInitialized, setIsInitialized] = useState(false);
 
+    const registerKnownExercise = useCallback((exercise: Exercise) => {
+        setKnownExercises(prev => ({ ...prev, [exercise.id]: exercise }));
+    }, []);
+
+    const allExercises = useMemo(() => {
+        const map = new Map<string, Exercise>();
+        exercises?.forEach(e => map.set(e.id, e));
+        Object.values(knownExercises).forEach(e => map.set(e.id, e));
+        return Array.from(map.values());
+    }, [exercises, knownExercises]);
+
     const form = useForm<WorkoutFormValues>({
-        resolver: zodResolver(workoutSchema),
+        resolver: zodResolver(workoutSchema) as any,
         defaultValues: {
             name: '',
             imageUrl: '',
@@ -125,6 +136,11 @@ export function EditWorkout({ workoutId, onSuccess, redirectPath }: EditWorkoutP
     // Initialize form with workout data when loaded
     useEffect(() => {
         if (workout && !isInitialized) {
+            workout.exerciseSeries?.forEach(s => {
+                if (s.exercise?.id) {
+                    registerKnownExercise(s.exercise);
+                }
+            });
             const formData: WorkoutFormValues = {
                 name: workout.name,
                 description: workout.description || '',
@@ -215,7 +231,7 @@ export function EditWorkout({ workoutId, onSuccess, redirectPath }: EditWorkoutP
 
         try {
             const fullExerciseSeries = data.exerciseSeries.map(series => {
-                const exercise = exercises?.find(e => e.id === series.exerciseId);
+                const exercise = allExercises.find(e => e.id === series.exerciseId);
                 if (!exercise) throw new Error(`Exercise not found: ${series.exerciseId}`);
 
                 return {
@@ -251,30 +267,19 @@ export function EditWorkout({ workoutId, onSuccess, redirectPath }: EditWorkoutP
         }
     };
 
-    const handleAddExercise = async () => {
-        const isHeaderValid = await form.trigger(['name', 'level', 'durationMinutes']);
-        if (!isHeaderValid) {
-            toast({
-                title: "Błąd walidacji",
-                description: "Uzupełnij szczegóły treningu (nazwa, poziom, czas) przed dodaniem ćwiczeń.",
-                variant: "destructive"
-            });
-            return;
+    const handleAddExercise = (exerciseId: string, exercise?: Exercise) => {
+        if (exercise) {
+            registerKnownExercise(exercise);
         }
+        const exerciseDef = exercise || allExercises.find(e => e.id === exerciseId);
+        const exType = exerciseDef?.type || 'weight';
+        const defaultSets = exType === 'duration'
+            ? [{ type: SetType.WorkingSet, duration: 30, restTimeSeconds: 60 }]
+            : exType === 'reps'
+            ? [{ type: SetType.WorkingSet, reps: 10, restTimeSeconds: 60 }]
+            : [{ type: SetType.WorkingSet, reps: 10, weight: 0, weightUnit: 'kg' as const, restTimeSeconds: 60 }];
 
-        if (exerciseFields.length > 0) {
-            const isExercisesValid = await form.trigger('exerciseSeries');
-            if (!isExercisesValid) {
-                toast({
-                    title: "Błąd walidacji",
-                    description: "Uzupełnij poprzednie ćwiczenie przed dodaniem kolejnego.",
-                    variant: "destructive"
-                });
-                return;
-            }
-        }
-
-        appendExercise({ exerciseId: '', sets: [{ type: SetType.WorkingSet, reps: 10, weight: 0, restTimeSeconds: 60 }] });
+        appendExercise({ exerciseId, sets: defaultSets, tempo: '', tip: '' });
         setOpenExerciseIndex(exerciseFields.length);
     };
 
@@ -393,7 +398,8 @@ export function EditWorkout({ workoutId, onSuccess, redirectPath }: EditWorkoutP
                         move={moveExercise}
                         isFirst={index === 0}
                         isLast={index === exerciseFields.length - 1}
-                        exercises={exercises || []}
+                        exercises={allExercises}
+                        onExerciseSelected={registerKnownExercise}
                         isOpen={openExerciseIndex === index}
                         onToggle={() => setOpenExerciseIndex(openExerciseIndex === index ? null : index)}
                     />
@@ -401,9 +407,14 @@ export function EditWorkout({ workoutId, onSuccess, redirectPath }: EditWorkoutP
                 ))}
                 </AnimatePresence>
                 <div className="flex justify-end">
-                    <Button type="button" onClick={handleAddExercise}>
-                        <Plus className="mr-2 h-4 w-4" /> Dodaj Ćwiczenie
-                    </Button>
+                    <AddExerciseSheet
+                        onAddExercise={handleAddExercise}
+                        trigger={
+                            <Button type="button">
+                                <Plus className="mr-2 h-4 w-4" /> Dodaj Ćwiczenie
+                            </Button>
+                        }
+                    />
                 </div>
             </div>
 
@@ -425,6 +436,7 @@ function ExerciseSeriesItem({
     isFirst,
     isLast,
     exercises,
+    onExerciseSelected,
     isOpen,
     onToggle
 }: {
@@ -435,10 +447,10 @@ function ExerciseSeriesItem({
     isFirst: boolean,
     isLast: boolean,
     exercises: Exercise[],
+    onExerciseSelected?: (exercise: Exercise) => void,
     isOpen: boolean,
     onToggle: () => void
 }) {
-    const [exerciseDialogOpen, setExerciseDialogOpen] = useState(false);
     const [weightUnit, setWeightUnit] = useState<'kg' | 'rpe'>('kg');
     const { toast } = useToast();
     const { fields: setFields, append: appendSet, remove: removeSet } = useFieldArray({
@@ -572,27 +584,21 @@ function ExerciseSeriesItem({
                                     touched={form.formState.touchedFields.exerciseSeries?.[index]?.exerciseId}
                                     required
                                 >
-                                    <Dialog open={exerciseDialogOpen} onOpenChange={setExerciseDialogOpen}>
-                                        <DialogTrigger asChild>
+                                    <AddExerciseSheet
+                                        onAddExercise={(newExerciseId, exercise) => {
+                                            if (exercise) {
+                                                onExerciseSelected?.(exercise);
+                                            }
+                                            form.setValue(`exerciseSeries.${index}.exerciseId`, newExerciseId, { shouldValidate: true, shouldDirty: true });
+                                        }}
+                                        title="Zmień ćwiczenie"
+                                        trigger={
                                             <Button variant="outline" role="combobox" className={cn("w-full justify-between", !selectedExerciseId &&"text-muted-foreground")}>
                                                 {selectedExercise ? selectedExercise.name : "Wybierz ćwiczenie..."}
                                                 <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                             </Button>
-                                        </DialogTrigger>
-                                        <DialogContent className="flex flex-col gap-3 p-4 h-dvh max-w-none rounded-none border-0 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
-                                            <DialogHeader>
-                                                <DialogTitle>Wybierz ćwiczenie</DialogTitle>
-                                            </DialogHeader>
-                                            <ExerciseSelector
-                                                exercises={exercises}
-                                                selectedId={selectedExerciseId}
-                                                onSelect={(val) => {
-                                                    form.setValue(`exerciseSeries.${index}.exerciseId`, val, { shouldValidate: true, shouldDirty: true });
-                                                    setExerciseDialogOpen(false);
-                                                }}
-                                            />
-                                        </DialogContent>
-                                    </Dialog>
+                                        }
+                                    />
                                 </FormFieldWithValidation>
                             </div>
                             <div className="space-y-2">

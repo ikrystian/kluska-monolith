@@ -1,27 +1,11 @@
 import { lazy, Suspense, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Settings, UserRound } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { buttonVariants } from '@/components/ui/button';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { ProfileHero } from '@/components/profile/ProfileHero';
 import { ProfileTab } from '@/components/profile/ProfileTab';
-import { SettingsTab } from '@/components/profile/SettingsTab';
 import { useUserProfile } from '@/contexts/UserProfileContext';
-import { useAuth } from '@/contexts/AuthContext';
 import { useUpdateDoc, useUser } from '@/lib/db-hooks';
 import { useToast } from '@/hooks/use-toast';
 import { resolveMediaUrl } from '@/lib/api-client';
-import { haptic } from '@/lib/haptics';
 import { TourAnchor } from '@/components/tour/TourAnchor';
 
 // Editors (react-image-crop, zod form, gyms list) only load when the athlete opens them.
@@ -35,40 +19,27 @@ const FavoriteGymsSheet = lazy(() =>
   import('@/components/profile/FavoriteGymsSheet').then(m => ({ default: m.FavoriteGymsSheet }))
 );
 
-const YOU_TABS = ['profile', 'settings'] as const;
-type YouTab = (typeof YOU_TABS)[number];
-const DEFAULT_TAB: YouTab = 'profile';
-
-function isYouTab(value: string | null): value is YouTab {
-  return YOU_TABS.includes(value as YouTab);
-}
-
 /**
- * The "Ty" tab: who you are on top, then your profile and the app's settings,
- * one tap apart. The tab
- * lives in the URL (`?tab=settings`), so search hits and old profile links
- * land on the right one.
+ * The "Ty" view: who you are on top, lifetime totals, and your profile details.
+ * Settings are in their own dedicated view at `/athlete/settings`.
  */
 export default function YouPage() {
   const { toast } = useToast();
   const { user } = useUser();
-  const { logout } = useAuth();
-  const navigate = useNavigate();
   const { updateDoc } = useUpdateDoc();
   const { userProfile, refetch } = useUserProfile();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const tabParam = searchParams.get('tab');
-  const activeTab: YouTab = isYouTab(tabParam) ? tabParam : DEFAULT_TAB;
+  const [searchParams] = useSearchParams();
+
+  // Backward-compatibility: if an old link hits `?tab=settings`, redirect to the dedicated view.
+  if (searchParams.get('tab') === 'settings') {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('tab');
+    const searchString = nextParams.toString();
+    return <Navigate to={{ pathname: '/athlete/settings', search: searchString ? `?${searchString}` : '' }} replace />;
+  }
 
   const [openPanel, setOpenPanel] = useState<'avatar' | 'edit' | 'gyms' | null>(null);
-  const [guestLogoutOpen, setGuestLogoutOpen] = useState(false);
   const closePanel = (open: boolean) => !open && setOpenPanel(null);
-
-  const setActiveTab = (tab: string) => {
-    if (!isYouTab(tab)) return;
-    haptic('tap');
-    setSearchParams(tab === DEFAULT_TAB ? {} : { tab }, { replace: true });
-  };
 
   const handleProfileSaved = () => {
     void refetch();
@@ -84,47 +55,17 @@ export default function YouPage() {
     }
   };
 
-  const doLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  const handleLogout = () => {
-    haptic('impact');
-    if (user?.isGuest) {
-      setGuestLogoutOpen(true);
-      return;
-    }
-    doLogout();
-  };
-
   return (
-    <div className="page">
+    <div className="page space-y-5">
       <TourAnchor name="you-hero">
         <ProfileHero onEditProfile={() => setOpenPanel('edit')} onEditAvatar={() => setOpenPanel('avatar')} />
       </TourAnchor>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-5">
-        <TabsList data-tour="you-tabs" className="grid h-11 w-full grid-cols-2 rounded-full p-1">
-          <TabsTrigger value="profile" className="h-full gap-1.5 rounded-full">
-            <UserRound className="h-4 w-4" /> Profil
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="h-full gap-1.5 rounded-full">
-            <Settings className="h-4 w-4" /> Ustawienia
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="profile" className="mt-5">
-          <ProfileTab
-            onEditProfile={() => setOpenPanel('edit')}
-            onEditAvatar={() => setOpenPanel('avatar')}
-            onEditGyms={() => setOpenPanel('gyms')}
-          />
-        </TabsContent>
-        <TabsContent value="settings" className="mt-5">
-          <SettingsTab onLogout={handleLogout} />
-        </TabsContent>
-      </Tabs>
+      <ProfileTab
+        onEditProfile={() => setOpenPanel('edit')}
+        onEditAvatar={() => setOpenPanel('avatar')}
+        onEditGyms={() => setOpenPanel('gyms')}
+      />
 
       <Suspense fallback={null}>
         {openPanel === 'avatar' && (
@@ -142,23 +83,6 @@ export default function YouPage() {
           <FavoriteGymsSheet open onOpenChange={closePanel} userProfile={userProfile} onSaved={handleProfileSaved} />
         )}
       </Suspense>
-
-      <AlertDialog open={guestLogoutOpen} onOpenChange={setGuestLogoutOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Wylogować konto gościa?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Twoje dane są przypisane do tego urządzenia. Po wylogowaniu stracisz do nich dostęp. Załóż konto, aby je zachować.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Anuluj</AlertDialogCancel>
-            <AlertDialogAction onClick={doLogout} className={buttonVariants({ variant: 'destructive' })}>
-              Rozumiem, wyloguj mnie
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

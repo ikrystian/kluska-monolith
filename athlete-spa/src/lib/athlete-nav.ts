@@ -163,7 +163,7 @@ export const athleteNavItems: NavEntry[] = [
     color: 'hsl(var(--primary))',
     items: [
       { href: '/athlete/you', label: 'Profil', icon: IdCard, color: 'hsl(var(--primary))', description: 'Podsumowanie, poziom, dane profilu', keywords: ['podsumowanie', 'wizytówka', 'statystyki', 'kilometry', 'tony', 'czołgi', 'równik', 'konto', 'awatar', 'zdjęcie', 'imię', 'email', 'siłownie', 'poziom', 'xp'] },
-      { href: '/athlete/you?tab=settings', label: 'Ustawienia', icon: SlidersHorizontal, color: 'hsl(var(--primary))', description: 'Motyw, powiadomienia, integracje', keywords: ['motyw', 'ciemny', 'jasny', 'powiadomienia', 'push', 'strava', 'spotify', 'integracje', 'wibracje', 'przerwa', 'gps', 'lokalizacja', 'aparat', 'offline', 'wyloguj'] },
+      { href: '/athlete/settings', label: 'Ustawienia', icon: SlidersHorizontal, color: 'hsl(var(--primary))', description: 'Motyw, powiadomienia, integracje', keywords: ['motyw', 'ciemny', 'jasny', 'powiadomienia', 'push', 'strava', 'spotify', 'integracje', 'wibracje', 'przerwa', 'gps', 'lokalizacja', 'aparat', 'offline', 'wyloguj'] },
     ],
   },
 ];
@@ -292,7 +292,7 @@ const EXTRA_TITLES: { match: RegExp; title: string }[] = [
 
 /** Label for the current screen, or undefined when there is nothing sensible to show. */
 export function getScreenTitle(pathname: string, search = '', userName?: string): string | undefined {
-  // Tab links (`/athlete/you?tab=settings`, `/athlete/social?tab=people`) title their own tab, not the screen's default one.
+  // Tab links (`/athlete/social?tab=people`) title their own tab, not the screen's default one.
   if (search) {
     const activeLeafWithQuery = athleteNavLeaves.find(
       leaf => leaf.href.includes('?') && isNavLeafActive(leaf.href, pathname, search)
