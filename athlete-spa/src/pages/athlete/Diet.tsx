@@ -1,374 +1,322 @@
-'use client';
-
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import useSWR from 'swr';
-import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import {
-    UtensilsCrossed,
-    MessageSquare,
-    Clock,
-    Flame,
-    Beef,
-    Wheat,
-    Droplets,
-    CalendarDays,
-    NotebookPen,
-} from 'lucide-react';
+import { CalendarDays, Flame, MessageSquare, RefreshCw, Search, UserRound, UtensilsCrossed } from 'lucide-react';
 
-import { jsonFetcher } from '@/lib/db-hooks';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { apiFetch } from '@/lib/api-client';
+import { jsonFetcher, useCollection } from '@/lib/db-hooks';
+import { haptic } from '@/lib/haptics';
+import { MEAL_TYPE_LABELS, todayISO, type DiaryResponse } from '@/lib/nutrition';
+import { daysLabel } from '@/lib/plural';
+import { cn } from '@/lib/utils';
+import type { Article, ArticleCategory } from '@/lib/types';
+import { useUserProfile } from '@/contexts/UserProfileContext';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { SectionHeader } from '@/components/ui/section';
 import { AnimatePresence, motion } from '@/components/motion';
-import { cn } from '@/lib/utils';
+import { ArticleRow } from '@/components/knowledge/ArticleCards';
+import {
+    DIET_CATEGORY,
+    UNCATEGORIZED,
+    categoryColor,
+    isDietArticle,
+    isRecipeArticle,
+    useReadArticles,
+} from '@/components/knowledge/knowledge-utils';
+import { AddRecipeSheet } from '@/components/nutrition/AddRecipeSheet';
+import { RecipeShelf } from '@/components/diet/RecipeShelf';
+import {
+    DaySummary,
+    DiaryStrip,
+    DietMealCard,
+    dayTotals,
+    sortDayMeals,
+    type AssignedDiet,
+    type DietDayMeal,
+} from '@/components/diet/DietParts';
 
-type MealType = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
+const RECIPE_LIMIT = 10;
+const DIET_ARTICLE_LIMIT = 4;
+const DIET_ARTICLES_HREF = `/athlete/knowledge-zone?category=${encodeURIComponent(DIET_CATEGORY)}`;
 
-interface DietIngredient {
-    name: string;
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-    amount?: number;
-    unit?: string;
+/** Knowledge-zone posts the screen needs; same SWR key as the Strefa Wiedzy list, so the cache is shared. */
+function useDietReading() {
+    const { data: articles, isLoading } = useCollection<Article>('articles', { status: 'published' }, { sort: { createdAt: -1 } });
+    const { data: categories } = useCollection<ArticleCategory>('articleCategories');
+    const recipes = useMemo(() => (articles ?? []).filter(isRecipeArticle).slice(0, RECIPE_LIMIT), [articles]);
+    const dietArticles = useMemo(() => (articles ?? []).filter(isDietArticle), [articles]);
+    const orderedCategories = useMemo(() => categories?.map((c) => c.name) ?? [], [categories]);
+    return { recipes, dietArticles, orderedCategories, isLoading: isLoading && !articles };
 }
 
-interface DietMealDetails {
-    id: string;
-    name: string;
-    category: MealType;
-    ingredients: DietIngredient[];
-    totalCalories: number;
-    totalProtein: number;
-    totalCarbs: number;
-    totalFat: number;
-}
-
-interface DietDayMeal {
-    type: MealType;
-    time?: string;
-    meal: DietMealDetails | null;
-}
-
-interface DietDay {
-    dayNumber: number;
-    meals: DietDayMeal[];
-}
-
-interface AssignedDiet {
-    id: string;
-    name: string;
-    description?: string;
-    days: DietDay[];
-    updatedAt?: string;
-}
-
-const MEAL_TYPE_LABELS: Record<MealType, string> = {
-    Breakfast: 'Śniadanie',
-    Lunch: 'Obiad',
-    Dinner: 'Kolacja',
-    Snack: 'Przekąska',
-};
-
-const MEAL_TYPE_ORDER: Record<MealType, number> = {
-    Breakfast: 0,
-    Lunch: 1,
-    Dinner: 2,
-    Snack: 3,
-};
-
-function sortDayMeals(meals: DietDayMeal[]): DietDayMeal[] {
-    return [...meals].sort((a, b) => {
-        if (a.time && b.time) return a.time.localeCompare(b.time);
-        if (a.time) return -1;
-        if (b.time) return 1;
-        return MEAL_TYPE_ORDER[a.type] - MEAL_TYPE_ORDER[b.type];
-    });
-}
-
-function dayTotals(day: DietDay) {
-    return day.meals.reduce(
-        (acc, { meal }) => {
-            if (!meal) return acc;
-            return {
-                calories: acc.calories + meal.totalCalories,
-                protein: acc.protein + meal.totalProtein,
-                carbs: acc.carbs + meal.totalCarbs,
-                fat: acc.fat + meal.totalFat,
-            };
-        },
-        { calories: 0, protein: 0, carbs: 0, fat: 0 }
-    );
-}
-
-function MacroStat({ icon: Icon, value, label }: { icon: typeof Flame; value: string; label: string }) {
+function PlanHero({ diet, dayCount, avgCalories, avgMeals }: { diet: AssignedDiet; dayCount: number; avgCalories: number; avgMeals: number }) {
+    const stats = [
+        { icon: CalendarDays, value: daysLabel(dayCount), label: 'w planie' },
+        { icon: Flame, value: `${Math.round(avgCalories).toLocaleString('pl-PL')}`, label: 'kcal / dzień' },
+        { icon: UtensilsCrossed, value: `${Math.round(avgMeals * 10) / 10}`.replace('.', ','), label: 'posiłków / dzień' },
+    ];
     return (
-        <div className="space-y-1 text-center">
-            <div className="flex items-center justify-center">
-                <Icon className="h-4 w-4 text-primary" />
+        <section className="rounded-2xl bg-card p-4">
+            <p className="eyebrow flex items-center gap-1.5">
+                <UserRound className="h-3.5 w-3.5 text-food" />
+                Plan od trenera
+                {diet.updatedAt && <span className="font-normal">· {format(new Date(diet.updatedAt), 'd MMM', { locale: pl })}</span>}
+            </p>
+            <h1 className="mt-1 font-headline text-[1.75rem] font-bold leading-tight tracking-tight">{diet.name}</h1>
+            {diet.description && <p className="mt-1.5 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{diet.description}</p>}
+            <div className="mt-4 grid grid-cols-3 gap-2">
+                {stats.map((stat) => (
+                    <div key={stat.label} className="rounded-xl bg-secondary/50 px-3 py-2.5">
+                        <stat.icon className="h-4 w-4 text-food" />
+                        <p className="mt-1.5 truncate font-display text-xl font-bold leading-none tabular-nums">{stat.value}</p>
+                        <p className="mt-1 truncate text-[11px] text-muted-foreground">{stat.label}</p>
+                    </div>
+                ))}
             </div>
-            <p className="text-lg font-bold leading-none">{value}</p>
-            <p className="text-xs text-muted-foreground">{label}</p>
-        </div>
+        </section>
     );
 }
 
-function MealCard({ dayMeal }: { dayMeal: DietDayMeal }) {
-    const { meal } = dayMeal;
-
+function NoPlanHero({ hasTrainer }: { hasTrainer: boolean }) {
     return (
-        <Card>
-            <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <Badge variant="secondary">{MEAL_TYPE_LABELS[dayMeal.type]}</Badge>
-                            {dayMeal.time && (
-                                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                                    <Clock className="h-3 w-3" />
-                                    {dayMeal.time}
-                                </span>
-                            )}
-                        </div>
-                        <CardTitle className="mt-2 text-lg leading-snug">
-                            {meal ? meal.name : 'Posiłek niedostępny'}
-                        </CardTitle>
-                    </div>
-                    {meal && (
-                        <div className="shrink-0 text-right">
-                            <p className="text-lg font-bold text-primary leading-none">{Math.round(meal.totalCalories)}</p>
-                            <p className="text-xs text-muted-foreground">kcal</p>
-                        </div>
-                    )}
-                </div>
-            </CardHeader>
-            <CardContent className="space-y-3 pt-0">
-                {meal ? (
-                    <>
-                        <div className="flex flex-wrap gap-2">
-                            <Badge variant="outline" className="text-xs">B: {Math.round(meal.totalProtein)} g</Badge>
-                            <Badge variant="outline" className="text-xs">W: {Math.round(meal.totalCarbs)} g</Badge>
-                            <Badge variant="outline" className="text-xs">T: {Math.round(meal.totalFat)} g</Badge>
-                        </div>
-
-                        {meal.ingredients.length > 0 && (
-                            <Accordion type="single" collapsible className="w-full">
-                                <AccordionItem value="ingredients" className="border-none">
-                                    <AccordionTrigger className="py-2 text-sm hover:no-underline">
-                                        Składniki ({meal.ingredients.length})
-                                    </AccordionTrigger>
-                                    <AccordionContent>
-                                        <ul className="space-y-2">
-                                            {meal.ingredients.map((ingredient, index) => (
-                                                <li
-                                                    key={index}
-                                                    className="flex items-baseline justify-between gap-3 rounded-md bg-secondary/30 px-3 py-2"
-                                                >
-                                                    <div className="min-w-0">
-                                                        <p className="truncate text-sm font-medium">{ingredient.name}</p>
-                                                        {ingredient.amount != null && (
-                                                            <p className="text-xs text-muted-foreground">
-                                                                {ingredient.amount} {ingredient.unit || 'g'}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                    <p className="shrink-0 text-xs text-muted-foreground">
-                                                        {Math.round(ingredient.calories)} kcal
-                                                    </p>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            </Accordion>
-                        )}
-                    </>
+        <section className="relative overflow-hidden rounded-2xl bg-card p-5">
+            <div aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-food/15 blur-2xl" />
+            <span className="relative grid h-12 w-12 place-items-center rounded-2xl bg-food/15 text-food">
+                <UtensilsCrossed className="h-6 w-6" />
+            </span>
+            <h1 className="relative mt-4 font-headline text-[1.75rem] font-bold leading-tight tracking-tight">Nie masz jeszcze planu diety</h1>
+            <p className="relative mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                {hasTrainer
+                    ? 'Poproś trenera o jadłospis. Do tego czasu gotuj z przepisów poniżej i czytaj o diecie i suplementacji.'
+                    : 'Jadłospis układa trener. Znajdź swojego, a w międzyczasie gotuj z przepisów i czytaj o diecie i suplementacji.'}
+            </p>
+            <Button asChild className="relative mt-4 h-11 w-full rounded-2xl">
+                {hasTrainer ? (
+                    <Link to="/athlete/chat">
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        Napisz do trenera
+                    </Link>
                 ) : (
-                    <p className="text-sm text-muted-foreground">
-                        Ten posiłek został usunięty przez trenera. Zapytaj go o aktualizację diety.
-                    </p>
+                    <Link to="/athlete/trainers">
+                        <Search className="mr-2 h-4 w-4" />
+                        Znajdź trenera
+                    </Link>
                 )}
-            </CardContent>
-        </Card>
+            </Button>
+        </section>
     );
 }
 
-function NoDietView() {
+function DietArticles({ articles, orderedCategories, isLoading }: { articles: Article[]; orderedCategories: string[]; isLoading: boolean }) {
+    const { readIds } = useReadArticles();
+    if (!isLoading && articles.length === 0) return null;
+
     return (
-        <div className="page">
-            <section className="relative overflow-hidden rounded-2xl bg-card p-6 text-center">
-                <div className="relative z-10 mx-auto max-w-md space-y-6">
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
-                        <UtensilsCrossed className="h-8 w-8" />
-                    </div>
-                    <h1 className="font-headline text-3xl font-bold tracking-tight">Brak przypisanej diety</h1>
-                    <p className="text-muted-foreground leading-relaxed">
-                        Twój trener nie przypisał Ci jeszcze planu żywieniowego. Gdy to zrobi, zobaczysz tutaj
-                        wszystkie dni, posiłki i makroskładniki.
-                    </p>
-                    <div className="flex flex-wrap justify-center gap-3">
-                        <Button size="lg"  asChild>
-                            <Link to="/athlete/chat">
-                                <MessageSquare className="mr-2 h-4 w-4" />
-                                Napisz do Trenera
-                            </Link>
-                        </Button>
-                        <Button size="lg" variant="outline"  asChild>
-                            <Link to="/athlete/nutrition">
-                                <NotebookPen className="mr-2 h-4 w-4" />
-                                Dzienniczek Kalorii
-                            </Link>
-                        </Button>
-                    </div>
-                </div>
-            </section>
-        </div>
+        <section>
+            <SectionHeader title="Dieta i suplementacja" href={DIET_ARTICLES_HREF} />
+            <div className="grid gap-3">
+                {isLoading && articles.length === 0
+                    ? Array.from({ length: 2 }, (_, i) => <Skeleton key={i} className="h-[7.5rem] rounded-2xl" />)
+                    : articles.slice(0, DIET_ARTICLE_LIMIT).map((article) => (
+                          <ArticleRow
+                              key={article.id}
+                              article={article}
+                              href={`/athlete/knowledge-zone/${article.id}`}
+                              color={categoryColor(article.category || UNCATEGORIZED, orderedCategories)}
+                              isRead={readIds.has(article.id)}
+                          />
+                      ))}
+            </div>
+        </section>
     );
 }
 
 function LoadingView() {
     return (
-        <div className="page space-y-6">
-            <Skeleton className="h-44 w-full rounded-2xl" />
+        <div className="page space-y-4">
+            <Skeleton className="h-52 w-full rounded-2xl" />
+            <Skeleton className="h-16 w-full rounded-2xl" />
             <div className="flex gap-2">
-                {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-9 w-20 rounded-full" />
+                {[1, 2, 3, 4].map((i) => (
+                    <Skeleton key={i} className="h-14 w-20 rounded-2xl" />
                 ))}
             </div>
-            <Skeleton className="h-40 w-full rounded-xl" />
-            <Skeleton className="h-40 w-full rounded-xl" />
+            <Skeleton className="h-36 w-full rounded-2xl" />
+            <Skeleton className="h-32 w-full rounded-2xl" />
         </div>
     );
 }
 
 export default function AthleteDietPage() {
-    const { data, error: fetchError, isLoading } = useSWR<{ diet: AssignedDiet | null }>(
-        '/api/athlete/diet',
-        jsonFetcher
-    );
+    const { userProfile } = useUserProfile();
+    const { data, error: fetchError, isLoading, mutate: refetchDiet } = useSWR<{ diet: AssignedDiet | null }>('/api/athlete/diet', jsonFetcher);
+    const today = todayISO();
+    const { data: diary, isLoading: diaryLoading, mutate: refetchDiary } = useSWR<DiaryResponse>(`/api/athlete/nutrition/diary?date=${today}`, jsonFetcher);
+    const { recipes, dietArticles, orderedCategories, isLoading: readingLoading } = useDietReading();
+
+    // Selected day lives in the URL so coming back from a recipe keeps it.
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [recipeToAdd, setRecipeToAdd] = useState<Article | null>(null);
+    const [recipeSheetOpen, setRecipeSheetOpen] = useState(false);
+    const [loggingKey, setLoggingKey] = useState<string | null>(null);
+
     const diet = data?.diet ?? null;
-    const error = fetchError && !data ? 'Nie udało się pobrać diety. Spróbuj ponownie później.' : null;
-    const [selectedDay, setSelectedDay] = useState<number | null>(null);
+    const sortedDays = useMemo(() => [...(diet?.days ?? [])].sort((a, b) => a.dayNumber - b.dayNumber), [diet]);
+    const selectedDay = Number(searchParams.get('day'));
+    const activeDay = sortedDays.find((day) => day.dayNumber === selectedDay) ?? sortedDays[0];
+
+    // "planned meal id + meal type" pairs already logged today, to mark them eaten.
+    const loggedToday = useMemo(
+        () => new Set((diary?.entries ?? []).filter((e) => e.source === 'meal' && e.productId).map((e) => `${e.productId}:${e.mealType}`)),
+        [diary]
+    );
+
+    const openRecipe = (article: Article) => {
+        setRecipeToAdd(article);
+        setRecipeSheetOpen(true);
+    };
+
+    const selectDay = (dayNumber: number) => {
+        haptic('tap');
+        setSearchParams({ day: String(dayNumber) }, { replace: true });
+    };
+
+    const logMeal = async (dayMeal: DietDayMeal) => {
+        if (!dayMeal.meal) return;
+        const key = `${dayMeal.meal.id}:${dayMeal.type}`;
+        setLoggingKey(key);
+        try {
+            const response = await apiFetch('/api/athlete/nutrition/diary', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date: today, mealType: dayMeal.type, mealId: dayMeal.meal.id, servings: 1 }),
+            });
+            if (!response.ok) throw new Error('Request failed');
+            haptic('success');
+            toast.success(`${MEAL_TYPE_LABELS[dayMeal.type]} w dzienniczku · ${Math.round(dayMeal.meal.totalCalories)} kcal`);
+            void refetchDiary();
+        } catch {
+            haptic('warning');
+            toast.error('Nie udało się dodać posiłku. Spróbuj ponownie.');
+        } finally {
+            setLoggingKey(null);
+        }
+    };
 
     if (isLoading) return <LoadingView />;
 
-    if (error) {
+    const failed = Boolean(fetchError && !data);
+    const hasPlan = Boolean(diet && sortedDays.length > 0 && activeDay);
+
+    const recipeSheet = recipeToAdd && <AddRecipeSheet article={recipeToAdd} open={recipeSheetOpen} onOpenChange={setRecipeSheetOpen} />;
+    const recipeShelf = <RecipeShelf recipes={recipes} isLoading={readingLoading} onQuickAdd={openRecipe} showEmpty={!hasPlan} />;
+
+    if (!hasPlan || !diet || !activeDay) {
         return (
-            <div className="page">
-                <div className="rounded-xl border-2 border-dashed bg-muted/30 py-12 text-center">
-                    <UtensilsCrossed className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                    <p className="text-muted-foreground">{error}</p>
+            <div className="page space-y-6">
+                <div className="space-y-3">
+                    {failed ? (
+                        <section className="rounded-2xl bg-card p-5 text-center">
+                            <UtensilsCrossed className="mx-auto h-8 w-8 text-muted-foreground" />
+                            <p className="mt-3 text-[15px] font-semibold">Nie udało się pobrać diety</p>
+                            <p className="mt-1 text-sm text-muted-foreground">Sprawdź połączenie i spróbuj ponownie.</p>
+                            <Button variant="secondary" size="sm" className="mt-4 rounded-full" onClick={() => void refetchDiet()}>
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                                Spróbuj ponownie
+                            </Button>
+                        </section>
+                    ) : (
+                        <NoPlanHero hasTrainer={Boolean(userProfile?.trainerId)} />
+                    )}
+                    <DiaryStrip totals={diary?.totals} goal={diary?.goal} isLoading={diaryLoading} />
                 </div>
+                {recipeShelf}
+                <DietArticles articles={dietArticles} orderedCategories={orderedCategories} isLoading={readingLoading} />
+                {recipeSheet}
             </div>
         );
     }
 
-    if (!diet || diet.days.length === 0) return <NoDietView />;
-
-    const sortedDays = [...diet.days].sort((a, b) => a.dayNumber - b.dayNumber);
-    const activeDay = sortedDays.find((day) => day.dayNumber === selectedDay) ?? sortedDays[0];
+    const dayCalories = sortedDays.map((day) => dayTotals(day).calories);
+    const avgCalories = dayCalories.reduce((a, b) => a + b, 0) / sortedDays.length;
+    const avgMeals = sortedDays.reduce((acc, day) => acc + day.meals.length, 0) / sortedDays.length;
     const totals = dayTotals(activeDay);
-    const avgCalories =
-        sortedDays.reduce((acc, day) => acc + dayTotals(day).calories, 0) / sortedDays.length;
+    const meals = sortDayMeals(activeDay.meals);
 
     return (
         <div className="page space-y-6">
-            {/* Header */}
-            <section className="rounded-2xl bg-card p-4">
-                <div className="relative z-10 space-y-3">
-                    <Badge variant="secondary" className="rounded-full px-4 py-1 text-sm font-medium">
-                        Dieta od Trenera
-                    </Badge>
-                    <h1 className="font-headline text-3xl font-bold tracking-tight">{diet.name}</h1>
-                    {diet.description && (
-                        <p className="max-w-2xl leading-relaxed text-muted-foreground">{diet.description}</p>
-                    )}
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1.5">
-                            <CalendarDays className="h-4 w-4 text-primary" />
-                            {sortedDays.length} {sortedDays.length === 1 ? 'dzień' : 'dni'}
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                            <Flame className="h-4 w-4 text-primary" />
-                            śr. {Math.round(avgCalories)} kcal / dzień
-                        </span>
-                        {diet.updatedAt && (
-                            <span>
-                                Aktualizacja: {format(new Date(diet.updatedAt), 'd MMM yyyy', { locale: pl })}
-                            </span>
-                        )}
-                    </div>
-                    <Button variant="outline" size="sm"  asChild>
-                        <Link to="/athlete/nutrition">
-                            <NotebookPen className="mr-2 h-4 w-4" />
-                            Dzienniczek Kalorii
-                        </Link>
-                    </Button>
-                </div>
-            </section>
-
-            {/* Day selector */}
-            <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
-                {sortedDays.map((day) => (
-                    <button
-                        key={day.dayNumber}
-                        onClick={() => setSelectedDay(day.dayNumber)}
-                        className={cn(
-                            'pressable-sm shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors',
-                            day.dayNumber === activeDay.dayNumber
-                                ? 'border-transparent bg-primary text-primary-foreground'
-                                : 'border-border bg-secondary/40 text-muted-foreground hover:text-foreground'
-                        )}
-                    >
-                        Dzień {day.dayNumber}
-                    </button>
-                ))}
+            <div className="space-y-3">
+                <PlanHero diet={diet} dayCount={sortedDays.length} avgCalories={avgCalories} avgMeals={avgMeals} />
+                <DiaryStrip totals={diary?.totals} goal={diary?.goal} isLoading={diaryLoading} />
             </div>
 
-            {/* Day summary + meals */}
-            <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                    key={activeDay.dayNumber}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.15 }}
-                    className="space-y-4"
-                >
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-base">Podsumowanie dnia {activeDay.dayNumber}</CardTitle>
-                            <CardDescription>
-                                {activeDay.meals.length}{' '}
-                                {activeDay.meals.length === 1 ? 'posiłek' : activeDay.meals.length < 5 ? 'posiłki' : 'posiłków'}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-4 gap-2">
-                                <MacroStat icon={Flame} value={`${Math.round(totals.calories)}`} label="kcal" />
-                                <MacroStat icon={Beef} value={`${Math.round(totals.protein)} g`} label="Białko" />
-                                <MacroStat icon={Wheat} value={`${Math.round(totals.carbs)} g`} label="Węgle" />
-                                <MacroStat icon={Droplets} value={`${Math.round(totals.fat)} g`} label="Tłuszcze" />
+            <section className="space-y-3">
+                {sortedDays.length > 1 && (
+                    <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4" role="tablist" aria-label="Dni planu">
+                        {sortedDays.map((day, index) => {
+                            const active = day.dayNumber === activeDay.dayNumber;
+                            return (
+                                <button
+                                    key={day.dayNumber}
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={active}
+                                    onClick={() => selectDay(day.dayNumber)}
+                                    className={cn(
+                                        'pressable-sm flex min-w-[4.75rem] shrink-0 flex-col items-center rounded-2xl px-3 py-2 transition-colors',
+                                        active ? 'bg-foreground text-background' : 'bg-card text-foreground'
+                                    )}
+                                >
+                                    <span className={cn('text-[11px] font-semibold', active ? 'text-background/70' : 'text-muted-foreground')}>Dzień</span>
+                                    <span className="font-display text-xl font-bold leading-none tabular-nums">{day.dayNumber}</span>
+                                    <span className={cn('mt-1 text-[10px] tabular-nums', active ? 'text-background/70' : 'text-muted-foreground')}>
+                                        {Math.round(dayCalories[index])} kcal
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+
+                <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                        key={activeDay.dayNumber}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.15 }}
+                        className="space-y-3"
+                    >
+                        <DaySummary dayNumber={activeDay.dayNumber} totals={totals} mealCount={activeDay.meals.length} goal={diary?.goal} />
+
+                        {meals.map((dayMeal, index) => {
+                            const key = dayMeal.meal ? `${dayMeal.meal.id}:${dayMeal.type}` : `missing-${index}`;
+                            return (
+                                <DietMealCard
+                                    key={`${dayMeal.type}-${dayMeal.time ?? ''}-${index}`}
+                                    dayMeal={dayMeal}
+                                    logged={loggedToday.has(key)}
+                                    isLogging={loggingKey === key}
+                                    onLog={logMeal}
+                                />
+                            );
+                        })}
+
+                        {meals.length === 0 && (
+                            <div className="rounded-2xl border border-dashed bg-card/50 py-10 text-center text-sm text-muted-foreground">
+                                Brak posiłków zaplanowanych na ten dzień.
                             </div>
-                        </CardContent>
-                    </Card>
+                        )}
+                    </motion.div>
+                </AnimatePresence>
+            </section>
 
-                    {sortDayMeals(activeDay.meals).map((dayMeal, index) => (
-                        <MealCard key={`${dayMeal.type}-${dayMeal.time ?? index}`} dayMeal={dayMeal} />
-                    ))}
-
-                    {activeDay.meals.length === 0 && (
-                        <div className="rounded-xl border-2 border-dashed bg-muted/30 py-10 text-center">
-                            <p className="text-muted-foreground">Brak posiłków zaplanowanych na ten dzień.</p>
-                        </div>
-                    )}
-                </motion.div>
-            </AnimatePresence>
+            {recipeShelf}
+            {recipeSheet}
         </div>
     );
 }

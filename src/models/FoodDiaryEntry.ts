@@ -19,7 +19,8 @@ export interface IFoodDiaryEntry {
   fat: number;
   productId?: string;
   barcode?: string;
-  source: 'search' | 'barcode' | 'manual' | 'meal';
+  /** 'recipe' entries come from a knowledge-zone recipe; productId is the article id. */
+  source: 'search' | 'barcode' | 'manual' | 'meal' | 'recipe';
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -38,7 +39,7 @@ const FoodDiaryEntrySchema = new Schema<IFoodDiaryEntry>(
     fat: { type: Number, required: true, min: 0 },
     productId: { type: String },
     barcode: { type: String },
-    source: { type: String, enum: ['search', 'barcode', 'manual', 'meal'], default: 'search' },
+    source: { type: String, enum: ['search', 'barcode', 'manual', 'meal', 'recipe'], default: 'search' },
   },
   {
     timestamps: true,

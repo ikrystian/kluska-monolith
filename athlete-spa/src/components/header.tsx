@@ -64,14 +64,7 @@ export function AppHeader() {
         <h1 className={cn('flex min-w-0 flex-1 items-baseline gap-2', isRoot && 'pl-2')}>
           {screenTitle && (
             <span className="truncate font-display text-[1.75rem] font-bold uppercase leading-none">
-              {screenTitle.startsWith('#') ? (
-                <>
-                  <span className="text-volt">#</span>
-                  {screenTitle.slice(1)}
-                </>
-              ) : (
-                screenTitle
-              )}
+              <span><span className="text-volt">#</span>{screenTitle}</span>
             </span>
           )}
         </h1>

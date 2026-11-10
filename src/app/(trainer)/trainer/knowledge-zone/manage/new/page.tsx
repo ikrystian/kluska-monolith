@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useCollection, useUser, useDoc, useCreateDoc } from '@/lib/db-hooks';
-import { ArticleForm, ArticleFormValues } from '@/components/ArticleForm';
+import { ArticleForm, ArticleFormValues, recipeFromForm } from '@/components/ArticleForm';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
@@ -53,6 +53,7 @@ export default function NewArticlePage() {
         authorName: userProfile.name || 'Anonimowy autor',
         coverImageUrl: data.coverImageUrl || `https://picsum.photos/seed/${encodeURIComponent(data.title)}/800/600`,
         imageHint: data.imageHint || data.title.split(' ').slice(0, 2).join(' ').toLowerCase(),
+        recipe: recipeFromForm(data) ?? undefined,
         createdAt: new Date(),
         updatedAt: new Date(),
       };

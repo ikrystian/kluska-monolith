@@ -12,6 +12,20 @@ export interface Article {
   status: 'published' | 'draft';
   coverImageUrl?: string;
   imageHint?: string;
+  /** Per-serving nutrition of a recipe article — lets the athlete log the dish. */
+  recipe?: ArticleRecipe | null;
+}
+
+/** Keep in sync with src/lib/article-recipe.ts in the backend. */
+export interface ArticleRecipe {
+  dishName?: string;
+  servings: number;
+  prepMinutes?: number;
+  mealType?: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
 }
 
 export interface ArticleCategory {

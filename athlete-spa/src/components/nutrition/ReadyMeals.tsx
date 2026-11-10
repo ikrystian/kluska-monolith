@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
-import { ChefHat, Loader2, Minus, Plus, Search, UserRound } from 'lucide-react';
+import { ChefHat, Loader2, Plus, Search, UserRound } from 'lucide-react';
 
 import { apiFetch } from '@/lib/api-client';
 import {
@@ -15,7 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FoodIcon, FoodRow, GoalImpact, MacroSummary, SectionLabel } from '@/components/nutrition/FoodParts';
+import { FoodIcon, FoodRow, GoalImpact, MacroSummary, SectionLabel, ServingsStepper } from '@/components/nutrition/FoodParts';
 import { cn } from '@/lib/utils';
 
 export const DISH_CATEGORY_LABEL = Object.fromEntries(DISH_CATEGORIES.map((c) => [c.value, c.label])) as Record<DishCategory, string>;
@@ -168,10 +168,6 @@ export function ReadyMealList({ initialQuery = '', onSelect }: { initialQuery?: 
     );
 }
 
-const QUICK_SERVINGS = [0.5, 1, 1.5, 2];
-
-const formatServings = (n: number) => n.toLocaleString('pl-PL', { maximumFractionDigits: 2 });
-
 interface ReadyMealDetailProps {
     meal: ReadyMeal;
     date: string;
@@ -194,8 +190,6 @@ export function ReadyMealDetail({ meal, date, mealType, goal, totals, onSaved, o
         carbs: meal.carbs * servings,
         fat: meal.fat * servings,
     };
-
-    const step = (delta: number) => setServings((current) => Math.min(10, Math.max(0.5, Math.round((current + delta) * 2) / 2)));
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -232,38 +226,7 @@ export function ReadyMealDetail({ meal, date, mealType, goal, totals, onSaved, o
 
             {meal.description && <p className="text-sm text-muted-foreground">{meal.description}</p>}
 
-            <div className="rounded-2xl bg-secondary/40 p-3">
-                <div className="flex items-center gap-3">
-                    <Button type="button" variant="secondary" size="icon" className="rounded-full bg-background/70" onClick={() => step(-0.5)} disabled={servings <= 0.5} aria-label="Mniej">
-                        <Minus className="h-4 w-4" />
-                    </Button>
-                    <div className="min-w-0 flex-1 text-center">
-                        <span className="font-display text-4xl font-bold leading-none tabular-nums">{formatServings(servings)}</span>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                            {servings === 1 ? 'porcja' : 'porcji'}
-                            {weight ? ` · ${Math.round(weight * servings)} g` : ''}
-                        </p>
-                    </div>
-                    <Button type="button" variant="secondary" size="icon" className="rounded-full bg-background/70" onClick={() => step(0.5)} disabled={servings >= 10} aria-label="Więcej">
-                        <Plus className="h-4 w-4" />
-                    </Button>
-                </div>
-                <div className="mt-3 grid grid-cols-4 gap-1.5">
-                    {QUICK_SERVINGS.map((quick) => (
-                        <button
-                            key={quick}
-                            type="button"
-                            onClick={() => setServings(quick)}
-                            className={cn(
-                                'pressable-sm rounded-xl py-1.5 text-xs font-semibold transition-colors',
-                                servings === quick ? 'bg-foreground text-background' : 'bg-background/60 text-muted-foreground'
-                            )}
-                        >
-                            {formatServings(quick)}×
-                        </button>
-                    ))}
-                </div>
-            </div>
+            <ServingsStepper value={servings} onChange={setServings} detail={weight ? `${Math.round(weight * servings)} g` : undefined} />
 
             <MacroSummary {...added} />
             <GoalImpact goal={goal} totals={totals} adding={added.calories} />

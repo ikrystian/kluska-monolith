@@ -11,6 +11,7 @@ import { useFrozenDuringTransition } from '@/lib/page-transition';
 import {
     MEAL_TYPES,
     MEAL_TYPE_LABELS,
+    mealForNow,
     todayISO,
     type DiaryEntry,
     type DiaryResponse,
@@ -33,18 +34,13 @@ function shiftDate(date: string, days: number): string {
     return format(addDays(parseISO(date), days), 'yyyy-MM-dd');
 }
 
-/** The meal that makes sense to log right now, for opening the add dialog from a shortcut. */
-function mealForNow(): MealType {
-    const hour = new Date().getHours();
-    if (hour < 11) return 'Breakfast';
-    if (hour < 16) return 'Lunch';
-    if (hour < 21) return 'Dinner';
-    return 'Snack';
-}
-
 export default function NutritionPage() {
     const [searchParams, setSearchParams] = useSearchParams();
-    const [date, setDate] = useState(todayISO());
+    // ?date=YYYY-MM-DD opens a given day (e.g. right after adding a recipe for tomorrow).
+    const [date, setDate] = useState(() => {
+        const requested = searchParams.get('date');
+        return requested && /^\d{4}-\d{2}-\d{2}$/.test(requested) ? requested : todayISO();
+    });
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogMealType, setDialogMealType] = useState<MealType>('Breakfast');
 

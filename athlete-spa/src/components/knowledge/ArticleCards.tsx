@@ -5,7 +5,7 @@ import { ArrowUpRight, CheckCircle2, Clock } from 'lucide-react';
 import { tint } from '@/components/profile/profile-ui';
 import { cn } from '@/lib/utils';
 import type { Article } from '@/lib/types';
-import { articleCoverUrl, excerpt, readingMinutes } from './knowledge-utils';
+import { articleCoverUrl, excerpt, hasRecipeNutrition, readingMinutes } from './knowledge-utils';
 
 interface ArticleCardProps {
   article: Article;
@@ -105,11 +105,13 @@ export function ArticleRow({ article, href, color, isRead }: ArticleCardProps) {
         />
       </div>
       <div className="flex min-w-0 flex-1 flex-col py-0.5">
-        <span
-          className="mb-1 text-xs font-semibold"
-          style={{ color }}
-        >
-          {article.category || 'Bez kategorii'}
+        <span className="mb-1 flex items-center gap-2 text-xs font-semibold">
+          <span style={{ color }}>{article.category || 'Bez kategorii'}</span>
+          {hasRecipeNutrition(article) && (
+            <span className="rounded-full bg-food/15 px-1.5 py-px tabular-nums text-food">
+              {Math.round(article.recipe!.calories)} kcal
+            </span>
+          )}
         </span>
         <h3 className="line-clamp-2 font-headline text-base font-bold leading-snug">{article.title}</h3>
         <ReadingMeta article={article} isRead={isRead} className="mt-auto pt-2 text-muted-foreground" />

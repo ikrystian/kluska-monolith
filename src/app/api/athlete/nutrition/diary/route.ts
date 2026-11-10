@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { FoodDiaryEntry, type FoodDiaryMealType } from '@/models/FoodDiaryEntry';
+import { Article } from '@/models/Article';
+import { parseNutrition } from '@/lib/article-recipe';
 import { NutritionGoal } from '@/models/NutritionGoal';
 import { SavedMeal } from '@/models/SavedMeal';
 import { User } from '@/models/User';
@@ -83,6 +85,10 @@ export async function POST(request: NextRequest) {
         if (body.mealId !== undefined) {
             return addSavedMeal(user.id, date, mealType, body.mealId, body.servings);
         }
+        // Dish from a knowledge-zone recipe article.
+        if (body.articleId !== undefined) {
+            return addRecipe(user.id, date, mealType, body.articleId, body.servings, body.nutrition);
+        }
         if (typeof name !== 'string' || !name.trim()) {
             return NextResponse.json({ error: 'Product name is required' }, { status: 400 });
         }
@@ -140,8 +146,8 @@ async function addSavedMeal(userId: string, date: string, mealType: FoodDiaryMea
     if (typeof mealId !== 'string' || !/^[a-f\d]{24}$/i.test(mealId)) {
         return NextResponse.json({ error: 'Invalid meal id' }, { status: 400 });
     }
-    const parsedServings = Number(servings ?? 1);
-    if (!Number.isFinite(parsedServings) || parsedServings < 0.25 || parsedServings > 10) {
+    const parsedServings = parseServings(servings);
+    if (parsedServings === null) {
         return NextResponse.json({ error: 'Servings must be between 0.25 and 10' }, { status: 400 });
     }
 
@@ -167,6 +173,62 @@ async function addSavedMeal(userId: string, date: string, mealType: FoodDiaryMea
         fat: round1(meal.totalFat * parsedServings),
         productId: mealId,
         source: 'meal',
+    });
+
+    return NextResponse.json({ entry: entry.toJSON() }, { status: 201 });
+}
+
+function parseServings(servings: unknown): number | null {
+    const parsed = Number(servings ?? 1);
+    return Number.isFinite(parsed) && parsed >= 0.25 && parsed <= 10 ? parsed : null;
+}
+
+/**
+ * Logs servings of a recipe article's dish. Macros come from the article's
+ * recipe block; only when the author left it out may the client supply its
+ * own per-serving estimate (the athlete's own diary, so nothing to forge).
+ */
+async function addRecipe(
+    userId: string,
+    date: string,
+    mealType: FoodDiaryMealType,
+    articleId: unknown,
+    servings: unknown,
+    nutrition: unknown
+) {
+    if (typeof articleId !== 'string' || !/^[a-f\d]{24}$/i.test(articleId)) {
+        return NextResponse.json({ error: 'Invalid article id' }, { status: 400 });
+    }
+    const parsedServings = parseServings(servings);
+    if (parsedServings === null) {
+        return NextResponse.json({ error: 'Servings must be between 0.25 and 10' }, { status: 400 });
+    }
+
+    await connectToDatabase();
+    const article = await Article.findOne({ _id: articleId, status: 'published' }, { title: 1, recipe: 1 }).lean();
+    if (!article) {
+        return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
+    }
+
+    const perServing = article.recipe?.calories ? article.recipe : parseNutrition(nutrition);
+    if (!perServing) {
+        return NextResponse.json({ error: 'Recipe has no nutrition data' }, { status: 400 });
+    }
+
+    const round1 = (n: number) => Math.round(n * 10) / 10;
+    const entry = await FoodDiaryEntry.create({
+        ownerId: userId,
+        date,
+        mealType,
+        name: (article.recipe?.dishName || article.title).slice(0, 160),
+        amount: parsedServings,
+        unit: servingsUnit(parsedServings),
+        calories: Math.round(perServing.calories * parsedServings),
+        protein: round1(perServing.protein * parsedServings),
+        carbs: round1(perServing.carbs * parsedServings),
+        fat: round1(perServing.fat * parsedServings),
+        productId: articleId,
+        source: 'recipe',
     });
 
     return NextResponse.json({ entry: entry.toJSON() }, { status: 201 });

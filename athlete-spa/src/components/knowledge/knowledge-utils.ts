@@ -9,6 +9,24 @@ const CATEGORY_COLORS = ['--chart-1', '--chart-2', '--chart-4', '--chart-5', '--
 
 export const UNCATEGORIZED = 'Bez kategorii';
 
+/** Knowledge-zone categories the diet screen pulls from. */
+export const RECIPE_CATEGORY = 'Przepisy';
+export const DIET_CATEGORY = 'Dieta i Suplementacja';
+
+/** Has per-serving macros, so the dish can be logged to the food diary in one tap. */
+export function hasRecipeNutrition(article: Pick<Article, 'recipe'>): boolean {
+  return Boolean(article.recipe && article.recipe.calories > 0);
+}
+
+export function isRecipeArticle(article: Pick<Article, 'category' | 'recipe'>): boolean {
+  return hasRecipeNutrition(article) || /przepis/i.test(article.category ?? '');
+}
+
+/** Diet and supplementation reading (recipes excluded — they get their own shelf). */
+export function isDietArticle(article: Pick<Article, 'category' | 'recipe'>): boolean {
+  return !isRecipeArticle(article) && /diet|suplement|odżyw|żywien/i.test(article.category ?? '');
+}
+
 /** Plain text of the article's HTML body, whitespace collapsed. */
 export function stripHtml(html: string): string {
   if (!html) return '';

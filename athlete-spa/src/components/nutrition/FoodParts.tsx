@@ -1,10 +1,12 @@
 import type { ReactNode } from 'react';
-import { ArrowLeft, Coffee, Cookie, Moon, Sun, type LucideIcon } from 'lucide-react';
+import { ArrowLeft, Coffee, Cookie, Minus, Moon, Plus, Sun, type LucideIcon } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
 
 import { MEAL_TYPES, MEAL_TYPE_LABELS, type DiaryGoal, type DiaryTotals, type MealType } from '@/lib/nutrition';
 import { cn } from '@/lib/utils';
 
-const MEAL_TYPE_ICONS: Record<MealType, LucideIcon> = {
+export const MEAL_TYPE_ICONS: Record<MealType, LucideIcon> = {
     Breakfast: Coffee,
     Lunch: Sun,
     Dinner: Moon,
@@ -159,5 +161,48 @@ export function FoodIcon({ icon: Icon, className }: { icon: LucideIcon; classNam
         <span className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-background/60 text-muted-foreground', className)}>
             <Icon className="h-4 w-4" />
         </span>
+    );
+}
+
+const QUICK_SERVINGS = [0.5, 1, 1.5, 2];
+
+export const formatServings = (n: number) => n.toLocaleString('pl-PL', { maximumFractionDigits: 2 });
+
+/** Big portion counter with ± in half-serving steps and quick picks. */
+export function ServingsStepper({ value, onChange, detail }: { value: number; onChange: (servings: number) => void; detail?: string }) {
+    const step = (delta: number) => onChange(Math.min(10, Math.max(0.5, Math.round((value + delta) * 2) / 2)));
+    return (
+        <div className="rounded-2xl bg-secondary/40 p-3">
+            <div className="flex items-center gap-3">
+                <Button type="button" variant="secondary" size="icon" className="rounded-full bg-background/70" onClick={() => step(-0.5)} disabled={value <= 0.5} aria-label="Mniej">
+                    <Minus className="h-4 w-4" />
+                </Button>
+                <div className="min-w-0 flex-1 text-center">
+                    <span className="font-display text-4xl font-bold leading-none tabular-nums">{formatServings(value)}</span>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        {value === 1 ? 'porcja' : 'porcji'}
+                        {detail ? ` · ${detail}` : ''}
+                    </p>
+                </div>
+                <Button type="button" variant="secondary" size="icon" className="rounded-full bg-background/70" onClick={() => step(0.5)} disabled={value >= 10} aria-label="Więcej">
+                    <Plus className="h-4 w-4" />
+                </Button>
+            </div>
+            <div className="mt-3 grid grid-cols-4 gap-1.5">
+                {QUICK_SERVINGS.map((quick) => (
+                    <button
+                        key={quick}
+                        type="button"
+                        onClick={() => onChange(quick)}
+                        className={cn(
+                            'pressable-sm rounded-xl py-1.5 text-xs font-semibold transition-colors',
+                            value === quick ? 'bg-foreground text-background' : 'bg-background/60 text-muted-foreground'
+                        )}
+                    >
+                        {formatServings(quick)}×
+                    </button>
+                ))}
+            </div>
+        </div>
     );
 }

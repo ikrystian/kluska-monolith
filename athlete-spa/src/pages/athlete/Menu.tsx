@@ -1,33 +1,8 @@
-import { useMemo, useRef, useState, type ComponentType } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
-import {
-  Award,
-  ChevronRight,
-  Coins,
-  Flame,
-  LogOut,
-  Monitor,
-  Moon,
-  Play,
-  Search,
-  SlidersHorizontal,
-  Sun,
-  X,
-  Sparkles,
-  ArrowRight,
-  Dumbbell,
-  UtensilsCrossed,
-  TrendingUp,
-  Users2,
-  Compass,
-  LayoutGrid,
-  NotebookPen,
-  Ruler,
-  Footprints,
-} from 'lucide-react';
+import { ChevronRight, LogOut, Monitor, Moon, Palette, Search, Sun, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +13,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { EmptyState } from '@/components/ui/section';
+import { SettingsGroup, tint } from '@/components/profile/profile-ui';
 import { useUserProfile } from '@/contexts/UserProfileContext';
 import { useUser } from '@/lib/db-hooks';
 import { useAuth } from '@/contexts/AuthContext';
@@ -52,244 +29,113 @@ import {
   navLeafColor,
   navLeavesForRole,
   searchNavLeaves,
-  type NavGroup,
   type NavLeaf,
 } from '@/lib/athlete-nav';
 import { resolveMediaUrl } from '@/lib/api-client';
 import { haptic } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
 
-const tint = (color: string, pct: number) => `color-mix(in srgb, ${color} ${pct}%, transparent)`;
+const APP_VERSION = '0.9.3';
 
-const SEARCH_HINTS = ['trening', 'motyw', 'powiadomienia', 'strava', 'waga', 'makro', 'czat', 'atlas', 'kalendarz', 'wyloguj'];
+/** The nav group the menu draws at the bottom as "Aplikacja", next to the theme and logout. */
+const SETTINGS_GROUP = 'Ustawienia';
+const PROFILE_HREF = '/athlete/you';
+const SETTINGS_HREF = '/athlete/you?tab=settings';
 
-const PLATE_SIZES = {
-  lg: { disc: 'h-12 w-12', ring: 'inset-[3.5px]', icon: 'h-5 w-5' },
-  md: { disc: 'h-10 w-10', ring: 'inset-[3px]', icon: 'h-4 w-4' },
-  sm: { disc: 'h-7 w-7', ring: 'inset-[2px]', icon: 'h-3.5 w-3.5' },
-} as const;
+const SEARCH_HINTS = ['trening', 'waga', 'makro', 'czat', 'kalendarz', 'strava', 'powiadomienia', 'motyw'];
 
-/**
- * A destination's icon on a disc in its domain colour, with the concentric inner ring of
- * an Olympic weight plate — iconic to the #leniwakluska design system.
- */
-function Plate({ leaf, size = 'md' }: { leaf: NavLeaf; size?: keyof typeof PLATE_SIZES }) {
+const THEME_OPTIONS = [
+  { id: 'light', label: 'Jasny', icon: Sun },
+  { id: 'dark', label: 'Ciemny', icon: Moon },
+  { id: 'system', label: 'Auto', icon: Monitor },
+] as const;
+
+/** Polish plural: 1 dzień, 2–4 dni… picks the right form for `n`. */
+function plural(n: number, one: string, few: string, many: string) {
+  if (n === 1) return one;
+  const tens = n % 100;
+  const units = n % 10;
+  return units >= 2 && units <= 4 && (tens < 12 || tens > 14) ? few : many;
+}
+
+/** Destination's icon on a rounded tile in its domain colour — the same tile the settings rows use. */
+function RowIcon({ leaf }: { leaf: NavLeaf }) {
   const Icon = leaf.icon;
   const color = navLeafColor(leaf);
-  const s = PLATE_SIZES[size];
   return (
     <span
-      className={cn('relative grid shrink-0 place-items-center rounded-full transition-transform', s.disc)}
-      style={{ backgroundColor: tint(color, 16), color }}
+      className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
+      style={{ backgroundColor: tint(color, 15), color }}
     >
-      <span
-        aria-hidden
-        className={cn('pointer-events-none absolute rounded-full border', s.ring)}
-        style={{ borderColor: tint(color, 24) }}
-      />
-      <Icon className={s.icon} />
+      <Icon className="h-[18px] w-[18px]" />
     </span>
   );
 }
 
-type MenuCategory = 'all' | 'training' | 'health' | 'progress' | 'social' | 'explore' | 'settings';
-
-interface FilterOption {
-  id: MenuCategory;
-  label: string;
-  icon: ComponentType<{ className?: string }>;
-}
-
-const CATEGORY_FILTERS: FilterOption[] = [
-  { id: 'all', label: 'Wszystko', icon: LayoutGrid },
-  { id: 'training', label: 'Trening', icon: Dumbbell },
-  { id: 'health', label: 'Dieta & Zdrowie', icon: UtensilsCrossed },
-  { id: 'progress', label: 'Postępy', icon: TrendingUp },
-  { id: 'social', label: 'Trener & Ekipa', icon: Users2 },
-  { id: 'explore', label: 'Odkrywaj', icon: Compass },
-  { id: 'settings', label: 'Ustawienia', icon: SlidersHorizontal },
-];
-
-function getGroupCategory(label: string): MenuCategory {
-  switch (label) {
-    case 'Trening':
-      return 'training';
-    case 'Na co dzień':
-      return 'health';
-    case 'Postępy':
-      return 'progress';
-    case 'Twój trener':
-    case 'Dla trenera':
-    case 'Społeczność':
-      return 'social';
-    case 'Odkrywaj':
-      return 'explore';
-    case 'Ustawienia':
-      return 'settings';
-    default:
-      return 'all';
-  }
-}
-
-/** Featured Hero launcher card */
-function HeroQuickAction({
-  to,
-  color,
-  icon: Icon,
-  badge,
-  title,
-  subtitle,
-}: {
-  to: string;
-  color: string;
-  icon: ComponentType<{ className?: string }>;
-  badge: string;
-  title: string;
-  subtitle: string;
-}) {
+/** One destination in a grouped list: icon, name, one-line hint, chevron. */
+function MenuRow({ leaf, description = leaf.description }: { leaf: NavLeaf; description?: ReactNode }) {
   return (
     <Link
-      to={to}
+      to={leaf.href}
       onClick={() => haptic('tap')}
-      className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-border/70 bg-gradient-to-br from-card via-card/90 to-card/60 p-3.5 shadow-xs transition-all duration-200 hover:border-border active:scale-[0.98] active:bg-secondary/40"
+      className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/50 active:bg-secondary"
     >
-      <div
-        className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full blur-2xl opacity-15"
-        style={{ backgroundColor: color }}
-      />
-      <div className="flex items-center justify-between">
-        <span
-          className="relative grid h-10 w-10 shrink-0 place-items-center rounded-2xl shadow-xs"
-          style={{ backgroundColor: tint(color, 16), color }}
-        >
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-[3px] rounded-xl border"
-            style={{ borderColor: tint(color, 25) }}
-          />
-          <Icon className="h-5 w-5" />
-        </span>
-        <span
-          className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-          style={{ backgroundColor: tint(color, 14), color }}
-        >
-          {badge}
-        </span>
+      <RowIcon leaf={leaf} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[15px] font-semibold leading-snug">{leaf.label}</p>
+        {description && <p className="mt-0.5 truncate text-xs text-muted-foreground">{description}</p>}
       </div>
-      <div className="mt-3">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-            {title}
-          </span>
-          <ArrowRight className="h-3.5 w-3.5 opacity-0 -translate-x-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0 text-primary" />
-        </div>
-        <p className="mt-0.5 text-[11px] text-muted-foreground leading-snug line-clamp-1">{subtitle}</p>
-      </div>
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
     </Link>
   );
 }
 
-/** Athlete identity card on top */
-function AthleteIdentityCard() {
+/** Who is signed in, with level and streak at a glance; opens the profile. */
+function ProfileCard() {
   const { userProfile } = useUserProfile();
   const { stats } = useGamificationProfile();
-  const { theme, setTheme } = useTheme();
 
   const name = userProfile?.name?.trim() || 'Sportowiec';
-  const role = userProfile?.role === 'trainer' ? 'Trener' : 'Sportowiec';
-  const avatarUrl = userProfile?.avatarUrl;
+  const isTrainer = userProfile?.role === 'trainer';
 
-  const toggleTheme = () => {
-    haptic('tap');
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
+  const facts: string[] = [];
+  if (isTrainer) facts.push('Trener');
+  if (stats) {
+    facts.push(`Poziom ${stats.level}`);
+    const streak = stats.streaks?.workout ?? 0;
+    if (streak > 0) facts.push(`seria ${streak} ${plural(streak, 'dzień', 'dni', 'dni')}`);
+    if (stats.currentFitCoins > 0) {
+      facts.push(`${stats.currentFitCoins} ${plural(stats.currentFitCoins, 'FitCoin', 'FitCoiny', 'FitCoinów')}`);
+    }
+  }
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-border/70 bg-gradient-to-br from-card via-card/95 to-secondary/30 p-4 shadow-xs">
-      <div className="flex items-center gap-3.5">
-        <Link
-          to="/athlete/you"
-          onClick={() => haptic('tap')}
-          className="relative shrink-0 transition-transform active:scale-95"
-          aria-label="Przejdź do profilu"
-        >
-          <Avatar className="h-13 w-13 ring-2 ring-primary/25 ring-offset-2 ring-offset-background">
-            {avatarUrl && <AvatarImage src={resolveMediaUrl(avatarUrl)} alt={name} className="object-cover" />}
-            <AvatarFallback className="bg-primary/10 text-primary font-bold text-base">
-              {name.slice(0, 2).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-        </Link>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h1 className="truncate font-display text-lg font-bold uppercase tracking-tight text-foreground">
-              {name}
-            </h1>
-            <Badge
-              variant={userProfile?.role === 'trainer' ? 'default' : 'secondary'}
-              className="text-[10px] uppercase font-bold tracking-wider py-0 px-2 h-4"
-            >
-              {role}
-            </Badge>
-          </div>
-
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-            {stats ? (
-              <>
-                <span className="flex items-center gap-1 font-semibold text-primary">
-                  <Award className="h-3.5 w-3.5" /> Poz. {stats.level}
-                </span>
-                {stats.streaks?.workout > 0 && (
-                  <span className="flex items-center gap-1 font-semibold text-amber-500">
-                    <Flame className="h-3.5 w-3.5" /> {stats.streaks.workout} dni
-                  </span>
-                )}
-                {stats.currentFitCoins > 0 && (
-                  <span className="flex items-center gap-1 font-medium text-muted-foreground">
-                    <Coins className="h-3.5 w-3.5" /> {stats.currentFitCoins}
-                  </span>
-                )}
-              </>
-            ) : (
-              <span className="text-muted-foreground text-[11px]">Centrum dowodzenia sportowca</span>
-            )}
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={toggleTheme}
-          aria-label="Przełącz motyw"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-secondary text-foreground transition-transform active:scale-90"
-        >
-          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        </button>
+    <Link
+      to={PROFILE_HREF}
+      onClick={() => haptic('tap')}
+      className="flex items-center gap-3.5 rounded-2xl bg-card px-4 py-3.5 transition-colors hover:bg-secondary/50 active:bg-secondary"
+    >
+      <Avatar className="h-12 w-12">
+        {userProfile?.avatarUrl && (
+          <AvatarImage src={resolveMediaUrl(userProfile.avatarUrl)} alt="" className="object-cover" />
+        )}
+        <AvatarFallback className="bg-primary/10 text-base font-semibold text-primary">
+          {name.slice(0, 2).toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-base font-semibold leading-tight">{name}</p>
+        <p className="mt-1 truncate text-xs text-muted-foreground">
+          {facts.length > 0 ? facts.join(' · ') : 'Profil, statystyki i dane konta'}
+        </p>
       </div>
-
-      <div className="mt-3.5 flex items-center gap-2 pt-3 border-t border-border/50">
-        <Link
-          to="/athlete/you"
-          onClick={() => haptic('tap')}
-          className="flex-1 rounded-xl bg-secondary/80 hover:bg-secondary py-2 text-center text-xs font-semibold text-foreground transition-colors active:opacity-75"
-        >
-          Mój profil
-        </Link>
-        <Link
-          to="/athlete/you?tab=settings"
-          onClick={() => haptic('tap')}
-          className="flex-1 rounded-xl bg-secondary/80 hover:bg-secondary py-2 text-center text-xs font-semibold text-foreground transition-colors active:opacity-75 flex items-center justify-center gap-1.5"
-        >
-          <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
-          Ustawienia
-        </Link>
-      </div>
-    </div>
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+    </Link>
   );
 }
 
-/** Active workout pulse alert banner */
-function ActiveWorkoutAlert() {
+/** A session left running elsewhere: one tap takes the athlete back into it. */
+function ActiveWorkoutRow() {
   const { activeWorkout, hasActiveWorkout } = useActiveWorkout();
   if (!hasActiveWorkout || !activeWorkout) return null;
 
@@ -297,89 +143,48 @@ function ActiveWorkoutAlert() {
     <Link
       to={`/athlete/log?logId=${activeWorkout.id}`}
       onClick={() => haptic('impact')}
-      className="group flex items-center justify-between gap-3 rounded-3xl border border-primary/50 bg-primary/10 p-3.5 shadow-xs transition-all active:scale-[0.98]"
+      className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 transition-colors active:bg-primary/15"
     >
-      <div className="flex items-center gap-3">
-        <span className="relative flex h-3 w-3 shrink-0">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-          <span className="relative inline-flex h-3 w-3 rounded-full bg-primary" />
-        </span>
-        <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-primary">
-            Trening w toku
-          </p>
-          <p className="truncate text-sm font-semibold text-foreground">
-            {activeWorkout.workoutName || 'Sesja treningowa'}
-          </p>
-        </div>
+      <span className="relative flex h-2.5 w-2.5 shrink-0">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-semibold text-primary">Trening w toku</p>
+        <p className="truncate text-[15px] font-semibold leading-snug">
+          {activeWorkout.workoutName || 'Sesja treningowa'}
+        </p>
       </div>
-      <span className="flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow-xs">
-        <Play className="h-3.5 w-3.5 fill-current" />
+      <span className="shrink-0 rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground">
         Wróć
       </span>
     </Link>
   );
 }
 
-/** Card for coaches/trainers */
-function TrainerModeBanner() {
-  return (
-    <Link
-      to="/athlete/trainer-panel"
-      onClick={() => haptic('tap')}
-      className="group relative flex items-center justify-between overflow-hidden rounded-3xl border border-primary/40 bg-gradient-to-r from-primary/15 via-primary/5 to-transparent p-4 transition-all duration-200 active:scale-[0.98] shadow-xs"
-    >
-      <div className="flex items-center gap-3.5">
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-xs">
-          <Award className="h-5 w-5" />
-        </span>
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="font-display text-sm font-bold uppercase tracking-wider text-primary">
-              Panel Trenera
-            </span>
-            <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
-              Aktywny
-            </span>
-          </div>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Zarządzaj podopiecznymi, planami i raportami check-in
-          </p>
-        </div>
-      </div>
-      <ChevronRight className="h-5 w-5 shrink-0 text-primary transition-transform duration-200 group-hover:translate-x-0.5" />
-    </Link>
-  );
-}
-
-/** Horizontal row of recently opened screens */
-function RecentShortcuts({ recentLeaves }: { recentLeaves: NavLeaf[] }) {
-  if (recentLeaves.length === 0) return null;
-
+/** The last few screens opened (at most four), as an even two-column grid of shortcuts. */
+function RecentShortcuts({ leaves }: { leaves: NavLeaf[] }) {
   return (
     <section>
-      <div className="flex items-center justify-between mb-2 px-1">
-        <h2 className="eyebrow">Ostatnio odwiedzone</h2>
-        <span className="text-[11px] font-medium text-muted-foreground">Szybki powrót</span>
-      </div>
-      <div className="no-scrollbar flex items-center gap-2 overflow-x-auto pb-1">
-        {recentLeaves.map(leaf => {
-          const color = navLeafColor(leaf);
+      <h2 className="mb-2 px-4 text-xs font-semibold text-muted-foreground">Ostatnio otwierane</h2>
+      <div className="grid grid-cols-2 gap-2">
+        {leaves.map(leaf => {
           const Icon = leaf.icon;
+          const color = navLeafColor(leaf);
           return (
             <Link
               key={leaf.href}
               to={leaf.href}
               onClick={() => haptic('tap')}
-              className="pressable-sm flex shrink-0 items-center gap-2 rounded-2xl border border-border/60 bg-card px-3 py-2 text-xs font-semibold shadow-xs hover:border-border transition-colors"
+              className="flex h-12 min-w-0 items-center gap-2.5 rounded-xl bg-card px-2.5 transition-colors hover:bg-secondary/50 active:bg-secondary"
             >
               <span
-                className="grid h-6 w-6 shrink-0 place-items-center rounded-lg"
-                style={{ backgroundColor: tint(color, 16), color }}
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-lg"
+                style={{ backgroundColor: tint(color, 15), color }}
               >
-                <Icon className="h-3.5 w-3.5" />
+                <Icon className="h-4 w-4" />
               </span>
-              <span className="whitespace-nowrap">{leaf.label}</span>
+              <span className="line-clamp-2 text-[13px] font-semibold leading-tight">{leaf.label}</span>
             </Link>
           );
         })}
@@ -388,178 +193,75 @@ function RecentShortcuts({ recentLeaves }: { recentLeaves: NavLeaf[] }) {
   );
 }
 
-/** Single row item in a category card */
-function MenuItemRow({ leaf }: { leaf: NavLeaf }) {
-  return (
-    <Link
-      to={leaf.href}
-      onClick={() => haptic('tap')}
-      className="group flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-secondary/40 active:bg-secondary/70"
-    >
-      <Plate leaf={leaf} size="md" />
-      <div className="min-w-0 flex-1">
-        <span className="block text-[15px] font-semibold tracking-tight leading-snug text-foreground group-hover:text-primary transition-colors">
-          {leaf.label}
-        </span>
-        {leaf.description && (
-          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-            {leaf.description}
-          </span>
-        )}
-      </div>
-      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-foreground" />
-    </Link>
-  );
-}
-
-/** One structured category section card */
-function GroupedSectionCard({ group, leaves }: { group: NavGroup; leaves: NavLeaf[] }) {
-  return (
-    <section className="space-y-2">
-      <div className="flex items-center justify-between px-1">
-        <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wider text-foreground">
-          <span
-            aria-hidden
-            className="h-3.5 w-1.5 rounded-full"
-            style={{ backgroundColor: group.color }}
-          />
-          {group.label}
-        </h2>
-        <span className="rounded-full bg-secondary/70 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-          {leaves.length} {leaves.length === 1 ? 'pozycja' : leaves.length < 5 ? 'pozycje' : 'pozycji'}
-        </span>
-      </div>
-      <div className="divide-y divide-border/40 overflow-hidden rounded-3xl border border-border/70 bg-card shadow-xs">
-        {leaves.map(leaf => (
-          <MenuItemRow key={leaf.href} leaf={leaf} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/** Destination as a full-width row for search hits */
-function SearchHitRow({ leaf }: { leaf: NavLeaf }) {
-  const group = findNavGroup(leaf.href);
-  return (
-    <Link
-      to={leaf.href}
-      onClick={() => haptic('tap')}
-      className="group flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-secondary/40 active:bg-secondary/70"
-    >
-      <Plate leaf={leaf} size="md" />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="text-[15px] font-semibold leading-snug text-foreground group-hover:text-primary transition-colors">
-            {leaf.label}
-          </span>
-          {group && (
-            <span
-              className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-              style={{ backgroundColor: tint(group.color, 14), color: group.color }}
-            >
-              {group.label}
-            </span>
-          )}
-        </div>
-        {leaf.description && (
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">{leaf.description}</p>
-        )}
-      </div>
-      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-foreground" />
-    </Link>
-  );
-}
-
-/** App footer with theme toggle, network status, version and logout */
-function AppUtilitiesFooter({ onLogoutClick }: { onLogoutClick: () => void }) {
+/** Theme switch inline, so the most-changed setting needs no extra screen. */
+function ThemeRow() {
   const { theme, setTheme } = useTheme();
-  const isOnline = useOnlineStatus();
+  const current = theme ?? 'system';
+  const color = 'hsl(var(--chart-4))';
 
   return (
-    <section className="space-y-2.5 pt-2">
-      <h2 className="eyebrow px-1">System & Aplikacja</h2>
-
-      <div className="overflow-hidden rounded-3xl border border-border/70 bg-card p-4 shadow-xs space-y-4">
-        {/* Motyw */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-              <Sun className="h-3.5 w-3.5 text-primary" />
-              Motyw interfejsu
-            </span>
-            <span className="text-xs font-semibold text-foreground">
-              {theme === 'system' ? 'Systemowy' : theme === 'dark' ? 'Ciemny' : 'Jasny'}
-            </span>
-          </div>
-          <div className="grid grid-cols-3 gap-1 rounded-2xl bg-secondary/60 p-1">
-            {[
-              { id: 'light', label: 'Jasny', icon: Sun },
-              { id: 'dark', label: 'Ciemny', icon: Moon },
-              { id: 'system', label: 'System', icon: Monitor },
-            ].map(opt => {
-              const Icon = opt.icon;
-              const active = theme === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => {
-                    haptic('tap');
-                    setTheme(opt.id);
-                  }}
-                  className={cn(
-                    'flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold transition-all',
-                    active
-                      ? 'bg-card text-foreground shadow-xs'
-                      : 'text-muted-foreground hover:text-foreground active:opacity-70'
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Status sieci i wersja */}
-        <div className="flex items-center justify-between pt-3 border-t border-border/40 text-xs">
-          <div className="flex items-center gap-2">
-            <span
+    <div className="flex items-center gap-3 px-4 py-3">
+      <span
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
+        style={{ backgroundColor: tint(color, 15), color }}
+      >
+        <Palette className="h-[18px] w-[18px]" />
+      </span>
+      <p className="min-w-0 flex-1 truncate text-[15px] font-semibold">Motyw</p>
+      <div role="radiogroup" aria-label="Motyw aplikacji" className="flex shrink-0 gap-0.5 rounded-full bg-secondary/70 p-0.5">
+        {THEME_OPTIONS.map(({ id, label }) => {
+          const active = current === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => {
+                haptic('tap');
+                setTheme(id);
+              }}
               className={cn(
-                'h-2 w-2 rounded-full',
-                isOnline ? 'bg-emerald-500 shadow-xs' : 'bg-amber-500'
+                'h-8 rounded-full px-3 text-xs font-semibold transition-colors',
+                active ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground active:text-foreground'
               )}
-            />
-            <span className="text-muted-foreground font-medium">
-              {isOnline ? 'Online (Połączono)' : 'Tryb offline'}
-            </span>
-          </div>
-          <span className="text-muted-foreground font-mono text-[11px]">
-            Leniwa Kluska v0.9.3
-          </span>
-        </div>
-
-        {/* Wyloguj */}
-        <div className="pt-2 border-t border-border/40">
-          <button
-            type="button"
-            onClick={onLogoutClick}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive/20 bg-destructive/10 py-3 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/15 active:scale-[0.99]"
-          >
-            <LogOut className="h-4 w-4" />
-            Wyloguj się
-          </button>
-        </div>
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
-    </section>
+    </div>
+  );
+}
+
+function HintChips({ onPick }: { onPick: (hint: string) => void }) {
+  return (
+    <div className="flex flex-wrap justify-center gap-2">
+      {SEARCH_HINTS.map(hint => (
+        <button
+          key={hint}
+          type="button"
+          onClick={() => {
+            haptic('tap');
+            onPick(hint);
+          }}
+          className="h-8 rounded-full bg-secondary px-3.5 text-xs font-semibold transition-colors active:bg-secondary/70"
+        >
+          {hint}
+        </button>
+      ))}
+    </div>
   );
 }
 
 /**
- * The redesigned "Menu" hub:
- * Complete, organized command center for every screen, tool, setting, and quick action.
+ * "Menu": every screen of the app in one ordered, grouped list.
+ *
+ * Top to bottom: search, who you are (and a workout left running), the screens
+ * you opened lately, then the nav groups in their fixed order, and the app
+ * itself — settings, theme, logout. Groups come from `athlete-nav`, so a new
+ * screen added there shows up here and in search without touching this file.
  */
 export default function MenuPage() {
   const { userProfile } = useUserProfile();
@@ -567,38 +269,30 @@ export default function MenuPage() {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const recentRoutes = useRecentRoutes();
+  const isOnline = useOnlineStatus();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<MenuCategory>('all');
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   const role = userProfile?.role;
 
-  // All groups available to this role
-  const allSections = useMemo(
-    () =>
-      navItemsForRole(role)
-        .filter(isNavGroup)
-        .map(group => ({ group, leaves: group.items }))
-        .filter(section => section.leaves.length > 0),
+  const groups = useMemo(
+    () => navItemsForRole(role).filter(isNavGroup).filter(group => group.label !== SETTINGS_GROUP && group.items.length > 0),
     [role]
   );
 
-  // Filter sections by selected category
-  const filteredSections = useMemo(() => {
-    if (selectedCategory === 'all') return allSections;
-    return allSections.filter(section => getGroupCategory(section.group.label) === selectedCategory);
-  }, [allSections, selectedCategory]);
-
-  const results = query.trim() ? searchNavLeaves(query, role) : null;
+  const settingsLeaf = useMemo(() => navLeavesForRole(role).find(leaf => leaf.href === SETTINGS_HREF), [role]);
 
   const recentLeaves = useMemo(() => {
+    const leaves = navLeavesForRole(role);
     return recentRoutes
-      .map(href => navLeavesForRole(role).find(leaf => leaf.href === href))
+      .map(href => leaves.find(leaf => leaf.href === href))
       .filter((leaf): leaf is NavLeaf => Boolean(leaf));
   }, [recentRoutes, role]);
+
+  const results = query.trim() ? searchNavLeaves(query, role) : null;
 
   const closeSearch = () => {
     setQuery('');
@@ -613,8 +307,8 @@ export default function MenuPage() {
   };
 
   return (
-    <div className="page space-y-4 pb-8">
-      {/* Search Input Bar */}
+    <div className="page space-y-6 pb-8">
+      {/* Search */}
       <div className="flex items-center gap-2">
         <div className="relative min-w-0 flex-1">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -624,15 +318,14 @@ export default function MenuPage() {
             value={query}
             onChange={e => setQuery(e.target.value)}
             onFocus={() => setSearching(true)}
-            placeholder="Szukaj funkcji, ekranów, ustawień..."
+            placeholder="Szukaj ekranu lub ustawienia"
             aria-label="Szukaj w aplikacji"
             enterKeyHint="go"
             onKeyDown={e => {
-              if (e.key === 'Enter' && results?.[0]) {
-                navigate(results[0].href);
-              }
+              if (e.key === 'Enter' && results?.[0]) navigate(results[0].href);
+              if (e.key === 'Escape') closeSearch();
             }}
-            className="h-12 w-full rounded-2xl border border-border/60 bg-card pl-10 pr-10 text-sm md:text-base outline-none transition-colors placeholder:text-muted-foreground focus:border-primary [&::-webkit-search-cancel-button]:hidden shadow-xs"
+            className="h-11 w-full rounded-xl border border-transparent bg-card pl-10 pr-10 text-[15px] outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/60 [&::-webkit-search-cancel-button]:hidden"
           />
           {query && (
             <button
@@ -642,7 +335,7 @@ export default function MenuPage() {
                 inputRef.current?.focus();
               }}
               aria-label="Wyczyść wyszukiwanie"
-              className="absolute right-1.5 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-muted-foreground active:bg-secondary"
+              className="absolute right-1 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-muted-foreground active:bg-secondary"
             >
               <X className="h-4 w-4" />
             </button>
@@ -652,216 +345,109 @@ export default function MenuPage() {
           <button
             type="button"
             onClick={closeSearch}
-            className="h-12 shrink-0 px-2 text-sm font-semibold text-primary active:opacity-60"
+            className="h-11 shrink-0 px-1 text-[15px] font-semibold text-primary active:opacity-60"
           >
             Anuluj
           </button>
         )}
       </div>
 
-      {/* When searching: display search view */}
       {searching ? (
         results ? (
-          <div aria-live="polite" className="animate-fade-in space-y-3">
-            <div className="flex items-center justify-between px-1">
-              <h2 className="eyebrow">Wyniki wyszukiwania ({results.length})</h2>
-              {results.length > 0 && (
-                <span className="text-xs text-muted-foreground">Wciśnij Enter, aby przejść</span>
-              )}
-            </div>
+          <div aria-live="polite" className="animate-fade-in">
             {results.length > 0 ? (
-              <div className="divide-y divide-border/40 overflow-hidden rounded-3xl border border-border/70 bg-card shadow-xs">
-                {results.map(leaf => (
-                  <SearchHitRow key={leaf.href} leaf={leaf} />
-                ))}
-              </div>
+              <SettingsGroup title={`${results.length} ${plural(results.length, 'wynik', 'wyniki', 'wyników')}`}>
+                {results.map(leaf => {
+                  const group = findNavGroup(leaf.href)?.label;
+                  const description = [group, leaf.description].filter(Boolean).join(' · ');
+                  return <MenuRow key={leaf.href} leaf={leaf} description={description} />;
+                })}
+              </SettingsGroup>
             ) : (
-              <div className="rounded-3xl border border-border/70 bg-card p-6 text-center shadow-xs space-y-3">
-                <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-secondary text-muted-foreground">
-                  <Search className="h-6 w-6" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    Nic nie znaleziono dla „{query.trim()}”
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Sprawdź czy nie popełniłeś literówki lub spróbuj innego hasła.
-                  </p>
-                </div>
-                <div className="pt-2">
-                  <p className="eyebrow mb-2">Popularne wyszukiwania</p>
-                  <div className="flex flex-wrap justify-center gap-1.5">
-                    {SEARCH_HINTS.map(hint => (
-                      <button
-                        key={hint}
-                        type="button"
-                        onClick={() => {
-                          haptic('tap');
-                          setQuery(hint);
-                        }}
-                        className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-foreground hover:bg-secondary/80 active:scale-95 transition-all"
-                      >
-                        {hint}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <EmptyState
+                icon={Search}
+                title={`Brak wyników dla „${query.trim()}”`}
+                description="Sprawdź pisownię albo wybierz jedną z podpowiedzi."
+                action={<HintChips onPick={setQuery} />}
+              />
             )}
           </div>
         ) : (
-          <div className="animate-fade-in space-y-4">
-            {recentLeaves.length > 0 && <RecentShortcuts recentLeaves={recentLeaves} />}
-            <section className="space-y-2">
-              <h2 className="eyebrow px-1">Popularne hasła</h2>
-              <div className="flex flex-wrap gap-2">
-                {SEARCH_HINTS.map(hint => (
-                  <button
-                    key={hint}
-                    type="button"
-                    onClick={() => {
-                      haptic('tap');
-                      setQuery(hint);
-                    }}
-                    className="pressable-sm flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-3.5 py-2 text-xs font-semibold shadow-xs"
-                  >
-                    <Sparkles className="h-3.5 w-3.5 text-primary" />
-                    {hint}
-                  </button>
+          <div className="animate-fade-in space-y-6">
+            {recentLeaves.length > 0 && (
+              <SettingsGroup title="Ostatnio otwierane">
+                {recentLeaves.map(leaf => (
+                  <MenuRow key={leaf.href} leaf={leaf} />
                 ))}
+              </SettingsGroup>
+            )}
+            <section>
+              <h2 className="mb-2 px-4 text-xs font-semibold text-muted-foreground">Podpowiedzi</h2>
+              <div className="rounded-2xl bg-card p-4">
+                <HintChips onPick={setQuery} />
               </div>
             </section>
           </div>
         )
       ) : (
-        /* Default Hub View */
-        <div className="stagger-rise space-y-4">
-          {/* Athlete Identity Card */}
-          <AthleteIdentityCard />
-
-          {/* Active Workout Alert */}
-          <ActiveWorkoutAlert />
-
-          {/* Trainer Mode Callout */}
-          {role === 'trainer' && <TrainerModeBanner />}
-
-          {/* Category Filter Pills */}
-          <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto pb-0.5">
-            {CATEGORY_FILTERS.map(filter => {
-              const active = selectedCategory === filter.id;
-              const Icon = filter.icon;
-              return (
-                <button
-                  key={filter.id}
-                  type="button"
-                  onClick={() => {
-                    haptic('tap');
-                    setSelectedCategory(filter.id);
-                  }}
-                  className={cn(
-                    'flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 active:scale-95',
-                    active
-                      ? 'bg-primary text-primary-foreground shadow-xs'
-                      : 'border border-border/60 bg-card text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  <span>{filter.label}</span>
-                </button>
-              );
-            })}
+        <div className="stagger-rise space-y-6">
+          <div className="space-y-2.5">
+            <ProfileCard />
+            <ActiveWorkoutRow />
           </div>
 
-          {/* Hero Quick Actions (shown when 'all' is selected) */}
-          {selectedCategory === 'all' && (
-            <section className="space-y-2">
-              <div className="flex items-center justify-between px-1">
-                <h2 className="eyebrow">Szybkie akcje</h2>
-                <span className="text-[11px] font-medium text-muted-foreground">1-tap launch</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2.5">
-                <HeroQuickAction
-                  to="/athlete/log"
-                  color="hsl(var(--primary))"
-                  icon={Play}
-                  badge="Trening"
-                  title="Trenuj teraz"
-                  subtitle="Nowa sesja lub z szablonu"
-                />
-                <HeroQuickAction
-                  to="/athlete/nutrition"
-                  color="hsl(var(--food))"
-                  icon={NotebookPen}
-                  badge="Dieta"
-                  title="Kalorie i makro"
-                  subtitle="Posiłki i bilans dnia"
-                />
-                <HeroQuickAction
-                  to="/athlete/measurements"
-                  color="hsl(var(--volt))"
-                  icon={Ruler}
-                  badge="Forma"
-                  title="Pomiary & waga"
-                  subtitle="Waga, obwody, zdjęcia"
-                />
-                <HeroQuickAction
-                  to="/athlete/running"
-                  color="hsl(var(--run))"
-                  icon={Footprints}
-                  badge="GPS"
-                  title="Bieganie"
-                  subtitle="Rejestruj trasę i tempo"
-                />
-              </div>
-            </section>
-          )}
+          {recentLeaves.length > 0 && <RecentShortcuts leaves={recentLeaves} />}
 
-          {/* Recent Shortcuts */}
-          {selectedCategory === 'all' && recentLeaves.length > 0 && (
-            <RecentShortcuts recentLeaves={recentLeaves} />
-          )}
+          {groups.map(group => (
+            <SettingsGroup key={group.label} title={group.label}>
+              {group.items.map(leaf => (
+                <MenuRow key={leaf.href} leaf={leaf} />
+              ))}
+            </SettingsGroup>
+          ))}
 
-          {/* Structured Category Groups */}
+          <SettingsGroup title="Aplikacja">
+            {settingsLeaf && <MenuRow leaf={settingsLeaf} description="Powiadomienia, integracje, dane offline" />}
+            <ThemeRow />
+          </SettingsGroup>
+
           <div className="space-y-4">
-            {filteredSections.map(({ group, leaves }) => (
-              <GroupedSectionCard key={group.label} group={group} leaves={leaves} />
-            ))}
-          </div>
-
-          {/* Reset filter banner if empty or single filter selected */}
-          {selectedCategory !== 'all' && (
-            <div className="text-center pt-2">
+            <div className="overflow-hidden rounded-2xl bg-card">
               <button
                 type="button"
                 onClick={() => {
                   haptic('tap');
-                  setSelectedCategory('all');
+                  setLogoutDialogOpen(true);
                 }}
-                className="text-xs font-semibold text-primary hover:underline"
+                className="flex w-full items-center justify-center gap-2 px-4 py-3.5 text-[15px] font-semibold text-destructive transition-colors active:bg-secondary"
               >
-                Pokaż wszystkie sekcje (Wszystko)
+                <LogOut className="h-4 w-4" />
+                Wyloguj się
               </button>
             </div>
-          )}
 
-          {/* System & Utilities Footer */}
-          {selectedCategory === 'all' && (
-            <AppUtilitiesFooter onLogoutClick={() => setLogoutDialogOpen(true)} />
-          )}
+            <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <span>Leniwa Kluska {APP_VERSION}</span>
+              <span aria-hidden>·</span>
+              <span className="flex items-center gap-1.5">
+                <span className={cn('h-1.5 w-1.5 rounded-full', isOnline ? 'bg-emerald-500' : 'bg-amber-500')} />
+                {isOnline ? 'Online' : 'Offline'}
+              </span>
+            </p>
+          </div>
         </div>
       )}
 
-      {/* Logout Confirmation Dialog */}
       <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
-        <AlertDialogContent className="rounded-3xl max-w-sm">
+        <AlertDialogContent className="max-w-sm rounded-3xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-display text-lg uppercase tracking-wide">
+            <AlertDialogTitle>
               {user?.isGuest ? 'Konto gościa zostanie utracone' : 'Wylogować się?'}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-sm">
               {user?.isGuest
-                ? 'Jesteś zalogowany jako gość na tym urządzeniu. Po wylogowaniu Twoje treningi, plany i historia zostaną bezpowrotnie usunięte. Czy na pewno chcesz kontynuować?'
-                : 'Czy na pewno chcesz zakończyć bieżącą sesję w aplikacji Leniwa Kluska?'}
+                ? 'Jesteś zalogowany jako gość na tym urządzeniu. Po wylogowaniu Twoje treningi, plany i historia zostaną bezpowrotnie usunięte.'
+                : 'Zakończysz bieżącą sesję w aplikacji na tym urządzeniu.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:gap-0">

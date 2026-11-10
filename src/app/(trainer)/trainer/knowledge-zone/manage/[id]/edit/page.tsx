@@ -2,7 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { useCollection, useUser, useDoc, useUpdateDoc } from '@/lib/db-hooks';
-import { ArticleForm, ArticleFormValues } from '@/components/ArticleForm';
+import { ArticleForm, ArticleFormValues, recipeFromForm } from '@/components/ArticleForm';
+import type { ArticleRecipe } from '@/lib/article-recipe';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { use } from 'react';
@@ -17,6 +18,7 @@ interface Article {
   status: 'published' | 'draft';
   coverImageUrl?: string;
   imageHint?: string;
+  recipe?: ArticleRecipe | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -74,6 +76,7 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
         status: data.status,
         coverImageUrl: data.coverImageUrl || article.coverImageUrl,
         imageHint: data.imageHint || article.imageHint,
+        recipe: recipeFromForm(data),
         updatedAt: new Date(),
       };
 

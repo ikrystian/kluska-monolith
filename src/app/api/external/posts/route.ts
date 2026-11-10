@@ -5,6 +5,7 @@ import { Article } from '@/models/Article';
 import { ArticleCategory } from '@/models/ArticleCategory';
 import { SocialPost } from '@/models/SocialPost';
 import { User } from '@/models/User';
+import { parseRecipe } from '@/lib/article-recipe';
 
 function corsHeaders() {
   return {
@@ -122,6 +123,8 @@ export async function GET(request: NextRequest) {
           imageHint: 'Krótki opis zdjęcia (opcjonalnie)',
           status: 'published (domyślnie) | draft',
           type: 'article (domyślnie, wpis bazy wiedzy) | social (post społecznościowy)',
+          recipe:
+            'Opcjonalnie, dla przepisów (kategoria "Przepisy"): { dishName?, servings?, prepMinutes?, mealType?: Breakfast|Lunch|Dinner|Snack, calories, protein, carbs, fat } — makro na 1 porcję; pozwala dodać danie do dzienniczka kalorii',
         },
       },
     },
@@ -237,6 +240,7 @@ export async function POST(request: NextRequest) {
       postData.coverImageUrl || postData.imageUrl || postData.image;
     const imageHint = postData.imageHint;
     const status = postData.status === 'draft' ? 'draft' : 'published';
+    const recipe = parseRecipe(postData.recipe ?? rawBody.recipe);
 
     if (!title || typeof title !== 'string' || !title.trim()) {
       return NextResponse.json(
@@ -269,6 +273,7 @@ export async function POST(request: NextRequest) {
       status,
       coverImageUrl: coverImageUrl?.trim() || undefined,
       imageHint: imageHint?.trim() || undefined,
+      ...(recipe ? { recipe } : {}),
     });
 
     await article.save();

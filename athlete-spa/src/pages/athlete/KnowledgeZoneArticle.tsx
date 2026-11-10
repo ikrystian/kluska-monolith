@@ -4,21 +4,27 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { BookOpen, Check, Clock, Share2 } from 'lucide-react';
+import { BookOpen, Check, ChefHat, Clock, Plus, Share2, Users } from 'lucide-react';
 import { useCollection, useDoc } from '@/lib/db-hooks';
 import type { Article, ArticleCategory } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { haptic } from '@/lib/haptics';
+import { cn } from '@/lib/utils';
 import { ArticleRow, CategoryPill } from '@/components/knowledge/ArticleCards';
 import {
   UNCATEGORIZED,
   articleCoverUrl,
   categoryColor,
+  hasRecipeNutrition,
+  isRecipeArticle,
   readingMinutes,
   useReadArticles,
 } from '@/components/knowledge/knowledge-utils';
+import { AddRecipeSheet } from '@/components/nutrition/AddRecipeSheet';
+import { MEAL_TYPE_LABELS } from '@/lib/nutrition';
+import { plural } from '@/lib/plural';
 
 const BASE_PATH = '/athlete/knowledge-zone';
 const RELATED_LIMIT = 3;
@@ -63,6 +69,7 @@ export default function ArticlePage() {
   const { toast } = useToast();
   const progress = useScrollProgress();
   const { readIds, markRead } = useReadArticles();
+  const [recipeSheetOpen, setRecipeSheetOpen] = useState(false);
 
   const { data: article, isLoading } = useDoc<Article>('articles', articleId ?? null);
   const { data: categories } = useCollection<ArticleCategory>('articleCategories');
@@ -147,6 +154,11 @@ export default function ArticlePage() {
   const updated = article.updatedAt ? new Date(article.updatedAt) : null;
   const editedAt = updated && updated.getTime() - published.getTime() > 24 * 60 * 60 * 1000 ? updated : null;
   const readCount = (articles ?? []).filter(a => readIds.has(a.id)).length;
+  const isRecipe = isRecipeArticle(article);
+  const openRecipeSheet = () => {
+    haptic('tap');
+    setRecipeSheetOpen(true);
+  };
 
   return (
     <article className="pb-28">
@@ -213,9 +225,27 @@ export default function ArticlePage() {
           </div>
         </header>
 
+        {isRecipe && <RecipeCard article={article} onAdd={openRecipeSheet} />}
+
         <div id="knowledge-zone-article" className="article-body mt-6" dangerouslySetInnerHTML={{ __html: article.content }} />
 
-        <footer className="mt-10 flex items-center justify-between gap-3 rounded-2xl bg-card p-4">
+        {isRecipe && (
+          <button
+            type="button"
+            onClick={openRecipeSheet}
+            className="pressable-sm mt-10 flex w-full items-center gap-3 rounded-2xl bg-food/10 p-4 text-left"
+          >
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-food text-background">
+              <ChefHat className="h-5 w-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold">Ugotowane? Zapisz w jadłospisie</span>
+              <span className="block text-xs text-muted-foreground">Wybierz posiłek, a kalorie trafią do dzienniczka</span>
+            </span>
+            <Plus className="h-5 w-5 shrink-0 text-food" />
+          </button>
+        )}
+        <footer className={cn(isRecipe ? 'mt-3' : 'mt-10', 'flex items-center justify-between gap-3 rounded-2xl bg-card p-4')}>
           <div className="flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-volt/15 text-volt">
               <Check className="h-5 w-5" />
@@ -259,6 +289,77 @@ export default function ArticlePage() {
           </div>
         </section>
       )}
+
+      {isRecipe && <AddRecipeSheet article={article} open={recipeSheetOpen} onOpenChange={setRecipeSheetOpen} />}
     </article>
+  );
+}
+
+/** Per-serving macros of a recipe, right under the title, with the way into the diary. */
+function RecipeCard({ article, onAdd }: { article: Article; onAdd: () => void }) {
+  const recipe = article.recipe;
+  const hasNutrition = hasRecipeNutrition(article);
+  const macros = recipe
+    ? [
+        { label: 'Białko', value: recipe.protein },
+        { label: 'Węgle', value: recipe.carbs },
+        { label: 'Tłuszcz', value: recipe.fat },
+      ]
+    : [];
+
+  return (
+    <section className="mt-6 rounded-2xl bg-card p-4" aria-label="Wartości odżywcze">
+      <div className="flex items-center justify-between gap-3">
+        <p className="flex items-center gap-2 text-[15px] font-semibold">
+          <ChefHat className="h-4 w-4 text-food" />
+          {hasNutrition ? 'Na 1 porcję' : 'Przepis'}
+        </p>
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          {recipe?.prepMinutes ? (
+            <span className="flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5" />
+              {recipe.prepMinutes} min
+            </span>
+          ) : null}
+          {recipe && recipe.servings > 1 && (
+            <span className="flex items-center gap-1">
+              <Users className="h-3.5 w-3.5" />
+              {plural(recipe.servings, 'porcja', 'porcje', 'porcji')}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {hasNutrition && recipe ? (
+        <div className="mt-3 flex items-stretch gap-3">
+          <div className="flex min-w-[5.5rem] flex-col justify-center rounded-xl bg-food/15 px-3 py-2">
+            <span className="font-display text-3xl font-bold leading-none tabular-nums text-food">{Math.round(recipe.calories)}</span>
+            <span className="mt-1 text-[11px] font-medium text-muted-foreground">kcal</span>
+          </div>
+          <div className="grid flex-1 grid-cols-3 gap-2">
+            {macros.map(item => (
+              <div key={item.label} className="flex flex-col justify-center">
+                <span className="text-lg font-bold leading-none tabular-nums">{Math.round(item.value)}</span>
+                <span className="mt-1 text-[11px] text-muted-foreground">{item.label} (g)</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <p className="mt-2 text-sm text-muted-foreground">
+          Autor nie podał makroskładników — przy dodawaniu wpiszesz własny szacunek na porcję.
+        </p>
+      )}
+
+      <Button className="mt-4 h-12 w-full rounded-2xl text-[15px]" onClick={onAdd}>
+        <Plus className="mr-2 h-4 w-4" />
+        Dodaj do jadłospisu
+      </Button>
+      {recipe?.mealType && (
+        <p className="mt-2 text-center text-xs text-muted-foreground">
+          Najlepiej pasuje na: <span className="font-semibold text-foreground">{MEAL_TYPE_LABELS[recipe.mealType].toLowerCase()}</span>
+        </p>
+      )}
+    </section>
   );
 }

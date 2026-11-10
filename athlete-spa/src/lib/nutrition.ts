@@ -36,6 +36,9 @@ export interface DiaryEntry {
     protein: number;
     carbs: number;
     fat: number;
+    /** SavedMeal id ('meal'), article id ('recipe') or product id. */
+    productId?: string;
+    source?: RecentFood['source'];
 }
 
 export interface DiaryTotals {
@@ -62,10 +65,20 @@ export function productId(product: FoodProduct): string | undefined {
     return product._id ?? product.id;
 }
 
-/** Today's date in the device's local timezone as YYYY-MM-DD. */
-export function todayISO(): string {
+/** A date in the device's local timezone as YYYY-MM-DD (today by default). */
+export function todayISO(offsetDays = 0): string {
     const now = new Date();
+    now.setDate(now.getDate() + offsetDays);
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+/** The meal that makes sense to log right now. */
+export function mealForNow(): MealType {
+    const hour = new Date().getHours();
+    if (hour < 11) return 'Breakfast';
+    if (hour < 16) return 'Lunch';
+    if (hour < 21) return 'Dinner';
+    return 'Snack';
 }
 
 /** Dish categories of ready-made meals — keep in sync with src/lib/meal-catalog.ts in the backend. */
@@ -122,7 +135,8 @@ export interface RecentFood {
     protein: number;
     carbs: number;
     fat: number;
-    source: 'search' | 'barcode' | 'manual' | 'meal';
+    /** 'recipe' — dish from a knowledge-zone recipe; productId is the article id. */
+    source: 'search' | 'barcode' | 'manual' | 'meal' | 'recipe';
     productId?: string;
     barcode?: string;
     /** How many times it was logged in the last 30 days. */
@@ -134,6 +148,17 @@ export function relogBody(food: RecentFood, date: string, mealType: MealType) {
     if (food.source === 'meal' && food.productId) {
         return { date, mealType, mealId: food.productId, servings: food.amount };
     }
+    if (food.source === 'recipe' && food.productId) {
+        // The logged portion carries its own per-serving estimate, used when the recipe has none.
+        const perServing = (value: number) => Math.round((value / Math.max(food.amount, 0.25)) * 10) / 10;
+        return {
+            date,
+            mealType,
+            articleId: food.productId,
+            servings: food.amount,
+            nutrition: { calories: perServing(food.calories), protein: perServing(food.protein), carbs: perServing(food.carbs), fat: perServing(food.fat) },
+        };
+    }
     const per = (value: number) => Math.round(((value / Math.max(food.amount, 0.1)) * 100) * 10) / 10;
     return {
         date,
@@ -143,6 +168,6 @@ export function relogBody(food: RecentFood, date: string, mealType: MealType) {
         per100: { calories: per(food.calories), protein: per(food.protein), carbs: per(food.carbs), fat: per(food.fat) },
         productId: food.productId,
         barcode: food.barcode,
-        source: food.source === 'meal' ? 'manual' : food.source,
+        source: food.source === 'meal' || food.source === 'recipe' ? 'manual' : food.source,
     };
 }

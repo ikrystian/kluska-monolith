@@ -153,7 +153,7 @@ export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdd
 
     /** Opens a recent product in the amount picker (per-100 g values rebuilt from the logged portion). */
     const openRecent = (food: RecentFood) => {
-        if (food.source === 'meal') {
+        if (food.source === 'meal' || food.source === 'recipe') {
             void handleRelog(food);
             return;
         }
@@ -360,7 +360,7 @@ function StartScreen({
                             return (
                                 <li key={food.name}>
                                     <FoodRow
-                                        icon={<FoodIcon icon={food.source === 'meal' ? ChefHat : food.source === 'barcode' ? ScanBarcode : Apple} />}
+                                        icon={<FoodIcon icon={food.source === 'meal' || food.source === 'recipe' ? ChefHat : food.source === 'barcode' ? ScanBarcode : Apple} />}
                                         title={food.name}
                                         detail={`${formatAmount(food)} · B ${Math.round(food.protein)} · W ${Math.round(food.carbs)} · T ${Math.round(food.fat)}`}
                                         calories={food.calories}
