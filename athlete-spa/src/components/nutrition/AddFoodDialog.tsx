@@ -331,7 +331,7 @@ export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdd
                             {isSearching && (
                                 <div className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed bg-muted/30 py-8 text-sm text-muted-foreground">
                                     <Sparkles className="h-4 w-4 animate-pulse text-primary" />
-                                    AI szuka wartości odżywczych…
+                                    Trwa wyszukiwanie
                                 </div>
                             )}
 

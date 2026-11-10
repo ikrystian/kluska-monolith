@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Gender, TrainingLevelType, OnboardingData } from '@/models/types/user';
 import { useUserProfile } from '@/contexts/UserProfileContext';
-import { ONBOARDING_PENDING_KEY } from '@/contexts/AuthContext';
+import { ONBOARDING_PENDING_KEY, ONBOARDING_SKIPPED_KEY } from '@/contexts/AuthContext';
 import { apiFetch } from '@/lib/api-client';
 
 export interface OnboardingState {
@@ -51,6 +51,14 @@ export interface UseOnboardingReturn {
   nextStep: () => void;
   prevStep: () => void;
   goToStep: (step: number) => void;
+  /** Jump to a data step from the summary; "Dalej" then returns to the summary. */
+  editStep: (step: number) => void;
+  /** True while editing a single answer opened from the summary. */
+  isEditingFromSummary: boolean;
+  /** Leave the wizard without saving; the dashboard keeps a reminder card. */
+  skipOnboarding: () => void;
+  /** Data steps still ahead of the current one (welcome counts all of them). */
+  remainingDataSteps: number;
   isFirstStep: boolean;
   isLastStep: boolean;
   isDataStep: boolean;
@@ -67,6 +75,7 @@ export function useOnboarding(initialName: string = ''): UseOnboardingReturn {
     name: initialName,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [returnToSummary, setReturnToSummary] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { refetch: refetchUserProfile } = useUserProfile();
@@ -119,22 +128,49 @@ export function useOnboarding(initialName: string = ''): UseOnboardingReturn {
   }, [currentStepName, data]);
 
   const nextStep = useCallback(() => {
+    if (returnToSummary) {
+      setReturnToSummary(false);
+      setCurrentStep(totalSteps - 1);
+      return;
+    }
     if (currentStep < totalSteps - 1) {
       setCurrentStep((prev) => prev + 1);
     }
-  }, [currentStep, totalSteps]);
+  }, [currentStep, totalSteps, returnToSummary]);
 
   const prevStep = useCallback(() => {
+    if (returnToSummary) {
+      setReturnToSummary(false);
+      setCurrentStep(totalSteps - 1);
+      return;
+    }
     if (currentStep > 0) {
       setCurrentStep((prev) => prev - 1);
     }
-  }, [currentStep]);
+  }, [currentStep, totalSteps, returnToSummary]);
 
   const goToStep = useCallback((step: number) => {
     if (step >= 0 && step < totalSteps) {
       setCurrentStep(step);
     }
   }, [totalSteps]);
+
+  const editStep = useCallback((step: number) => {
+    if (step > 0 && step < totalSteps - 1) {
+      setReturnToSummary(true);
+      setCurrentStep(step);
+    }
+  }, [totalSteps]);
+
+  const skipOnboarding = useCallback(() => {
+    // Nothing is saved: the profile stays incomplete and the dashboard shows a
+    // reminder card that brings the athlete back here.
+    localStorage.removeItem(ONBOARDING_PENDING_KEY);
+    localStorage.setItem(ONBOARDING_SKIPPED_KEY, '1');
+    navigate('/athlete/dashboard', { replace: true });
+  }, [navigate]);
+
+  const remainingDataSteps = Math.max(0, dataSteps - Math.max(0, currentStep - 1));
 
   const submitOnboarding = useCallback(async () => {
     if (isSubmitting) return;
@@ -187,6 +223,7 @@ export function useOnboarding(initialName: string = ''): UseOnboardingReturn {
 
       // Wizard is done — clear the marker so relaunches skip it.
       localStorage.removeItem(ONBOARDING_PENDING_KEY);
+      localStorage.removeItem(ONBOARDING_SKIPPED_KEY);
 
       // Refetch user profile to update the cached data
       if (refetchUserProfile) {
@@ -215,6 +252,10 @@ export function useOnboarding(initialName: string = ''): UseOnboardingReturn {
     nextStep,
     prevStep,
     goToStep,
+    editStep,
+    isEditingFromSummary: returnToSummary,
+    skipOnboarding,
+    remainingDataSteps,
     isFirstStep,
     isLastStep,
     isDataStep,

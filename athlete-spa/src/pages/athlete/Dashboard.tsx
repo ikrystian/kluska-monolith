@@ -25,6 +25,7 @@ import { useTodayHabits } from '@/hooks/useTodayHabits';
 import { DailyBar, type BarPlate } from '@/components/dashboard/DailyBar';
 import { WeekStrip, type WeekDay } from '@/components/dashboard/WeekStrip';
 import { TodayHero } from '@/components/dashboard/TodayHero';
+import { CompleteProfileCard } from '@/components/dashboard/CompleteProfileCard';
 import { HabitsToday } from '@/components/dashboard/HabitsToday';
 import { NutritionToday } from '@/components/dashboard/NutritionToday';
 import { todayISO, type DiaryResponse } from '@/lib/nutrition';
@@ -519,6 +520,8 @@ export default function AthleteDashboardPage() {
 
   return (
     <div className="page space-y-4">
+      <CompleteProfileCard profile={userProfile} />
+
       <WeekStrip days={weekDays} doneCount={doneThisWeek.length} target={weeklyTarget} streak={gamification?.streaks.workout} />
 
       <TodayHero

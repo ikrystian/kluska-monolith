@@ -1,115 +1,86 @@
-'use client';
-
 import { motion } from 'framer-motion';
+import { Bot, Clock, Dumbbell, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dumbbell, Sparkles, Target, TrendingUp } from 'lucide-react';
+import gymPhoto from '@/assets/auth-gym.jpg';
 
 interface WelcomeStepProps {
+  name?: string;
   onNext: () => void;
+  onSkip: () => void;
+  totalQuestions: number;
 }
 
-export function WelcomeStep({ onNext }: WelcomeStepProps) {
-  const features = [
-    { icon: Target, text: 'Śledź swoje postępy' },
-    { icon: TrendingUp, text: 'Osiągaj cele' },
-    { icon: Dumbbell, text: 'Trenuj efektywniej' },
-  ];
+const benefits = [
+  { icon: Dumbbell, title: 'Plany na Twoją miarę', text: 'Objętość i obciążenia dobrane do poziomu', tint: 'bg-primary/15 text-primary' },
+  { icon: Flame, title: 'Kalorie bez liczenia', text: 'Zapotrzebowanie i makro wyliczone za Ciebie', tint: 'bg-food/15 text-food' },
+  { icon: Bot, title: 'Trener AI, który Cię zna', text: 'Wskazówki pasujące do Twojego ciała', tint: 'bg-run/15 text-run' },
+];
+
+export function WelcomeStep({ name, onNext, onSkip, totalQuestions }: WelcomeStepProps) {
+  const firstName = name?.trim().split(/\s+/)[0];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.5 }}
-      className="flex flex-col items-center justify-center min-h-screen px-6 py-12"
-    >
-      {/* Animated Logo */}
-      <motion.div
-        initial={{ scale: 0, rotate: -180 }}
-        animate={{ scale: 1, rotate: 0 }}
-        transition={{ duration: 0.8, type: 'spring', stiffness: 100 }}
-        className="relative mb-8"
-      >
-        <div className="w-28 h-28 rounded-full bg-primary flex items-center justify-center">
-          <Dumbbell className="w-14 h-14 text-primary-foreground" />
+    <div className="relative flex min-h-[100svh] flex-col bg-background">
+      {/* Poster header — same gym photo as the login screen, so it feels like one flow. */}
+      <div className="relative px-4 pb-8 pt-[calc(5rem+env(safe-area-inset-top))]">
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <img src={gymPhoto} alt="" className="h-full w-full object-cover" decoding="async" />
+          <div className="absolute inset-0 bg-black/55" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/25 to-transparent" />
         </div>
         <motion.div
-          animate={{
-            scale: [1, 1.1, 1],
-            opacity: [0.7, 1, 0.7],
-            rotate: [0, 5, -5, 0],
-          }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-          className="absolute -top-2 -right-2"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="app-column relative"
         >
-          <Sparkles className="w-8 h-8 text-food" />
+          <p className="text-xl font-semibold text-primary">
+            {firstName ? `Cześć, ${firstName}!` : 'Cześć!'}
+          </p>
+          <h1 className="mt-1 font-display text-[3.75rem] font-bold uppercase leading-[0.9] text-white">
+            Ustawmy
+            <br />
+            Twój profil
+          </h1>
         </motion.div>
-      </motion.div>
+      </div>
 
-      {/* Welcome Text */}
-      <motion.h1
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, duration: 0.5 }}
-        className="mb-4 text-center font-display text-[3rem] font-bold uppercase leading-none"
-      >
-        Witaj w #leniwakluska!
-      </motion.h1>
-
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5, duration: 0.5 }}
-        className="text-lg text-muted-foreground text-center mb-10 max-w-sm"
-      >
-        Odpowiedz na kilka pytań, aby spersonalizować Twoje doświadczenie treningowe.
-      </motion.p>
-
-      {/* Features */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.7, duration: 0.5 }}
-        className="flex flex-col gap-4 mb-12 w-full max-w-xs"
-      >
-        {features.map((feature, index) => (
-          <motion.div
-            key={feature.text}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.8 + index * 0.1, duration: 0.3 }}
-            className="flex items-center gap-4 bg-secondary/50 rounded-xl p-4"
-          >
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <feature.icon className="w-5 h-5 text-primary" />
-            </div>
-            <span className="text-foreground font-medium">{feature.text}</span>
-          </motion.div>
-        ))}
-      </motion.div>
-
-      {/* CTA Button */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.1, duration: 0.5 }}
-        className="w-full max-w-xs"
-      >
-        <Button
-          onClick={onNext}
-          size="lg"
-          className="w-full h-14 text-lg font-semibold rounded-xl bg-primary"
-        >
-          Rozpocznij
-        </Button>
-        <p className="text-center text-sm text-muted-foreground mt-4">
-          Najtrudniejszy krok masz już za sobą — reszta zajmie 2 minuty
+      <div className="app-column flex flex-1 flex-col px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <p className="text-[15px] leading-relaxed text-muted-foreground">
+          Kilka szybkich pytań i #leniwakluska zacznie pracować pod Ciebie, a nie pod przeciętnego użytkownika.
         </p>
-      </motion.div>
-    </motion.div>
+
+        <ul className="stagger-rise mt-6 space-y-2.5">
+          {benefits.map(({ icon: Icon, title, text, tint }) => (
+            <li key={title} className="flex items-center gap-3.5 rounded-2xl bg-card p-3.5">
+              <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${tint}`}>
+                <Icon className="h-5 w-5" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[15px] font-semibold leading-tight">{title}</span>
+                <span className="block text-xs text-muted-foreground">{text}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="mt-auto pt-8">
+          <p className="mb-3 flex items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <Clock className="h-3.5 w-3.5" aria-hidden />
+            {totalQuestions} krótkich pytań · około minuty
+          </p>
+          <Button onClick={onNext} size="lg" className="h-14 w-full rounded-2xl text-base">
+            Zaczynamy
+          </Button>
+          <button
+            type="button"
+            onClick={onSkip}
+            className="mt-2 h-11 w-full rounded-2xl text-sm font-semibold text-muted-foreground transition-colors active:bg-secondary"
+          >
+            Pomiń na razie
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

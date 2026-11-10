@@ -84,8 +84,8 @@ export default function LoginPage() {
     <>
       <AuthShell
         mode="login"
-        title="Wracaj"
-        accent="częściej."
+        title="Ćwicz"
+        accent="mądrzej."
         subtitle=""
         footer={
           <div className="space-y-3">

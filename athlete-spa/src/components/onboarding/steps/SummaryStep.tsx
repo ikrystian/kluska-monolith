@@ -1,214 +1,77 @@
-'use client';
-
-import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Check, Loader2, Sparkles, User, Calendar, Ruler, Weight, Trophy } from 'lucide-react';
-import { OnboardingState } from '@/hooks/useOnboarding';
-import { useMemo } from 'react';
+import { Pencil } from 'lucide-react';
+import type { OnboardingState } from '@/hooks/useOnboarding';
+import { pluralForm } from '@/lib/plural';
+import { cn } from '@/lib/utils';
+import { ageFromIso } from './BirthDateStep';
 
 interface SummaryStepProps {
   data: OnboardingState;
-  onSubmit: () => void;
-  onPrev: () => void;
   onEdit: (step: number) => void;
-  isSubmitting: boolean;
 }
 
-const genderLabels = {
-  male: 'Mężczyzna',
-  female: 'Kobieta',
-  other: 'Inna',
-};
+const genderLabels = { male: 'Mężczyzna', female: 'Kobieta', other: 'Inna' } as const;
+const levelLabels = { beginner: 'Początkujący', intermediate: 'Średniozaawansowany', advanced: 'Zaawansowany' } as const;
 
-const trainingLevelLabels = {
-  beginner: 'Początkujący',
-  intermediate: 'Średniozaawansowany',
-  advanced: 'Zaawansowany',
-};
+function Tile({
+  label,
+  value,
+  unit,
+  onEdit,
+  className,
+  big,
+}: {
+  label: string;
+  value: string;
+  unit?: string;
+  onEdit: () => void;
+  className?: string;
+  big?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onEdit}
+      aria-label={`${label}: ${value}${unit ? ` ${unit}` : ''}. Zmień`}
+      className={cn('row-tap relative rounded-2xl bg-card p-4 text-left', className)}
+    >
+      <span className="eyebrow block">{label}</span>
+      <span className="mt-1.5 flex items-end gap-1">
+        <span className={cn(big ? 'num text-[2.5rem]' : 'text-[17px] font-semibold leading-tight')}>{value}</span>
+        {unit && <span className="pb-1 text-sm font-semibold text-muted-foreground">{unit}</span>}
+      </span>
+      <Pencil className="absolute right-3.5 top-3.5 h-3.5 w-3.5 text-muted-foreground/70" aria-hidden />
+    </button>
+  );
+}
 
-export function SummaryStep({ data, onSubmit, onPrev, onEdit, isSubmitting }: SummaryStepProps) {
-  const age = useMemo(() => {
-    if (!data.dateOfBirth) return null;
-    const birthDate = new Date(data.dateOfBirth);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  }, [data.dateOfBirth]);
-
-  const summaryItems = [
-    {
-      icon: User,
-      label: 'Imię',
-      value: data.name,
-      editStep: 1,
-      color: 'bg-run',
-    },
-    {
-      icon: User,
-      label: 'Płeć',
-      value: data.gender ? genderLabels[data.gender] : '-',
-      editStep: 2,
-      color: 'bg-social',
-    },
-    {
-      icon: Calendar,
-      label: 'Wiek',
-      value: age ? `${age} lat` : '-',
-      editStep: 3,
-      color: 'bg-primary',
-    },
-    {
-      icon: Ruler,
-      label: 'Wzrost',
-      value: data.height ? `${data.height} cm` : '-',
-      editStep: 4,
-      color: 'bg-volt',
-    },
-    {
-      icon: Weight,
-      label: 'Waga',
-      value: data.weight ? `${data.weight} kg` : '-',
-      editStep: 5,
-      color: 'bg-food',
-    },
-    {
-      icon: Trophy,
-      label: 'Poziom',
-      value: data.trainingLevel ? trainingLevelLabels[data.trainingLevel] : '-',
-      editStep: 6,
-      color: 'bg-social',
-    },
-  ];
+export function SummaryStep({ data, onEdit }: SummaryStepProps) {
+  const age = ageFromIso(data.dateOfBirth);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 50 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -50 }}
-      transition={{ duration: 0.4 }}
-      className="flex flex-col items-center px-6 py-8"
-    >
-      {/* Success Icon */}
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-        className="relative mb-6"
-      >
-        <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center">
-          <Check className="w-10 h-10 text-primary-foreground" />
-        </div>
-        <motion.div
-          animate={{
-            scale: [1, 1.1, 1],
-            rotate: [0, 8, -8, 0],
-          }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-          className="absolute -top-2 -right-2"
-        >
-          <Sparkles className="w-8 h-8 text-food" />
-        </motion.div>
-      </motion.div>
-
-      {/* Title */}
-      <motion.h2
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="text-2xl font-bold text-center mb-3"
-      >
-        Wszystko gotowe!
-      </motion.h2>
-
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="text-muted-foreground text-center mb-8"
-      >
-        Sprawdź swoje dane przed rozpoczęciem
-      </motion.p>
-
-      {/* Summary Cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="w-full max-w-sm space-y-3 mb-8"
-      >
-        {summaryItems.map((item, index) => {
-          const Icon = item.icon;
-          return (
-            <motion.div
-              key={item.label}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6 + index * 0.05 }}
-              className="flex items-center gap-4 p-3 rounded-xl bg-secondary/50 hover:bg-secondary/70 transition-colors group"
-            >
-              <div
-                className={`w-10 h-10 rounded-full ${item.color} flex items-center justify-center shrink-0`}
-              >
-                <Icon className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-muted-foreground">{item.label}</p>
-                <p className="font-semibold truncate">{item.value}</p>
-              </div>
-              <button
-                onClick={() => onEdit(item.editStep)}
-                className="text-sm text-primary opacity-0 group-hover:opacity-100 transition-opacity hover:underline"
-              >
-                Edytuj
-              </button>
-            </motion.div>
-          );
-        })}
-      </motion.div>
-
-      {/* Navigation */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.9 }}
-        className="flex flex-col gap-3 w-full max-w-sm"
-      >
-        <Button
-          onClick={onSubmit}
-          disabled={isSubmitting}
-          size="lg"
-          className="w-full h-14 text-lg font-semibold rounded-xl bg-primary"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Zapisywanie...
-            </>
-          ) : (
-            <>
-              Rozpocznij trening
-              <Sparkles className="w-5 h-5 ml-2" />
-            </>
-          )}
-        </Button>
-        <Button
-          variant="outline"
-          onClick={onPrev}
-          disabled={isSubmitting}
-          className="w-full h-12 rounded-xl"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Wróć do edycji
-        </Button>
-      </motion.div>
-    </motion.div>
+    <div className="stagger-rise grid grid-cols-2 gap-2.5">
+      <Tile label="Imię" value={data.name || '–'} onEdit={() => onEdit(1)} className="col-span-2" />
+      <Tile label="Płeć" value={data.gender ? genderLabels[data.gender] : '–'} onEdit={() => onEdit(2)} />
+      <Tile
+        label="Wiek"
+        value={age !== null ? String(age) : '–'}
+        unit={age !== null ? pluralForm(age, 'rok', 'lata', 'lat') : undefined}
+        onEdit={() => onEdit(3)}
+        big
+      />
+      <Tile label="Wzrost" value={data.height ? String(data.height) : '–'} unit="cm" onEdit={() => onEdit(4)} big />
+      <Tile
+        label="Waga"
+        value={data.weight ? data.weight.toLocaleString('pl-PL', { maximumFractionDigits: 1 }) : '–'}
+        unit="kg"
+        onEdit={() => onEdit(5)}
+        big
+      />
+      <Tile
+        label="Poziom"
+        value={data.trainingLevel ? levelLabels[data.trainingLevel] : '–'}
+        onEdit={() => onEdit(6)}
+        className="col-span-2"
+      />
+    </div>
   );
 }

@@ -1,221 +1,148 @@
-'use client';
-
-import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, Calendar, Cake } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
+import { pluralForm } from '@/lib/plural';
+import { cn } from '@/lib/utils';
 
 interface BirthDateStepProps {
   value: string;
   onChange: (value: string) => void;
-  onNext: () => void;
-  onPrev: () => void;
-  canProceed: boolean;
 }
 
-export function BirthDateStep({ value, onChange, onNext, onPrev, canProceed }: BirthDateStepProps) {
-  const [day, setDay] = useState(value ? new Date(value).getDate().toString() : '');
-  const [month, setMonth] = useState(value ? (new Date(value).getMonth() + 1).toString() : '');
-  const [year, setYear] = useState(value ? new Date(value).getFullYear().toString() : '');
+const MONTHS = [
+  'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
+  'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień',
+];
 
-  const age = useMemo(() => {
-    if (!value) return null;
-    const birthDate = new Date(value);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  }, [value]);
+const pad = (n: number) => String(n).padStart(2, '0');
 
-  const updateDate = (newDay: string, newMonth: string, newYear: string) => {
-    setDay(newDay);
-    setMonth(newMonth);
-    setYear(newYear);
+/** "YYYY-MM-DD" → parts, read as a calendar date (no timezone shift). */
+function splitIso(value: string) {
+  const [y, m, d] = value.split('-');
+  return { year: y ? String(Number(y)) : '', month: m ? String(Number(m)) : '', day: d ? String(Number(d)) : '' };
+}
 
-    // Only update if all fields are valid
-    const d = parseInt(newDay);
-    const m = parseInt(newMonth);
-    const y = parseInt(newYear);
+export function ageFromIso(value: string): number | null {
+  if (!value) return null;
+  const [y, m, d] = value.split('-').map(Number);
+  const today = new Date();
+  let age = today.getFullYear() - y;
+  if (today.getMonth() + 1 < m || (today.getMonth() + 1 === m && today.getDate() < d)) age--;
+  return age;
+}
 
-    if (d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 1920 && y <= new Date().getFullYear()) {
-      const date = new Date(y, m - 1, d);
-      // Validate the date is valid (e.g., not Feb 30)
-      if (date.getDate() === d && date.getMonth() === m - 1 && date.getFullYear() === y) {
-        onChange(date.toISOString().split('T')[0]);
-      }
-    }
+function DateSelect({
+  label,
+  value,
+  onChange,
+  options,
+  className,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  className?: string;
+}) {
+  return (
+    <label className={cn('block', className)}>
+      <span className="eyebrow mb-1.5 block pl-1">{label}</span>
+      <span className="relative block">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={cn(
+            'h-14 w-full appearance-none rounded-2xl bg-card pl-4 pr-8 text-lg font-semibold ring-1 ring-border transition-shadow focus:ring-2 focus:ring-primary',
+            !value && 'text-muted-foreground',
+          )}
+        >
+          <option value="">–</option>
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      </span>
+    </label>
+  );
+}
+
+export function BirthDateStep({ value, onChange }: BirthDateStepProps) {
+  const initial = splitIso(value);
+  const [day, setDay] = useState(initial.day);
+  const [month, setMonth] = useState(initial.month);
+  const [year, setYear] = useState(initial.year);
+
+  const age = useMemo(() => ageFromIso(value), [value]);
+  const currentYear = new Date().getFullYear();
+
+  const update = (d: string, m: string, y: string) => {
+    setDay(d);
+    setMonth(m);
+    setYear(y);
+    const dn = Number(d);
+    const mn = Number(m);
+    const yn = Number(y);
+    const date = new Date(yn, mn - 1, dn);
+    const valid = dn && mn && yn && date.getDate() === dn && date.getMonth() === mn - 1;
+    // Build the string by hand — toISOString() would shift to the previous day east of UTC.
+    onChange(valid ? `${yn}-${pad(mn)}-${pad(dn)}` : '');
   };
 
-  const months = [
-    { value: '1', label: 'Styczeń' },
-    { value: '2', label: 'Luty' },
-    { value: '3', label: 'Marzec' },
-    { value: '4', label: 'Kwiecień' },
-    { value: '5', label: 'Maj' },
-    { value: '6', label: 'Czerwiec' },
-    { value: '7', label: 'Lipiec' },
-    { value: '8', label: 'Sierpień' },
-    { value: '9', label: 'Wrzesień' },
-    { value: '10', label: 'Październik' },
-    { value: '11', label: 'Listopad' },
-    { value: '12', label: 'Grudzień' },
-  ];
-
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 100 }, (_, i) => currentYear - 13 - i);
+  const outOfRange = age !== null && (age < 13 || age > 100);
+  const impossibleDate = Boolean(day && month && year && !value);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 50 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -50 }}
-      transition={{ duration: 0.4 }}
-      className="flex flex-col items-center px-6 py-8"
-    >
-      {/* Icon */}
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-        className="relative mb-8"
-      >
-        <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center">
-          <Calendar className="w-10 h-10 text-primary-foreground" />
-        </div>
-        <motion.div
-          animate={{ y: [0, -5, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="absolute -top-2 -right-2"
-        >
-          <Cake className="w-8 h-8 text-social" />
-        </motion.div>
-      </motion.div>
+    <div>
+      <div className="flex gap-2.5">
+        <DateSelect
+          label="Dzień"
+          value={day}
+          onChange={(v) => update(v, month, year)}
+          options={Array.from({ length: 31 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))}
+          className="w-[5.5rem] shrink-0"
+        />
+        <DateSelect
+          label="Miesiąc"
+          value={month}
+          onChange={(v) => update(day, v, year)}
+          options={MONTHS.map((label, i) => ({ value: String(i + 1), label }))}
+          className="min-w-0 flex-1"
+        />
+        <DateSelect
+          label="Rok"
+          value={year}
+          onChange={(v) => update(day, month, v)}
+          options={Array.from({ length: 88 }, (_, i) => {
+            const y = String(currentYear - 13 - i);
+            return { value: y, label: y };
+          })}
+          className="w-[6.5rem] shrink-0"
+        />
+      </div>
 
-      {/* Title */}
-      <motion.h2
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="text-2xl font-bold text-center mb-3"
-      >
-        Kiedy się urodziłeś?
-      </motion.h2>
-
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="text-muted-foreground text-center mb-8"
-      >
-        Twój wiek pomoże nam dostosować intensywność treningów
-      </motion.p>
-
-      {/* Date Input */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="w-full max-w-sm space-y-4 mb-6"
-      >
-        <div className="flex gap-3">
-          {/* Day */}
-          <div className="flex-1">
-            <label className="block text-sm text-muted-foreground mb-1 text-center">Dzień</label>
-            <select
-              value={day}
-              onChange={(e) => updateDate(e.target.value, month, year)}
-              className="w-full h-12 rounded-xl border-2 bg-background text-center text-lg focus:border-primary transition-colors"
-            >
-              <option value="">--</option>
-              {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                <option key={d} value={d.toString()}>
-                  {d}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Month */}
-          <div className="flex-[2]">
-            <label className="block text-sm text-muted-foreground mb-1 text-center">Miesiąc</label>
-            <select
-              value={month}
-              onChange={(e) => updateDate(day, e.target.value, year)}
-              className="w-full h-12 rounded-xl border-2 bg-background text-center text-lg focus:border-primary transition-colors"
-            >
-              <option value="">--</option>
-              {months.map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Year */}
-          <div className="flex-1">
-            <label className="block text-sm text-muted-foreground mb-1 text-center">Rok</label>
-            <select
-              value={year}
-              onChange={(e) => updateDate(day, month, e.target.value)}
-              className="w-full h-12 rounded-xl border-2 bg-background text-center text-lg focus:border-primary transition-colors"
-            >
-              <option value="">--</option>
-              {years.map((y) => (
-                <option key={y} value={y.toString()}>
-                  {y}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Age Display */}
-        {age !== null && (
+      <AnimatePresence mode="wait">
+        {age !== null && !outOfRange ? (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-secondary/50 rounded-xl p-4 text-center"
+            key="age"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="mt-6 flex items-end justify-center gap-2 rounded-2xl bg-card py-6"
           >
-            <p className="text-muted-foreground">Twój wiek:</p>
-            <p className="text-3xl font-bold text-primary">{age} lat</p>
+            <span className="num text-[4.5rem] text-primary">{age}</span>
+            <span className="pb-2.5 text-lg font-semibold text-muted-foreground">{pluralForm(age, 'rok', 'lata', 'lat')}</span>
           </motion.div>
+        ) : (
+          (outOfRange || impossibleDate) && (
+            <motion.p key="err" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4 text-sm font-medium text-destructive">
+              {impossibleDate ? 'Taka data nie istnieje — sprawdź dzień.' : 'Wiek musi być między 13 a 100 lat.'}
+            </motion.p>
+          )
         )}
-
-        {age !== null && (age < 13 || age > 100) && (
-          <p className="text-sm text-destructive text-center">
-            Wiek musi być między 13 a 100 lat
-          </p>
-        )}
-      </motion.div>
-
-      {/* Navigation */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7 }}
-        className="flex gap-4 w-full max-w-sm"
-      >
-        <Button
-          variant="outline"
-          onClick={onPrev}
-          className="flex-1 h-12 rounded-xl"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Wstecz
-        </Button>
-        <Button
-          onClick={onNext}
-          disabled={!canProceed}
-          className="flex-1 h-12 rounded-xl bg-primary"
-        >
-          Dalej
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
-      </motion.div>
-    </motion.div>
+      </AnimatePresence>
+    </div>
   );
 }

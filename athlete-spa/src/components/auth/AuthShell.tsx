@@ -23,7 +23,7 @@ function Brand({ title, accent }: { title: string; accent: string }) {
   return (
     <div className="flex items-end gap-3">
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-primary">#leniwakluska</p>
+        <p className="text-xl font-semibold text-primary">#leniwakluska</p>
         <h2 className="mt-0.5 font-display text-[3.5rem] font-bold uppercase leading-[0.92] text-white">
           {title}
           <br />
@@ -32,7 +32,7 @@ function Brand({ title, accent }: { title: string; accent: string }) {
       </div>
       {/* Same dark tile as the launcher icon (assets/logo.png), so the mark
           reads as the app's icon rather than a loose illustration. */}
-      <span className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl bg-[#191814] p-1 ring-1 ring-white/15">
+      <span className="grid h-36 w-36 shrink-0 place-items-center rounded-2xl bg-[#191814] p-1 ring-1 ring-white/15">
         <img src={logoMark} alt="" className="h-full w-full object-contain" decoding="async" />
       </span>
     </div>

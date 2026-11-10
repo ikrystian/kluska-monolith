@@ -31,6 +31,12 @@ const GUEST_MODE_KEY = 'athlete-spa:guest-mode';
  */
 export const ONBOARDING_PENDING_KEY = 'athlete-spa:onboarding-pending';
 
+/**
+ * Set when the athlete skips the onboarding wizard. The dashboard then shows a
+ * reminder card that reopens the wizard. Cleared on completion and on logout.
+ */
+export const ONBOARDING_SKIPPED_KEY = 'athlete-spa:onboarding-skipped';
+
 export interface AuthUser {
   uid: string;
   email: string;
@@ -226,6 +232,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearStoredToken();
       localStorage.removeItem(GUEST_MODE_KEY);
       localStorage.removeItem(ONBOARDING_PENDING_KEY);
+      localStorage.removeItem(ONBOARDING_SKIPPED_KEY);
     }
 
     // The persisted SWR snapshot holds the previous account's data; without

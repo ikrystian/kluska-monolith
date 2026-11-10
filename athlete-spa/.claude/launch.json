@@ -6,6 +6,18 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "autoPort": true
+    },
+    {
+      "name": "mock-api",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["/tmp/claude-1000/-home-krystian--claude-spares-spare-GHdMjs/8baeb73b-3aaf-4e86-80c0-cf1fc6f1e5ce/scratchpad/mock-api.mjs"],
+      "port": 4010
+    },
+    {
+      "name": "athlete-spa-mock",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "--mode", "mock", "--port", "5174", "--strictPort"],
+      "port": 5174
     }
   ]
 }

@@ -9,7 +9,7 @@ import { ActiveWorkoutProvider } from '@/contexts/ActiveWorkoutContext';
 import { ActiveWorkoutWidget } from '@/components/workout/ActiveWorkoutWidget';
 import { NativeWidgetBridge } from '@/components/native-widget-bridge';
 import { UserProfileProvider, useUserProfile } from '@/contexts/UserProfileContext';
-import { useAuth, ONBOARDING_PENDING_KEY } from '@/contexts/AuthContext';
+import { useAuth, ONBOARDING_PENDING_KEY, ONBOARDING_SKIPPED_KEY } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { AnimatedOutlet } from '@/components/motion';
 import { useAndroidBackButton } from '@/hooks/useAndroidBackButton';
@@ -87,6 +87,7 @@ function AthleteLayoutContent() {
         if (userProfile.onboardingCompleted) {
           // Profile is set up — drop any leftover "pending" marker.
           localStorage.removeItem(ONBOARDING_PENDING_KEY);
+          localStorage.removeItem(ONBOARDING_SKIPPED_KEY);
         } else if (
           localStorage.getItem(ONBOARDING_PENDING_KEY) === '1' &&
           !isOnboardingPage

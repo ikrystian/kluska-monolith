@@ -1,214 +1,69 @@
-'use client';
-
-import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
-import { Input } from '@/components/ui/input';
-import { ArrowLeft, ArrowRight, Weight } from 'lucide-react';
 import { useMemo } from 'react';
+import { motion } from 'framer-motion';
+import { NumberDial } from '../NumberDial';
+import { cn } from '@/lib/utils';
 
 interface WeightStepProps {
   value: number | null;
   height: number | null;
   onChange: (value: number) => void;
-  onNext: () => void;
-  onPrev: () => void;
-  canProceed: boolean;
 }
 
-export function WeightStep({ value, height, onChange, onNext, onPrev, canProceed }: WeightStepProps) {
-  const weight = value ?? 70;
+const BMI_MIN = 15;
+const BMI_MAX = 40;
+const BANDS = [
+  { upTo: 18.5, label: 'Niedowaga', bar: 'bg-run', text: 'text-run' },
+  { upTo: 25, label: 'Waga prawidłowa', bar: 'bg-volt', text: 'text-volt' },
+  { upTo: 30, label: 'Nadwaga', bar: 'bg-food', text: 'text-food' },
+  { upTo: BMI_MAX, label: 'Otyłość', bar: 'bg-destructive', text: 'text-destructive' },
+];
 
-  // Calculate BMI
+export function WeightStep({ value, height, onChange }: WeightStepProps) {
+  const weight = value ?? 75;
+
   const bmi = useMemo(() => {
-    if (!height || !value) return null;
-    const heightInMeters = height / 100;
-    return value / (heightInMeters * heightInMeters);
-  }, [height, value]);
+    if (!height) return null;
+    const m = height / 100;
+    return weight / (m * m);
+  }, [height, weight]);
 
-  const getBmiCategory = (bmi: number): { label: string; color: string } => {
-    if (bmi < 18.5) return { label: 'Niedowaga', color: 'text-run' };
-    if (bmi < 25) return { label: 'Waga prawidłowa', color: 'text-volt' };
-    if (bmi < 30) return { label: 'Nadwaga', color: 'text-food' };
-    return { label: 'Otyłość', color: 'text-destructive' };
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value);
-    if (!isNaN(val) && val >= 30 && val <= 300) {
-      onChange(val);
-    }
-  };
+  const band = bmi !== null ? BANDS.find((b) => bmi < b.upTo) ?? BANDS[BANDS.length - 1] : null;
+  const markerPct = bmi !== null ? ((Math.min(Math.max(bmi, BMI_MIN), BMI_MAX) - BMI_MIN) / (BMI_MAX - BMI_MIN)) * 100 : 0;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 50 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -50 }}
-      transition={{ duration: 0.4 }}
-      className="flex flex-col items-center px-6 py-8"
-    >
-      {/* Icon */}
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-        className="mb-6"
-      >
-        <div className="w-20 h-20 rounded-full bg-food flex items-center justify-center">
-          <Weight className="w-10 h-10 text-primary-foreground" />
-        </div>
-      </motion.div>
+    <div className="space-y-3">
+      <NumberDial value={weight} onChange={onChange} min={30} max={200} step={0.5} decimals={1} unit="kg" label="wagę" />
 
-      {/* Title */}
-      <motion.h2
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="text-2xl font-bold text-center mb-3"
-      >
-        Ile ważysz?
-      </motion.h2>
-
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="text-muted-foreground text-center mb-8"
-      >
-        Ustawiliśmy typową wartość — dostosuj ją do swojej aktualnej wagi
-      </motion.p>
-
-      {/* Weight Display */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.5 }}
-        className="mb-6 text-center"
-      >
-        <div className="flex items-center justify-center gap-2">
-          <Input
-            type="number"
-            value={weight}
-            onChange={handleInputChange}
-            min={30}
-            max={300}
-            step={0.1}
-            className="w-32 h-16 text-4xl font-bold text-center border-2 rounded-xl"
-          />
-          <span className="text-xl text-muted-foreground">kg</span>
-        </div>
-      </motion.div>
-
-      {/* Weight Slider */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.6 }}
-        className="w-full max-w-sm mb-6"
-      >
-        {/* Circular progress ring */}
-        <div className="flex justify-center mb-6">
-          <div className="relative w-32 h-32">
-            <svg className="w-32 h-32 -rotate-90" viewBox="0 0 120 120">
-              {/* Background circle */}
-              <circle
-                cx="60"
-                cy="60"
-                r="50"
-                fill="none"
-                strokeWidth="10"
-                className="stroke-secondary"
-              />
-              {/* Progress circle */}
-              <motion.circle
-                cx="60"
-                cy="60"
-                r="50"
-                fill="none"
-                strokeWidth="10"
-                className="stroke-food"
-                strokeLinecap="round"
-                initial={{ pathLength: 0 }}
-                animate={{ pathLength: Math.min((weight - 30) / 170, 1) }}
-                transition={{ type: 'spring', stiffness: 60, damping: 15 }}
-                style={{
-                  strokeDasharray: '314.159',
-                  strokeDashoffset: 0,
-                }}
-              />
-            </svg>
-            {/* Center content */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <motion.div
-                className="text-3xl font-bold text-food"
-                key={weight}
-                initial={{ scale: 1.1 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 0.2 }}
-              >
-                {Math.round(weight)}
-              </motion.div>
-              <span className="text-xs text-muted-foreground">kg</span>
-            </div>
+      {bmi !== null && band && (
+        <div className="rounded-2xl bg-card p-4">
+          <div className="flex items-baseline justify-between">
+            <span className="eyebrow">BMI</span>
+            <span className={cn('text-sm font-semibold', band.text)}>{band.label}</span>
           </div>
+          <p className="num mt-1 text-[2rem]">{bmi.toLocaleString('pl-PL', { maximumFractionDigits: 1, minimumFractionDigits: 1 })}</p>
+          <div className="relative mt-3">
+            <div className="flex h-2 gap-1">
+              {BANDS.map((b, i) => {
+                const from = i === 0 ? BMI_MIN : BANDS[i - 1].upTo;
+                return (
+                  <span
+                    key={b.label}
+                    className={cn('h-full rounded-full', b.bar, b === band ? 'opacity-100' : 'opacity-30')}
+                    style={{ flexGrow: b.upTo - from }}
+                  />
+                );
+              })}
+            </div>
+            <motion.span
+              className="absolute -top-1 h-4 w-4 -translate-x-1/2 rounded-full border-[3px] border-card bg-foreground"
+              initial={false}
+              animate={{ left: `${markerPct}%` }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            />
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">To tylko orientacyjny wskaźnik — nie uwzględnia masy mięśniowej.</p>
         </div>
-
-        <Slider
-          value={[weight]}
-          onValueChange={([v]) => onChange(v)}
-          min={30}
-          max={200}
-          step={0.5}
-          className="w-full"
-        />
-        <div className="flex justify-between text-xs text-muted-foreground mt-2">
-          <span>30 kg</span>
-          <span>115 kg</span>
-          <span>200 kg</span>
-        </div>
-      </motion.div>
-
-      {/* BMI Indicator */}
-      {bmi && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-          className="bg-secondary/50 rounded-xl p-4 text-center mb-6 w-full max-w-sm"
-        >
-          <p className="text-muted-foreground text-sm">Twoje BMI:</p>
-          <p className="text-2xl font-bold">{bmi.toFixed(1)}</p>
-          <p className={`text-sm font-medium ${getBmiCategory(bmi).color}`}>
-            {getBmiCategory(bmi).label}
-          </p>
-        </motion.div>
       )}
-
-      {/* Navigation */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.9 }}
-        className="flex gap-4 w-full max-w-sm"
-      >
-        <Button
-          variant="outline"
-          onClick={onPrev}
-          className="flex-1 h-12 rounded-xl"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Wstecz
-        </Button>
-        <Button
-          onClick={onNext}
-          disabled={!canProceed}
-          className="flex-1 h-12 rounded-xl bg-primary"
-        >
-          Dalej
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
-      </motion.div>
-    </motion.div>
+    </div>
   );
 }

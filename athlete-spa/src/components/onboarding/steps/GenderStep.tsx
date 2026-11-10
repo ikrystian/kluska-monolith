@@ -1,20 +1,13 @@
-'use client';
-
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, CircleDashed } from 'lucide-react';
-import { Gender } from '@/models/types/user';
+import { Check, CircleDashed } from 'lucide-react';
+import type { Gender } from '@/models/types/user';
 import { cn } from '@/lib/utils';
 
 interface GenderStepProps {
   value: Gender | null;
   onChange: (value: Gender) => void;
-  onNext: () => void;
-  onPrev: () => void;
-  canProceed: boolean;
 }
 
-// Custom Mars icon (♂)
 const MarsIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <circle cx="10" cy="14" r="5" />
@@ -24,7 +17,6 @@ const MarsIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-// Custom Venus icon (♀)
 const VenusIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <circle cx="12" cy="9" r="5" />
@@ -33,152 +25,52 @@ const VenusIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const genderOptions: { value: Gender; label: string; icon: React.FC<{ className?: string }>; color: string }[] = [
-  { value: 'male', label: 'Mężczyzna', icon: MarsIcon, color: 'bg-run' },
-  { value: 'female', label: 'Kobieta', icon: VenusIcon, color: 'bg-social' },
-  { value: 'other', label: 'Inna', icon: CircleDashed, color: 'bg-social' },
+const options: { value: Gender; label: string; icon: React.FC<{ className?: string }> }[] = [
+  { value: 'female', label: 'Kobieta', icon: VenusIcon },
+  { value: 'male', label: 'Mężczyzna', icon: MarsIcon },
+  { value: 'other', label: 'Inna', icon: CircleDashed },
 ];
 
-export function GenderStep({ value, onChange, onNext, onPrev, canProceed }: GenderStepProps) {
+export function GenderStep({ value, onChange }: GenderStepProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 50 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -50 }}
-      transition={{ duration: 0.4 }}
-      className="flex flex-col items-center px-6 py-8"
-    >
-      {/* Animated silhouettes */}
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-        className="flex gap-4 mb-8"
-      >
-        {genderOptions.map((option, index) => (
-          <motion.div
+    <div role="radiogroup" aria-label="Płeć" className="grid grid-cols-2 gap-3">
+      {options.map((option) => {
+        const selected = value === option.value;
+        const Icon = option.icon;
+        return (
+          <button
             key={option.value}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 + index * 0.1 }}
-            className={cn(
-              'w-16 h-16 rounded-full flex items-center justify-center',
-              value === option.value
-                ? `${option.color}`
-                : 'bg-secondary'
-            )}
-          >
-            <option.icon className={cn(
-              'w-8 h-8',
-              value === option.value ? 'text-primary-foreground' : 'text-muted-foreground'
-            )} />
-          </motion.div>
-        ))}
-      </motion.div>
-
-      {/* Title */}
-      <motion.h2
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="text-2xl font-bold text-center mb-3"
-      >
-        Wybierz swoją płeć
-      </motion.h2>
-
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="text-muted-foreground text-center mb-8"
-      >
-        Pomoże nam to lepiej dostosować treningi
-      </motion.p>
-
-      {/* Gender Cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="w-full max-w-sm space-y-4 mb-8"
-      >
-        {genderOptions.map((option, index) => (
-          <motion.button
-            key={option.value}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.6 + index * 0.1 }}
+            type="button"
+            role="radio"
+            aria-checked={selected}
             onClick={() => onChange(option.value)}
             className={cn(
-              'w-full p-4 rounded-xl border-2 flex items-center gap-4 transition-all duration-300',
-              value === option.value
-                ? `border-primary bg-primary/10`
-                : 'border-secondary hover:border-primary/50 hover:bg-secondary/50'
+              'relative flex flex-col items-start justify-between gap-6 rounded-2xl bg-card p-4 text-left transition-[box-shadow,background-color,transform] duration-200 active:scale-[0.98]',
+              option.value === 'other' && 'col-span-2 flex-row items-center justify-start gap-3',
+              selected ? 'bg-primary/10 ring-2 ring-primary' : 'ring-1 ring-border',
             )}
           >
-            <div
+            <span
               className={cn(
-                'w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300',
-                value === option.value
-                  ? `${option.color}`
-                  : 'bg-secondary'
+                'grid h-12 w-12 place-items-center rounded-xl transition-colors',
+                selected ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground',
               )}
             >
-              <option.icon className={cn(
-                'w-7 h-7',
-                value === option.value ? 'text-primary-foreground' : 'text-muted-foreground'
-              )} />
-            </div>
-            <span className="text-lg font-medium">{option.label}</span>
-            {value === option.value && (
-              <motion.div
+              <Icon className="h-6 w-6" />
+            </span>
+            <span className="text-lg font-semibold">{option.label}</span>
+            {selected && (
+              <motion.span
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="ml-auto w-6 h-6 rounded-full bg-primary flex items-center justify-center"
+                className="absolute right-3 top-3 grid h-6 w-6 place-items-center rounded-full bg-primary text-primary-foreground"
               >
-                <svg
-                  className="w-4 h-4 text-primary-foreground"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </motion.div>
+                <Check className="h-3.5 w-3.5" strokeWidth={3} />
+              </motion.span>
             )}
-          </motion.button>
-        ))}
-      </motion.div>
-
-      {/* Navigation */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.9 }}
-        className="flex gap-4 w-full max-w-sm"
-      >
-        <Button
-          variant="outline"
-          onClick={onPrev}
-          className="flex-1 h-12 rounded-xl"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Wstecz
-        </Button>
-        <Button
-          onClick={onNext}
-          disabled={!canProceed}
-          className="flex-1 h-12 rounded-xl bg-primary"
-        >
-          Dalej
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
-      </motion.div>
-    </motion.div>
+          </button>
+        );
+      })}
+    </div>
   );
 }

@@ -1,221 +1,76 @@
-'use client';
-
-import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, Sprout, Dumbbell, Trophy } from 'lucide-react';
-import { TrainingLevelType } from '@/models/types/user';
+import type { TrainingLevelType } from '@/models/types/user';
 import { cn } from '@/lib/utils';
 
 interface TrainingLevelStepProps {
   value: TrainingLevelType | null;
   onChange: (value: TrainingLevelType) => void;
-  onNext: () => void;
-  onPrev: () => void;
-  canProceed: boolean;
 }
 
-const levelOptions: {
-  value: TrainingLevelType;
-  label: string;
-  description: string;
-  icon: React.ElementType;
-  color: string;
-  bgColor: string;
-}[] = [
-  {
-    value: 'beginner',
-    label: 'Początkujący',
-    description: 'Dopiero zaczynam swoją przygodę z siłownią lub ćwiczę od niedawna',
-    icon: Sprout,
-    color: 'bg-volt',
-    bgColor: 'bg-volt/10',
-  },
-  {
-    value: 'intermediate',
-    label: 'Średniozaawansowany',
-    description: 'Regularnie ćwiczę od kilku miesięcy, znam podstawowe techniki',
-    icon: Dumbbell,
-    color: 'bg-run',
-    bgColor: 'bg-run/10',
-  },
-  {
-    value: 'advanced',
-    label: 'Zaawansowany',
-    description: 'Trenuję od lat, mam doświadczenie w różnych metodach treningowych',
-    icon: Trophy,
-    color: 'bg-food',
-    bgColor: 'bg-food/10',
-  },
+const levels: { value: TrainingLevelType; label: string; description: string; bars: number }[] = [
+  { value: 'beginner', label: 'Początkujący', description: 'Zaczynam albo ćwiczę od niedawna', bars: 1 },
+  { value: 'intermediate', label: 'Średniozaawansowany', description: 'Trenuję regularnie od kilku miesięcy, znam technikę', bars: 2 },
+  { value: 'advanced', label: 'Zaawansowany', description: 'Trenuję od lat, znam różne metody i periodyzację', bars: 3 },
 ];
 
-export function TrainingLevelStep({
-  value,
-  onChange,
-  onNext,
-  onPrev,
-  canProceed,
-}: TrainingLevelStepProps) {
+/** Three rising bars — reads as "level" at a glance, like a signal meter. */
+function LevelBars({ count, active }: { count: number; active: boolean }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 50 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -50 }}
-      transition={{ duration: 0.4 }}
-      className="flex flex-col items-center px-6 py-8"
-    >
-      {/* Animated icons */}
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-        className="flex gap-2 mb-8"
-      >
-        {levelOptions.map((option, index) => {
-          const Icon = option.icon;
-          return (
-            <motion.div
-              key={option.value}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 + index * 0.1 }}
-              className={cn(
-                'w-14 h-14 rounded-full flex items-center justify-center',
-                value === option.value
-                  ? `${option.color}`
-                  : 'bg-secondary'
-              )}
-            >
-              <Icon
-                className={cn(
-                  'w-7 h-7',
-                  value === option.value ? 'text-primary-foreground' : 'text-muted-foreground'
+    <span className="flex h-8 items-end gap-1" aria-hidden>
+      {[1, 2, 3].map((n) => (
+        <span
+          key={n}
+          className={cn(
+            'w-2 rounded-sm transition-colors',
+            n <= count ? (active ? 'bg-primary' : 'bg-foreground/70') : 'bg-secondary',
+          )}
+          style={{ height: `${n * 33}%` }}
+        />
+      ))}
+    </span>
+  );
+}
+
+export function TrainingLevelStep({ value, onChange }: TrainingLevelStepProps) {
+  return (
+    <div role="radiogroup" aria-label="Poziom zaawansowania" className="space-y-3">
+      {levels.map((level) => {
+        const selected = value === level.value;
+        return (
+          <button
+            key={level.value}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            onClick={() => onChange(level.value)}
+            className={cn(
+              'flex w-full items-center gap-4 rounded-2xl bg-card p-4 text-left transition-[box-shadow,background-color,transform] duration-200 active:scale-[0.98]',
+              selected ? 'bg-primary/10 ring-2 ring-primary' : 'ring-1 ring-border',
+            )}
+          >
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-secondary/70">
+              <LevelBars count={level.bars} active={selected} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="text-[17px] font-semibold leading-tight">{level.label}</span>
+                {level.value === 'beginner' && (
+                  <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-semibold text-primary">Najczęstszy</span>
                 )}
-              />
-            </motion.div>
-          );
-        })}
-      </motion.div>
-
-      {/* Title */}
-      <motion.h2
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="text-2xl font-bold text-center mb-3"
-      >
-        Jaki jest Twój poziom?
-      </motion.h2>
-
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="text-muted-foreground text-center mb-8"
-      >
-        Dopasujemy treningi do Twojego doświadczenia
-      </motion.p>
-
-      {/* Level Cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="w-full max-w-sm space-y-4 mb-8"
-      >
-        {levelOptions.map((option, index) => {
-          const Icon = option.icon;
-          const isSelected = value === option.value;
-
-          return (
-            <motion.button
-              key={option.value}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6 + index * 0.1 }}
-              onClick={() => onChange(option.value)}
+              </span>
+              <span className="mt-0.5 block text-sm leading-snug text-muted-foreground">{level.description}</span>
+            </span>
+            <span
               className={cn(
-                'w-full p-4 rounded-xl border-2 flex items-start gap-4 transition-all duration-300 text-left',
-                isSelected
-                  ? `border-primary ${option.bgColor}`
-                  : 'border-secondary hover:border-primary/50 hover:bg-secondary/50'
+                'grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 transition-colors',
+                selected ? 'border-primary bg-primary' : 'border-input',
               )}
+              aria-hidden
             >
-              <div
-                className={cn(
-                  'w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-all duration-300',
-                  isSelected
-                    ? `${option.color}`
-                    : 'bg-secondary'
-                )}
-              >
-                <Icon
-                  className={cn(
-                    'w-6 h-6',
-                    isSelected ? 'text-primary-foreground' : 'text-muted-foreground'
-                  )}
-                />
-              </div>
-              <div className="flex-1">
-                <span className="text-lg font-semibold block">
-                  {option.label}
-                  {option.value === 'beginner' && (
-                    <span className="ml-2 align-middle rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                      Najczęstszy wybór
-                    </span>
-                  )}
-                </span>
-                <span className="text-sm text-muted-foreground">{option.description}</span>
-              </div>
-              {isSelected && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shrink-0 mt-1"
-                >
-                  <svg
-                    className="w-4 h-4 text-primary-foreground"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                </motion.div>
-              )}
-            </motion.button>
-          );
-        })}
-      </motion.div>
-
-      {/* Navigation */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.9 }}
-        className="flex gap-4 w-full max-w-sm"
-      >
-        <Button
-          variant="outline"
-          onClick={onPrev}
-          className="flex-1 h-12 rounded-xl"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Wstecz
-        </Button>
-        <Button
-          onClick={onNext}
-          disabled={!canProceed}
-          className="flex-1 h-12 rounded-xl bg-primary"
-        >
-          Dalej
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
-      </motion.div>
-    </motion.div>
+              {selected && <span className="h-2 w-2 rounded-full bg-primary-foreground" />}
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
