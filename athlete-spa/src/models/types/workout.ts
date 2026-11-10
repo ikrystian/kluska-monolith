@@ -69,6 +69,8 @@ export interface WorkoutLog {
   /** AI coach summary, generated once on demand and reused afterwards. */
   aiSummary?: string;
   newRecords?: PersonalRecord[];
+  /** Nagrody przyznane przez serwer przy zakończeniu treningu. */
+  rewards?: import('@/hooks/useRewards').RewardSummary;
   sourceWorkoutId?: string; // Track the original workout template used
 }
 

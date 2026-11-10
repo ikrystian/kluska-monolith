@@ -205,8 +205,25 @@ const policies: Record<string, CollectionPolicy> = {
   workouts: owned('ownerId', { readAll: true }),
 
   // Personal data
-  workoutLogs: owned('athleteId'),
-  goals: owned('ownerId'),
+  // Pola nagród ustawia wyłącznie serwer (lib/gamification) — inaczej dałoby się je sfałszować.
+  workoutLogs: { ...owned('athleteId'), protectedFields: ['rewardedAt', 'rewards', 'newRecords'] },
+  goals: {
+    ...owned('ownerId'),
+    protectedFields: [
+      'status',
+      'completedAt',
+      'pointsAwarded',
+      'basePoints',
+      'difficulty',
+      'trainerApproved',
+      'metric',
+      'exerciseId',
+      'direction',
+      'startValue',
+      'startDate',
+      'progressLog',
+    ],
+  },
   plannedWorkouts: owned('ownerId'),
   bodyMeasurements: owned('ownerId'),
   meals: {

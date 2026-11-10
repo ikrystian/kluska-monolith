@@ -8,12 +8,15 @@ export {
   calculateStreakBonus,
   calculateApprovalBonus,
   calculateXPForLevel,
+  calculateRunPoints,
+  streakMilestoneCrossed,
   type PointCalculationInput,
   type PointCalculationResult,
 } from './point-calculator';
 
 export {
   getOrCreateGamificationProfile,
+  grantPoints,
   getGamificationStats,
   awardGoalCompletionPoints,
   awardWorkoutCompletionPoints,
@@ -35,3 +38,23 @@ export {
   seedDefaultAchievements,
   type AchievementUnlock,
 } from './achievement-checker';
+
+export {
+  syncProgress,
+  onWorkoutCompleted,
+  onRunLogged,
+  onActivityLogged,
+  getOverview,
+  markAchievementsSeen,
+  type RewardSummary,
+  type GamificationOverview,
+  type SyncResult,
+} from './engine';
+
+export { computeAthleteStats, summarizeActivity, workoutVolumeKg, type AthleteStats } from './stats';
+export { CATALOG, TRACKS, buildTracks, evaluateCatalog, type TrackView } from './catalog';
+export { completeGoal, listGoals, syncAutoGoals, toGoalView, rawMetricValue, currentFromRaw, GOAL_METRIC_UNITS, type GoalView } from './goals';
+export { goalFraction, goalPace, isGoalReached } from './goal-progress';
+export { buildQuestViews, pickWeeklyQuests, type QuestView } from './quests';
+export { bestsFromLog, findNewRecords, detectPersonalRecords } from './records';
+export { computeStreaks, dayKey, effectiveStreak, weekStartKey } from './streaks';

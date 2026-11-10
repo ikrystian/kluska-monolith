@@ -1,41 +1,10 @@
-'use client';
-
-import { apiFetch, resolveMediaUrl } from '@/lib/api-client';
-import { useState, useRef } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { format, formatDistanceToNow } from 'date-fns';
-import { pl } from 'date-fns/locale';
-
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import { Plus, Target, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import type { Goal, Achievement } from '@/lib/types';
-import { PlusCircle, Target, Calendar as CalendarIcon, Loader2, Trophy, Upload, MoreVertical, Edit, Trash2, Medal, Sparkles, Share2 } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState, SectionHeader } from '@/components/ui/section';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,934 +14,295 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import { useUser, useCollection, useCreateDoc, useUpdateDoc, useDeleteDoc } from '@/lib/db-hooks';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Textarea } from '@/components/ui/textarea';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAchievements, useGamificationProfile } from '@/hooks/useGamification';
-import { AchievementsGrid, GamificationStatsCard, AchievementNotification, useAchievementNotifications } from '@/components/gamification';
-import { AnimatePresence, motion, cardItemMotion } from '@/components/motion';
-import { ImageCropDialog, STORY_ASPECT } from '@/components/shared/ImageCropDialog';
+} from '@/components/ui/alert-dialog';
+import { useCollection, useUser } from '@/lib/db-hooks';
+import { haptic } from '@/lib/haptics';
+import { pluralForm } from '@/lib/plural';
+import type { Achievement, Goal } from '@/lib/types';
+import { useRewardsOverview, type GoalView } from '@/hooks/useRewards';
+import { GoalCard } from '@/components/goals/GoalCard';
+import { GoalFormSheet, GoalProgressSheet } from '@/components/goals/GoalFormSheet';
+import { CompletedGoals } from '@/components/goals/CompletedGoals';
+import { AddTrophySheet, TrophyGallery } from '@/components/goals/TrophyGallery';
 import { ShareGoalDialog } from '@/components/goals/ShareGoalDialog';
-import { Award } from 'lucide-react';
+import { RewardsHero } from '@/components/rewards/RewardsHero';
+import { WeeklyQuests } from '@/components/rewards/WeeklyQuests';
+import { AchievementTracks } from '@/components/rewards/AchievementTracks';
+import { RewardCelebration, type Celebration } from '@/components/rewards/RewardCelebration';
 
-// --- SCHEMAS ---
+const errorMessage = (cause: unknown, fallback: string) => (cause instanceof Error ? cause.message : fallback);
 
-const goalSchema = z.object({
-  title: z.string().min(1, 'Tytuł jest wymagany.'),
-  target: z.coerce.number().positive('Cel musi być liczbą dodatnią.'),
-  current: z.coerce.number().min(0, 'Aktualna wartość nie może być ujemna.'),
-  unit: z.string().min(1, 'Jednostka jest wymagana (np. kg, km, powtórzenia).'),
-  deadline: z.date({
-    required_error: 'Termin jest wymagany.',
-  }),
-});
-
-const achievementSchema = z.object({
-  title: z.string().min(1, 'Tytuł jest wymagany.'),
-  description: z.string().optional(),
-  date: z.date({
-    required_error: 'Data jest wymagana.',
-  }),
-  photos: z.array(z.instanceof(File)).optional(),
-});
-
-type GoalFormValues = z.infer<typeof goalSchema>;
-type AchievementFormValues = z.infer<typeof achievementSchema>;
-
-
-// --- GOAL FORM ---
-function GoalForm({ onFormSubmit, goal, onDialogClose }: { onFormSubmit: (data: GoalFormValues) => Promise<void>, goal?: Goal | null, onDialogClose: () => void }) {
-  const isEditMode = !!goal;
-
-  const form = useForm<GoalFormValues>({
-    resolver: zodResolver(goalSchema),
-    defaultValues: isEditMode && goal ? {
-      title: goal.title,
-      target: goal.target,
-      current: goal.current,
-      unit: goal.unit,
-      deadline: new Date(goal.deadline),
-    } : {
-      title: '',
-      target: 100,
-      current: 0,
-      unit: 'kg',
-      deadline: undefined,
-    },
-  });
-
-  const handleSubmit = async (data: GoalFormValues) => {
-    try {
-      await onFormSubmit(data);
-      form.reset();
-      onDialogClose();
-    } catch (error) {
-      // Error is already handled by onFormSubmit, just prevent dialog from closing
-      console.error('Error submitting goal:', error);
-    }
-  }
-
+function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <DialogHeader>
-          <DialogTitle className="font-headline">{isEditMode ? "Edytuj Cel" : "Ustaw Nowy Cel"}</DialogTitle>
-          <DialogDescription>
-            {isEditMode ? "Zaktualizuj szczegóły swojego celu." : "Zdefiniuj swój następny cel i pozostań zmotywowany."}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="grid gap-4 py-4">
-          <FormField
-            control={form.control}
-            name="title"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tytuł Celu</FormLabel>
-                <FormControl>
-                  <Input placeholder="np. Wyciskanie na ławce 100kg" {...field} disabled={form.formState.isSubmitting} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <div className="grid grid-cols-3 gap-4">
-            <FormField
-              control={form.control}
-              name="current"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Aktualnie</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} disabled={form.formState.isSubmitting} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="target"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cel</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} disabled={form.formState.isSubmitting} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="unit"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Jednostka</FormLabel>
-                  <FormControl>
-                    <Input placeholder="kg, km, powt." {...field} disabled={form.formState.isSubmitting} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <FormField
-            control={form.control}
-            name="deadline"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Termin</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant={'outline'}
-                        className={cn(
-                          'w-full pl-3 text-left font-normal',
-                          !field.value && 'text-muted-foreground'
-                        )}
-                        disabled={form.formState.isSubmitting}
-                      >
-                        {field.value ? (
-                          format(field.value, 'PPP', { locale: pl })
-                        ) : (
-                          <span>Wybierz datę</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      locale={pl}
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      disabled={(date) => date < new Date() || form.formState.isSubmitting}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="secondary" disabled={form.formState.isSubmitting}>
-              Anuluj
-            </Button>
-          </DialogClose>
-          <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isEditMode ? "Zapisz Zmiany" : "Zapisz Cel"}
-          </Button>
-        </DialogFooter>
-      </form>
-    </Form>
+    <button
+      type="button"
+      onClick={onClick}
+      className="-my-2 flex min-h-11 shrink-0 items-center gap-1 text-sm font-semibold text-primary active:opacity-70"
+    >
+      <Plus className="h-4 w-4" /> {label}
+    </button>
   );
 }
 
-// --- ADD ACHIEVEMENT FORM ---
-function AddAchievementForm({ onAchievementAdded }: { onAchievementAdded: () => void }) {
+export default function GoalsAndRewardsPage() {
   const { user } = useUser();
-  const { toast } = useToast();
-  const { createDoc, isLoading } = useCreateDoc();
-  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
-  /** Picked photos waiting to be cropped; the first one is being cropped now. */
-  const [cropQueue, setCropQueue] = useState<File[]>([]);
-  const photoInputRef = useRef<HTMLInputElement>(null);
-
-  const form = useForm<AchievementFormValues>({
-    resolver: zodResolver(achievementSchema),
-    defaultValues: {
-      title: '',
-      description: '',
-      date: new Date(),
-      photos: [],
-    }
-  });
-
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "photos"
-  });
-
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    if (files.length > 0) setCropQueue(prev => [...prev, ...files]);
-    // Reset so picking the same file again still fires onChange.
-    e.target.value = '';
-  };
-
-  const handleCropConfirm = (cropped: File) => {
-    setPhotoPreviews(prev => [...prev, URL.createObjectURL(cropped)]);
-    append(cropped);
-    setCropQueue(prev => prev.slice(1));
-  };
-
-  const handleCropCancel = () => setCropQueue(prev => prev.slice(1));
-
-  const uploadPhotos = async (photos: File[]): Promise<string[]> => {
-    if (!user) return [];
-    const uploadPromises = photos.map(async (photo) => {
-      const formData = new FormData();
-      formData.append('file', photo);
-      const response = await apiFetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await response.json();
-      return data.url as string; // Public /upload-data/... path
-    });
-    return Promise.all(uploadPromises);
-  };
-
-  async function onSubmit(data: AchievementFormValues) {
-    if (!user) return;
-
-    let photoURLs: string[] = [];
-    if (data.photos && data.photos.length > 0) {
-      try {
-        photoURLs = await uploadPhotos(data.photos);
-      } catch (error) {
-        console.error("Error uploading photos: ", error);
-        toast({
-          title: 'Błąd przesyłania zdjęć',
-          description: 'Nie udało się przesłać wszystkich zdjęć. Spróbuj ponownie.',
-          variant: 'destructive',
-        });
-        return; // Stop submission if photo upload fails
-      }
-    } else {
-      photoURLs.push(`https://picsum.photos/seed/${data.title}/400/300`);
-    }
-
-    const newAchievementData = {
-      title: data.title,
-      description: data.description || '',
-      date: data.date.toISOString(),
-      photoURLs,
-      ownerId: user.uid,
-    };
-
-    try {
-      await createDoc('achievements', newAchievementData);
-      toast({
-        title: 'Trofeum Dodane!',
-        description: `Twoje osiągnięcie "${data.title}" zostało dodane do galerii.`,
-      });
-      form.reset();
-      setPhotoPreviews([]);
-      onAchievementAdded();
-    } catch (error) {
-      console.error("Error adding achievement:", error);
-      toast({ title: "Błąd", description: "Nie udało się dodać trofeum.", variant: "destructive" });
-    }
-  }
-
-  return (
-    <>
-    <ImageCropDialog
-      file={cropQueue[0] ?? null}
-      aspect={STORY_ASPECT}
-      title="Przytnij zdjęcie"
-      description={
-        cropQueue.length > 1
-          ? `Format 9:16 jak w relacji na Instagramie. Kolejne zdjęcia w kolejce: ${cropQueue.length - 1}.`
-          : 'Format 9:16 jak w relacji na Instagramie. Przesuń i zmień ramkę, aby wybrać kadr.'
-      }
-      onCancel={handleCropCancel}
-      onConfirm={handleCropConfirm}
-    />
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <DialogHeader>
-          <DialogTitle className="font-headline">Dodaj Nowe Trofeum</DialogTitle>
-          <DialogDescription>
-            Udokumentuj swoje osiągnięcie, aby zapamiętać ten moment.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="grid gap-4 py-4">
-          <FormField
-            control={form.control}
-            name="title"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tytuł Osiągnięcia</FormLabel>
-                <FormControl>
-                  <Input placeholder="np. Ukończony maraton" {...field} disabled={form.formState.isSubmitting} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Data Osiągnięcia</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant={'outline'}
-                        className={cn('w-full pl-3 text-left font-normal', !field.value && 'text-muted-foreground')}
-                        disabled={form.formState.isSubmitting}
-                      >
-                        {field.value ? format(field.value, 'PPP', { locale: pl }) : <span>Wybierz datę</span>}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar locale={pl} mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Opis (opcjonalnie)</FormLabel>
-                <FormControl>
-                  <Textarea placeholder="Opisz swoje osiągnięcie..." {...field} disabled={form.formState.isSubmitting} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <div className="space-y-2">
-            <FormLabel>Zdjęcia (opcjonalnie)</FormLabel>
-            {photoPreviews.length > 0 && (
-              <Carousel className="w-full max-w-[11rem] mx-auto">
-                <CarouselContent>
-                  {photoPreviews.map((src, index) => (
-                    <CarouselItem key={index}>
-                      <div className="p-1">
-                        <div className="relative aspect-[9/16] w-full">
-                          <img src={src} alt={`Podgląd zdjęcia ${index + 1}`} className="absolute inset-0 w-full h-full rounded-md object-cover" />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            className="absolute top-2 right-2 h-6 w-6"
-                            onClick={() => {
-                              setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
-                              remove(index);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <CarouselPrevious />
-                <CarouselNext />
-              </Carousel>
-            )}
-            <Button type="button" variant="outline" className="w-full" onClick={() => photoInputRef.current?.click()}>
-              <Upload className="mr-2 h-4 w-4" />
-              {photoPreviews.length > 0 ? 'Dodaj więcej zdjęć' : 'Dodaj pamiątkowe zdjęcia'}
-            </Button>
-            <Input type="file" ref={photoInputRef} accept="image/*" onChange={handlePhotoChange} className="hidden" multiple />
-          </div>
-        </div>
-
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="secondary" disabled={isLoading}>Anuluj</Button>
-          </DialogClose>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Zapisz Trofeum
-          </Button>
-        </DialogFooter>
-      </form>
-    </Form>
-    </>
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { overview, isLoading, error, refresh, createGoal, updateGoal, deleteGoal, completeGoal, markSeen } = useRewardsOverview(
+    Boolean(user)
   );
-}
-
-
-// --- CONVERT GOAL TO ACHIEVEMENT FORM ---
-
-function ConvertGoalToAchievementForm({ goal, onConverted }: { goal: Goal, onConverted: () => void }) {
-  const { user } = useUser();
-  const { toast } = useToast();
-  const { createDoc, isLoading: isCreating } = useCreateDoc();
-  const { deleteDoc, isLoading: isDeleting } = useDeleteDoc();
-  const isLoading = isCreating || isDeleting;
-
-  const form = useForm<AchievementFormValues>({
-    resolver: zodResolver(achievementSchema),
-    defaultValues: {
-      title: goal.title,
-      description: `Osiągnięto cel: ${goal.target} ${goal.unit}`,
-      date: new Date(),
-    }
-  });
-
-  async function onSubmit(data: AchievementFormValues) {
-    if (!user) return;
-
-    const photoURLs = [`https://picsum.photos/seed/${encodeURIComponent(data.title)}/400/300`];
-
-    const newAchievementData = {
-      title: data.title,
-      description: data.description || '',
-      date: data.date.toISOString(),
-      photoURLs,
-      ownerId: user.uid,
-    };
-
-    try {
-      // Not transactional, but best effort for this migration
-      await createDoc('achievements', newAchievementData);
-      await deleteDoc('goals', goal.id);
-
-      toast({
-        title: 'Cel Osiągnięty!',
-        description: 'Gratulacje! Twój cel został przeniesiony do trofeów.',
-      });
-      form.reset();
-      onConverted();
-    } catch (error) {
-      console.error("Error converting goal:", error);
-      toast({ title: "Błąd", description: "Nie udało się przenieść celu.", variant: "destructive" });
-    }
-  }
-
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <DialogHeader>
-          <DialogTitle className="font-headline">Gratulacje! Zamień cel w trofeum.</DialogTitle>
-          <DialogDescription>
-            Dodaj szczegóły i zdjęcie, aby upamiętnić swój sukces.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="grid gap-4 py-4">
-          <FormField
-            control={form.control}
-            name="title"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tytuł Osiągnięcia</FormLabel>
-                <FormControl>
-                  <Input {...field} disabled={form.formState.isSubmitting} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Data Osiągnięcia</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant={'outline'}
-                        className={cn('w-full pl-3 text-left font-normal', !field.value && 'text-muted-foreground')}
-                        disabled={form.formState.isSubmitting}
-                      >
-                        {field.value ? format(field.value, 'PPP', { locale: pl }) : <span>Wybierz datę</span>}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar locale={pl} mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Opis (opcjonalnie)</FormLabel>
-                <FormControl>
-                  <Textarea placeholder="Opisz swoje osiągnięcie..." {...field} disabled={form.formState.isSubmitting} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          {/* Photo upload UI removed for migration */}
-        </div>
-
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="secondary" disabled={isLoading}>Anuluj</Button>
-          </DialogClose>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Zapisz Trofeum
-          </Button>
-        </DialogFooter>
-      </form>
-    </Form>
-  );
-}
-
-
-// --- MAIN PAGE COMPONENT ---
-
-export default function GoalsAndAchievementsPage() {
-  const [isGoalDialogOpen, setGoalDialogOpen] = useState(false);
-  const [isAchievementDialogOpen, setAchievementDialogOpen] = useState(false);
-  const [goalToConvert, setGoalToConvert] = useState<Goal | null>(null);
-  const [goalToDelete, setGoalToDelete] = useState<Goal | null>(null);
-  const [goalToShare, setGoalToShare] = useState<Goal | null>(null);
-  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
-  const { user } = useUser();
-  const { toast } = useToast();
-  const { createDoc, isLoading: isCreating } = useCreateDoc();
-  const { updateDoc, isLoading: isUpdating } = useUpdateDoc();
-  const { deleteDoc, isLoading: isDeleting } = useDeleteDoc();
-
-  // Fetch Goals
-  const { data: goals, isLoading: goalsLoading, refetch: refetchGoals } = useCollection<Goal>(
-    user ? 'goals' : null,
-    { ownerId: user?.uid },
-  );
-
-  // Fetch Achievements (user trophies)
-  const { data: achievements, isLoading: achievementsLoading, refetch: refetchAchievements } = useCollection<Achievement>(
+  const { data: trophies, refetch: refetchTrophies } = useCollection<Achievement>(
     user ? 'achievements' : null,
     { ownerId: user?.uid },
     { sort: { date: -1 } }
   );
 
-  // Gamification hooks
-  const { stats: gamificationStats, isLoading: statsLoading, refreshProfile } = useGamificationProfile();
-  const { achievements: badges, isLoading: badgesLoading, checkAchievements, refreshAchievements: refetchBadges } = useAchievements();
-  const { currentNotification, addNotifications, dismissCurrent } = useAchievementNotifications();
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<GoalView | null>(null);
+  const [progressGoal, setProgressGoal] = useState<GoalView | null>(null);
+  const [goalToDelete, setGoalToDelete] = useState<GoalView | null>(null);
+  const [goalToShare, setGoalToShare] = useState<GoalView | null>(null);
+  const [trophyOpen, setTrophyOpen] = useState(false);
+  const [trophyPrefill, setTrophyPrefill] = useState<{ title: string; description?: string } | null>(null);
+  const [celebration, setCelebration] = useState<Celebration | null>(null);
+  const [completingId, setCompletingId] = useState<string | null>(null);
 
-  const isLoading = goalsLoading || achievementsLoading;
+  // Skrót „+” prowadzi tu z ?add=1 i od razu otwiera formularz.
+  useEffect(() => {
+    if (searchParams.get('add') !== '1') return;
+    setEditing(null);
+    setFormOpen(true);
+    setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams]);
 
-  const handleGoalDialogClose = () => {
-    setEditingGoal(null);
-    setGoalDialogOpen(false);
+  // Osiągnięcia odblokowane poza tym ekranem (np. przez pomiar albo bieg) czekają tu na pokazanie.
+  const unseen = overview?.unseen;
+  useEffect(() => {
+    if (!unseen || unseen.length === 0) return;
+    setCelebration(current =>
+      current ?? {
+        title:
+          unseen.length === 1
+            ? 'Nowe osiągnięcie!'
+            : `${unseen.length} ${pluralForm(unseen.length, 'nowe osiągnięcie', 'nowe osiągnięcia', 'nowych osiągnięć')}!`,
+        unlocked: unseen,
+      }
+    );
+    void markSeen().catch(() => undefined);
+  }, [unseen, markSeen]);
+
+  const openCreate = () => {
+    haptic('tap');
+    setEditing(null);
+    setFormOpen(true);
   };
 
-  const handleGoalFormSubmit = async (data: GoalFormValues) => {
-    if (!user) return;
-
+  const handleComplete = async (goal: GoalView) => {
+    setCompletingId(goal.id);
     try {
-      if (editingGoal) {
-        const updatedGoalData = { ...data, deadline: data.deadline.toISOString() };
-        await updateDoc('goals', editingGoal.id, updatedGoalData);
-        toast({ title: 'Cel Zaktualizowany!', description: `Twój cel "${data.title}" został zmieniony.` });
-      } else {
-        const newGoalData = { ...data, deadline: data.deadline.toISOString(), ownerId: user.uid };
-        await createDoc('goals', newGoalData);
-        toast({ title: 'Cel Ustawiony!', description: `Twój nowy cel "${data.title}" został dodany.` });
-      }
-      refetchGoals();
-    } catch (error) {
-      toast({ title: "Błąd", description: "Nie udało się zapisać celu.", variant: "destructive" });
-      throw error; // Re-throw to prevent dialog from closing
+      const result = await completeGoal(goal.id);
+      setCelebration({
+        title: 'Cel osiągnięty!',
+        description:
+          result.points > 0
+            ? `„${goal.title}” — brawo! Razem +${result.points + result.newAchievements.reduce((sum, a) => sum + a.pointsAwarded, 0)} XP.`
+            : `„${goal.title}” — brawo!`,
+        points: result.points,
+        levelUp: result.levelUp ? result.level : null,
+        unlocked: result.newAchievements,
+      });
+      if (result.newAchievements.length > 0) void markSeen().catch(() => undefined);
+    } catch (cause) {
+      toast.error(errorMessage(cause, 'Nie udało się zamknąć celu.'));
+    } finally {
+      setCompletingId(null);
     }
   };
 
-  const handleAchievementAdded = () => {
-    setAchievementDialogOpen(false);
-    refetchAchievements();
+  const handleDelete = async () => {
+    if (!goalToDelete) return;
+    try {
+      await deleteGoal(goalToDelete.id);
+      haptic('impact');
+      toast.success('Cel usunięty');
+    } catch (cause) {
+      toast.error(errorMessage(cause, 'Nie udało się usunąć celu.'));
+    } finally {
+      setGoalToDelete(null);
+    }
+  };
+
+  if (error && !overview) {
+    return (
+      <div className="page">
+        <EmptyState
+          icon={Target}
+          title="Nie udało się wczytać celów"
+          description="Sprawdź połączenie i spróbuj ponownie."
+          action={<Button onClick={() => void refresh()}>Spróbuj ponownie</Button>}
+        />
+      </div>
+    );
   }
 
-  const handleGoalConverted = async () => {
-    setGoalToConvert(null);
-    refetchGoals();
-    refetchAchievements();
-    // Sprawdź nowe odznaki gamifikacji
-    try {
-      const result = await checkAchievements();
-      if (result?.newAchievements?.length > 0) {
-        addNotifications(result.newAchievements);
-        toast({
-          title: 'Nowe odznaki!',
-          description: `Odblokowałeś ${result.newAchievements.length} nowych odznak!`,
-        });
-      }
-      refreshProfile();
-      refetchBadges();
-    } catch (error) {
-      console.error('Error checking achievements:', error);
-    }
-  };
+  if (isLoading && !overview) {
+    return (
+      <div className="page space-y-5" aria-busy="true">
+        <Skeleton className="h-64 w-full rounded-2xl" />
+        <Skeleton className="h-32 w-full rounded-2xl" />
+        <Skeleton className="h-48 w-full rounded-2xl" />
+      </div>
+    );
+  }
 
-  const handleDeleteGoal = async () => {
-    if (!goalToDelete || !user) return;
-    try {
-      await deleteDoc('goals', goalToDelete.id);
-      toast({ title: "Cel usunięty", variant: "destructive" });
-      setGoalToDelete(null);
-      refetchGoals();
-    } catch (error) {
-      toast({ title: "Błąd", description: "Nie udało się usunąć celu.", variant: "destructive" });
-    }
-  };
+  if (!overview) return null;
+
+  const { active, completed } = overview.goals;
 
   return (
-    // Controlled by goalToDelete rather than an AlertDialogTrigger inside the
-    // goal's dropdown: opening a dialog from a menu item that Radix keeps open
-    // leaves the two fighting over focus and pointer events.
-    <AlertDialog open={!!goalToDelete} onOpenChange={(open) => { if (!open && !isDeleting) setGoalToDelete(null); }}>
-      {/* Achievement unlock notification */}
-      <AchievementNotification
-        achievement={currentNotification}
-        onClose={dismissCurrent}
-      />
-      <div className="page">
-        {/* --- Active Goals Section --- */}
-        <section className="mb-12">
-          <div className="grid grid-cols-1 gap-6">
-            {isLoading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <Card key={i} className="flex flex-col">
-                  <CardHeader><Skeleton className="h-6 w-3/4" /><Skeleton className="h-4 w-1/2 mt-2" /></CardHeader>
-                  <CardContent className="flex-grow space-y-2"><Skeleton className="h-8 w-1/2 mx-auto" /><Skeleton className="h-4 w-full" /></CardContent>
-                  <CardFooter><Skeleton className="h-4 w-1/3 mx-auto" /></CardFooter>
-                </Card>
-              ))
-            ) : (
-              <AnimatePresence initial={false}>
-                {goals?.map((goal) => {
-                  const progress = Math.min((goal.current / goal.target) * 100, 100);
-                  const isCompleted = progress >= 100;
-                  return (
-                    <motion.div key={goal.id} {...cardItemMotion}>
-                      <Card className={`flex h-full flex-col ${isCompleted ? 'border-volt/40 bg-volt/[0.04]' : ''}`}>
-                        <CardHeader>
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <CardTitle className="font-headline">{goal.title}</CardTitle>
-                              <CardDescription className="text-xs">
-                                Termin: {format(new Date(goal.deadline), 'd MMM yyyy', { locale: pl })}
-                              </CardDescription>
-                            </div>
-                            <DropdownMenu modal={false}>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => { setEditingGoal(goal); setGoalDialogOpen(true); }}>
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  <span>Edytuj</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => setGoalToShare(goal)}>
-                                  <Share2 className="mr-2 h-4 w-4" />
-                                  <span>Udostępnij</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => setGoalToDelete(goal)}>
-                                  <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-                                  <span className="text-destructive">Usuń</span>
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="flex-grow">
-                          <div className="mb-3 flex items-baseline justify-center gap-2">
-                            <span className="font-display text-5xl font-extrabold tabular-nums">{goal.current.toLocaleString('pl-PL')}</span>
-                            <span className="text-sm text-muted-foreground">/ {goal.target.toLocaleString('pl-PL')} {goal.unit}</span>
-                          </div>
-                          <Progress value={progress} aria-label={`${goal.title} postęp`} />
-                          <p className={`mt-2 text-center text-xs font-semibold ${isCompleted ? 'text-volt' : 'text-muted-foreground'}`}>
-                            {progress.toFixed(0)}% ukończono
-                          </p>
-                        </CardContent>
-                        <CardFooter className="flex-col gap-2">
-                          {isCompleted ? (
-                            <Button onClick={() => setGoalToConvert(goal)} className="w-full bg-volt font-bold text-volt-foreground hover:bg-volt/90">
-                              <Trophy className="mr-2 h-4 w-4" /> Zamień w trofeum
-                            </Button>
-                          ) : (
-                            <p className="text-xs text-muted-foreground w-full text-center">
-                              Pozostało {formatDistanceToNow(new Date(goal.deadline), { locale: pl, addSuffix: true })}
-                            </p>
-                          )}
-                        </CardFooter>
-                      </Card>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            )}
+    <div className="page space-y-6">
+      <RewardsHero overview={overview} />
 
-            <div
-              onClick={() => { setEditingGoal(null); setGoalDialogOpen(true); }}
-              className="flex min-h-[280px] cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 p-6 text-center transition-all hover:border-primary/50 hover:bg-secondary/30 active:scale-[0.99]"
-            >
-              <span className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-secondary text-primary">
-                <PlusCircle className="h-7 w-7" />
-              </span>
-              <h3 className="mb-1 font-headline text-lg font-bold">Stwórz nowy cel</h3>
-              <p className="mb-4 text-sm text-muted-foreground">Zdefiniuj swój następny cel i pozostań zmotywowany.</p>
-              <Button variant="outline" size="sm">Ustaw nowy cel</Button>
-            </div>
+      <section>
+        <SectionHeader title="Twoje cele" action={<AddButton label="Nowy cel" onClick={openCreate} />} />
+        {active.length === 0 ? (
+          <EmptyState
+            icon={Target}
+            title="Nie masz jeszcze celu"
+            description="Ustaw cel, a postęp policzy się sam z Twoich treningów."
+            action={<Button onClick={openCreate}>Ustaw pierwszy cel</Button>}
+          />
+        ) : (
+          <div className="space-y-2.5">
+            {active.map(goal => (
+              <GoalCard
+                key={goal.id}
+                goal={goal}
+                busy={completingId === goal.id}
+                onUpdateProgress={setProgressGoal}
+                onComplete={handleComplete}
+                onEdit={target => {
+                  setEditing(target);
+                  setFormOpen(true);
+                }}
+                onShare={setGoalToShare}
+                onDelete={setGoalToDelete}
+              />
+            ))}
           </div>
-        </section>
+        )}
+      </section>
 
-        {/* --- Gamification Badges Section --- */}
-        <section className="mb-12">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="flex items-center gap-2 font-headline text-lg font-bold tracking-tight">
-              <Medal className="h-5 w-5 text-[hsl(var(--chart-5))]" />
-              Odznaki gamifikacji
-            </h2>
-            {gamificationStats && (
-              <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-bold">
-                <Sparkles className="h-3.5 w-3.5 text-primary" />
-                <span>Poziom {gamificationStats.level}</span>
-                <span className="text-muted-foreground">·</span>
-                <span className="text-volt">{gamificationStats.currentFitCoins} FitCoins</span>
-              </div>
-            )}
-          </div>
-
-          {/* Mini stats card */}
-          {gamificationStats && (
-            <div className="mb-6 grid grid-cols-2 gap-3">
-              <div className="rounded-2xl bg-card p-4 text-center">
-                <p className="font-display text-3xl font-bold tabular-nums">{gamificationStats.level}</p>
-                <p className="mt-0.5 text-xs font-semibold text-muted-foreground">Poziom</p>
-              </div>
-              <div className="rounded-2xl bg-card p-4 text-center">
-                <p className="font-display text-3xl font-bold tabular-nums text-volt">{gamificationStats.currentFitCoins}</p>
-                <p className="mt-0.5 text-xs font-semibold text-muted-foreground">FitCoins</p>
-              </div>
-              <div className="rounded-2xl bg-card p-4 text-center">
-                <p className="font-display text-3xl font-bold tabular-nums text-primary">{gamificationStats.streaks.goals}</p>
-                <p className="mt-0.5 text-xs font-semibold text-muted-foreground">Seria celów</p>
-              </div>
-              <div className="rounded-2xl bg-card p-4 text-center">
-                <p className="font-display text-3xl font-bold tabular-nums">{gamificationStats.achievementCount}</p>
-                <p className="mt-0.5 text-xs font-semibold text-muted-foreground">Odznaki</p>
-              </div>
-            </div>
-          )}
-
-          {/* Badges Grid */}
-          {badgesLoading ? (
-            <div className="grid grid-cols-1 gap-4">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardHeader><div className="h-6 bg-muted rounded w-3/4"></div></CardHeader>
-                  <CardContent><div className="h-4 bg-muted rounded w-full mb-2"></div><div className="h-3 bg-muted rounded w-full"></div></CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : badges.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
-              <span className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-secondary text-primary">
-                <Medal className="h-7 w-7" />
-              </span>
-              <h3 className="mb-1 font-headline text-lg font-bold">Brak dostępnych odznak</h3>
-              <p className="text-sm text-muted-foreground">Zdobywaj odznaki kończąc cele i treningi!</p>
-            </div>
-          ) : (
-            <AchievementsGrid achievements={badges} />
-          )}
-        </section>
-
-        {/* --- Achievements Section --- */}
+      {overview.quests.items.length > 0 && (
         <section>
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="font-headline text-lg font-bold tracking-tight">Zdobyte trofea</h2>
-            <Button variant="outline" size="sm" onClick={() => setAchievementDialogOpen(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Dodaj trofeum
-            </Button>
-          </div>
-          {isLoading ? (
-            <div className="grid grid-cols-1 gap-6">
-              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-96 w-full rounded-2xl" />)}
-            </div>
-          ) : achievements?.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 py-20 text-center">
-              <span className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-secondary text-primary">
-                <Trophy className="h-7 w-7" />
-              </span>
-              <h3 className="mb-1 font-headline text-lg font-bold">Brak trofeów</h3>
-              <p className="max-w-sm text-sm text-muted-foreground">Osiągnij swoje cele lub dodaj osiągnięcie ręcznie, aby zapełnić tę galerię chwały!</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-6">
-              {achievements?.map((achievement) => (
-                <Card key={achievement.id} className="overflow-hidden flex flex-col">
-                  <Carousel className="w-full">
-                    <CarouselContent>
-                      {achievement.photoURLs?.map((url, index) => (
-                        <CarouselItem key={index}>
-                          <div className="relative w-full aspect-4/3 bg-secondary">
-                            {/* contain: photos are cropped to 9:16, so cover would cut the chosen frame again */}
-                            <img src={resolveMediaUrl(url)} alt={`${achievement.title} ${index + 1}`} className="absolute inset-0 w-full h-full object-contain" />
-                          </div>
-                        </CarouselItem>
-                      ))}
-                    </CarouselContent>
-                    {achievement.photoURLs && achievement.photoURLs.length > 1 && (
-                      <>
-                        <CarouselPrevious className="left-4" />
-                        <CarouselNext className="right-4" />
-                      </>
-                    )}
-                  </Carousel>
-                  <CardHeader>
-                    <CardTitle className="font-headline">{achievement.title}</CardTitle>
-                    <CardDescription>{format(new Date(achievement.date), 'd MMMM yyyy', { locale: pl })}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex-grow">
-                    <p className="text-sm text-muted-foreground">{achievement.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          <SectionHeader title="Wyzwania tygodnia" />
+          <WeeklyQuests quests={overview.quests.items} />
         </section>
+      )}
 
-        {/* --- Dialogs --- */}
-        <Dialog open={isGoalDialogOpen} onOpenChange={(isOpen) => { if (!isOpen) handleGoalDialogClose(); else setGoalDialogOpen(true); }}>
-          <DialogContent>
-            <GoalForm onFormSubmit={handleGoalFormSubmit} goal={editingGoal} onDialogClose={handleGoalDialogClose} />
-          </DialogContent>
-        </Dialog>
+      <section>
+        <SectionHeader
+          title="Osiągnięcia"
+          action={
+            <span className="text-sm tabular-nums text-muted-foreground">
+              {overview.profile.achievementCount} / {overview.profile.achievementTotal}
+            </span>
+          }
+        />
+        <AchievementTracks tracks={overview.tracks} />
+      </section>
 
-        <Dialog open={isAchievementDialogOpen} onOpenChange={setAchievementDialogOpen}>
-          <DialogContent>
-            <AddAchievementForm onAchievementAdded={handleAchievementAdded} />
-          </DialogContent>
-        </Dialog>
+      {completed.length > 0 && (
+        <section>
+          <SectionHeader title="Osiągnięte cele" />
+          <CompletedGoals
+            goals={completed}
+            onMakeTrophy={goal => {
+              setTrophyPrefill({
+                title: goal.title,
+                description: `Cel osiągnięty: ${goal.target.toLocaleString('pl-PL')} ${goal.unit}.`,
+              });
+              setTrophyOpen(true);
+            }}
+          />
+        </section>
+      )}
 
-        <ShareGoalDialog goal={goalToShare} onClose={() => setGoalToShare(null)} />
+      <section>
+        <SectionHeader
+          title="Trofea"
+          action={
+            <AddButton
+              label="Dodaj"
+              onClick={() => {
+                haptic('tap');
+                setTrophyPrefill(null);
+                setTrophyOpen(true);
+              }}
+            />
+          }
+        />
+        {trophies && trophies.length > 0 ? (
+          <TrophyGallery achievements={trophies} />
+        ) : (
+          <EmptyState
+            icon={Trophy}
+            title="Galeria czeka na pierwsze trofeum"
+            description="Dodaj zdjęcie z zawodów, rekordu albo przemiany — własną pamiątkę."
+          />
+        )}
+      </section>
 
-        <Dialog open={!!goalToConvert} onOpenChange={() => setGoalToConvert(null)}>
-          <DialogContent>
-            {goalToConvert && <ConvertGoalToAchievementForm goal={goalToConvert} onConverted={handleGoalConverted} />}
-          </DialogContent>
-        </Dialog>
+      <GoalFormSheet
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        goal={editing}
+        onCreate={async input => {
+          await createGoal(input);
+          toast.success('Cel ustawiony');
+        }}
+        onUpdate={async (id, input) => {
+          await updateGoal(id, input);
+          toast.success('Cel zapisany');
+        }}
+      />
 
+      <GoalProgressSheet goal={progressGoal} onClose={() => setProgressGoal(null)} onSave={(goal, current) => updateGoal(goal.id, { current })} />
+
+      {user && (
+        <AddTrophySheet
+          open={trophyOpen}
+          onOpenChange={setTrophyOpen}
+          ownerId={user.uid}
+          prefill={trophyPrefill}
+          onSaved={() => {
+            toast.success('Trofeum dodane');
+            refetchTrophies();
+          }}
+        />
+      )}
+
+      {/* Obrazek do udostępnienia potrzebuje terminu jako tekstu; brak terminu po prostu go pomija. */}
+      <ShareGoalDialog
+        goal={goalToShare ? ({ ...goalToShare, deadline: goalToShare.deadline ?? '' } as Goal) : null}
+        onClose={() => setGoalToShare(null)}
+      />
+
+      <AlertDialog open={goalToDelete !== null} onOpenChange={open => !open && setGoalToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Czy na pewno chcesz usunąć ten cel?</AlertDialogTitle>
+            <AlertDialogTitle>Usunąć ten cel?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tej operacji nie można cofnąć. To spowoduje trwałe usunięcie celu "{goalToDelete?.title}".
+              „{goalToDelete?.title}” zniknie razem z historią postępu. Tego nie da się cofnąć.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Anuluj</AlertDialogCancel>
-            {/* preventDefault keeps the dialog open until the request finishes, so a failure is visible in place. */}
-            <AlertDialogAction
-              onClick={(e) => { e.preventDefault(); void handleDeleteGoal(); }}
-              disabled={isDeleting}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Usuń
-            </AlertDialogAction>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void handleDelete()}>Usuń cel</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </div>
-    </AlertDialog>
+      </AlertDialog>
+
+      <RewardCelebration celebration={celebration} onClose={() => setCelebration(null)} />
+    </div>
   );
 }
-

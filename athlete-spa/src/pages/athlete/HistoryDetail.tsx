@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { useDoc, useUser, useCreateDoc } from '@/lib/db-hooks';
 import { resolveMediaUrl } from '@/lib/api-client';
+import { WorkoutRewards } from '@/components/rewards/WorkoutRewards';
 import type { WorkoutLog, Workout } from '@/lib/types';
 import { TrainingLevel } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -444,6 +445,8 @@ export default function HistoryDetailPage() {
           </p>
         </div>
       </section>
+
+      {workoutLog.rewards && workoutLog.rewards.xp > 0 && <WorkoutRewards rewards={workoutLog.rewards} />}
 
       {/* Personal Records Celebration Banner (Peak Moment) */}
       {workoutLog.newRecords && workoutLog.newRecords.length > 0 && (

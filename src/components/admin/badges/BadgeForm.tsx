@@ -42,7 +42,7 @@ const badgeSchema = z.object({
     pointsReward: z.coerce.number().min(0),
     isActive: z.boolean().default(true),
     requirement: z.object({
-        type: z.enum(['streak', 'goal_count', 'workout_count', 'points_earned', 'level_reached', 'custom']),
+        type: z.enum(['streak', 'goal_count', 'workout_count', 'points_earned', 'level_reached', 'total_volume', 'personal_record_count', 'streak_days', 'run_distance', 'custom']),
         value: z.coerce.number().min(1),
         comparison: z.enum(['gte', 'lte', 'eq']).default('gte'),
         customField: z.string().optional(),
@@ -218,6 +218,10 @@ export function BadgeForm({ initialData, onSubmit, onCancel, isLoading }: BadgeF
                                             <SelectItem value="goal_count">Goal Count</SelectItem>
                                             <SelectItem value="points_earned">Points Earned</SelectItem>
                                             <SelectItem value="level_reached">Level Reached</SelectItem>
+                                            <SelectItem value="total_volume">Total Volume (kg)</SelectItem>
+                                            <SelectItem value="personal_record_count">Personal Records</SelectItem>
+                                            <SelectItem value="streak_days">Streak (days)</SelectItem>
+                                            <SelectItem value="run_distance">Run Distance (km)</SelectItem>
                                             <SelectItem value="custom">Custom</SelectItem>
                                         </SelectContent>
                                     </Select>

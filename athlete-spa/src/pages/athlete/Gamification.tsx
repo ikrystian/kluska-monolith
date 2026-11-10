@@ -1,5 +1,6 @@
 'use client';
 
+import toast from 'react-hot-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import {
@@ -32,12 +33,12 @@ export default function GamificationPage() {
     try {
       const result = await checkin();
       if (result.points > 0) {
-        alert(`Check-in udany! Zdobyłeś ${result.points} punktów. Seria: ${result.streak} dni.`);
+        toast.success(`Check-in udany! +${result.points} pkt · seria: ${result.streak} dni`);
       } else {
-        alert('Już dzisiaj się zameldowałeś!');
+        toast('Dzisiejszy check-in masz już za sobą.');
       }
     } catch (error) {
-      alert('Błąd podczas check-inu');
+      toast.error('Nie udało się zapisać check-inu.');
     }
   };
 
@@ -45,12 +46,12 @@ export default function GamificationPage() {
     try {
       const result = await checkAchievements();
       if (result.count > 0) {
-        alert(`Odblokowano ${result.count} nowych osiągnięć!`);
+        toast.success(`Nowe osiągnięcia: ${result.count}`);
       } else {
-        alert('Brak nowych osiągnięć do odblokowania.');
+        toast('Na razie nic nowego do odblokowania.');
       }
     } catch (error) {
-      alert('Błąd podczas sprawdzania osiągnięć');
+      toast.error('Nie udało się sprawdzić osiągnięć.');
     }
   };
 

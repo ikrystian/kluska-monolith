@@ -1,8 +1,10 @@
 import { connectToDatabase } from '@/lib/mongodb';
-import { GamificationProfile, IGamificationProfile, IPointTransaction } from '@/models/GamificationProfile';
+import { IGamificationProfile } from '@/models/GamificationProfile';
 import { AchievementBadge, IAchievementBadge, IAchievementRequirement } from '@/models/AchievementBadge';
 import { getOrCreateGamificationProfile } from './gamification-service';
 import { calculateLevelFromXP } from './point-calculator';
+import { CATALOG, metricValue } from './catalog';
+import type { AthleteStats } from './stats';
 
 export interface AchievementUnlock {
   achievementId: string;
@@ -11,132 +13,77 @@ export interface AchievementUnlock {
   pointsAwarded: number;
   rarity: string;
   iconUrl?: string;
+  /** Ikona z katalogu (nazwa), gdy osiągnięcie nie ma własnej grafiki. */
+  icon?: string;
 }
 
-/**
- * Check if a user meets the requirement for an achievement
- */
-async function checkRequirement(
-  profile: IGamificationProfile,
+/** Wartość, z którą porównujemy wymaganie odznaki z panelu admina. */
+export function requirementValue(
+  profile: Pick<IGamificationProfile, 'streaks' | 'totalPointsEarned' | 'experiencePoints'>,
+  stats: AthleteStats | null,
   requirement: IAchievementRequirement
-): Promise<boolean> {
-  let currentValue: number;
-
+): number {
   switch (requirement.type) {
     case 'streak':
-      // Check the highest streak value
-      currentValue = Math.max(
-        profile.streaks.workout,
-        profile.streaks.goals,
-        profile.streaks.checkins
-      );
-      break;
+      return Math.max(stats?.longestStreakDays ?? 0, profile.streaks.goals, profile.streaks.checkins);
+    case 'streak_days':
+      return stats?.longestStreakDays ?? 0;
     case 'goal_count':
-      // Count completed goals from transactions
-      currentValue = profile.pointTransactions.filter(
-        t => t.source === 'goal_completion'
-      ).length;
-      break;
+      return stats?.goalsCompleted ?? 0;
     case 'workout_count':
-      // Count completed workouts from transactions
-      currentValue = profile.pointTransactions.filter(
-        t => t.source === 'workout_completion'
-      ).length;
-      break;
+      return stats?.workoutCount ?? 0;
+    case 'total_volume':
+      return stats?.totalVolumeKg ?? 0;
+    case 'personal_record_count':
+      return stats?.prCount ?? 0;
+    case 'run_distance':
+      return stats?.runKm ?? 0;
     case 'points_earned':
-      currentValue = profile.totalPointsEarned;
-      break;
+      return profile.totalPointsEarned;
     case 'level_reached':
-      currentValue = calculateLevelFromXP(profile.experiencePoints).level;
-      break;
-    case 'custom':
-      // Custom requirements need special handling
-      currentValue = 0;
-      break;
+      return calculateLevelFromXP(profile.experiencePoints).level;
     default:
-      currentValue = 0;
+      return 0;
   }
+}
 
+export function requirementMet(value: number, requirement: IAchievementRequirement): boolean {
   switch (requirement.comparison) {
-    case 'gte':
-      return currentValue >= requirement.value;
     case 'lte':
-      return currentValue <= requirement.value;
+      return value <= requirement.value;
     case 'eq':
-      return currentValue === requirement.value;
+      return value === requirement.value;
     default:
-      return false;
+      return value >= requirement.value;
   }
 }
 
 /**
- * Check and award any new achievements for a user
+ * Check and award any new achievements for a user. Pełna synchronizacja:
+ * statystyki, katalog, odznaki z bazy, cele i wyzwania.
  */
-export async function checkAndAwardAchievements(
-  userId: string
-): Promise<AchievementUnlock[]> {
-  await connectToDatabase();
-
-  const profile = await getOrCreateGamificationProfile(userId);
-  const allAchievements = await AchievementBadge.find({ isActive: true });
-
-  const unlockedAchievements: AchievementUnlock[] = [];
-
-  for (const achievement of allAchievements) {
-    // Skip if already earned
-    if (profile.achievements.includes(achievement._id.toString())) {
-      continue;
-    }
-
-    // Check if requirement is met
-    const requirementMet = await checkRequirement(profile, achievement.requirement);
-
-    if (requirementMet) {
-      // Award the achievement
-      profile.achievements.push(achievement._id.toString());
-
-      // Award points for the achievement
-      if (achievement.pointsReward > 0) {
-        profile.totalPointsEarned += achievement.pointsReward;
-        profile.currentFitCoins += achievement.pointsReward;
-        profile.experiencePoints += achievement.pointsReward;
-
-        const transaction: IPointTransaction = {
-          amount: achievement.pointsReward,
-          type: 'bonus',
-          source: 'achievement',
-          sourceId: achievement._id.toString(),
-          description: `Achievement unlocked: ${achievement.name}`,
-          createdAt: new Date(),
-        };
-        profile.pointTransactions.push(transaction);
-      }
-
-      unlockedAchievements.push({
-        achievementId: achievement._id.toString(),
-        name: achievement.name,
-        description: achievement.description,
-        pointsAwarded: achievement.pointsReward,
-        rarity: achievement.rarity,
-        iconUrl: achievement.iconUrl,
-      });
-    }
-  }
-
-  if (unlockedAchievements.length > 0) {
-    await profile.save();
-  }
-
-  return unlockedAchievements;
+export async function checkAndAwardAchievements(userId: string): Promise<AchievementUnlock[]> {
+  const { syncProgress } = await import('./engine');
+  return (await syncProgress(userId)).unlocked;
 }
 
 /**
- * Get all achievements with user's progress
+ * Get all achievements with user's progress — katalog z kodu + odznaki z bazy,
+ * w kształcie używanym przez siatkę odznak.
  */
 export async function getAchievementsWithProgress(
   userId: string
 ): Promise<{
-  achievement: IAchievementBadge;
+  achievement: {
+    id: string;
+    name: string;
+    description: string;
+    iconUrl?: string;
+    icon?: string;
+    category: string;
+    pointsReward: number;
+    rarity: string;
+  };
   unlocked: boolean;
   unlockedAt?: Date;
   progress: number;
@@ -145,62 +92,56 @@ export async function getAchievementsWithProgress(
   await connectToDatabase();
 
   const profile = await getOrCreateGamificationProfile(userId);
-  const allAchievements = await AchievementBadge.find({ isActive: true });
+  const stats = (profile.lifetimeStats as AthleteStats | undefined) ?? null;
+  const level = calculateLevelFromXP(profile.experiencePoints).level;
+  const unlockedAt = new Map((profile.unlocked ?? []).map(u => [u.key, u.unlockedAt]));
 
-  const result = [];
+  const catalog = CATALOG.map(entry => {
+    const value = stats ? metricValue(stats, level, entry.metric) : entry.metric === 'level' ? level : 0;
+    return {
+      achievement: {
+        id: entry.key,
+        name: entry.name,
+        description: entry.description,
+        icon: entry.icon,
+        category: entry.trackId,
+        pointsReward: entry.xp,
+        rarity: entry.rarity,
+      },
+      unlocked: unlockedAt.has(entry.key),
+      unlockedAt: unlockedAt.get(entry.key),
+      progress: Math.min(value, entry.threshold),
+      progressMax: entry.threshold,
+    };
+  });
 
-  for (const achievement of allAchievements) {
-    const unlocked = profile.achievements.includes(achievement._id.toString());
+  const badges = await AchievementBadge.find({ isActive: true });
+  const fromDatabase = badges.map(badge => {
+    const id = badge._id.toString();
+    const unlocked = profile.achievements.includes(id);
+    const transaction = unlocked
+      ? profile.pointTransactions.find(t => t.source === 'achievement' && t.sourceId === id)
+      : undefined;
+    const value = requirementValue(profile, stats, badge.requirement);
 
-    // Find unlock date from transactions
-    let unlockedAt: Date | undefined;
-    if (unlocked) {
-      const transaction = profile.pointTransactions.find(
-        t => t.source === 'achievement' && t.sourceId === achievement._id.toString()
-      );
-      unlockedAt = transaction?.createdAt;
-    }
-
-    // Calculate progress
-    let progress = 0;
-    const progressMax = achievement.requirement.value;
-
-    switch (achievement.requirement.type) {
-      case 'streak':
-        progress = Math.max(
-          profile.streaks.workout,
-          profile.streaks.goals,
-          profile.streaks.checkins
-        );
-        break;
-      case 'goal_count':
-        progress = profile.pointTransactions.filter(
-          t => t.source === 'goal_completion'
-        ).length;
-        break;
-      case 'workout_count':
-        progress = profile.pointTransactions.filter(
-          t => t.source === 'workout_completion'
-        ).length;
-        break;
-      case 'points_earned':
-        progress = profile.totalPointsEarned;
-        break;
-      case 'level_reached':
-        progress = calculateLevelFromXP(profile.experiencePoints).level;
-        break;
-    }
-
-    result.push({
-      achievement,
+    return {
+      achievement: {
+        id,
+        name: badge.name,
+        description: badge.description,
+        iconUrl: badge.iconUrl,
+        category: badge.category,
+        pointsReward: badge.pointsReward,
+        rarity: badge.rarity,
+      },
       unlocked,
-      unlockedAt,
-      progress: Math.min(progress, progressMax),
-      progressMax,
-    });
-  }
+      unlockedAt: transaction?.createdAt,
+      progress: Math.min(value, badge.requirement.value),
+      progressMax: badge.requirement.value,
+    };
+  });
 
-  return result;
+  return [...catalog, ...fromDatabase];
 }
 
 /**

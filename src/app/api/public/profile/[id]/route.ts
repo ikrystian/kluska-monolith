@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import { User } from '@/models/User';
 import { WorkoutLog } from '@/models/WorkoutLog';
+import { calculateLevelFromXP } from '@/lib/gamification/point-calculator';
 import { GamificationProfile } from '@/models/GamificationProfile';
 import { Gym } from '@/models/Gym';
 import { PersonalRecord } from '@/models/PersonalRecord';
@@ -220,6 +221,7 @@ export async function GET(
 
         // Calculate longest streak from history (simplified - using current)
         const longestStreak = Math.max(
+            gamificationProfile?.lifetimeStats?.longestStreakDays || 0,
             gamificationProfile?.streaks?.workout || 0,
             gamificationProfile?.streaks?.goals || 0,
             gamificationProfile?.streaks?.checkins || 0
@@ -246,7 +248,8 @@ export async function GET(
             .filter(date => new Date(date) >= oneYearAgo)
             .sort();
 
-        const currentLevel = gamificationProfile?.level || 1;
+        // Poziom liczony z XP — pole `level` w starszych profilach nigdy nie było zapisywane.
+        const currentLevel = calculateLevelFromXP(gamificationProfile?.experiencePoints || 0).level;
         const currentXP = gamificationProfile?.experiencePoints || 0;
         const xpForNextLevel = calculateXPForNextLevel(currentLevel);
 

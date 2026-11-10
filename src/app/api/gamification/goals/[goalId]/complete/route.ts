@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isValidObjectId } from 'mongoose';
 import { getRequestUser } from '@/lib/api-auth';
-import { awardGoalCompletionPoints, checkAndAwardAchievements } from '@/lib/gamification';
+import { completeGoal, isGoalReached, syncProgress } from '@/lib/gamification';
+import { calculateLevelFromXP } from '@/lib/gamification';
+import { getOrCreateGamificationProfile } from '@/lib/gamification';
 import { connectToDatabase } from '@/lib/mongodb';
 import { Goal } from '@/models/Goal';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { goalId: string } }
+  { params }: { params: Promise<{ goalId: string }> }
 ) {
   try {
     const user = await getRequestUser(request);
@@ -15,9 +18,10 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { goalId } = params;
-    const body = await request.json();
-    const { trainerApproval = false } = body;
+    const { goalId } = await params;
+    if (!isValidObjectId(goalId)) {
+      return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
+    }
 
     await connectToDatabase();
 
@@ -35,27 +39,29 @@ export async function POST(
       return NextResponse.json({ error: 'Goal already completed' }, { status: 400 });
     }
 
-    // Update goal status
-    goal.status = 'completed';
-    goal.current = goal.target;
-    await goal.save();
+    if (!isGoalReached(goal)) {
+      return NextResponse.json({ error: 'Cel nie jest jeszcze osiągnięty' }, { status: 400 });
+    }
 
-    // Award points
-    const pointsResult = await awardGoalCompletionPoints(
-      goalId,
-      user.id,
-      trainerApproval
-    );
+    const before = await getOrCreateGamificationProfile(user.id);
+    const levelBefore = calculateLevelFromXP(before.experiencePoints).level;
 
-    // Check for new achievements
-    const newAchievements = await checkAndAwardAchievements(user.id);
+    const completion = await completeGoal(goalId, user.id);
+    if (!completion) {
+      return NextResponse.json({ error: 'Goal already completed' }, { status: 400 });
+    }
+
+    // Zamknięty cel może odblokować osiągnięcia ze ścieżki „Cele”.
+    const sync = await syncProgress(user.id);
+    const levelAfter = calculateLevelFromXP(sync.profile.experiencePoints).level;
 
     return NextResponse.json({
       success: true,
-      points: pointsResult.points,
-      newBalance: pointsResult.newBalance,
-      levelUp: pointsResult.levelUp,
-      newAchievements,
+      points: completion.points,
+      newBalance: sync.profile.currentFitCoins,
+      levelUp: levelAfter > levelBefore,
+      level: levelAfter,
+      newAchievements: sync.unlocked,
     });
   } catch (error) {
     console.error('Error completing goal:', error);

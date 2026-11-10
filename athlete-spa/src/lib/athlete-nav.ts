@@ -234,10 +234,10 @@ export function searchNavLeaves(query: string, role: NavRole | undefined): NavLe
  * shows their big title rather than a way back — there is nothing above them.
  */
 export const ROOT_TITLES: Record<string, string> = {
-  '/athlete/dashboard': 'Dziś',
+  '/athlete/dashboard': '#leniwakluska',
   '/athlete/log': 'Trening',
   '/athlete/social': 'Ekipa',
-  '/athlete/you': 'Ty',
+  '/athlete/you': 'Menu',
 };
 
 export const ROOT_PATHS = Object.keys(ROOT_TITLES);

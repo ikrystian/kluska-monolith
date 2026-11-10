@@ -6,6 +6,7 @@ import { isValidObjectId } from 'mongoose';
 import { jsonWithEtag } from '@/lib/http-cache';
 import { cascadeDeleteUserData } from '@/lib/user-cascade-delete';
 import { linkWorkoutLogExercises } from '@/lib/workout-log-exercises';
+import { onActivityLogged, onWorkoutCompleted } from '@/lib/gamification';
 import {
   AccessContext,
   AccessError,
@@ -219,6 +220,20 @@ export async function PATCH(
     if (!wasCompleted && doc.athleteId === user.id) {
       const activity = describeFinishedActivity(collection, doc.toObject());
       if (activity) void notifyFriendsOfActivity(user.id, activity);
+    }
+
+    // Nagrody za przejście in-progress -> completed (także gdy trening zamyka trener).
+    // Czekamy na wynik, żeby ekran podsumowania od razu miał `rewards`; błąd nagród
+    // nie może wywrócić zapisanego już treningu.
+    if (collection === 'workoutLogs' && !wasCompleted) {
+      try {
+        const rewards = await onWorkoutCompleted(doc.toObject(), { actorId: user.id });
+        if (rewards) return NextResponse.json({ data: { ...doc.toJSON(), rewards, newRecords: rewards.newRecords } });
+      } catch (error) {
+        console.error('Failed to award workout rewards:', error);
+      }
+    } else if (collection === 'bodyMeasurements' && doc.ownerId) {
+      void onActivityLogged(doc.ownerId);
     }
 
     return NextResponse.json({ data: doc.toJSON() });

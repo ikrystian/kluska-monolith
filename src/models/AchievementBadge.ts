@@ -3,8 +3,22 @@ import mongoose, { Schema, Model, Document } from 'mongoose';
 export type AchievementCategory = 'consistency' | 'performance' | 'social' | 'milestone';
 export type AchievementRarity = 'common' | 'rare' | 'epic' | 'legendary';
 
+export const REQUIREMENT_TYPES = [
+  'streak',
+  'goal_count',
+  'workout_count',
+  'points_earned',
+  'level_reached',
+  'total_volume',
+  'personal_record_count',
+  'streak_days',
+  'run_distance',
+  'custom',
+] as const;
+export type RequirementType = (typeof REQUIREMENT_TYPES)[number];
+
 export interface IAchievementRequirement {
-  type: 'streak' | 'goal_count' | 'workout_count' | 'points_earned' | 'level_reached' | 'custom';
+  type: RequirementType;
   value: number;
   comparison: 'gte' | 'lte' | 'eq';
   customField?: string;
@@ -28,7 +42,7 @@ const AchievementRequirementSchema = new Schema<IAchievementRequirement>(
   {
     type: {
       type: String,
-      enum: ['streak', 'goal_count', 'workout_count', 'points_earned', 'level_reached', 'custom'],
+      enum: REQUIREMENT_TYPES,
       required: true,
     },
     value: { type: Number, required: true },

@@ -293,7 +293,7 @@ export default function YouPage() {
                   <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />
                 </p>
               </div>
-              <Progress value={xpPercent} className="mt-2 h-2 bg-background/60" />
+              <Progress value={xpPercent} className="mt-2 h-2 bg-foreground/10" />
               <div className="mt-3.5 grid grid-cols-3 gap-2">
                 <Counter icon={Flame} color="hsl(var(--primary))" value={streak} label={`${pluralForm(streak, 'dzień', 'dni', 'dni')} serii`} />
                 <Counter icon={Coins} color="hsl(var(--food))" value={stats?.currentFitCoins ?? 0} label="FitCoins" />

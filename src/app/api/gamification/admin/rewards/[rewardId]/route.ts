@@ -6,7 +6,7 @@ import { Reward } from '@/models/Reward';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { rewardId: string } }
+  { params }: { params: Promise<{ rewardId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -17,7 +17,7 @@ export async function GET(
 
     await connectToDatabase();
 
-    const reward = await Reward.findById(params.rewardId);
+    const reward = await Reward.findById((await params).rewardId);
 
     if (!reward) {
       return NextResponse.json({ error: 'Reward not found' }, { status: 404 });
@@ -35,7 +35,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { rewardId: string } }
+  { params }: { params: Promise<{ rewardId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -53,7 +53,7 @@ export async function PUT(
     await connectToDatabase();
 
     const reward = await Reward.findByIdAndUpdate(
-      params.rewardId,
+      (await params).rewardId,
       { $set: body },
       { new: true }
     );
@@ -74,7 +74,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { rewardId: string } }
+  { params }: { params: Promise<{ rewardId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -89,7 +89,7 @@ export async function DELETE(
 
     await connectToDatabase();
 
-    const reward = await Reward.findByIdAndDelete(params.rewardId);
+    const reward = await Reward.findByIdAndDelete((await params).rewardId);
 
     if (!reward) {
       return NextResponse.json({ error: 'Reward not found' }, { status: 404 });

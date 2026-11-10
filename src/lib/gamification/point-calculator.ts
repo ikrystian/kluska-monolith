@@ -143,3 +143,22 @@ export function calculateStreakMilestoneBonus(streakDays: number): number {
   if (streakDays >= 7) return 50;
   return 0;
 }
+
+const STREAK_MILESTONES: [days: number, bonus: number][] = [
+  [7, 50],
+  [30, 200],
+  [100, 500],
+];
+
+/**
+ * Bonus za kamienie milowe serii przekroczone między `previous` a `next`.
+ * Każdy próg płaci raz przy przejściu, a nie codziennie po jego osiągnięciu.
+ */
+export function streakMilestoneCrossed(previous: number, next: number): number {
+  return STREAK_MILESTONES.reduce((sum, [days, bonus]) => (previous < days && next >= days ? sum + bonus : sum), 0);
+}
+
+/** Punkty za bieg: 30 + 5 za każdy kilometr, maksymalnie 100. */
+export function calculateRunPoints(distanceKm: number): number {
+  return Math.min(100, 30 + Math.floor(Math.max(0, distanceKm)) * 5);
+}

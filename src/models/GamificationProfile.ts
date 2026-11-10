@@ -9,10 +9,44 @@ export interface IStreak {
   lastCheckinDate?: Date;
 }
 
+export const POINT_SOURCES = [
+  'goal_completion',
+  'workout_completion',
+  'run_completion',
+  'personal_record',
+  'quest',
+  'streak_bonus',
+  'achievement',
+  'reward_redemption',
+  'admin_adjustment',
+] as const;
+export type PointSource = (typeof POINT_SOURCES)[number];
+
+/** Osiągnięcie z katalogu w kodzie (`lib/gamification/catalog.ts`). */
+export interface IUnlockedAchievement {
+  key: string;
+  unlockedAt: Date;
+  /** Kiedy użytkownik zobaczył celebrację; brak = jeszcze do pokazania. */
+  seenAt?: Date;
+}
+
+export interface IWeeklyQuest {
+  id: string;
+  target: number;
+  xp: number;
+  rewardedAt?: Date;
+}
+
+export interface IWeeklyQuests {
+  /** Poniedziałek tygodnia, `YYYY-MM-DD`. */
+  weekKey: string;
+  items: IWeeklyQuest[];
+}
+
 export interface IPointTransaction {
   amount: number;
   type: 'earned' | 'spent' | 'bonus' | 'expired';
-  source: 'goal_completion' | 'workout_completion' | 'streak_bonus' | 'achievement' | 'reward_redemption' | 'admin_adjustment';
+  source: PointSource;
   sourceId?: string;
   description: string;
   createdAt: Date;
@@ -26,7 +60,14 @@ export interface IGamificationProfile extends Document {
   level: number;
   experiencePoints: number;
   streaks: IStreak;
+  /** Id odznak z kolekcji `achievementbadges` (panel admina). */
   achievements: string[];
+  /** Osiągnięcia z katalogu w kodzie. */
+  unlocked: IUnlockedAchievement[];
+  /** Snapshot `AthleteStats` — odczyt ekranu bez pełnej agregacji. */
+  lifetimeStats?: Record<string, any>;
+  statsUpdatedAt?: Date;
+  quests?: IWeeklyQuests;
   redeemedRewards: {
     rewardId: string;
     redeemedAt: Date;
@@ -60,7 +101,7 @@ const PointTransactionSchema = new Schema<IPointTransaction>(
     },
     source: {
       type: String,
-      enum: ['goal_completion', 'workout_completion', 'streak_bonus', 'achievement', 'reward_redemption', 'admin_adjustment'],
+      enum: POINT_SOURCES,
       required: true,
     },
     sourceId: { type: String },
@@ -79,6 +120,28 @@ const GamificationProfileSchema = new Schema<IGamificationProfile>(
     experiencePoints: { type: Number, default: 0 },
     streaks: { type: StreakSchema, default: () => ({}) },
     achievements: [{ type: String }],
+    unlocked: [
+      {
+        _id: false,
+        key: { type: String, required: true },
+        unlockedAt: { type: Date, default: Date.now },
+        seenAt: { type: Date },
+      },
+    ],
+    lifetimeStats: { type: Schema.Types.Mixed },
+    statsUpdatedAt: { type: Date },
+    quests: {
+      weekKey: { type: String },
+      items: [
+        {
+          _id: false,
+          id: { type: String, required: true },
+          target: { type: Number, required: true },
+          xp: { type: Number, required: true },
+          rewardedAt: { type: Date },
+        },
+      ],
+    },
     redeemedRewards: [
       {
         rewardId: { type: String, required: true },

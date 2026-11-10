@@ -173,7 +173,7 @@ export function QuickAddSheet({ open, onOpenChange }: { open: boolean; onOpenCha
             <ActionRow icon={NotebookPen} color="text-food" label="Posiłek" hint="Dzienniczek kalorii i skaner" onClick={() => go('/athlete/nutrition?add=1')} />
             <ActionRow icon={SquareCheck} color="text-volt" label="Nawyki" hint="Odhacz dzisiejsze" onClick={() => go('/athlete/habits')} />
             <ActionRow icon={Ruler} color="text-primary" label="Pomiary" hint="Obwody i zdjęcia sylwetki" onClick={() => go('/athlete/measurements?add=1')} />
-            <ActionRow icon={Target} color="text-primary" label="Cel" hint="Nowy cel do pobicia" onClick={() => go('/athlete/goals')} />
+            <ActionRow icon={Target} color="text-primary" label="Cel" hint="Nowy cel do pobicia" onClick={() => go('/athlete/goals?add=1')} />
             <ActionRow icon={MessageSquarePlus} color="text-social" label="Status dla ekipy" hint="Napisz, co u Ciebie" onClick={() => go('/athlete/social')} />
           </div>
 

@@ -60,11 +60,6 @@ export function AppHeader() {
           {screenTitle && (
             <span className="truncate font-display text-[1.75rem] font-bold uppercase leading-none">{screenTitle}</span>
           )}
-          {isToday && (
-            <span className="truncate text-sm font-medium normal-case text-muted-foreground">
-              {format(new Date(), 'EEEE, d MMMM', { locale: pl })}
-            </span>
-          )}
         </h1>
 
         <div className="flex shrink-0 items-center">

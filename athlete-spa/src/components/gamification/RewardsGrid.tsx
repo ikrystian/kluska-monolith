@@ -23,6 +23,13 @@ interface RewardsGridProps {
   isLoading?: boolean;
 }
 
+const TIER_LABELS: Record<string, string> = {
+  bronze: 'Brąz',
+  silver: 'Srebro',
+  gold: 'Złoto',
+  platinum: 'Platyna',
+};
+
 function getTierColor(tier: string) {
   switch (tier) {
     case 'bronze':
@@ -154,7 +161,7 @@ export function RewardsGrid({
                 <div className="flex items-start justify-between">
                   <CardTitle className="text-lg">{reward.title}</CardTitle>
                   <Badge className={getTierColor(reward.tier)}>
-                    {reward.tier}
+                    {TIER_LABELS[reward.tier] ?? reward.tier}
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -200,7 +207,7 @@ export function RewardsGrid({
               <div className="flex items-center justify-between mb-4">
                 <span className="font-medium">{selectedReward.title}</span>
                 <Badge className={getTierColor(selectedReward.tier)}>
-                  {selectedReward.tier}
+                  {TIER_LABELS[selectedReward.tier] ?? selectedReward.tier}
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground mb-4">

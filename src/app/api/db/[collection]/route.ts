@@ -6,6 +6,7 @@ import { jsonWithEtag } from '@/lib/http-cache';
 import { describeFinishedActivity, notifyFriendsOfActivity } from '@/lib/friends';
 import { AccessContext, AccessError, isPublicCollection, sanitizeBody, scopeRead } from '@/lib/db-access';
 import { linkWorkoutLogExercises } from '@/lib/workout-log-exercises';
+import { onActivityLogged, onRunLogged, onWorkoutCompleted } from '@/lib/gamification';
 
 import {
   User,
@@ -193,6 +194,22 @@ export async function POST(
     // A workout saved as already completed, or a recorded run: tell friends.
     const activity = describeFinishedActivity(collection, doc.toObject());
     if (activity) void notifyFriendsOfActivity(user.id, activity);
+
+    // Nagrody: trening zapisany od razu jako ukończony, bieg albo pomiar.
+    if (collection === 'workoutLogs' && doc.status === 'completed') {
+      try {
+        const rewards = await onWorkoutCompleted(doc.toObject(), { actorId: user.id });
+        if (rewards) {
+          return NextResponse.json({ data: { ...doc.toJSON(), rewards, newRecords: rewards.newRecords } }, { status: 201 });
+        }
+      } catch (error) {
+        console.error('Failed to award workout rewards:', error);
+      }
+    } else if (collection === 'runningSessions' && doc.ownerId) {
+      void onRunLogged(doc.ownerId, doc.toObject());
+    } else if (collection === 'bodyMeasurements' && doc.ownerId) {
+      void onActivityLogged(doc.ownerId);
+    }
 
     return NextResponse.json({ data: doc.toJSON() }, { status: 201 });
   } catch (error) {

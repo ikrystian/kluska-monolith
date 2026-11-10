@@ -35,6 +35,12 @@ export interface IWorkoutLog extends Document {
   feedback?: string;
   /** AI coach summary, generated once on demand and reused afterwards. */
   aiSummary?: string;
+  /** Znacznik idempotencji: nagrody za ten trening zostały już przyznane. */
+  rewardedAt?: Date;
+  /** Podsumowanie nagród (`RewardSummary`) pokazywane po treningu. */
+  rewards?: Record<string, any>;
+  /** Rekordy życiowe pobite w tym treningu. */
+  newRecords?: Record<string, any>[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -92,6 +98,9 @@ const WorkoutLogSchema = new Schema<IWorkoutLog>(
     },
     feedback: { type: String },
     aiSummary: { type: String },
+    rewardedAt: { type: Date },
+    rewards: { type: Schema.Types.Mixed },
+    newRecords: { type: [Schema.Types.Mixed], default: undefined },
   },
   {
     timestamps: true,

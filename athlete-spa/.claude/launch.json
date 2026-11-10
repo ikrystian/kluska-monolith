@@ -45,19 +45,6 @@
       "port": 5178
     },
     {
-      "name": "athlete-spa-mock3",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": [
-        "vite",
-        "--mode",
-        "mock3",
-        "--port",
-        "5179",
-        "--strictPort"
-      ],
-      "port": 5179
-    },
-    {
       "name": "landing",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
