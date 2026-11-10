@@ -1,5 +1,7 @@
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
+import { Manifesto } from './components/Manifesto';
+import { YearPlan } from './components/YearPlan';
 import { TrainingStage, RunningStage, NutritionStage, HabitsStage, CoachStage } from './components/Stages';
 import { PlateCalcInteractive } from './components/PlateCalcInteractive';
 import { KeyFeatures } from './components/KeyFeatures';
@@ -17,6 +19,8 @@ export default function App() {
       <Navbar />
       <main>
         <Hero />
+        <Manifesto />
+        <YearPlan />
         <TrainingStage />
         <PlateCalcInteractive />
         <RunningStage />

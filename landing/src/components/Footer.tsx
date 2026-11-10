@@ -1,60 +1,35 @@
-import { Fragment } from 'react';
 import { Wordmark } from './Wordmark';
 
 const links = [
-  ['Trening', '#trening'],
+  ['Panel trenera', 'https://app.leniwakluska.pl'],
   ['Kalkulator talerzy', '#kalkulator'],
-  ['Bieganie', '#bieganie'],
-  ['Jedzenie', '#dieta'],
-  ['Nawyki', '#nawyki'],
-  ['Panel trenera', '/login'],
-  ['Mam kod od trenera', '/athlete/login'],
   ['Cennik', '#cennik'],
   ['FAQ', '#faq'],
-  ['Zaloguj się', '/athlete/login'],
-  ['Zacznij za darmo', '/athlete/dashboard'],
+  ['Prywatność', '#'],
+  ['Regulamin', '#'],
 ];
 
-/* A colophon instead of link columns: one dense line of everything on the page. */
+/* One line and a note. Everything else on the page is already one scroll away. */
 export function Footer() {
   return (
-    <footer className="pb-8 pt-14 sm:pt-20">
+    <footer className="py-10">
       <div className="shell">
-        <a href="#" aria-label="Leniwa Kluska — do góry" className="inline-block">
-          <Wordmark size="lg" />
-        </a>
-
-        <p className="mt-6 max-w-[62rem] text-[0.9375rem] leading-[2.1] text-ink-2">
-          Trening, bieganie i dieta w jednym dzienniku. Zrobione w Polsce.{' '}
-          <span className="max-sm:block max-sm:pt-3">
-            {links.map(([label, href], i) => (
-              <Fragment key={label}>
-                <span className="whitespace-nowrap">
-                  <a href={href} className="font-semibold text-ink transition-colors hover:text-accent-ink">
-                    {label}
-                  </a>
-                  {i < links.length - 1 && (
-                    <span aria-hidden className="mx-2.5 text-rule-strong">
-                      /
-                    </span>
-                  )}
-                </span>{' '}
-              </Fragment>
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <a href="#" aria-label="Leniwa Kluska — do góry" className="inline-block shrink-0">
+            <Wordmark />
+          </a>
+          <nav aria-label="Stopka" className="flex flex-wrap gap-x-7 gap-y-3 text-[0.9375rem] font-semibold">
+            {links.map(([label, href]) => (
+              <a key={label} href={href} className="whitespace-nowrap text-ink/85 transition-colors hover:text-accent-ink">
+                {label}
+              </a>
             ))}
-          </span>
-        </p>
-
-        <div className="mt-10 flex flex-col gap-3 border-t border-rule pt-6 text-sm text-ink-2 sm:flex-row sm:justify-between">
-          <p>© {new Date().getFullYear()} Leniwa Kluska · liczby na ekranach aplikacji to dane przykładowe</p>
-          <p className="flex gap-6">
-            <a href="#" className="transition-colors hover:text-ink">
-              Prywatność
-            </a>
-            <a href="#" className="transition-colors hover:text-ink">
-              Regulamin
-            </a>
-          </p>
+          </nav>
         </div>
+        <p className="mt-8 border-t border-rule pt-6 text-sm leading-relaxed text-ink-2">
+          © {new Date().getFullYear()} Leniwa Kluska. Trening, bieganie i dieta w jednym dzienniku — zrobione w Polsce. Liczby na ekranach aplikacji
+          to dane przykładowe.
+        </p>
       </div>
     </footer>
   );

@@ -15,7 +15,8 @@ const getDevOrigins = (): string[] => {
     'http://83.168.88.80',
     'https://kluska.studio-ai.com.pl',
     'https://kluska-beta.studio-ai.com.pl',
-    'https://kluska.sandbox-ai.pl'
+    'https://kluska.sandbox-ai.pl',
+    'https://app.leniwakluska.pl'
   ];
 
   const origins = new Set<string>(baseOrigins);

@@ -1,36 +1,42 @@
 import { ArrowRight } from 'lucide-react';
-import { reveal } from '../lib/reveal';
+import { getSeason, plural, useNow } from '../lib/season';
 
+/* The closing poster: the brand's own line on a full ember field, the lifter printed into it. */
 export function CtaSection() {
+  const season = getSeason(useNow(60_000));
+
   return (
-    <section aria-labelledby="cta-title" className="px-3 pb-3 pt-4 sm:px-4 sm:pb-4">
-      <div className="relative isolate mx-auto max-w-[90rem] overflow-hidden rounded-[var(--radius-card)] bg-shade">
-        <img
-          src="/images/deadlift-dark.webp"
-          alt=""
-          width={2400}
-          height={1600}
-          loading="lazy"
-          className="absolute inset-0 -z-10 size-full object-cover object-[50%_30%] opacity-80 [mask-image:linear-gradient(to_top,black_25%,transparent_95%)]"
-        />
-        <div className="shell pb-12 pt-24 sm:pb-16 sm:pt-36 lg:pt-48">
-          <h2 {...reveal(0)} id="cta-title" className="display max-w-[12ch] text-[clamp(3.25rem,10vw,8.5rem)]">
-            Koniec z&nbsp;byciem leniwą kluską.
-          </h2>
-          <div className="mt-8 grid grid-cols-[minmax(0,1fr)] items-end gap-8 lg:grid-cols-[minmax(0,1fr)_auto]">
-            <p {...reveal(1)} className="lede max-w-xl !text-ink">
-              Wybierz szablon, zapisz pierwszą serię i za tydzień zobacz, o ile ją pobiłeś. Za darmo, w całości — w
-              przeglądarce od razu, a na Androidzie także jako aplikacja.
-            </p>
-            <div {...reveal(2)} className="flex flex-col gap-2.5 min-[420px]:flex-row">
-              <a href="/athlete/dashboard" className="btn btn-primary btn-lg">
-                Zacznij za darmo
-                <ArrowRight className="nudge size-4" aria-hidden />
-              </a>
-              <a href="/athlete/login" className="btn btn-ghost btn-lg">
-                Mam już konto
-              </a>
-            </div>
+    <section aria-labelledby="cta-title" className="on-ember grain overflow-clip">
+      <img
+        src="/images/deadlift-dark.webp"
+        alt=""
+        width={2400}
+        height={1600}
+        loading="lazy"
+        className="duotone cta-photo absolute inset-y-0 right-0 -z-10 hidden h-full w-[62%] object-cover object-[50%_30%] opacity-60 lg:block"
+      />
+      <div className="shell pb-14 pt-24 sm:pb-20 sm:pt-36">
+        <p className="font-display text-2xl font-bold uppercase leading-none sm:text-3xl">
+          {season.pre
+            ? `Do stycznia ${season.days} ${plural(season.days, 'dzień', 'dni', 'dni')}. Pierwsza kratka czeka dziś.`
+            : `Dzień ${season.dayOfYear} z ${season.daysInYear}. Pierwsza kratka czeka dziś.`}
+        </p>
+        <h2 id="cta-title" className="display mt-4 max-w-[11ch] text-[clamp(3.5rem,13vw,11.5rem)]">
+          Koniec z&nbsp;byciem leniwą kluską.
+        </h2>
+        <div className="mt-9 grid grid-cols-[minmax(0,1fr)] items-end gap-8 lg:grid-cols-[minmax(0,1fr)_auto]">
+          <p className="max-w-xl text-lg font-medium leading-relaxed sm:text-xl">
+            Wybierz szablon, zapisz pierwszą serię i za tydzień zobacz, o ile ją pobiłeś. Za darmo, w całości — w przeglądarce od razu, a na
+            Androidzie także jako aplikacja.
+          </p>
+          <div className="flex flex-col gap-2.5 min-[440px]:flex-row">
+            <a href="https://app.leniwakluska.pl" className="btn btn-ink btn-lg">
+              Zacznij dziś
+              <ArrowRight className="nudge size-5" aria-hidden />
+            </a>
+            <a href="https://app.leniwakluska.pl" className="btn btn-lg btn-on-ember">
+              Mam już konto
+            </a>
           </div>
         </div>
       </div>

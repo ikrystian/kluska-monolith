@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { GymFavorites } from '@/components/gyms/GymFavorites';
 import { GymLogo } from '@/components/gyms/GymLogo';
+import { GymRecentWorkouts } from '@/components/gyms/GymRecentWorkouts';
 import { useGymPoints, type GymPoint } from '@/hooks/useGymPoints';
 import { useDoc, useUser } from '@/lib/db-hooks';
 import { gymId, type Coords } from '@/lib/gym-geo';
@@ -129,6 +130,7 @@ function GymCard({ gym, distance, onClose }: { gym: GymPoint; distance?: number;
       </div>
 
       <GymFavorites gymId={gymId(gym)} />
+      <GymRecentWorkouts gymId={gymId(gym)} />
     </div>
   );
 }

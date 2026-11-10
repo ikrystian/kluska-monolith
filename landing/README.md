@@ -1,36 +1,53 @@
 # Leniwa Kluska – Landing Page
 
-Responsywny landing page aplikacji **Leniwa Kluska (Athlete SPA)** — w tym samym systemie wizualnym co aplikacja („Sztanga”): grafit i kreda, jeden akcent (ember), wąskie wersaliki w nagłówkach i kolory talerzy olimpijskich dla dziedzin.
+Responsywny landing page aplikacji **Leniwa Kluska (Athlete SPA)**. Strona jest plakatem z jedną tezą — **„Nie czekaj do stycznia”** — złożonym z pełnych pól koloru (grafit, ember, kreda), ciężkich wąskich wersalików i prawdziwych zdjęć.
 
 ---
 
+## Kampania noworoczna (przełącza się sama)
+
+Logika siedzi w `src/lib/season.ts`:
+
+- **październik–grudzień**: pasek nad nawigacją, odliczanie do 1 stycznia w hero, nagłówek „Nie czekaj do stycznia.”, a planer pokazuje przyszły rok plus „przewagę” — dni, które zostały do sylwestra.
+- **styczeń–wrzesień**: bez paska, hero pokazuje dzień roku (np. 41/365), nagłówek zmienia się na „Nie czekaj do poniedziałku.”, a planer liczy to, co zostało z bieżącego roku.
+
+Nic nie trzeba wyłączać po Nowym Roku.
+
 ## Design system
 
-- **Tokeny** w `src/index.css` (`@theme`, Tailwind v4) odwzorowują ciemny motyw z `athlete-spa/src/globals.css`, przeliczony z HSL na OKLCH: `paper*` (tło / karta / secondary), `ink*` (kreda), `accent` (ember), `run` (niebieski), `food` (żółty), `volt` (zielony, „zrobione”), `social` (fiolet). Zmiana palety w aplikacji = zmiana tych wartości tutaj. Używaj wyłącznie nazwanych tokenów.
-- **Typografia** jak w aplikacji: Barlow Condensed (nagłówki wersalikami — `.display`, `.h-section`, `.h-sub`; duże liczby — `.big`) + Figtree (tekst). `.num` to tylko cyfry o stałej szerokości.
-- **Przyciski**: `.btn` + `.btn-primary` / `.btn-ghost` / `.btn-light`, rozmiary `.btn-sm` / `.btn-lg` — zaokrąglony blok jak w aplikacji, nie pigułka.
-- **Powierzchnie**: `.screen` (ekran aplikacji — prawdziwe UI, bez rysowanych ramek telefonu), `.stage-proof` (panel z ekranami etapu, podświetlony kolorem `--tone`), `.sheet` (jasna karta cennika), `.surface`.
-- **Kolor etapu**: sekcja ustawia `--tone` (kolor swojego talerza); korzystają z niego `.plate`, `.bloom` i `.stage-proof`.
+- **Tokeny** w `src/index.css` (`@theme`, Tailwind v4) — te same wartości co ciemny motyw aplikacji (`paper*`, `ink*`, `accent`, kolory dziedzin `run` / `food` / `volt` / `social`) oraz jasne pole `sheet*`. Używaj wyłącznie nazwanych tokenów.
+- **Typografia**: Barlow Condensed 800 wersalikami (`.display`, `.h-section`, `.h-sub`, liczby `.big`) + Figtree (tekst).
+- **Przyciski**: `.btn` z etykietą wersalikami + `.btn-primary` (ember) / `.btn-ghost` (obrys, na zdjęcia i grafit) / `.btn-ink` (grafit, na ember i kredę) / `.btn-on-ember`; rozmiary `.btn-sm` / `.btn-lg`.
+- **Pola koloru**: `.on-ember` (pełny ember, ciemny tekst), `.sheet` (kreda), oba z `.grain` (ziarno druku). Ekrany aplikacji (`.screen`) zostają zaokrąglone jak w apce — kontrastują z ostrą siatką strony.
+
+## Animacje
+
+Celowo jest ich kilka, każda coś znaczy — **nie dodawaj fade-up do każdej sekcji**:
+
+1. **Hero** — zdjęcie „siada”, wiersze nagłówka wyjeżdżają z maski, odliczanie tyka (CSS, bez JS).
+2. **Manifest** (`Manifesto`) — czytany scrollem: słowa dochodzą do pełnej czerni w miarę przewijania (`useReadProgress`).
+3. **Planer roku** (`YearPlan`) — fala wypełniająca kratki i licznik treningów; reaguje na przełączniki.
+4. **Zdjęcia** — odsłaniane kurtyną raz, przy wejściu w kadr (`reveal(0, 'curtain')`).
+5. **Ekrany aplikacji** — paski, pierścienie i ptaszki wypełniają się po wejściu w kadr (`reveal(0, 'live')` + klasy `.fill`, `.ring-arc`, `.pop`).
+
+Wszystko respektuje `prefers-reduced-motion` (treść jest wtedy od razu w stanie końcowym).
 
 ## Układ
 
-Strona opowiada aplikację jako ładowanie sztangi: cztery etapy to cztery talerze (`src/lib/stages.ts`), a suma kilogramów rośnie od 20 do 160.
-
-1. **Nawigacja** (`Navbar`) — nad hero zwykły wiersz, po przewinięciu pływający pasek z licznikiem kg; talerzyki przy linkach zapalają się po minięciu etapu.
-2. **Hero** (`Hero` + `LoadBar`) — nagłówek, CTA i sztanga w SVG, którą odwiedzający sam ładuje (dwa talerze wchodzą same). Pod spodem trzy fakty i ticker „Zapisz. Pobij. Powtórz.”.
-3. **Etapy** (`Stages`): **Trening** (25 kg), **Bieganie** (20 kg), **Jedzenie** (15 kg), **Nawyki** (10 kg) — każdy zaczyna się linią sztangi z dotychczasowymi talerzami i sumą, potem nagłówek, lista funkcji i panel z ekranami aplikacji (`AppScreens`). Po Treningu siedzi **Kalkulator talerzy** (`PlateCalcInteractive`).
-4. **Trener** (`CoachStage`) — osobne pasmo bez talerza, w kolorze `social`.
-5. **Wszystko, czego potrzebuje Twój tydzień** (`KeyFeatures`) — lista-specyfikacja zamiast siatki kart.
-6. **Cennik** (`Pricing`) — jeden plan (0 zł) na jasnej karcie i trzy kroki na start.
-7. **FAQ**, **CTA**, **stopka** (kolofon z linkami w jednym akapicie).
+1. **Pasek kampanii + nawigacja** (`Navbar`) — pasek odjeżdża ze stroną, belka zostaje i po przewinięciu dostaje tło.
+2. **Hero** (`Hero` + `Countdown`) — jedno zdjęcie, jedno zdanie, jeden zegar.
+3. **Manifest** (`Manifesto`) — pole ember.
+4. **Planer roku** (`YearPlan`, `#rok`) — pole kredy: ile razy w tygodniu, start dziś czy 1 stycznia, kalendarz roku w kratkach. Liczby to zwykła arytmetyka kalendarza danego roku.
+5. **Trening** (pas zdjęcia z hasłem), **Kalkulator talerzy**, **Bieganie** (zdjęcie jako tło całej sekcji), **Jedzenie** (zdjęcie ze skanerem na rogu), **Nawyki** (tryptyk), **Trener** (split) — każda sekcja ma inną kompozycję (`Stages`).
+6. **Indeks reszty funkcji** (`KeyFeatures`), **Cennik** (pole kredy, „0 zł”), **FAQ**, **CTA** (pole ember ze zdjęciem w duotonie), **stopka** w jednym wierszu.
 
 Wszystkie liczby wewnątrz ekranów aplikacji (ciężary, tempo, makro) to dane przykładowe.
 
 ## Zdjęcia
 
-Kadry w `public/images/` to prawdziwe fotografie z [Unsplash](https://unsplash.com/license) (licencja pozwala na użycie komercyjne bez atrybucji), zapisane jako WebP: `hero-press` (hero), `grip-chalk` (Trening), `plates-floor` (kalkulator), `runners-dusk` (Bieganie), `meal-plate` (Dieta), `stairs-steps` (Nawyki), `coach-floor` (Trener), `deadlift-dark` (CTA), `gym-hall` (zapas dla nieużywanych sekcji). Nie dokładaj grafik generowanych — strona ma wyglądać jak siłownia, nie jak render. Sztanga jest motywem strony — w aplikacji dzień pokazuje lista „Cele dnia” (jej replika jest w etapie Nawyki).
+Kadry w `public/images/` to prawdziwe fotografie z [Unsplash](https://unsplash.com/license) (licencja pozwala na użycie komercyjne bez atrybucji), zapisane jako WebP: `hero-press` (hero), `grip-chalk` (Trening), `plates-floor` (kalkulator), `runners-dusk` (Bieganie), `meal-plate` (Dieta), `stairs-steps` (Nawyki), `coach-floor` (Trener), `deadlift-dark` (CTA), `gym-hall` (zapas dla nieużywanych sekcji). Nie dokładaj grafik generowanych — strona ma wyglądać jak siłownia, nie jak render. W aplikacji dzień pokazuje lista „Cele dnia” (jej replika jest w sekcji Nawyki).
 
-Starsze komponenty (`StickyFeatures`, `Chapters`, `CardRail`, `Facts`, `CalcTeaser` i inne) zostały w `src/components`, ale nie są już podpięte w `App.tsx`.
+Starsze komponenty (`LoadBar`, `StickyFeatures`, `Chapters`, `CardRail`, `Facts`, `CalcTeaser` i inne) zostały w `src/components`, ale nie są już podpięte w `App.tsx`.
 
 ---
 

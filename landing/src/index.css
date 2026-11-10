@@ -1,13 +1,11 @@
-/* Hallmark · genre: atmospheric · macrostructure: Narrative Workflow · stages are the four plates of the app's "Sztanga dnia"
- * theme: custom · vibe: "the athlete app's own Sztanga system — graphite, chalk, ember, olympic plates"
- * paper: oklch(16.7% 0.005 264) · accent: oklch(68.3% 0.21 37) · display: Barlow Condensed 700 · body: Figtree
- * axes: dark / display-condensed / warm · tokens mirror athlete-spa/src/globals.css (.dark), converted HSL → OKLCH
- * hero: left-aligned statement + Tier B hand-built SVG barbell the visitor loads (the app's DailyBar, enlarged)
- * nav: N10 scroll-morph (plain row → floating bar with running kg) · footer: Ft4 dense colophon · CTA: closing photo band
- * dividers: a bar shaft carrying the plates earned so far + running total · reveal: horizontal sweep on the plates
- * pre-emit critique: P5 H4 E4 S5 R4 V4
- * contrast: pass (40–41) · nav: N10 · footer: Ft4 · slop: pass (42–45) · honest: pass (46) · chrome: pass (47)
- * tokens: pass (48) · responsive: pass (49–52) · caps line-height: pass (55)
+/* Hallmark · genre: editorial · macrostructure: Manifesto · the page argues one thing: don't wait for January
+ * theme: custom · vibe: "gym poster — ember, chalk and graphite colour fields, heavy condensed caps"
+ * paper: oklch(16.7% 0.005 264) + full fields of accent oklch(68.3% 0.21 37) and chalk oklch(95% 0.014 90)
+ * display: Barlow Condensed 800 · body: Figtree · axes: colour-blocked (dark / mid / light) / display-condensed / warm
+ * hero: photographic fold + live countdown to 1 January · enrichment: Tier A year planner built from 365 cells
+ * nav: N12 banner + retract · footer: Ft2 inline single line · CTA: ember field, duotone photo
+ * motion: load orchestration in the hero, scroll-read manifesto, planner wave, app screens that fill in — no blanket fade-up
+ * pre-emit critique: P5 H4 E4 S5 R4 V5
  */
 @import "tailwindcss";
 
@@ -49,6 +47,7 @@
   --color-focus: oklch(84.4% 0.149 87);
   --color-steel: oklch(71.9% 0.014 255);
   --color-shade: oklch(10% 0.005 264);
+  --color-ember-deep: oklch(58% 0.2 35);
 
   /* the light "chalk" card — pricing sits on it */
   --color-receipt: oklch(95% 0.014 90);
@@ -56,6 +55,7 @@
   --color-receipt-rule: oklch(78% 0.014 90);
   --color-sheet: oklch(95% 0.014 90);
   --color-sheet-2: oklch(90% 0.016 88);
+  --color-sheet-3: oklch(84.5% 0.018 86);
   --color-sheet-ink: oklch(19% 0.01 264);
   --color-sheet-ink-2: oklch(42% 0.012 258);
   --color-sheet-rule: oklch(80% 0.014 88);
@@ -74,7 +74,8 @@
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
   --radius-ui: 14px;
-  --radius-card: 28px;
+  --radius-card: 12px;
+  --radius-btn: 6px;
   --radius-pill: 999px;
 
   --shadow-pop: 0 2px 4px oklch(0% 0 0 / 0.25), 0 28px 56px -24px oklch(0% 0 0 / 0.7);
@@ -156,26 +157,78 @@
     text-wrap: pretty;
   }
 
-  /* ---------- reveals, armed by useScrollReveal() ---------- */
+  /* ---------- reveals, armed by useScrollReveal() ----------
+     Three kinds only. Text is never faded in on scroll: it is simply there. */
 
-  .reveal-on [data-reveal] {
+  /* legacy fade-up, still used by the components that are not mounted */
+  .reveal-on [data-reveal='up'],
+  .reveal-on [data-reveal='fade'],
+  .reveal-on [data-reveal='plate'] {
     opacity: 0;
+    transform: translate3d(0, 20px, 0);
     transition:
       opacity 600ms var(--ease-out),
       transform 800ms var(--ease-out);
     transition-delay: calc(var(--i, 0) * 80ms);
   }
 
-  .reveal-on [data-reveal='up'] {
-    transform: translate3d(0, 20px, 0);
-  }
-
-  /* a plate sliding onto the sleeve */
-  .reveal-on [data-reveal='plate'] {
-    transform: translate3d(-28px, 0, 0);
-  }
-
   .reveal-on [data-reveal].is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* a photo uncovered from the top, settling from a slight zoom. The clip sits on an inner
+     wrapper: a clipped element reports no visible area to the IntersectionObserver. */
+  .reveal-on [data-reveal='curtain'] > .cur {
+    clip-path: inset(0 0 100% 0);
+    transition: clip-path 1100ms var(--ease-out);
+  }
+
+  .reveal-on [data-reveal='curtain'] img {
+    transform: scale(1.14);
+    transition: transform 1700ms var(--ease-out);
+  }
+
+  .reveal-on [data-reveal='curtain'].is-visible > .cur {
+    clip-path: inset(0);
+  }
+
+  .reveal-on [data-reveal='curtain'].is-visible img {
+    transform: none;
+  }
+
+  /* app screens fill in when they scroll into view: bars grow, rings draw, ticks land */
+  .reveal-on [data-reveal='live'] .fill {
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 1000ms var(--ease-out);
+    transition-delay: calc(var(--i, 0) * 110ms + 150ms);
+  }
+
+  .reveal-on [data-reveal='live'].is-visible .fill {
+    transform: none;
+  }
+
+  .reveal-on [data-reveal='live'] .ring-arc {
+    stroke-dashoffset: var(--ring-len);
+    transition: stroke-dashoffset 1200ms var(--ease-out);
+    transition-delay: calc(var(--i, 0) * 140ms + 150ms);
+  }
+
+  .reveal-on [data-reveal='live'].is-visible .ring-arc {
+    stroke-dashoffset: var(--ring-to);
+  }
+
+  .reveal-on [data-reveal='live'] .pop {
+    opacity: 0;
+    transform: scale(0.4);
+    transition:
+      opacity 200ms var(--ease-out),
+      transform 420ms var(--ease-out);
+    transition-delay: calc(var(--i, 0) * 160ms + 250ms);
+  }
+
+  .reveal-on [data-reveal='live'].is-visible .pop {
     opacity: 1;
     transform: none;
   }
@@ -198,14 +251,14 @@
   .display,
   .h-section {
     font-family: var(--font-display);
-    font-weight: 700;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0;
-    line-height: 1;
+    letter-spacing: -0.005em;
+    line-height: 0.92;
   }
 
   .h-section {
-    font-size: clamp(2.5rem, 5.2vw + 0.75rem, 5rem);
+    font-size: clamp(2.875rem, 6vw + 1rem, 6.25rem);
   }
 
   .h-sub {
@@ -264,27 +317,30 @@
     }
   }
 
-  /* ---------- buttons: the app's rounded-2xl block, not a pill ---------- */
+  /* ---------- buttons: a stamped block with a condensed caps label ---------- */
   .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    min-height: 3rem;
-    padding: 0 1.375rem;
-    border-radius: var(--radius-ui);
+    gap: 0.625rem;
+    min-height: 3.25rem;
+    padding: 0 1.5rem;
+    border-radius: var(--radius-btn);
+    font-family: var(--font-display);
     font-weight: 700;
-    font-size: 0.9375rem;
+    font-size: 1.1875rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
     white-space: nowrap;
     transition:
       background-color 160ms var(--ease-out),
       color 160ms var(--ease-out),
-      border-color 160ms var(--ease-out),
+      box-shadow 160ms var(--ease-out),
       transform 120ms var(--ease-out);
   }
 
   .btn:active {
-    transform: scale(0.97);
+    transform: translateY(1px) scale(0.985);
   }
 
   .btn:disabled,
@@ -294,24 +350,23 @@
   }
 
   .btn svg {
-    transition: transform 200ms var(--ease-out);
+    transition: transform 220ms var(--ease-out);
   }
 
   .btn:hover svg.nudge {
-    transform: translateX(3px);
+    transform: translateX(4px);
   }
 
   .btn-lg {
-    min-height: 3.5rem;
+    min-height: 3.75rem;
     padding: 0 1.75rem;
-    font-size: 1.0625rem;
+    font-size: 1.375rem;
   }
 
   .btn-sm {
     min-height: 2.5rem;
-    padding: 0 1rem;
-    font-size: 0.875rem;
-    border-radius: 12px;
+    padding: 0 0.875rem;
+    font-size: 1rem;
   }
 
   .btn-primary {
@@ -323,20 +378,26 @@
     background: var(--color-accent-hover);
   }
 
+  /* outlined: sits on photos and on graphite */
   .btn-ghost {
-    background: var(--color-paper-3);
     color: var(--color-ink);
+    box-shadow: inset 0 0 0 1.5px var(--color-rule-strong);
   }
 
   .btn-ghost:hover {
-    background: var(--color-rule-strong);
+    background: var(--color-ink);
+    color: var(--color-paper);
+    box-shadow: inset 0 0 0 1.5px var(--color-ink);
   }
 
+  /* graphite block: for the ember and chalk fields */
+  .btn-ink,
   .btn-light {
     background: var(--color-receipt-ink);
     color: var(--color-receipt);
   }
 
+  .btn-ink:hover,
   .btn-light:hover {
     background: var(--color-paper-3);
   }
@@ -353,7 +414,7 @@
     color: var(--color-ink);
     background: var(--color-screen);
     border: 1px solid var(--color-rule);
-    border-radius: 20px;
+    border-radius: 18px;
     box-shadow: var(--shadow-pop);
     overflow: hidden;
   }
@@ -442,23 +503,179 @@
       opacity 300ms var(--ease-out);
   }
 
-  /* hero headline: each line rises out of its own mask */
-  .line-mask {
+  /* hero headline: each line rises out of its own mask on load — no JS involved */
+  .rise {
     display: block;
     overflow: clip;
-    padding-block: 0.04em;
+    padding-top: 0.1em;
+    margin-top: -0.1em;
   }
 
-  .reveal-on .line-mask > span {
+  .rise > span {
     display: block;
-    transform: translate3d(0, 105%, 0);
-    transition: transform 900ms var(--ease-out);
-    transition-delay: calc(var(--i, 0) * 110ms + 80ms);
+    animation: rise 1000ms var(--ease-out) both;
+    animation-delay: calc(var(--i, 0) * 130ms + 120ms);
   }
 
-  .reveal-on .is-visible .line-mask > span,
-  .reveal-on .line-mask.is-visible > span {
-    transform: none;
+  @keyframes rise {
+    from {
+      transform: translate3d(0, 108%, 0);
+    }
+  }
+
+  .hero-photo {
+    animation: settle 2200ms var(--ease-out) both;
+  }
+
+  @keyframes settle {
+    from {
+      opacity: 0;
+      transform: scale(1.1);
+    }
+  }
+
+  .hero-late {
+    animation: late 700ms var(--ease-out) both;
+    animation-delay: calc(var(--i, 0) * 110ms + 520ms);
+  }
+
+  @keyframes late {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 14px, 0);
+    }
+  }
+
+  /* a countdown digit group swaps by sliding up */
+  .tick {
+    display: inline-block;
+    animation: tick 260ms var(--ease-out);
+  }
+
+  @keyframes tick {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 0.28em, 0);
+    }
+  }
+
+  /* print grain over a colour field; sits above the field's background, below its content */
+  .grain {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .grain::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.22;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  /* the manifesto is read by scrolling: words come up to full ink as they pass */
+  .mw {
+    opacity: 0.26;
+    transition: opacity 320ms var(--ease-out);
+  }
+
+  .mw.on {
+    opacity: 1;
+  }
+
+  /* ---------- year planner ---------- */
+  .yp-month {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 2px;
+  }
+
+  @media (min-width: 640px) {
+    .yp-month {
+      gap: 3px;
+    }
+  }
+
+  .yp-cell {
+    aspect-ratio: 1;
+    border-radius: 2px;
+    background: var(--color-sheet-3);
+    transition: background-color 280ms var(--ease-out);
+    transition-delay: calc(var(--d, 0) * 2.4ms);
+  }
+
+  .yp-cell.on {
+    background: var(--color-sheet-accent);
+  }
+
+  .yp-cell.bonus.on {
+    background: var(--color-sheet-ink);
+  }
+
+  .yp-cell.gone {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--color-sheet-rule);
+  }
+
+  .yp-cell.today {
+    outline: 2px solid var(--color-sheet-ink);
+    outline-offset: 1px;
+  }
+
+  .seg {
+    display: grid;
+    place-items: center;
+    min-width: 3rem;
+    height: 3rem;
+    padding: 0 1rem;
+    border-radius: var(--radius-btn);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.375rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    color: var(--color-sheet-ink);
+    box-shadow: inset 0 0 0 1.5px var(--color-sheet-rule);
+    transition:
+      background-color 160ms var(--ease-out),
+      color 160ms var(--ease-out),
+      box-shadow 160ms var(--ease-out),
+      transform 120ms var(--ease-out);
+  }
+
+  .seg:hover {
+    box-shadow: inset 0 0 0 1.5px var(--color-sheet-ink);
+  }
+
+  .seg:active {
+    transform: scale(0.96);
+  }
+
+  .seg[aria-pressed='true'] {
+    background: var(--color-sheet-ink);
+    color: var(--color-sheet);
+    box-shadow: inset 0 0 0 1.5px var(--color-sheet-ink);
+  }
+
+  .sheet :focus-visible,
+  .on-ember :focus-visible {
+    outline-color: var(--color-sheet-ink);
+  }
+
+  /* text colours inside an ember field */
+  .on-ember {
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+
+  /* a photo printed in ember and graphite */
+  .duotone {
+    filter: grayscale(1) contrast(1.25);
+    mix-blend-mode: multiply;
   }
 
   .marquee-track {
@@ -482,7 +699,6 @@
   .sheet {
     background: var(--color-sheet);
     color: var(--color-sheet-ink);
-    border-radius: var(--radius-card);
   }
 
   .sheet .muted {
@@ -525,5 +741,37 @@
     position: sticky;
     top: var(--header-h);
     height: calc(100dvh - var(--header-h));
+  }
+}
+
+@layer components {
+  /* outlined button on the ember field */
+  .btn-on-ember {
+    color: var(--color-on-accent);
+    box-shadow: inset 0 0 0 1.5px var(--color-on-accent);
+  }
+
+  .btn-on-ember:hover {
+    background: var(--color-on-accent);
+    color: var(--color-accent);
+  }
+}
+
+@layer components {
+  /* the closing photo fades out towards the headline on the left and the buttons at the bottom */
+  .cta-photo {
+    mask-image: linear-gradient(to right, transparent, black 45%), linear-gradient(to top, transparent 22%, black 60%);
+    mask-composite: intersect;
+  }
+}
+
+@layer components {
+  /* the long labels still fit one line on a 320 px phone */
+  @media (max-width: 399px) {
+    .btn-lg {
+      min-height: 3.5rem;
+      padding: 0 1.125rem;
+      font-size: 1.1875rem;
+    }
   }
 }

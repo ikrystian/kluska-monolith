@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { Check, Pause, Play, RefreshCw, RotateCcw } from 'lucide-react';
 
 /* The app's screens, rebuilt as real UI on the dark `.screen` surface — no device frame.
@@ -53,7 +53,7 @@ export function WorkoutScreen() {
                   {s.state === 'next' ? (
                     <span className="size-4 rounded-full border border-ink-2" aria-hidden />
                   ) : (
-                    <span className="grid size-4 place-items-center rounded-full bg-volt text-on-volt" aria-hidden>
+                    <span className="pop grid size-4 place-items-center rounded-full bg-volt text-on-volt" style={{ '--i': Number(s.n) } as CSSProperties} aria-hidden>
                       <Check className="size-3" strokeWidth={3} />
                     </span>
                   )}
@@ -166,12 +166,12 @@ export function SplitBars() {
   return (
     <table className="num w-full text-sm">
       <tbody>
-        {splits.map(([k, t, w]) => (
+        {splits.map(([k, t, w], n) => (
           <tr key={k} className="border-t border-rule first:border-t-0">
             <td className="w-px whitespace-nowrap px-4 py-2.5 text-ink-2 sm:px-5">{k}</td>
             <td className="py-2.5">
               <div className="h-1.5 overflow-hidden rounded-full bg-screen-2">
-                <div className={`h-full rounded-full ${k === 'km 5' ? 'bg-volt' : 'bg-ink-2'}`} style={{ width: `${w}%` }} />
+                <div className={`fill h-full rounded-full ${k === 'km 5' ? 'bg-volt' : 'bg-ink-2'}`} style={{ width: `${w}%`, '--i': n } as CSSProperties} />
               </div>
             </td>
             <td className="w-px whitespace-nowrap px-4 py-2.5 text-right font-semibold sm:px-5">{t}</td>
@@ -256,14 +256,14 @@ export const macros = [
 export function MacroBars() {
   return (
     <div className="space-y-3 px-4 py-4 sm:px-5">
-      {macros.map(([k, v, p]) => (
+      {macros.map(([k, v, p], n) => (
         <div key={k}>
           <div className="flex justify-between text-sm">
             <span className="font-medium">{k}</span>
             <span className="num text-ink-2">{v}</span>
           </div>
           <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-screen-2">
-            <div className={`h-full rounded-full ${k === 'Białko' ? 'bg-accent' : 'bg-ink-2'}`} style={{ width: `${p}%` }} />
+            <div className={`fill h-full rounded-full ${k === 'Białko' ? 'bg-accent' : 'bg-ink-2'}`} style={{ width: `${p}%`, '--i': n } as CSSProperties} />
           </div>
         </div>
       ))}

@@ -34,6 +34,9 @@ export function AppHeader() {
     }
   };
 
+  // One header for every athlete screen: same height, title style and right-hand
+  // actions. Only the leading slot changes — a back button on subpages, nothing
+  // on the root screens the bottom bar reaches.
   return (
     <header
       className={cn(
@@ -41,36 +44,33 @@ export function AppHeader() {
         !keepHeaderVisible && 'group-data-[chrome=hidden]/chrome:-translate-y-full'
       )}
     >
-      <div className="flex h-[var(--header-h)] items-center gap-1 px-4">
-        {isRoot ? (
-          <h1 className="flex min-w-0 items-baseline gap-2">
-            <span className="font-display text-[2rem] font-bold uppercase leading-none">{screenTitle}</span>
-            {isToday && (
-              <span className="truncate text-sm font-medium text-muted-foreground">
-                {format(new Date(), 'EEEE, d MMMM', { locale: pl })}
-              </span>
-            )}
-          </h1>
-        ) : (
-          <>
-            <button
-              type="button"
-              onClick={goBack}
-              aria-label="Wstecz"
-              className="-ml-2.5 grid h-11 w-11 shrink-0 place-items-center rounded-full text-foreground transition-transform active:scale-90 active:bg-secondary"
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </button>
-            {screenTitle && <h1 className="min-w-0 truncate text-[17px] font-semibold">{screenTitle}</h1>}
-          </>
+      <div className="flex h-[var(--header-h)] items-center gap-1 pl-2 pr-2">
+        {!isRoot && (
+          <button
+            type="button"
+            onClick={goBack}
+            aria-label="Wstecz"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-foreground transition-transform active:scale-90 active:bg-secondary"
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </button>
         )}
 
-        {isRoot && (
-          <div className="-mr-2 ml-auto flex shrink-0 items-center">
-            <NotificationBell />
-            <QuickChatWidget />
-          </div>
-        )}
+        <h1 className={cn('flex min-w-0 flex-1 items-baseline gap-2', isRoot && 'pl-2')}>
+          {screenTitle && (
+            <span className="truncate font-display text-[1.75rem] font-bold uppercase leading-none">{screenTitle}</span>
+          )}
+          {isToday && (
+            <span className="truncate text-sm font-medium normal-case text-muted-foreground">
+              {format(new Date(), 'EEEE, d MMMM', { locale: pl })}
+            </span>
+          )}
+        </h1>
+
+        <div className="flex shrink-0 items-center">
+          <NotificationBell />
+          <QuickChatWidget />
+        </div>
       </div>
     </header>
   );

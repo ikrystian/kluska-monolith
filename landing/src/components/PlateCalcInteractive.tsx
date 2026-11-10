@@ -89,17 +89,18 @@ export function PlateCalcInteractive() {
   const set = (v: number) => setTarget(Math.min(MAX, Math.max(bar, Math.round(v * 4) / 4)));
 
   return (
-    <section id="kalkulator" aria-labelledby="calc-title" className="section">
+    <section id="kalkulator" aria-labelledby="calc-title" className="section bg-paper-2">
       <div className="shell grid items-center gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
         <div>
-          <h2 {...reveal(0)} id="calc-title" className="h-section">
+          <h2 id="calc-title" className="h-section">
             Nie licz talerzy w{'\u00a0'}głowie.
           </h2>
-          <p {...reveal(1)} className="lede mt-5 max-w-lg">
+          <p className="lede mt-5 max-w-lg">
             Czwarta seria przysiadów to nie czas na matematykę. Wpisz ciężar — aplikacja rozpisze talerze na stronę.
             Spróbuj tutaj, to ten sam kalkulator.
           </p>
-          <figure {...reveal(2)} className="surface mt-10 hidden overflow-hidden lg:block">
+          <figure {...reveal(0, 'curtain')} className="mt-10 hidden overflow-hidden bg-shade lg:block">
+            <div className="cur">
             <img
               src="/images/plates-floor.webp"
               alt="Gryf z talerzami leżący na gumowej podłodze siłowni"
@@ -108,10 +109,11 @@ export function PlateCalcInteractive() {
               loading="lazy"
               className="block aspect-[16/10] w-full object-cover"
             />
+            </div>
           </figure>
         </div>
 
-        <div {...reveal(1)} className="surface overflow-hidden">
+        <div className="surface overflow-hidden !bg-paper">
           <div className="grid gap-6 border-b border-rule p-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end sm:p-7">
             <div>
               <label htmlFor="target" className="label text-ink-2">
@@ -141,7 +143,7 @@ export function PlateCalcInteractive() {
                       if (!Number.isNaN(v)) setTarget(Math.min(MAX, v));
                     }}
                     onBlur={() => set(target)}
-                    className="big h-12 w-32 rounded-[var(--radius-ui)] border border-rule-strong bg-paper pl-3.5 pr-10 text-3xl transition-colors focus:border-ink focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+                    className="big h-12 w-32 rounded-[var(--radius-ui)] border border-rule-strong bg-paper-2 pl-3.5 pr-10 text-3xl transition-colors focus:border-ink focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-2">kg</span>
                 </div>
@@ -159,7 +161,7 @@ export function PlateCalcInteractive() {
 
             <fieldset>
               <legend className="label text-ink-2">Gryf</legend>
-              <div className="mt-2 inline-flex rounded-[var(--radius-pill)] bg-paper p-1">
+              <div className="mt-2 inline-flex rounded-[var(--radius-pill)] bg-paper-2 p-1">
                 {[
                   [20, 'Męski 20 kg'],
                   [15, 'Damski 15 kg'],

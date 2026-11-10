@@ -1,6 +1,17 @@
 [
  {
   "date": "2026-11-10",
+  "macrostructure": "Manifesto",
+  "theme": "custom",
+  "theme_axes": "colour-blocked (dark / mid / light) / display-condensed / warm",
+  "vibe": "gym poster — full fields of ember, chalk and graphite, heavy condensed caps",
+  "enrichment": "photographic fold + Tier A year planner (365 cells) + live countdown to 1 January",
+  "nav": "N12 banner + retract",
+  "footer": "Ft2 inline single line",
+  "brief": "Leniwa Kluska · New Year campaign redesign: 'Nie czekaj do stycznia', scroll-read manifesto, resolution planner; no blanket fade-up"
+ },
+ {
+  "date": "2026-11-10",
   "macrostructure": "Narrative Workflow",
   "theme": "custom",
   "theme_axes": "dark / display-condensed / warm",

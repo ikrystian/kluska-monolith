@@ -359,11 +359,11 @@ export function CoachChapter() {
       }
       actions={
         <>
-          <a href="/login" className="btn btn-primary">
+          <a href="https://app.leniwakluska.pl" className="btn btn-primary">
             Przejdź do panelu trenera
             <ArrowRight className="nudge size-4" aria-hidden />
           </a>
-          <a href="/athlete/login" className="link text-sm">
+          <a href="https://app.leniwakluska.pl" className="link text-sm">
             Mam kod od trenera
           </a>
         </>

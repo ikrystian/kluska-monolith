@@ -109,6 +109,7 @@ const WorkoutLogSchema = new Schema<IWorkoutLog>(
 WorkoutLogSchema.index({ athleteId: 1, endTime: -1 });
 WorkoutLogSchema.index({ status: 1 });
 WorkoutLogSchema.index({ startTime: -1 });
+WorkoutLogSchema.index({ gymId: 1, status: 1, endTime: -1 });
 WorkoutLogSchema.index({ 'exercises.exerciseId': 1, status: 1 });
 
 export const WorkoutLog: Model<IWorkoutLog> =

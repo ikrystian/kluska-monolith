@@ -33,32 +33,27 @@ const faqs = [
 
 export function Faq() {
   return (
-    <section id="faq" aria-labelledby="faq-title" className="section bg-paper-2">
-      <div className="shell grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:gap-16">
-        <div className="lg:sticky lg:top-36 lg:self-start">
+    <section id="faq" aria-labelledby="faq-title" className="section">
+      <div className="shell grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20">
+        <div className="lg:sticky lg:top-[calc(var(--header-h)+2rem)] lg:self-start">
           <h2 id="faq-title" className="h-section">
             Pytania przed pierwszym treningiem.
           </h2>
           <p className="mt-5 text-ink-2">Czegoś brakuje? Zaloguj się i napisz do nas z poziomu aplikacji.</p>
         </div>
 
-        <div className="space-y-2.5">
+        <div className="border-t border-rule-strong">
           {faqs.map((f, i) => (
-            <details
-              key={f.q}
-              open={i === 0}
-              className="group rounded-[20px] border border-rule bg-paper transition-colors open:border-rule-strong"
-            >
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 rounded-[20px] px-5 py-5 sm:px-6 [&::-webkit-details-marker]:hidden">
-                <span className="text-[1.0625rem] font-semibold">{f.q}</span>
-                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-paper-3 transition-colors group-open:bg-ink group-open:text-paper">
-                  <Plus
-                    className="size-4 transition-transform duration-200 ease-[var(--ease-out)] group-open:rotate-45"
-                    aria-hidden
-                  />
-                </span>
+            <details key={f.q} open={i === 0} className="group border-b border-rule">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-5 transition-colors hover:text-accent-ink [&::-webkit-details-marker]:hidden">
+                <span className="font-display text-[1.625rem] font-bold uppercase leading-[1.05] sm:text-[2rem]">{f.q}</span>
+                <Plus
+                  className="size-6 shrink-0 text-ink-2 transition-transform duration-300 ease-[var(--ease-out)] group-open:rotate-45 group-open:text-accent"
+                  strokeWidth={2.5}
+                  aria-hidden
+                />
               </summary>
-              <p className="max-w-2xl px-5 pb-6 leading-relaxed text-ink-2 sm:px-6">{f.a}</p>
+              <p className="max-w-2xl pb-7 leading-relaxed text-ink-2">{f.a}</p>
             </details>
           ))}
         </div>
