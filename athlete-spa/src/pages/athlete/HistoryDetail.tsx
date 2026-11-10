@@ -716,8 +716,13 @@ export default function HistoryDetailPage() {
         </section>
       )}
 
-      {/* Bottom Actions Card / Thumb Zone */}
-      <section className="sticky bottom-4 z-20 rounded-2xl border border-border/80 bg-background/90 p-3 backdrop-blur-md">
+      {/* Bottom Actions Card / Thumb Zone. #outlet reserves room for the tab
+          bar, so when the bar slides away the card follows it down instead of
+          leaving an empty strip. */}
+      <section
+        id="thumb-zone"
+        className="sticky bottom-4 z-20 rounded-2xl border border-border/80 bg-background/90 p-3 backdrop-blur-md transition-transform duration-300 ease-out group-data-[chrome=hidden]/chrome:translate-y-[var(--tabbar-h)]"
+      >
         <div className="flex items-center gap-2.5">
           <Button
             onClick={handleRepeatWorkout}
