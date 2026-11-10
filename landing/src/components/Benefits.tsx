@@ -109,8 +109,8 @@ export function Benefits() {
           <Tile dark i={0} className="md:col-span-2 lg:row-span-2">
             <div className="relative h-56 sm:h-64 lg:h-auto lg:flex-1">
               <img
-                src="/images/kettlebells.webp"
-                alt="Trzy odważniki kettlebell na gumowej podłodze w ciemnej siłowni"
+                src="/images/gym-hall.webp"
+                alt="Pusta hala siłowni z ławkami i stojakami"
                 width={1800}
                 height={1260}
                 loading="lazy"
@@ -146,7 +146,7 @@ export function Benefits() {
           {/* B — running, wide */}
           <Tile dark i={1} className="md:col-span-2">
             <img
-              src="/images/route-terrain.webp"
+              src="/images/runners-dusk.webp"
               alt=""
               width={2400}
               height={1300}

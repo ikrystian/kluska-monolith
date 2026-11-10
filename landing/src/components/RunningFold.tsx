@@ -11,7 +11,7 @@ export function RunningFold() {
     <section id="bieganie" aria-labelledby="run-title" className="on-night bg-night text-night-ink">
       <figure {...reveal(0, 'fade')} className="parallax relative">
         <img
-          src="/images/route-terrain.webp"
+          src="/images/runners-dusk.webp"
           alt="Biegacz w terenie o zachodzie słońca — dynamiczny krok na górskim grzbiecie"
           width={2400}
           height={1300}

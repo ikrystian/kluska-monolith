@@ -5,6 +5,7 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { jsonWithEtag } from '@/lib/http-cache';
 import { describeFinishedActivity, notifyFriendsOfActivity } from '@/lib/friends';
 import { AccessContext, AccessError, isPublicCollection, sanitizeBody, scopeRead } from '@/lib/db-access';
+import { linkWorkoutLogExercises } from '@/lib/workout-log-exercises';
 
 import {
   User,
@@ -183,6 +184,9 @@ export async function POST(
     }
 
     const body = await sanitizeBody(new AccessContext(user), collection, await request.json(), true);
+    if (collection === 'workoutLogs' && Array.isArray(body.exercises)) {
+      body.exercises = await linkWorkoutLogExercises(body.exercises);
+    }
     const doc = new Model(body);
     await doc.save();
 

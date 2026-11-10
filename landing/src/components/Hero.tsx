@@ -1,170 +1,112 @@
-import type { ReactNode } from 'react';
-import { ArrowRight, Check, CloudOff, Flame, MessageCircle, ScanBarcode, Timer, Trophy } from 'lucide-react';
+import type { CSSProperties } from 'react';
+import { ArrowRight } from 'lucide-react';
 import { reveal } from '../lib/reveal';
+import { LoadBar } from './LoadBar';
 
-/* Fragments of the app, scattered around the headline — the reference scatters user quotes here;
-   we have no real quotes to show, so the scatter is product UI instead. Decorative, hence aria-hidden.
-   Below xl they fall back to a wrapped row under the CTA. */
-const frags: { pos: string; body: ReactNode }[] = [
-  {
-    pos: 'xl:left-[2%] xl:top-[7%] xl:-rotate-2',
-    body: (
-      <>
-        <span className="grid size-8 shrink-0 place-items-center rounded-[10px] bg-volt text-on-volt">
-          <Trophy className="size-4" />
-        </span>
-        <span className="min-w-0 leading-tight">
-          <span className="label block text-ink-2">Przysiad</span>
-          <span className="num text-sm font-semibold">140 kg × 5 · rekord</span>
-        </span>
-      </>
-    ),
-  },
-  {
-    pos: 'xl:right-[3%] xl:top-[10%] xl:rotate-1',
-    body: (
-      <>
-        <Timer className="size-4 shrink-0 text-accent" />
-        <span className="leading-tight">
-          <span className="label block text-ink-2">Przerwa</span>
-          <span className="num text-lg font-semibold">01:24</span>
-        </span>
-      </>
-    ),
-  },
-  {
-    pos: 'xl:left-[1%] xl:top-[31%] xl:rotate-1',
-    body: (
-      <span className="block leading-tight">
-        <span className="label block text-ink-2">Bieg · Park Leśny</span>
-        <span className="num block whitespace-nowrap text-sm font-semibold">10,24 km · 4:45 /km</span>
-        <span className="mt-1.5 flex">
-          <span className="chip bg-volt text-on-volt">
-            <Check className="size-3" strokeWidth={3} aria-hidden />
-            wysłano do Strava
-          </span>
-        </span>
-      </span>
-    ),
-  },
-  {
-    pos: 'xl:right-[0%] xl:top-[34%] xl:-rotate-1',
-    body: (
-      <>
-        <MessageCircle className="mt-0.5 size-4 shrink-0 self-start text-ink-2" />
-        <span className="leading-snug">
-          <span className="label block text-ink-2">Trener Michał</span>
-          <span className="text-sm">Dobry progres na ławce.</span>
-        </span>
-      </>
-    ),
-  },
-  {
-    pos: 'xl:left-[4%] xl:top-[54%] xl:-rotate-1',
-    body: (
-      <span className="block w-44 leading-tight">
-        <span className="flex items-baseline justify-between">
-          <span className="label text-ink-2">Białko dziś</span>
-          <span className="num text-sm font-semibold">148 / 180 g</span>
-        </span>
-        <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-screen-2">
-          <span className="block h-full w-[82%] rounded-full bg-accent" />
-        </span>
-      </span>
-    ),
-  },
-  {
-    pos: 'xl:right-[4%] xl:top-[57%] xl:rotate-2',
-    body: (
-      <span className="leading-tight">
-        <span className="label block text-ink-2">140 kg na stronę</span>
-        <span className="num text-sm font-semibold">2 × 25 + 10 kg</span>
-      </span>
-    ),
-  },
-  {
-    pos: 'xl:left-[1%] xl:top-[77%] xl:rotate-2',
-    body: (
-      <>
-        <ScanBarcode className="size-4 shrink-0 text-ink-2" />
-        <span className="leading-tight">
-          <span className="text-sm font-medium">Znaleziono</span>
-          <span className="label block text-ink-2">makro na 100 g</span>
-        </span>
-      </>
-    ),
-  },
-  {
-    pos: 'xl:right-[2%] xl:top-[79%] xl:-rotate-2',
-    body: (
-      <>
-        <Flame className="size-4 shrink-0 text-accent" />
-        <span className="leading-tight">
-          <span className="num text-sm font-semibold">5 dni z rzędu</span>
-          <span className="label block text-ink-2">seria trwa</span>
-        </span>
-      </>
-    ),
-  },
-  {
-    pos: 'xl:left-[19%] xl:top-[91%] xl:-rotate-1',
-    body: (
-      <>
-        <CloudOff className="size-4 shrink-0 text-ink-2" />
-        <span className="text-sm font-medium">Zapisano na telefonie</span>
-      </>
-    ),
-  },
+/* Only facts the product states about itself — no user counts or usage totals. */
+const facts = [
+  { value: '250+', caption: 'ćwiczeń z opisem techniki i zaangażowanymi mięśniami' },
+  { value: '4 → 1', caption: 'dziennik, bieganie, dieta i kontakt z trenerem w jednej aplikacji' },
+  { value: '0 zł', caption: 'za całość — bez subskrypcji, wersji premium i podawania karty' },
 ];
+
+const ticker = ['Zapisz', 'Pobij', 'Powtórz'];
 
 export function Hero() {
   return (
-    <section aria-labelledby="hero-title" className="relative overflow-x-clip">
-      <div className="shell">
-        <div className="relative z-10 mx-auto max-w-[46rem] pb-10 pt-14 sm:pt-20 lg:pt-24 xl:pb-48 xl:pt-28">
+    <>
+      <section aria-labelledby="hero-title" className="relative isolate overflow-x-clip pb-20 pt-[calc(var(--header-h)+2rem)] sm:pb-28 sm:pt-[calc(var(--header-h)+3.5rem)]">
+        <div aria-hidden className="knurl absolute inset-0 -z-10 [mask-image:linear-gradient(to_bottom,black,transparent_70%)]" />
+        <div aria-hidden className="bloom absolute -right-[20%] -top-[10%] -z-10 aspect-square w-[70%] max-w-[60rem]" />
+        {/* a real lift behind the headline: full-bleed on phones, the right half from lg; both fade into the page */}
+        <figure aria-hidden className="absolute inset-x-0 top-0 -z-10 h-[34rem] overflow-hidden sm:h-[40rem] lg:inset-x-auto lg:right-0 lg:h-[46rem] lg:w-[60%]">
+          <img
+            src="/images/hero-press.webp"
+            alt=""
+            width={2400}
+            height={1602}
+            fetchPriority="high"
+            className="size-full object-cover object-[62%_35%] opacity-55 lg:opacity-75"
+          />
+          <div className="absolute inset-0 bg-linear-to-b from-paper/55 via-paper/35 to-paper" />
+          <div className="absolute inset-0 hidden bg-linear-to-r from-paper via-paper/35 to-transparent lg:block" />
+        </figure>
+
+        <div className="shell">
           <a
             {...reveal(0)}
             href="#trening"
-            className="group inline-flex max-w-full items-center gap-2 rounded-[var(--radius-pill)] border border-rule bg-paper-2 py-1 pl-1 pr-3 text-sm transition-colors hover:border-rule-strong"
+            className="group inline-flex max-w-full items-center gap-2 rounded-[var(--radius-pill)] bg-paper-2 py-1 pl-1 pr-3 text-sm transition-colors hover:bg-paper-3"
           >
             <span className="chip bg-accent-wash text-accent-ink">Nowość</span>
             <span className="truncate text-ink-2 group-hover:text-ink">Trening na ekranie blokady Androida</span>
             <ArrowRight className="size-3.5 shrink-0 text-ink-2" aria-hidden />
           </a>
 
-          <h1 {...reveal(1)} id="hero-title" className="display mt-6 text-[clamp(2.5rem,5.6vw,4.75rem)]">
-            Siłownia, bieganie i&nbsp;dieta. <span className="text-ink-2">W&nbsp;jednej aplikacji.</span>
+          <h1 {...reveal(0, 'fade')} id="hero-title" className="display mt-6 text-[clamp(3.25rem,11vw,9rem)]">
+            <span className="line-mask" style={{ '--i': 0 } as CSSProperties}>
+              <span>Siłownia, bieganie i&nbsp;dieta.</span>
+            </span>
+            <span className="line-mask text-accent" style={{ '--i': 1 } as CSSProperties}>
+              <span>Na jednej sztandze.</span>
+            </span>
           </h1>
 
-          <p {...reveal(2)} className="lede mt-6 max-w-[36rem]">
-            Zapisujesz serie w trakcie treningu, biegasz z GPS i liczysz makro — w jednym dzienniku, który działa nawet
-            w piwnicy bez zasięgu. Masz trenera? Widzi wszystko na bieżąco.
-          </p>
-
-          <div {...reveal(3)} className="mt-9">
-            <a href="/athlete/dashboard" className="btn btn-primary btn-lg">
-              Zacznij za darmo
-              <ArrowRight className="nudge size-4" aria-hidden />
-            </a>
-            <p className="mt-4 text-sm text-ink-2">Bez karty i subskrypcji. Działa też bez zasięgu.</p>
+          <div className="mt-8 grid grid-cols-[minmax(0,1fr)] items-end gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-16">
+            <p {...reveal(3)} className="lede max-w-[38rem]">
+              Zapisujesz serie w trakcie treningu, biegasz z GPS i liczysz makro — w jednym dzienniku, który działa nawet
+              w piwnicy bez zasięgu. Masz trenera? Widzi wszystko na bieżąco.
+            </p>
+            <div {...reveal(4)}>
+              <div className="flex flex-col gap-2.5 min-[420px]:flex-row">
+                <a href="/athlete/dashboard" className="btn btn-primary btn-lg">
+                  Zacznij za darmo
+                  <ArrowRight className="nudge size-4" aria-hidden />
+                </a>
+                <a href="/athlete/login" className="btn btn-ghost btn-lg">
+                  Mam już konto
+                </a>
+              </div>
+              <p className="mt-3 text-sm text-ink-2">Bez karty i subskrypcji. Działa też bez zasięgu.</p>
+            </div>
           </div>
-        </div>
 
-        <ul
-          aria-hidden
-          className="mx-auto mt-4 flex max-w-[46rem] flex-wrap gap-2 pb-14 xl:absolute xl:inset-0 xl:m-0 xl:block xl:max-w-none xl:pb-0"
-        >
-          {frags.map((f, i) => (
-            <li
-              {...reveal(i + 3)}
-              key={i}
-              className={`screen flex w-fit items-center gap-2.5 !rounded-[var(--radius-ui)] px-3 py-2.5 !shadow-none xl:absolute ${f.pos}`}
-            >
-              {f.body}
-            </li>
+          <div {...reveal(5)} id="funkcje" className="mt-14 sm:mt-20">
+            <LoadBar />
+          </div>
+
+          <dl className="mt-14 grid grid-cols-[minmax(0,1fr)] border-t border-rule sm:mt-20 sm:grid-cols-3 sm:divide-x sm:divide-rule">
+            {facts.map((f, i) => (
+              <div
+                {...reveal(i)}
+                key={f.value}
+                className="flex flex-col-reverse gap-2 border-b border-rule py-6 sm:border-b-0 sm:px-8 sm:first:pl-0 sm:last:pr-0"
+              >
+                <dt className="max-w-[18rem] text-[0.9375rem] leading-snug text-ink-2">{f.caption}</dt>
+                <dd className="big text-[clamp(3rem,5vw,4.5rem)]">{f.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+
+      {/* the training loop as a ticker — decorative, pauses on hover */}
+      <div aria-hidden className="marquee overflow-hidden border-y border-rule py-5 sm:py-7">
+        <div className="marquee-track display text-[clamp(3rem,8vw,6.5rem)]">
+          {[0, 1].map((half) => (
+            <div key={half} className="flex shrink-0 items-center">
+              {[0, 1, 2].flatMap((rep) =>
+                ticker.map((word, i) => (
+                  <span key={`${rep}-${word}`} className="flex items-center">
+                    <span className={i === 1 ? 'text-ink' : 'outline-type'}>{word}.</span>
+                    <span className="plate mx-6 h-[0.62em] w-[0.14em] sm:mx-9" style={{ '--tone': 'var(--color-accent)' } as CSSProperties} />
+                  </span>
+                ))
+              )}
+            </div>
           ))}
-        </ul>
+        </div>
       </div>
-    </section>
+    </>
   );
 }

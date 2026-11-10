@@ -41,6 +41,6 @@ export function useScrollReveal() {
 }
 
 /** Spread on an element to reveal it; `i` staggers siblings by 80 ms each. */
-export function reveal(i = 0, kind: 'up' | 'image' | 'fade' = 'up') {
+export function reveal(i = 0, kind: 'up' | 'image' | 'fade' | 'plate' = 'up') {
   return { 'data-reveal': kind, style: { '--i': i } as CSSProperties };
 }

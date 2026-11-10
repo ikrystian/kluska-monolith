@@ -59,6 +59,7 @@ const ExerciseSnapshotSchema = new Schema({
   name: { type: String, required: true },
   mainMuscleGroups: [{ name: String, imageUrl: String }],
   secondaryMuscleGroups: [{ name: String, imageUrl: String }],
+  setup: [{ group: String, value: String }],
   instructions: String,
   mediaUrl: String,
   muscleGroup: String, // Legacy

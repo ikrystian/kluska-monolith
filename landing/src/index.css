@@ -1,70 +1,113 @@
-/* Hallmark · genre: atmospheric · macrostructure: Feature Stack · F2 pinned scroll-spy (3-col: statements | screen | statements) + chapter rails
- * theme: custom · vibe: "after-hours gym, ember and volt, graphite" · paper: oklch(14.5% 0.012 45) · accent: oklch(70% 0.19 45)
- * display: Space Grotesk 700 · body: Geist · axes: dark / grotesk-sans / warm
- * hero: left-aligned column + scattered app-UI fragments (no frame), static
- * nav: N6-derived centred stack (per reference) · footer: Ft5 statement + three link groups · CTA: closing band
- * enrichment: Tier A HTML-built app screens + existing stills · light "sheet" cards on dark paper for the rails
- * studied: yes · DNA-source: url (browsed live) · source-url: https://www.evolvetrainingapp.com/ · rhythm: observed in browser
- * adopted from the reference: structure and content presentation only — Kluska's own tokens, fonts and Polish copy are kept
- * pre-emit critique: P4 H4 E4 S4 R4 V3 (macrostructure family unchanged from the previous build, by request)
- * contrast: pass (40–41) · nav: N6-derived · footer: Ft5 + link groups · slop: pass (42–45) · honest: pass (46) · chrome: pass (47)
- * tokens: pass (48) · responsive: pass (49) · mobile: pass (34, 49, 50–57) · icons: pass (30)
+/* Hallmark · genre: atmospheric · macrostructure: Narrative Workflow · stages are the four plates of the app's "Sztanga dnia"
+ * theme: custom · vibe: "the athlete app's own Sztanga system — graphite, chalk, ember, olympic plates"
+ * paper: oklch(16.7% 0.005 264) · accent: oklch(68.3% 0.21 37) · display: Barlow Condensed 700 · body: Figtree
+ * axes: dark / display-condensed / warm · tokens mirror athlete-spa/src/globals.css (.dark), converted HSL → OKLCH
+ * hero: left-aligned statement + Tier B hand-built SVG barbell the visitor loads (the app's DailyBar, enlarged)
+ * nav: N10 scroll-morph (plain row → floating bar with running kg) · footer: Ft4 dense colophon · CTA: closing photo band
+ * dividers: a bar shaft carrying the plates earned so far + running total · reveal: horizontal sweep on the plates
+ * pre-emit critique: P5 H4 E4 S5 R4 V4
+ * contrast: pass (40–41) · nav: N10 · footer: Ft4 · slop: pass (42–45) · honest: pass (46) · chrome: pass (47)
+ * tokens: pass (48) · responsive: pass (49–52) · caps line-height: pass (55)
  */
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Space Grotesk', 'Geist', ui-sans-serif, sans-serif;
+  --font-sans: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Barlow Condensed', 'Figtree', ui-sans-serif, sans-serif;
 
-  /* graphite surfaces — higher = lighter, no glow shadows */
-  --color-paper: oklch(14.5% 0.012 45);
-  --color-paper-2: oklch(18.5% 0.014 45);
-  --color-paper-3: oklch(23.5% 0.016 45);
-  --color-screen: oklch(20% 0.015 45);
-  --color-screen-2: oklch(25% 0.017 45);
-  --color-ink: oklch(95.5% 0.008 75);
-  --color-ink-2: oklch(77% 0.012 65);
-  --color-ink-3: oklch(64% 0.013 60);
-  --color-rule: oklch(29% 0.014 45);
-  --color-rule-strong: oklch(38% 0.016 45);
+  /* graphite — the app's background / card / secondary / border ladder */
+  --color-paper: oklch(16.7% 0.005 264);
+  --color-paper-2: oklch(21.3% 0.007 258);
+  --color-paper-3: oklch(27.5% 0.01 260);
+  --color-screen: oklch(21.3% 0.007 258);
+  --color-screen-2: oklch(27.5% 0.01 260);
+  --color-rule: oklch(30.6% 0.012 258);
+  --color-rule-strong: oklch(41.1% 0.017 257);
 
-  /* ember — the brand accent; volt — "done / synced / record" signal only */
-  --color-accent: oklch(70% 0.19 45);
-  --color-accent-hover: oklch(75.5% 0.17 50);
-  --color-accent-ink: oklch(79% 0.15 55);
-  --color-accent-wash: oklch(26% 0.055 45);
-  --color-on-accent: oklch(16% 0.02 45);
-  --color-volt: oklch(89% 0.2 122);
-  --color-on-volt: oklch(20% 0.05 125);
-  --color-danger: oklch(68% 0.19 27);
-  --color-focus: oklch(80% 0.16 60);
+  /* chalk */
+  --color-ink: oklch(96.1% 0.01 90);
+  --color-ink-2: oklch(74% 0.014 255);
+  --color-ink-3: oklch(64.3% 0.015 255);
 
-  /* the paper receipt in the pricing section — a single warm object on the dark page */
-  --color-receipt: oklch(95% 0.02 85);
-  --color-receipt-ink: oklch(21% 0.015 50);
-  --color-receipt-rule: oklch(72% 0.02 80);
+  /* ember — the one action colour */
+  --color-accent: oklch(68.3% 0.21 37);
+  --color-accent-hover: oklch(72.3% 0.178 41);
+  --color-accent-ink: oklch(76% 0.16 45);
+  --color-accent-wash: oklch(25.8% 0.055 39);
+  --color-on-accent: oklch(15.7% 0.023 48);
+
+  /* plate colours of the domains: bieg / jedzenie / nawyki ("done") / ekipa */
+  --color-run: oklch(67.2% 0.174 258);
+  --color-run-ink: oklch(76% 0.13 258);
+  --color-food: oklch(84.4% 0.149 87);
+  --color-volt: oklch(89.2% 0.203 123);
+  --color-on-volt: oklch(20.4% 0.039 123);
+  --color-social: oklch(74.9% 0.146 296);
+  --color-on-plate: oklch(15.7% 0.012 264);
+
+  --color-danger: oklch(65.7% 0.192 25);
+  --color-focus: oklch(84.4% 0.149 87);
+  --color-steel: oklch(71.9% 0.014 255);
+  --color-shade: oklch(10% 0.005 264);
+
+  /* the light "chalk" card — pricing sits on it */
+  --color-receipt: oklch(95% 0.014 90);
+  --color-receipt-ink: oklch(19% 0.01 264);
+  --color-receipt-rule: oklch(78% 0.014 90);
+  --color-sheet: oklch(95% 0.014 90);
+  --color-sheet-2: oklch(90% 0.016 88);
+  --color-sheet-ink: oklch(19% 0.01 264);
+  --color-sheet-ink-2: oklch(42% 0.012 258);
+  --color-sheet-rule: oklch(80% 0.014 88);
+  --color-sheet-accent: oklch(52% 0.19 35);
 
   /* IWF plate colours — data colours for the plate calculator only */
-  --color-plate-25: oklch(52% 0.19 27);
-  --color-plate-20: oklch(48% 0.15 262);
-  --color-plate-15: oklch(80% 0.15 90);
-  --color-plate-10: oklch(52% 0.13 148);
-  --color-plate-5: oklch(95% 0.004 80);
-  --color-plate-2: oklch(40% 0.008 60);
-  --color-plate-1: oklch(70% 0.02 75);
-  --color-steel: oklch(70% 0.006 80);
+  --color-plate-25: oklch(56% 0.2 27);
+  --color-plate-20: oklch(52% 0.16 262);
+  --color-plate-15: oklch(84.4% 0.149 87);
+  --color-plate-10: oklch(58% 0.14 148);
+  --color-plate-5: oklch(95% 0.008 90);
+  --color-plate-2: oklch(40% 0.012 258);
+  --color-plate-1: oklch(70% 0.014 255);
 
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
   --radius-ui: 14px;
   --radius-card: 28px;
   --radius-pill: 999px;
 
-  --shadow-pop: 0 2px 4px oklch(0% 0 0 / 0.25), 0 24px 48px -20px oklch(0% 0 0 / 0.6);
+  --shadow-pop: 0 2px 4px oklch(0% 0 0 / 0.25), 0 28px 56px -24px oklch(0% 0 0 / 0.7);
+
+  --animate-marquee: marquee 38s linear infinite;
+
+  @keyframes marquee {
+    to {
+      transform: translate3d(-50%, 0, 0);
+    }
+  }
 }
 
 @layer base {
+  :root {
+    --shell-pad: 1rem;
+    --header-h: 4rem;
+    --tone: var(--color-accent);
+  }
+
+  @media (min-width: 640px) {
+    :root {
+      --shell-pad: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    :root {
+      --shell-pad: 2rem;
+      --header-h: 4.5rem;
+    }
+  }
+
   html,
   body {
     overflow-x: clip;
@@ -73,7 +116,8 @@
   html {
     color-scheme: dark;
     scroll-behavior: smooth;
-    scroll-padding-top: 6.5rem;
+    scroll-padding-top: calc(var(--header-h) + 1rem);
+    background: var(--color-paper);
   }
 
   body {
@@ -112,18 +156,23 @@
     text-wrap: pretty;
   }
 
-  /* ---------- hero entrance: the one orchestrated reveal, armed by useScrollReveal() ---------- */
+  /* ---------- reveals, armed by useScrollReveal() ---------- */
 
   .reveal-on [data-reveal] {
     opacity: 0;
     transition:
       opacity 600ms var(--ease-out),
-      transform 700ms var(--ease-out);
-    transition-delay: calc(var(--i, 0) * 70ms);
+      transform 800ms var(--ease-out);
+    transition-delay: calc(var(--i, 0) * 80ms);
   }
 
   .reveal-on [data-reveal='up'] {
-    transform: translate3d(0, 16px, 0);
+    transform: translate3d(0, 20px, 0);
+  }
+
+  /* a plate sliding onto the sleeve */
+  .reveal-on [data-reveal='plate'] {
+    transform: translate3d(-28px, 0, 0);
   }
 
   .reveal-on [data-reveal].is-visible {
@@ -145,19 +194,26 @@
 }
 
 @layer components {
-  .display {
-    font-family: var(--font-display);
-    font-weight: 700;
-    letter-spacing: -0.04em;
-    line-height: 0.98;
-  }
-
+  /* wielkie nagłówki: wąski krój wersalikami, jak w aplikacji */
+  .display,
   .h-section {
     font-family: var(--font-display);
     font-weight: 700;
-    letter-spacing: -0.035em;
-    line-height: 1.04;
-    font-size: clamp(2rem, 4.4vw + 0.75rem, 4rem);
+    text-transform: uppercase;
+    letter-spacing: 0;
+    line-height: 1;
+  }
+
+  .h-section {
+    font-size: clamp(2.5rem, 5.2vw + 0.75rem, 5rem);
+  }
+
+  .h-sub {
+    font-family: var(--font-display);
+    font-weight: 700;
+    text-transform: uppercase;
+    line-height: 1.02;
+    font-size: clamp(1.75rem, 2.4vw + 0.75rem, 2.5rem);
   }
 
   .lede {
@@ -174,33 +230,28 @@
 
   .label {
     font-size: 0.8125rem;
-    font-weight: 500;
+    font-weight: 600;
     line-height: 1.3;
   }
 
+  /* liczby w ekranach trzymają kolumny; duże odczyty dostają wąski krój przez .big */
   .num {
-    font-family: var(--font-display);
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.01em;
+  }
+
+  .big {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.005em;
+    line-height: 1;
   }
 
   .shell {
     width: 100%;
-    max-width: 76rem;
+    max-width: 78rem;
     margin-inline: auto;
-    padding-inline: 1rem;
-  }
-
-  @media (min-width: 640px) {
-    .shell {
-      padding-inline: 1.5rem;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .shell {
-      padding-inline: 2rem;
-    }
+    padding-inline: var(--shell-pad);
   }
 
   .section {
@@ -209,20 +260,20 @@
 
   @media (min-width: 640px) {
     .section {
-      padding-block: 7.5rem;
+      padding-block: 8rem;
     }
   }
 
-  /* ---------- buttons: one pill shape for the whole page ---------- */
+  /* ---------- buttons: the app's rounded-2xl block, not a pill ---------- */
   .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
     min-height: 3rem;
-    padding: 0 1.5rem;
-    border-radius: var(--radius-pill);
-    font-weight: 600;
+    padding: 0 1.375rem;
+    border-radius: var(--radius-ui);
+    font-weight: 700;
     font-size: 0.9375rem;
     white-space: nowrap;
     transition:
@@ -232,19 +283,13 @@
       transform 120ms var(--ease-out);
   }
 
-  @media (hover: hover) {
-    .btn:hover {
-      transform: translateY(-1px);
-    }
-  }
-
   .btn:active {
-    transform: translateY(0) scale(0.98);
+    transform: scale(0.97);
   }
 
   .btn:disabled,
   .btn[aria-disabled='true'] {
-    opacity: 0.45;
+    opacity: 0.4;
     pointer-events: none;
   }
 
@@ -258,14 +303,15 @@
 
   .btn-lg {
     min-height: 3.5rem;
-    padding: 0 1.875rem;
-    font-size: 1rem;
+    padding: 0 1.75rem;
+    font-size: 1.0625rem;
   }
 
   .btn-sm {
     min-height: 2.5rem;
-    padding: 0 1.125rem;
+    padding: 0 1rem;
     font-size: 0.875rem;
+    border-radius: 12px;
   }
 
   .btn-primary {
@@ -278,14 +324,12 @@
   }
 
   .btn-ghost {
-    background: transparent;
-    border: 1px solid var(--color-rule-strong);
+    background: var(--color-paper-3);
     color: var(--color-ink);
   }
 
   .btn-ghost:hover {
-    border-color: var(--color-ink-2);
-    background: var(--color-paper-2);
+    background: var(--color-rule-strong);
   }
 
   .btn-light {
@@ -294,7 +338,7 @@
   }
 
   .btn-light:hover {
-    background: oklch(30% 0.015 50);
+    background: var(--color-paper-3);
   }
 
   /* ---------- surfaces ---------- */
@@ -304,12 +348,12 @@
     border-radius: var(--radius-card);
   }
 
-  /* an app screen — real UI, no device frame; higher = lighter */
+  /* an app screen — the app's own card, lifted off the page; no device frame */
   .screen {
     color: var(--color-ink);
     background: var(--color-screen);
-    border: 1px solid var(--color-rule-strong);
-    border-radius: 24px;
+    border: 1px solid var(--color-rule);
+    border-radius: 20px;
     box-shadow: var(--shadow-pop);
     overflow: hidden;
   }
@@ -327,16 +371,24 @@
     padding: 0 0.625rem;
     border-radius: var(--radius-pill);
     font-size: 0.75rem;
-    font-weight: 600;
+    font-weight: 700;
     white-space: nowrap;
   }
 
-  /* warm stage light behind the hero screens — one static bloom, no animation */
+  /* stage light: one static bloom in the stage's plate colour */
   .bloom {
-    background: radial-gradient(closest-side, color-mix(in oklab, var(--color-accent) 26%, transparent), transparent);
+    background: radial-gradient(closest-side, color-mix(in oklab, var(--tone) 22%, transparent), transparent);
   }
 
-  /* typographic link with a drawn underline */
+  /* knurling — the diagonal hatch from the app's workout covers */
+  .knurl {
+    background-image: repeating-linear-gradient(
+      -32deg,
+      color-mix(in oklab, var(--color-ink) 4%, transparent) 0 2px,
+      transparent 2px 9px
+    );
+  }
+
   .link {
     display: inline-flex;
     align-items: center;
@@ -355,49 +407,78 @@
     color: var(--color-accent-ink);
   }
 
-  /* the receipt's torn bottom edge */
-  .receipt {
-    --tooth: 9px;
-    background: var(--color-receipt);
-    color: var(--color-receipt-ink);
-    mask: conic-gradient(from -45deg at bottom, transparent, black 1deg 89deg, transparent 90deg) 50% / calc(var(--tooth) * 2) 100%;
-    padding-bottom: calc(var(--tooth) + 1.5rem);
-  }
-}
-
-/* ---------- chapter rails: light "sheet" cards on the dark page (appended) ---------- */
-
-@theme {
-  --color-sheet: oklch(94.5% 0.012 80);
-  --color-sheet-2: oklch(89.5% 0.014 78);
-  --color-sheet-ink: oklch(19% 0.015 50);
-  --color-sheet-ink-2: oklch(42% 0.016 55);
-  --color-sheet-rule: oklch(80% 0.016 75);
-  --color-sheet-accent: oklch(47% 0.16 40);
-}
-
-@layer base {
-  :root {
-    --shell-pad: 1rem;
-    --header-h: 3.75rem;
+  /* the proof panel of a stage: screens staggered on a tinted floor */
+  .stage-proof {
+    position: relative;
+    isolation: isolate;
+    border-radius: var(--radius-card);
+    background: var(--color-paper-2);
+    border: 1px solid var(--color-rule);
+    overflow: hidden;
   }
 
-  @media (min-width: 640px) {
-    :root {
-      --shell-pad: 1.5rem;
-    }
+  .stage-proof::before {
+    content: '';
+    position: absolute;
+    inset: -30% -20% auto auto;
+    width: 80%;
+    aspect-ratio: 1;
+    z-index: -1;
+    background: radial-gradient(closest-side, color-mix(in oklab, var(--tone) 20%, transparent), transparent);
   }
 
-  @media (min-width: 1024px) {
-    :root {
-      --shell-pad: 2rem;
-      --header-h: 6.5rem;
-    }
+  /* a plate drawn in CSS: used by stage rules and the nav */
+  .plate {
+    display: block;
+    width: 0.625rem;
+    border-radius: 3px;
+    background: var(--tone);
   }
-}
 
-@layer components {
-  /* light card — the rail cards and the pricing receipt sit on it */
+  /* barbell plates in the hero slide by transform only */
+  .bar-plate {
+    transition:
+      transform 620ms var(--ease-out),
+      opacity 300ms var(--ease-out);
+  }
+
+  /* hero headline: each line rises out of its own mask */
+  .line-mask {
+    display: block;
+    overflow: clip;
+    padding-block: 0.04em;
+  }
+
+  .reveal-on .line-mask > span {
+    display: block;
+    transform: translate3d(0, 105%, 0);
+    transition: transform 900ms var(--ease-out);
+    transition-delay: calc(var(--i, 0) * 110ms + 80ms);
+  }
+
+  .reveal-on .is-visible .line-mask > span,
+  .reveal-on .line-mask.is-visible > span {
+    transform: none;
+  }
+
+  .marquee-track {
+    display: flex;
+    width: max-content;
+    animation: var(--animate-marquee);
+  }
+
+  .marquee:hover .marquee-track,
+  .marquee:focus-within .marquee-track {
+    animation-play-state: paused;
+  }
+
+  /* outlined wersaliki — the ticker's quiet half */
+  .outline-type {
+    color: transparent;
+    -webkit-text-stroke: 1px var(--color-rule-strong);
+  }
+
+  /* the light card pricing sits on */
   .sheet {
     background: var(--color-sheet);
     color: var(--color-sheet-ink);
@@ -413,7 +494,13 @@
     border-radius: var(--radius-ui);
   }
 
-  /* horizontal card rail — scrolls inside itself, aligned to the page shell on the left */
+  .receipt {
+    background: var(--color-receipt);
+    color: var(--color-receipt-ink);
+    border-radius: var(--radius-card);
+  }
+
+  /* horizontal card rail — kept for the older rail components */
   .rail {
     display: flex;
     gap: 1rem;
@@ -421,8 +508,8 @@
     overscroll-behavior-x: contain;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
-    padding-inline: max(var(--shell-pad), calc((100% - 76rem) / 2 + var(--shell-pad)));
-    scroll-padding-inline: max(var(--shell-pad), calc((100% - 76rem) / 2 + var(--shell-pad)));
+    padding-inline: max(var(--shell-pad), calc((100% - 78rem) / 2 + var(--shell-pad)));
+    scroll-padding-inline: max(var(--shell-pad), calc((100% - 78rem) / 2 + var(--shell-pad)));
   }
 
   .rail::-webkit-scrollbar {
@@ -434,7 +521,6 @@
     scroll-snap-align: start;
   }
 
-  /* the pinned stage of the scroll-spy section */
   .pin-stage {
     position: sticky;
     top: var(--header-h);

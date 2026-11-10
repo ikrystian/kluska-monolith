@@ -1,9 +1,6 @@
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
-import { StickyFeatures } from './components/StickyFeatures';
-import { CalcTeaser } from './components/CalcTeaser';
-import { Facts } from './components/Facts';
-import { TrainingChapter, RunningChapter, NutritionChapter, CoachChapter } from './components/Chapters';
+import { TrainingStage, RunningStage, NutritionStage, HabitsStage, CoachStage } from './components/Stages';
 import { PlateCalcInteractive } from './components/PlateCalcInteractive';
 import { KeyFeatures } from './components/KeyFeatures';
 import { Pricing } from './components/Pricing';
@@ -20,14 +17,12 @@ export default function App() {
       <Navbar />
       <main>
         <Hero />
-        <StickyFeatures />
-        <CalcTeaser />
-        <Facts />
-        <TrainingChapter />
+        <TrainingStage />
         <PlateCalcInteractive />
-        <RunningChapter />
-        <NutritionChapter />
-        <CoachChapter />
+        <RunningStage />
+        <NutritionStage />
+        <HabitsStage />
+        <CoachStage />
         <KeyFeatures />
         <Pricing />
         <Faq />

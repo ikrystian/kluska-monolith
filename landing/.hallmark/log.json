@@ -1,5 +1,16 @@
 [
  {
+  "date": "2026-11-10",
+  "macrostructure": "Narrative Workflow",
+  "theme": "custom",
+  "theme_axes": "dark / display-condensed / warm",
+  "vibe": "the athlete app's Sztanga system — graphite, chalk, ember, olympic plates",
+  "enrichment": "Tier B hand-built SVG barbell the visitor loads; Tier A HTML-built app screens",
+  "nav": "N10 scroll-morph with running kg",
+  "footer": "Ft4 dense colophon",
+  "brief": "Leniwa Kluska · landing redesigned to match athlete-spa (Barlow Condensed + Figtree, app tokens, plate colours per domain)"
+ },
+ {
   "date": "2026-10-12",
   "macrostructure": "Feature Stack",
   "theme": "custom",

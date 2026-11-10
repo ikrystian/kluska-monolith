@@ -62,7 +62,7 @@ export function TrainingChapter() {
       id="trening"
       title="Zapisz. Pobij. Powtórz."
       lede="Dziennik siłowy, który pamięta, ile podniosłeś tydzień temu — i nie przeszkadza w ciężkiej serii."
-      image={{ src: '/images/barbell-140kg.webp', width: 2400, height: 1100 }}
+      image={{ src: '/images/deadlift-dark.webp', width: 2400, height: 1100 }}
     >
       <CardRail label="Funkcje treningu">
         <RailCard
@@ -186,7 +186,7 @@ export function RunningChapter() {
       id="bieganie"
       title="W dni bez sztangi — trasa."
       lede="GPS, tempo na każdym kilometrze i Strava. Bez osobnej aplikacji do biegania."
-      image={{ src: '/images/route-terrain.webp', width: 2400, height: 1573 }}
+      image={{ src: '/images/runners-dusk.webp', width: 2400, height: 1573 }}
       imageClass="object-[50%_62%]"
     >
       <CardRail label="Funkcje biegania">

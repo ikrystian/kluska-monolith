@@ -18,7 +18,7 @@ export function ScreenSheet({
   return (
     <div className={`screen ${className}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-rule px-4 py-3.5 sm:px-5">
-        <p className="font-display font-semibold tracking-[-0.02em]">{title}</p>
+        <p className="text-[15px] font-semibold">{title}</p>
         {meta && <span className="label text-ink-2">{meta}</span>}
       </div>
       {children}
@@ -83,7 +83,7 @@ export function TimerScreen() {
   return (
     <ScreenSheet title="Przerwa" meta="po serii 3">
       <div className="px-4 py-6 sm:px-5">
-        <p className="num text-6xl font-semibold text-accent">01:24</p>
+        <p className="big text-7xl text-accent">01:24</p>
         <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-screen-2">
           <div className="h-full w-[38%] rounded-full bg-accent" />
         </div>
@@ -128,7 +128,7 @@ export function RestTimer() {
     <div className="screen flex items-center justify-between gap-4 px-4 py-4 sm:px-5">
       <div>
         <p className="label text-ink-2">Przerwa — kliknij play</p>
-        <p className={`num text-4xl font-semibold ${running ? 'text-accent' : ''}`} aria-live="off">
+        <p className={`big text-5xl ${running ? 'text-accent' : ''}`} aria-live="off">
           {label}
         </p>
       </div>

@@ -13,7 +13,7 @@ import { BigNumber, SectionHeader } from '@/components/ui/section';
 import { cn } from '@/lib/utils';
 import { jsonFetcher, useCollection, useDoc, useUser } from '@/lib/db-hooks';
 import type { WorkoutLog, Goal, BodyMeasurement, RunningSession, StravaActivity, PlannedWorkout, UserProfile, TrainingPlan } from '@/lib/types';
-import { Target, Weight, ClipboardCheck, Calendar as CalendarIcon, Dumbbell, Award, User, CheckSquare, Check, GripVertical, Eye, EyeOff, RotateCcw, LayoutGrid, Trophy, SlidersHorizontal, Users, Activity, UtensilsCrossed, type AnimatedIcon } from '@/components/animated-icons';
+import { Target, Weight, ClipboardCheck, Calendar as CalendarIcon, Award, User, CheckSquare, Check, GripVertical, Eye, EyeOff, RotateCcw, LayoutGrid, Trophy, SlidersHorizontal, Users, Activity, UtensilsCrossed, type AnimatedIcon } from '@/components/animated-icons';
 import { ChevronRight } from 'lucide-react';
 import type { TrainingSessionData } from '@/components/schedule/SessionDetailsDialog';
 import { ActiveChallenges } from '@/components/challenges/ActiveChallenges';
@@ -22,7 +22,7 @@ import { useDashboardLayout, type DashboardSectionId, type DashboardSectionState
 import { useActiveWorkout } from '@/hooks/useActiveWorkout';
 import { useGamificationProfile } from '@/hooks/useGamification';
 import { useTodayHabits } from '@/hooks/useTodayHabits';
-import { DailyBar, type BarPlate } from '@/components/dashboard/DailyBar';
+import { DailyGoals, type DailyGoal } from '@/components/dashboard/DailyGoals';
 import { WeekStrip, type WeekDay } from '@/components/dashboard/WeekStrip';
 import { TodayHero } from '@/components/dashboard/TodayHero';
 import { CompleteProfileCard } from '@/components/dashboard/CompleteProfileCard';
@@ -34,7 +34,7 @@ import { exercisesLabel } from '@/lib/plural';
 /* ---------- Editable dashboard sections ---------- */
 
 const SECTION_META: Record<DashboardSectionId, { title: string; icon: AnimatedIcon }> = {
-  bar: { title: 'Sztanga dnia', icon: Dumbbell },
+  'daily-goals': { title: 'Cele dnia', icon: CheckSquare },
   habits: { title: 'Nawyki', icon: CheckSquare },
   nutrition: { title: 'Jedzenie', icon: UtensilsCrossed },
   upcoming: { title: 'Nadchodzące', icon: CalendarIcon },
@@ -304,57 +304,81 @@ export default function AthleteDashboardPage() {
     });
   }, [recentWorkouts, plannedThisWeek, weekStart, today]);
 
-  /* ---------- Sztanga dnia ---------- */
+  /* ---------- Cele dnia ---------- */
 
-  const plates = useMemo<BarPlate[]>(() => {
+  const dailyGoals = useMemo<DailyGoal[]>(() => {
     const totals = diary?.totals ?? { calories: 0, protein: 0, carbs: 0, fat: 0 };
     const goal = diary?.goal ?? null;
+    const mealsLogged = diary?.entries.length ?? 0;
     const proteinTarget = goal?.dailyProtein ?? Math.round((currentWeight ?? userProfile?.weight ?? 75) * 1.6);
+    const kcal = (value: number) => Math.round(value).toLocaleString('pl-PL');
 
     // A week with a plan makes today's empty slot a deliberate rest day, and rest counts.
     const trained = Boolean(doneToday) || ranToday;
     const restDay = !trained && !plannedToday && plannedThisWeek.length > 0;
 
-    return [
+    const goals: DailyGoal[] = [
       {
         id: 'training',
-        kg: 25,
         label: restDay ? 'Odpoczynek' : 'Trening',
-        hint: trained ? 'zrobiony' : restDay ? 'dzień wolny' : plannedToday ? format(new Date(plannedToday.date), "'o' HH:mm") : 'jeszcze nie',
-        loaded: trained || restDay,
-        href: '/athlete/log',
+        hint: trained
+          ? 'zrobiony'
+          : restDay
+            ? 'dzień wolny, liczy się'
+            : plannedToday
+              ? format(new Date(plannedToday.date), "'zaplanowany na' HH:mm")
+              : 'jeszcze przed Tobą',
+        progress: trained || restDay ? 1 : 0,
+        tone: 'primary',
+        href: doneToday ? `/athlete/history/${doneToday.id}` : '/athlete/log',
       },
-      {
-        id: 'food',
-        kg: 20,
-        label: 'Jedzenie',
-        hint: goal ? `${Math.round(totals.calories)} kcal` : `${diary?.entries.length ?? 0} wpisów`,
-        loaded: goal ? totals.calories >= goal.dailyCalories * 0.7 : (diary?.entries.length ?? 0) >= 3,
-        href: '/athlete/nutrition',
-      },
+      goal
+        ? {
+            id: 'calories',
+            label: 'Kalorie',
+            hint: `${kcal(totals.calories)} / ${kcal(goal.dailyCalories)} kcal`,
+            progress: goal.dailyCalories > 0 ? totals.calories / goal.dailyCalories : 0,
+            tone: 'food',
+            href: '/athlete/nutrition',
+          }
+        : {
+            // No calorie target yet, so "ate properly" means three logged meals.
+            id: 'meals',
+            label: 'Posiłki',
+            hint: `${Math.min(mealsLogged, 3)} / 3 zapisane`,
+            progress: mealsLogged / 3,
+            tone: 'food',
+            href: '/athlete/nutrition',
+          },
       {
         id: 'protein',
-        kg: 15,
         label: 'Białko',
-        hint: `${Math.round(totals.protein)}/${proteinTarget} g`,
-        loaded: totals.protein >= proteinTarget * 0.9,
+        hint: `${Math.round(totals.protein)} / ${proteinTarget} g`,
+        progress: proteinTarget > 0 ? totals.protein / proteinTarget : 0,
+        tone: 'run',
         href: '/athlete/nutrition',
       },
-      {
-        id: 'habits',
-        kg: 10,
-        label: 'Nawyki',
-        hint: todayHabits.length ? `${habitsDone}/${todayHabits.length}` : 'brak',
-        loaded: todayHabits.length > 0 && habitsDone === todayHabits.length,
-        href: '/athlete/habits',
-      },
     ];
+
+    // A goal that cannot be met is just noise, so habits only show up once there are some.
+    if (todayHabits.length > 0) {
+      goals.push({
+        id: 'habits',
+        label: 'Nawyki',
+        hint: `${habitsDone} / ${todayHabits.length} odhaczone`,
+        progress: habitsDone / todayHabits.length,
+        tone: 'volt',
+        href: '/athlete/habits',
+      });
+    }
+
+    return goals;
   }, [diary, currentWeight, userProfile, doneToday, ranToday, plannedToday, plannedThisWeek, todayHabits, habitsDone]);
 
   /* ---------- Section registry ---------- */
 
   const sectionContent: Record<DashboardSectionId, ReactNode> = {
-    bar: <DailyBar plates={plates} />,
+    'daily-goals': <DailyGoals goals={dailyGoals} />,
 
     habits: todayHabits.length > 0 ? (
       <HabitsToday habits={todayHabits} isDone={isDone} onToggle={toggleHabit} doneCount={habitsDone} />

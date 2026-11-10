@@ -4,20 +4,57 @@
     {
       "name": "athlete-spa",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "autoPort": true
     },
     {
       "name": "mock-api",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["/tmp/claude-1000/-home-krystian--claude-spares-spare-GHdMjs/8baeb73b-3aaf-4e86-80c0-cf1fc6f1e5ce/scratchpad/mock-api.mjs"],
-      "port": 4010
+      "runtimeArgs": [
+        "/tmp/claude-1000/-home-krystian--claude-spares-spare-4TrgTm/671850ce-7560-472d-8f97-9e07d6413878/scratchpad/mock-api.mjs"
+      ],
+      "port": 4012
     },
     {
       "name": "athlete-spa-mock",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["vite", "--mode", "mock", "--port", "5174", "--strictPort"],
+      "runtimeArgs": [
+        "vite",
+        "--mode",
+        "mock",
+        "--port",
+        "5174",
+        "--strictPort"
+      ],
       "port": 5174
+    },
+    {
+      "name": "athlete-spa-mock2",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite",
+        "--mode",
+        "mock2",
+        "--port",
+        "5178",
+        "--strictPort"
+      ],
+      "port": 5178
+    },
+    {
+      "name": "landing",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "../landing",
+        "run",
+        "dev"
+      ],
+      "port": 5175,
+      "autoPort": true
     }
   ]
 }

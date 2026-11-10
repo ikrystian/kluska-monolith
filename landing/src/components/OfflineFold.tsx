@@ -56,14 +56,14 @@ export function OfflineFold() {
       <div className="grid lg:grid-cols-2">
         <figure {...reveal(0, 'image')} className="relative overflow-hidden lg:order-2">
           <img
-            src="/images/kettlebells.webp"
-            alt="Trzy odważniki kettlebell — 16, 24 i 32 kg — na gumowej podłodze w ciemnej siłowni"
+            src="/images/gym-hall.webp"
+            alt="Pusta hala siłowni z ławkami i stojakami"
             width={1800}
             height={1260}
             loading="lazy"
             className="block h-full min-h-[18rem] w-full object-cover lg:min-h-[40rem]"
           />
-          <figcaption className="label absolute bottom-0 left-0 p-4 text-night-ink-2 sm:p-6">16 · 24 · 32 kg</figcaption>
+          <figcaption className="label absolute bottom-0 left-0 p-4 text-night-ink-2 sm:p-6">Hala. Przed otwarciem.</figcaption>
         </figure>
 
         <div className="flex flex-col justify-center px-4 py-16 sm:px-8 sm:py-20 lg:px-12 xl:pl-[max(3rem,calc((100vw-84rem)/2+3rem))]">

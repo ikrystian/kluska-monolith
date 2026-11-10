@@ -1927,16 +1927,6 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
 
   return (
     <div className="stagger-rise space-y-6">
-      {templatesPending ? (
-        <Skeleton className="h-[16.5rem] rounded-3xl" />
-      ) : recommendation ? (
-        <FeaturedTemplate
-          template={recommendation.template}
-          reason={recommendation.reason}
-          lastSession={lastSessionOf(recommendation.template, historyLogs)}
-          onStart={() => handleStartWorkout(recommendation.template)}
-        />
-      ) : null}
 
       <div className={cn('grid gap-2', supportsGeolocation ? 'grid-cols-3' : 'grid-cols-2')}>
         <QuickTile image={gymPhoto} icon={Plus} iconClassName="bg-primary text-primary-foreground" title="Od zera" subtitle="Pusty trening" onClick={handleStartEmpty} />

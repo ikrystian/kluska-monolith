@@ -1,31 +1,36 @@
 # Leniwa Kluska – Landing Page
 
-Responsywny landing page aplikacji **Leniwa Kluska (Athlete SPA)** — ciemny, powściągliwy styl (modern-minimal) z pomarańczowym akcentem marki.
+Responsywny landing page aplikacji **Leniwa Kluska (Athlete SPA)** — w tym samym systemie wizualnym co aplikacja („Sztanga”): grafit i kreda, jeden akcent (ember), wąskie wersaliki w nagłówkach i kolory talerzy olimpijskich dla dziedzin.
 
 ---
 
 ## Design system
 
-- **Tokeny** w `src/index.css` (`@theme`, Tailwind v4): kolory w OKLCH — grafitowa strona (`paper`, `paper-2`, `paper-3`), ciemne ekrany aplikacji (`screen`, `screen-2`), jasne karty list (`sheet*`), akcent marki `accent` (ember) i `volt` (tylko sygnał „zrobione / rekord”). Używaj wyłącznie nazwanych tokenów.
-- **Typografia**: Space Grotesk (nagłówki, liczby `.num`) + Geist (tekst).
-- **Przyciski**: pigułki `.btn` + `.btn-primary` / `.btn-light` / `.btn-ghost`, rozmiary `.btn-sm` / `.btn-lg`.
-- **Powierzchnie**: `.sheet` (jasna karta na ciemnej stronie), `.screen` (ekran aplikacji — prawdziwe UI, bez rysowanych ramek telefonu), `.surface`, `.receipt` (paragon w cenniku).
-- **Poziome listy**: `CardRail` + `RailCard` (`.rail` w CSS) — przewijane ze snapem, wyrównane do lewej krawędzi kontenera.
+- **Tokeny** w `src/index.css` (`@theme`, Tailwind v4) odwzorowują ciemny motyw z `athlete-spa/src/globals.css`, przeliczony z HSL na OKLCH: `paper*` (tło / karta / secondary), `ink*` (kreda), `accent` (ember), `run` (niebieski), `food` (żółty), `volt` (zielony, „zrobione”), `social` (fiolet). Zmiana palety w aplikacji = zmiana tych wartości tutaj. Używaj wyłącznie nazwanych tokenów.
+- **Typografia** jak w aplikacji: Barlow Condensed (nagłówki wersalikami — `.display`, `.h-section`, `.h-sub`; duże liczby — `.big`) + Figtree (tekst). `.num` to tylko cyfry o stałej szerokości.
+- **Przyciski**: `.btn` + `.btn-primary` / `.btn-ghost` / `.btn-light`, rozmiary `.btn-sm` / `.btn-lg` — zaokrąglony blok jak w aplikacji, nie pigułka.
+- **Powierzchnie**: `.screen` (ekran aplikacji — prawdziwe UI, bez rysowanych ramek telefonu), `.stage-proof` (panel z ekranami etapu, podświetlony kolorem `--tone`), `.sheet` (jasna karta cennika), `.surface`.
+- **Kolor etapu**: sekcja ustawia `--tone` (kolor swojego talerza); korzystają z niego `.plate`, `.bloom` i `.stage-proof`.
 
 ## Układ
 
-Struktura strony wzorowana na evolvetrainingapp.com (układ i sposób prezentacji treści; kolory, kroje i teksty są Kluski).
+Strona opowiada aplikację jako ładowanie sztangi: cztery etapy to cztery talerze (`src/lib/stages.ts`), a suma kilogramów rośnie od 20 do 160.
 
-1. **Nawigacja** (`Navbar`) — wyśrodkowany znak, pod nim linki; na telefonie zwykły pasek z menu.
-2. **Hero** (`Hero`) — lewostronny nagłówek w wyśrodkowanej kolumnie, wokół rozsypane fragmenty aplikacji (od `xl`; niżej zawijany rząd).
-3. **Zajrzyj do środka** (`StickyFeatures`) — przypięty ekran w środku i sześć opisów po bokach, podświetlanych podczas przewijania (od `lg`); na mniejszych ekranach ta sama treść jako przewijana lista kart.
-4. **Teaser kalkulatora** (`CalcTeaser`) i **Fakty** (`Facts`) — trzy liczby, które produkt sam o sobie podaje (bez liczników użytkowników).
-5. **Rozdziały** (`Chapter` + `Chapters`): **Trening**, **Bieganie**, **Dieta**, **Trener** — duży nagłówek (ze zdjęciem lub bez) i lista kart z funkcjami. Między Treningiem a Bieganiem siedzi **Kalkulator talerzy** (`PlateCalcInteractive`).
-6. **Wszystko, czego potrzebuje Twój tydzień** (`KeyFeatures`) — siatka ikon z krótkimi opisami.
-7. **Cennik** (`Pricing`) — jeden plan (0 zł) jako paragon i trzy kroki na start.
-8. **FAQ**, **CTA**, **stopka** (hasło + trzy grupy linków).
+1. **Nawigacja** (`Navbar`) — nad hero zwykły wiersz, po przewinięciu pływający pasek z licznikiem kg; talerzyki przy linkach zapalają się po minięciu etapu.
+2. **Hero** (`Hero` + `LoadBar`) — nagłówek, CTA i sztanga w SVG, którą odwiedzający sam ładuje (dwa talerze wchodzą same). Pod spodem trzy fakty i ticker „Zapisz. Pobij. Powtórz.”.
+3. **Etapy** (`Stages`): **Trening** (25 kg), **Bieganie** (20 kg), **Jedzenie** (15 kg), **Nawyki** (10 kg) — każdy zaczyna się linią sztangi z dotychczasowymi talerzami i sumą, potem nagłówek, lista funkcji i panel z ekranami aplikacji (`AppScreens`). Po Treningu siedzi **Kalkulator talerzy** (`PlateCalcInteractive`).
+4. **Trener** (`CoachStage`) — osobne pasmo bez talerza, w kolorze `social`.
+5. **Wszystko, czego potrzebuje Twój tydzień** (`KeyFeatures`) — lista-specyfikacja zamiast siatki kart.
+6. **Cennik** (`Pricing`) — jeden plan (0 zł) na jasnej karcie i trzy kroki na start.
+7. **FAQ**, **CTA**, **stopka** (kolofon z linkami w jednym akapicie).
 
 Wszystkie liczby wewnątrz ekranów aplikacji (ciężary, tempo, makro) to dane przykładowe.
+
+## Zdjęcia
+
+Kadry w `public/images/` to prawdziwe fotografie z [Unsplash](https://unsplash.com/license) (licencja pozwala na użycie komercyjne bez atrybucji), zapisane jako WebP: `hero-press` (hero), `grip-chalk` (Trening), `plates-floor` (kalkulator), `runners-dusk` (Bieganie), `meal-plate` (Dieta), `stairs-steps` (Nawyki), `coach-floor` (Trener), `deadlift-dark` (CTA), `gym-hall` (zapas dla nieużywanych sekcji). Nie dokładaj grafik generowanych — strona ma wyglądać jak siłownia, nie jak render. Sztanga jest motywem strony — w aplikacji dzień pokazuje lista „Cele dnia” (jej replika jest w etapie Nawyki).
+
+Starsze komponenty (`StickyFeatures`, `Chapters`, `CardRail`, `Facts`, `CalcTeaser` i inne) zostały w `src/components`, ale nie są już podpięte w `App.tsx`.
 
 ---
 

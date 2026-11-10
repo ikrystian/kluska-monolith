@@ -5,6 +5,7 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { isValidObjectId } from 'mongoose';
 import { jsonWithEtag } from '@/lib/http-cache';
 import { cascadeDeleteUserData } from '@/lib/user-cascade-delete';
+import { linkWorkoutLogExercises } from '@/lib/workout-log-exercises';
 import {
   AccessContext,
   AccessError,
@@ -197,6 +198,10 @@ export async function PATCH(
           { status: 400 }
         );
       }
+    }
+
+    if (collection === 'workoutLogs' && Array.isArray(body.exercises)) {
+      body.exercises = await linkWorkoutLogExercises(body.exercises);
     }
 
     // Only the in-progress -> completed transition announces a workout to friends.

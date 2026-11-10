@@ -9,11 +9,11 @@ type Plate = (typeof PLATES)[number];
 const STYLE: Record<Plate, { fill: string; text: string; d: number; t: number }> = {
   25: { fill: 'var(--color-plate-25)', text: 'var(--color-plate-5)', d: 450, t: 27 },
   20: { fill: 'var(--color-plate-20)', text: 'var(--color-plate-5)', d: 450, t: 23 },
-  15: { fill: 'var(--color-plate-15)', text: 'var(--color-ink)', d: 400, t: 21 },
+  15: { fill: 'var(--color-plate-15)', text: 'var(--color-on-plate)', d: 400, t: 21 },
   10: { fill: 'var(--color-plate-10)', text: 'var(--color-plate-5)', d: 325, t: 21 },
-  5: { fill: 'var(--color-plate-5)', text: 'var(--color-ink)', d: 228, t: 20 },
+  5: { fill: 'var(--color-plate-5)', text: 'var(--color-on-plate)', d: 228, t: 20 },
   2.5: { fill: 'var(--color-plate-2)', text: 'var(--color-plate-5)', d: 190, t: 16 },
-  1.25: { fill: 'var(--color-plate-1)', text: 'var(--color-ink)', d: 160, t: 13 },
+  1.25: { fill: 'var(--color-plate-1)', text: 'var(--color-on-plate)', d: 160, t: 13 },
 };
 
 const PRESETS = [60, 100, 140, 180, 220];
@@ -101,10 +101,10 @@ export function PlateCalcInteractive() {
           </p>
           <figure {...reveal(2)} className="surface mt-10 hidden overflow-hidden lg:block">
             <img
-              src="/images/plates-stack.webp"
-              alt="Stos kolorowych talerzy olimpijskich od 25 do 2,5 kg"
-              width={1400}
-              height={1750}
+              src="/images/plates-floor.webp"
+              alt="Gryf z talerzami leżący na gumowej podłodze siłowni"
+              width={1600}
+              height={1067}
               loading="lazy"
               className="block aspect-[16/10] w-full object-cover"
             />
@@ -141,7 +141,7 @@ export function PlateCalcInteractive() {
                       if (!Number.isNaN(v)) setTarget(Math.min(MAX, v));
                     }}
                     onBlur={() => set(target)}
-                    className="num h-12 w-32 rounded-[var(--radius-ui)] border border-rule-strong bg-paper pl-3.5 pr-10 text-2xl font-semibold transition-colors focus:border-ink focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+                    className="big h-12 w-32 rounded-[var(--radius-ui)] border border-rule-strong bg-paper pl-3.5 pr-10 text-3xl transition-colors focus:border-ink focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-2">kg</span>
                 </div>
@@ -208,7 +208,7 @@ export function PlateCalcInteractive() {
             {grouped.length === 0 ? (
               <p className="mt-2">Sam gryf — {bar} kg.</p>
             ) : (
-              <p className="num mt-2 text-2xl font-semibold">
+              <p className="big mt-2 text-4xl">
                 {grouped.map(([p, n], i) => (
                   <span key={p}>
                     {i > 0 && <span className="text-ink-2"> + </span>}

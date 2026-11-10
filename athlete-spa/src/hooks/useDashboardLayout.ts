@@ -11,7 +11,7 @@ import { useUser } from '@/lib/db-hooks';
  */
 
 export const DASHBOARD_SECTION_IDS = [
-  'bar',
+  'daily-goals',
   'habits',
   'nutrition',
   'upcoming',
@@ -35,6 +35,11 @@ const DEFAULT_LAYOUT: DashboardSectionState[] = DASHBOARD_SECTION_IDS.map(id => 
   visible: true,
 }));
 
+/** Sections renamed over time; a stored layout keeps its slot under the new id. */
+const LEGACY_SECTION_IDS: Record<string, DashboardSectionId> = {
+  bar: 'daily-goals',
+};
+
 /**
  * Reconciles a stored layout with the sections the app currently knows about:
  * drops ids that no longer exist, appends newly added sections at the end
@@ -47,7 +52,8 @@ function normalizeStoredLayout(stored: unknown): DashboardSectionState[] {
   const result: DashboardSectionState[] = [];
 
   for (const entry of stored) {
-    const id = (entry as { id?: unknown } | null)?.id;
+    const rawId = (entry as { id?: unknown } | null)?.id;
+    const id = typeof rawId === 'string' ? (LEGACY_SECTION_IDS[rawId] ?? rawId) : rawId;
     if (typeof id === 'string' && known.has(id) && !result.some(s => s.id === id)) {
       result.push({
         id: id as DashboardSectionId,

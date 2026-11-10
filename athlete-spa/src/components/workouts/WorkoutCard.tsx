@@ -17,7 +17,7 @@ export function WorkoutCard({ workout, to }: { workout: Workout; to: string }) {
         <img src={workout.imageUrl} alt="" loading="lazy" className="h-14 w-14 shrink-0 rounded-xl object-cover" />
       )}
       <div className="min-w-0 flex-1">
-        <h2 className="truncate font-display text-2xl font-bold uppercase leading-none">{workout.name}</h2>
+        <h2 className=" font-display text-2xl font-bold uppercase leading-none">{workout.name}</h2>
         <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
           <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: color }} />
           <span className="truncate">
@@ -27,13 +27,12 @@ export function WorkoutCard({ workout, to }: { workout: Workout; to: string }) {
           </span>
         </p>
         {preview.length > 0 && (
-          <p className="mt-1 truncate text-xs text-muted-foreground">
+          <p className="mt-1  text-xs text-muted-foreground">
             {preview.join(' · ')}
             {more > 0 && ` · +${more}`}
           </p>
         )}
       </div>
-      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
     </Link>
   );
 }
