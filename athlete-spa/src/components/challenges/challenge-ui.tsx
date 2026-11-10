@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
+import { motion } from 'framer-motion';
 import { Flag, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SocialAvatar, socialName } from '@/components/social/SocialAvatar';
@@ -89,8 +90,12 @@ export function RaceBars({ sides, targetKm, className }: { sides: ChallengeSides
   );
 }
 
-/** The big race track of the detail screen: each runner's avatar travels towards the finish flag. */
-export function RaceTrack({ sides, targetKm }: { sides: ChallengeSides; targetKm: number }) {
+/**
+ * The big race track of the detail screen: each runner's avatar travels from the
+ * start towards the finish flag. With `live`, the runners keep bouncing, light
+ * runs along their lanes and the flag waves — the race is still on.
+ */
+export function RaceTrack({ sides, targetKm, live = false }: { sides: ChallengeSides; targetKm: number; live?: boolean }) {
   const lanes = [
     { key: 'me', side: sides.me, color: ME_COLOR, label: 'Ty' },
     { key: 'opponent', side: sides.opponent, color: OPPONENT_COLOR, label: socialName(sides.opponent.user) },
@@ -103,9 +108,17 @@ export function RaceTrack({ sides, targetKm }: { sides: ChallengeSides; targetKm
           aria-hidden
           className="absolute bottom-0 right-5 top-0 border-r-2 border-dashed border-foreground/25"
         />
-        <Flag aria-hidden className="absolute -top-1 right-0 h-4 w-4 text-foreground/60" />
-        {lanes.map(lane => {
+        <motion.span
+          aria-hidden
+          className="absolute -top-1 right-0 origin-bottom-left text-foreground/60"
+          animate={live ? { rotate: [-10, 12, -10] } : undefined}
+          transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          <Flag className="h-4 w-4" />
+        </motion.span>
+        {lanes.map((lane, index) => {
           const pct = Math.min(100, (lane.side.km / targetKm) * 100);
+          const travel = { duration: 1.4, delay: 0.5 + index * 0.15, ease: [0.16, 1, 0.3, 1] as const };
           return (
             <div
               key={lane.key}
@@ -116,18 +129,41 @@ export function RaceTrack({ sides, targetKm }: { sides: ChallengeSides; targetKm
               aria-valuemax={100}
               aria-valuenow={Math.round(pct)}
             >
-              <div className="absolute inset-x-0 top-1/2 h-2.5 -translate-y-1/2 rounded-full bg-secondary" />
-              <div
-                className="absolute left-0 top-1/2 h-2.5 -translate-y-1/2 rounded-full transition-[width] duration-700 ease-out"
-                style={{ width: `${pct}%`, backgroundColor: lane.color }}
-              />
-              <div
-                className="absolute top-1/2 -translate-y-1/2 transition-[left] duration-700 ease-out"
-                style={{ left: `clamp(0px, calc(${pct}% - 1.375rem), calc(100% - 2.75rem))` }}
+              <div className="absolute inset-x-0 top-1/2 -mt-[5px] h-2.5 rounded-full bg-secondary" />
+              <motion.div
+                className="absolute left-0 top-1/2 -mt-[5px] h-2.5 overflow-hidden rounded-full"
+                style={{ backgroundColor: lane.color }}
+                initial={{ width: '0%' }}
+                animate={{ width: `${pct}%` }}
+                transition={travel}
               >
-                <span className="block rounded-full p-[2px]" style={{ backgroundColor: lane.color }}>
-                  <SocialAvatar user={lane.side.user} className="h-10 w-10 border-2 border-card" />
-                </span>
+                {live && pct > 0 && (
+                  <motion.span
+                    aria-hidden
+                    className="absolute inset-y-0 w-12 bg-gradient-to-r from-transparent via-white/70 to-transparent"
+                    initial={{ left: '-30%' }}
+                    animate={{ left: '110%' }}
+                    transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 0.9, ease: 'easeInOut', delay: 2 + index * 0.3 }}
+                  />
+                )}
+              </motion.div>
+              {/* The avatar rides in a lane one avatar shorter than the track, so it never overshoots. */}
+              <div className="absolute inset-y-0 left-0 right-11">
+                <motion.div
+                  className="absolute top-0"
+                  initial={{ left: '0%' }}
+                  animate={{ left: `${pct}%` }}
+                  transition={travel}
+                >
+                  <motion.span
+                    className="block rounded-full p-[2px]"
+                    style={{ backgroundColor: lane.color }}
+                    animate={live ? { y: [0, -3, 0] } : undefined}
+                    transition={{ duration: 0.5, repeat: Infinity, ease: 'easeInOut', delay: index * 0.25 }}
+                  >
+                    <SocialAvatar user={lane.side.user} className="h-10 w-10 border-2 border-card" />
+                  </motion.span>
+                </motion.div>
               </div>
             </div>
           );

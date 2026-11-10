@@ -3,7 +3,8 @@ import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import { Camera as CameraPlugin } from '@capacitor/camera';
 import { useTheme } from 'next-themes';
-import { Bell, CalendarClock, Camera, MapPin, Monitor, Moon, Palette, Sun, TimerOff, TrendingUp, Vibrate, Volume2, VolumeX, type LucideIcon } from 'lucide-react';
+import { Bell, CalendarClock, Camera, Lightbulb, MapPin, Monitor, Moon, Palette, RotateCcw, Sun, TimerOff, TrendingUp, Vibrate, Volume2, VolumeX, type LucideIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -31,6 +32,8 @@ import {
   unsubscribeFromPush,
 } from '@/lib/push';
 import { isNativeCueAudioAvailable, playVibrationCue } from '@/lib/cue-audio';
+import { useUser } from '@/lib/db-hooks';
+import { areToursEnabled, resetTours, setToursEnabled } from '@/lib/tours/storage';
 import { SettingsGroup, SettingsRow, tint } from './profile-ui';
 
 const THEME_OPTIONS = [
@@ -46,6 +49,7 @@ const C = {
   location: '#0EA5E9',
   camera: '#8B5CF6',
   notify: 'hsl(var(--chart-5))',
+  tours: 'hsl(var(--volt))',
 };
 
 /** A settings row whose control is a segmented choice between a few options. */
@@ -138,6 +142,8 @@ export function AppSettingsSections() {
   const hapticsSupported = useMemo(() => isHapticsSupported(), []);
   const pushSupported = useMemo(() => isNativePushSupported() || isBrowserNotificationSupported(), []);
   const [hapticsOn, setHapticsOn] = useState(() => isHapticsEnabled());
+  const uid = useUser().user?.uid;
+  const [toursOn, setToursOn] = useState(() => (uid ? areToursEnabled(uid) : true));
   const [restCue, setRestCueState] = useState<RestCue>(() => getRestCue());
   // Natively the rest-over vibration doesn't go through navigator.vibrate.
   const restVibrationSupported = useMemo(() => hapticsSupported || isNativeCueAudioAvailable(), [hapticsSupported]);
@@ -368,6 +374,50 @@ export function AppSettingsSections() {
           />
         )}
       </SettingsGroup>
+
+      {uid && (
+        <SettingsGroup title="Samouczek" footer="Krótkie wskazówki przy pierwszym wejściu na ekran. Każdą możesz pominąć.">
+          <SettingsRow
+            icon={Lightbulb}
+            color={C.tours}
+            htmlFor="screen-tours"
+            title="Wskazówki na nowych ekranach"
+            description="Pokazuj, co gdzie jest, gdy otwierasz ekran pierwszy raz."
+            control={
+              <Switch
+                id="screen-tours"
+                checked={toursOn}
+                onCheckedChange={(checked) => {
+                  setToursEnabled(uid, checked);
+                  setToursOn(checked);
+                }}
+              />
+            }
+          />
+          <SettingsRow
+            icon={RotateCcw}
+            color={C.tours}
+            title="Pokaż wskazówki od nowa"
+            description="Każdy ekran przedstawi się jeszcze raz."
+            control={
+              <Button
+                variant="secondary"
+                size="sm"
+                className="shrink-0 rounded-full"
+                onClick={() => {
+                  resetTours(uid);
+                  setToursEnabled(uid, true);
+                  setToursOn(true);
+                  haptic('tap');
+                  toast({ title: 'Wskazówki włączone od nowa', description: 'Zobaczysz je przy kolejnym wejściu na każdy ekran.' });
+                }}
+              >
+                Przywróć
+              </Button>
+            }
+          />
+        </SettingsGroup>
+      )}
 
       <SettingsGroup title="Powiadomienia">
         <SettingsRow

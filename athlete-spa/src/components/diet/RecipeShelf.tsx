@@ -68,7 +68,7 @@ export function RecipeShelf({ recipes, isLoading, onQuickAdd, showEmpty }: Recip
     if (!isLoading && recipes.length === 0 && !showEmpty) return null;
 
     return (
-        <section>
+        <section data-tour="diet-recipes">
             <SectionHeader title="Przepisy" href={recipes.length ? RECIPES_HREF : undefined} />
             {isLoading && recipes.length === 0 ? (
                 <div className="no-scrollbar -mx-4 flex gap-3 overflow-hidden px-4">
@@ -78,7 +78,7 @@ export function RecipeShelf({ recipes, isLoading, onQuickAdd, showEmpty }: Recip
                 </div>
             ) : recipes.length === 0 ? (
                 <div className="flex items-center gap-3 rounded-2xl bg-card p-4">
-                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-food/15 text-food">
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-food/15 text-accent">
                         <ChefHat className="h-5 w-5" />
                     </span>
                     <div className="min-w-0">
@@ -93,7 +93,7 @@ export function RecipeShelf({ recipes, isLoading, onQuickAdd, showEmpty }: Recip
                     </div>
                 </div>
             ) : (
-                <ul className="no-scrollbar -mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1">
+                <ul className="no-scrollbar -mx-4 flex snap-x scroll-px-4 gap-3 overflow-x-auto px-4 pb-1">
                     {recipes.map((article) => (
                         <RecipeTile key={article.id} article={article} onQuickAdd={onQuickAdd} />
                     ))}

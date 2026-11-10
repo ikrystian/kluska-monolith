@@ -205,7 +205,7 @@ export default function CalendarPage() {
 
     return (
         <div className="page space-y-4">
-            <section className="overflow-hidden rounded-2xl bg-card p-3">
+            <section data-tour="calendar-strip" className="overflow-hidden rounded-2xl bg-card p-3">
                 {isLoading ? (
                     <Skeleton className="h-28 w-full" />
                 ) : (
@@ -213,7 +213,7 @@ export default function CalendarPage() {
                 )}
             </section>
 
-            <section>
+            <section data-tour="calendar-agenda">
                 <div className="mb-2 flex items-end justify-between gap-3 px-1">
                     <h2 className="text-lg font-bold first-letter:uppercase">
                         {format(selectedDate, 'EEEE, d MMMM', { locale: pl })}

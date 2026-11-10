@@ -9,6 +9,7 @@ import {
   Compass,
   Images,
   Dumbbell,
+  Flag,
   Footprints,
   History,
   IdCard,
@@ -22,6 +23,8 @@ import {
   Play,
   Ruler,
   SlidersHorizontal,
+  SquarePen,
+  SquarePlus,
   TrendingUp,
   Trophy,
   User,
@@ -82,7 +85,7 @@ export const athleteNavItems: NavEntry[] = [
     roles: ['trainer'],
     items: [
       { href: '/athlete/trainer-panel', label: 'Panel trenera', icon: LayoutGrid, description: 'Podopieczni, plany i sesje', keywords: ['trener', 'podopieczni', 'klienci', 'zarządzanie', 'coach'] },
-      { href: '/athlete/knowledge-zone/manage', label: 'Zarządzaj artykułami', icon: BookOpen, description: 'Baza wiedzy i publikacje', keywords: ['artykuły', 'porady', 'wiedza', 'publikacje', 'edycja', 'trener'] },
+      { href: '/athlete/knowledge-zone/manage', label: 'Zarządzaj artykułami', icon: SquarePen, description: 'Baza wiedzy i publikacje', keywords: ['artykuły', 'porady', 'wiedza', 'publikacje', 'edycja', 'trener'] },
     ],
   },
   {
@@ -92,7 +95,7 @@ export const athleteNavItems: NavEntry[] = [
     items: [
       { href: '/athlete/log', label: 'Trenuj teraz', icon: Play, description: 'Rozpocznij sesję treningową', keywords: ['start', 'sesja', 'siłownia', 'trening'] },
       { href: '/athlete/workouts', label: 'Szablony', icon: ClipboardList, description: 'Twoje zapisane treningi', keywords: ['treningi', 'workout', 'rutyna'] },
-      { href: '/athlete/workouts/create', label: 'Nowy trening', icon: ClipboardCheck, description: 'Stwórz własny szablon', keywords: ['kreator', 'nowy', 'stwórz', 'szablon', 'plan'] },
+      { href: '/athlete/workouts/create', label: 'Nowy trening', icon: SquarePlus, description: 'Stwórz własny szablon', keywords: ['kreator', 'nowy', 'stwórz', 'szablon', 'plan'] },
       { href: '/athlete/exercises', label: 'Ćwiczenia', icon: Dumbbell, description: 'Baza z instrukcjami', keywords: ['atlas', 'technika', 'mięśnie', 'baza'] },
       { href: '/athlete/running', label: 'Bieganie', icon: Footprints, color: 'hsl(var(--run))', description: 'Biegi z GPS i Stravy', keywords: ['bieg', 'strava', 'gps', 'trasa', 'wyzwania'] },
       { href: '/athlete/history', label: 'Historia', icon: History, description: 'Ukończone treningi', keywords: ['dziennik', 'log', 'poprzednie'] },
@@ -139,11 +142,12 @@ export const athleteNavItems: NavEntry[] = [
       { href: '/athlete/social', label: 'Aktywność znajomych', icon: Newspaper, description: 'Treningi, biegi i statusy', keywords: ['social', 'feed', 'znajomi', 'tablica'] },
       { href: '/athlete/social?tab=discover', label: 'Odkrywaj', icon: Images, description: 'Zdjęcia społeczności', keywords: ['posty', 'zdjęcia', 'tablica', 'social'] },
       { href: '/athlete/social?tab=people', label: 'Ludzie', icon: UserCheck, description: 'Znajomi, zaproszenia, okolica', keywords: ['przyjaciele', 'zaproszenia', 'blisko', 'okolica', 'social'] },
-      { href: '/athlete/challenges', label: 'Wyzwania', icon: Footprints, color: 'hsl(var(--run))', description: 'Biegowe wyścigi ze znajomymi', keywords: ['wyzwanie', 'wyzwania', 'rywalizacja', 'wyścig', 'bieg', 'znajomi', 'pojedynek', 'challenge'] },
+      { href: '/athlete/challenges', label: 'Wyzwania', icon: Flag, color: 'hsl(var(--run))', description: 'Biegowe wyścigi ze znajomymi', keywords: ['wyzwanie', 'wyzwania', 'rywalizacja', 'wyścig', 'bieg', 'znajomi', 'pojedynek', 'challenge'] },
     ],
   },
   {
-    label: 'Odkrywaj',
+    // Not "Odkrywaj": that is already a destination in Społeczność.
+    label: 'Wiedza i miejsca',
     icon: Compass,
     color: 'hsl(var(--muted-foreground))',
     items: [

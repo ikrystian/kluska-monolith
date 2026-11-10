@@ -176,7 +176,7 @@ export default function HistoryPage() {
   return (
     <AlertDialog>
       <div className="page">
-        <Card>
+        <Card data-tour="history-list">
           <CardContent className="pt-1">
             <Accordion type="single" collapsible className="w-full">
               {isHistoryLoading ? (

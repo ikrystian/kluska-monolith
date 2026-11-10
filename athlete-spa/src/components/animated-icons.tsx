@@ -15,6 +15,7 @@ import {
   DumbbellIcon,
   EyeIcon,
   EyeOffIcon,
+  FlagIcon,
   FootprintsIcon,
   GaugeIcon,
   GripVerticalIcon,
@@ -34,6 +35,8 @@ import {
   RulerIcon,
   SlidersHorizontalIcon,
   SquareCheckIcon,
+  SquarePenIcon,
+  SquarePlusIcon,
   TargetIcon,
   TrendingUpIcon,
   TrophyIcon,
@@ -143,6 +146,7 @@ export const Compass = animated(CompassIcon, 'Compass');
 export const Dumbbell = animated(DumbbellIcon, 'Dumbbell');
 export const Eye = animated(EyeIcon, 'Eye');
 export const EyeOff = animated(EyeOffIcon, 'EyeOff');
+export const Flag = animated(FlagIcon, 'Flag');
 export const Footprints = animated(FootprintsIcon, 'Footprints');
 export const GripVertical = animated(GripVerticalIcon, 'GripVertical');
 export const History = animated(HistoryIcon, 'History');
@@ -161,6 +165,8 @@ export const Play = animated(PlayIcon, 'Play');
 export const RotateCcw = animated(RotateCcwIcon, 'RotateCcw');
 export const Ruler = animated(RulerIcon, 'Ruler');
 export const SlidersHorizontal = animated(SlidersHorizontalIcon, 'SlidersHorizontal');
+export const SquarePen = animated(SquarePenIcon, 'SquarePen');
+export const SquarePlus = animated(SquarePlusIcon, 'SquarePlus');
 export const Target = animated(TargetIcon, 'Target');
 export const TrendingUp = animated(TrendingUpIcon, 'TrendingUp');
 export const Trophy = animated(TrophyIcon, 'Trophy');

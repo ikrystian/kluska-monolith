@@ -329,7 +329,7 @@ function StartScreen({
                         onClick={() => onOpenView(view)}
                         className="pressable-sm flex min-w-0 flex-col items-start gap-2.5 rounded-2xl bg-secondary/40 p-3 text-left"
                     >
-                        <span className="grid h-9 w-9 place-items-center rounded-xl bg-food/15 text-food">
+                        <span className="grid h-9 w-9 place-items-center rounded-xl bg-food/15 text-volt">
                             <Icon className="h-[18px] w-[18px]" />
                         </span>
                         <span className="w-full min-w-0">
@@ -398,7 +398,7 @@ function StartScreen({
                 <section className="space-y-2.5">
                     <SectionLabel
                         action={
-                            <button type="button" onClick={() => onOpenView('meals')} className="flex items-center text-xs font-semibold text-food">
+                            <button type="button" onClick={() => onOpenView('meals')} className="flex items-center text-xs font-semibold text-volt">
                                 Wszystkie <ChevronRight className="h-3.5 w-3.5" />
                             </button>
                         }
@@ -464,7 +464,7 @@ function SearchResults({
                     <SectionLabel
                         action={
                             dishes.length > 3 && (
-                                <button type="button" onClick={onShowAllDishes} className="flex items-center text-xs font-semibold text-food">
+                                <button type="button" onClick={onShowAllDishes} className="flex items-center text-xs font-semibold text-volt">
                                     Wszystkie ({dishes.length}) <ChevronRight className="h-3.5 w-3.5" />
                                 </button>
                             )
@@ -487,7 +487,7 @@ function SearchResults({
                 {isSearching ? (
                     <div className="space-y-2">
                         <p className="flex items-center gap-2 text-[13px] text-muted-foreground">
-                            <Sparkles className="h-4 w-4 animate-pulse text-food" />
+                            <Sparkles className="h-4 w-4 animate-pulse text-volt" />
                             Szukam w bazie i w internecie…
                         </p>
                         {Array.from({ length: 3 }, (_, i) => (
@@ -553,7 +553,7 @@ function ProductThumb({ product, size = 'sm' }: { product: FoodProduct; size?: '
         );
     }
     return (
-        <span className={cn(box, 'grid shrink-0 place-items-center bg-food/15 text-food')}>
+        <span className={cn(box, 'grid shrink-0 place-items-center bg-food/15 text-volt')}>
             <Apple className={size === 'lg' ? 'h-6 w-6' : 'h-4 w-4'} />
         </span>
     );
@@ -741,7 +741,7 @@ function ScanView({ onFound }: { onFound: (product: FoodProduct) => void }) {
 
             {isResolving ? (
                 <p className="flex items-center justify-center gap-2 py-1 text-sm text-muted-foreground">
-                    <Sparkles className="h-4 w-4 animate-pulse text-food" />
+                    <Sparkles className="h-4 w-4 animate-pulse text-volt" />
                     Rozpoznaję produkt…
                 </p>
             ) : error ? (

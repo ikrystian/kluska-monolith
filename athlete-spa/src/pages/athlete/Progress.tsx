@@ -34,6 +34,7 @@ import {
     Calendar,
 } from 'lucide-react';
 import { useUser, jsonFetcher } from '@/lib/db-hooks';
+import { TourAnchor } from '@/components/tour/TourAnchor';
 import { SectionHeader } from '@/components/ui/section';
 import { cn } from '@/lib/utils';
 import { useEffect } from 'react';
@@ -237,26 +238,28 @@ export default function ProgressPage() {
 
     return (
         <div className="page space-y-4">
-            <div className="no-scrollbar -mx-4 flex gap-1.5 overflow-x-auto px-4" role="tablist" aria-label="Okres">
-                {periods.map(p => (
-                    <button
-                        key={p.value}
-                        type="button"
-                        role="tab"
-                        aria-selected={period === p.value}
-                        onClick={() => setPeriod(p.value)}
-                        className={cn(
-                            'h-9 shrink-0 rounded-full px-3.5 text-sm font-semibold transition-colors',
-                            period === p.value ? 'bg-foreground text-background' : 'bg-card text-muted-foreground'
-                        )}
-                    >
-                        {p.label}
-                    </button>
-                ))}
-            </div>
+            <TourAnchor name="progress-period">
+                <div className="no-scrollbar -mx-4 flex gap-1.5 overflow-x-auto px-4" role="tablist" aria-label="Okres">
+                    {periods.map(p => (
+                        <button
+                            key={p.value}
+                            type="button"
+                            role="tab"
+                            aria-selected={period === p.value}
+                            onClick={() => setPeriod(p.value)}
+                            className={cn(
+                                'h-9 shrink-0 rounded-full px-3.5 text-sm font-semibold transition-colors',
+                                period === p.value ? 'bg-foreground text-background' : 'bg-card text-muted-foreground'
+                            )}
+                        >
+                            {p.label}
+                        </button>
+                    ))}
+                </div>
+            </TourAnchor>
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-2 gap-2.5">
+            <div data-tour="progress-summary" className="grid grid-cols-2 gap-2.5">
                 <StatCard
                     title="Objętość"
                     value={data?.summary?.totalVolume?.toLocaleString('pl-PL') || '0'}
@@ -288,7 +291,7 @@ export default function ProgressPage() {
 
             {/* Charts */}
             <Tabs defaultValue="volume">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList data-tour="progress-charts" className="grid w-full grid-cols-4">
                     <TabsTrigger value="volume">Objętość</TabsTrigger>
                     <TabsTrigger value="strength">Siła</TabsTrigger>
                     <TabsTrigger value="weight">Waga</TabsTrigger>

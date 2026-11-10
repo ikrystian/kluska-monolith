@@ -22,6 +22,7 @@ import { useUpdateDoc, useUser } from '@/lib/db-hooks';
 import { useToast } from '@/hooks/use-toast';
 import { resolveMediaUrl } from '@/lib/api-client';
 import { haptic } from '@/lib/haptics';
+import { TourAnchor } from '@/components/tour/TourAnchor';
 
 // Editors (react-image-crop, zod form, gyms list) only load when the athlete opens them.
 const AvatarUploadDialog = lazy(() =>
@@ -99,10 +100,12 @@ export default function YouPage() {
 
   return (
     <div className="page">
-      <ProfileHero onEditProfile={() => setOpenPanel('edit')} onEditAvatar={() => setOpenPanel('avatar')} />
+      <TourAnchor name="you-hero">
+        <ProfileHero onEditProfile={() => setOpenPanel('edit')} onEditAvatar={() => setOpenPanel('avatar')} />
+      </TourAnchor>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-5">
-        <TabsList className="grid h-11 w-full grid-cols-2 rounded-full p-1">
+        <TabsList data-tour="you-tabs" className="grid h-11 w-full grid-cols-2 rounded-full p-1">
           <TabsTrigger value="profile" className="h-full gap-1.5 rounded-full">
             <UserRound className="h-4 w-4" /> Profil
           </TabsTrigger>

@@ -93,7 +93,7 @@ export default function AthleteSocialPage() {
   return (
     <div className="page">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList data-tour="social-tabs" className="grid w-full grid-cols-3">
           <TabsTrigger value="feed">Znajomi</TabsTrigger>
           <TabsTrigger value="discover">Odkrywaj</TabsTrigger>
           <TabsTrigger value="people" className="gap-1.5">

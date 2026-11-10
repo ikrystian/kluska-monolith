@@ -39,6 +39,7 @@ import {
 import { ChallengesBanner } from '@/components/challenges/ChallengesBanner';
 import { SocialAvatar, socialName } from './SocialAvatar';
 import { dayLabel, formatDuration, pluralPl, timeAgo } from './social-format';
+import { TourAnchor } from '@/components/tour/TourAnchor';
 
 const MAX_STATUS_LENGTH = 280;
 const STRAVA_COLOR = '#FC4C02';
@@ -127,7 +128,9 @@ export function FriendsFeed({ onProfileClick, onOpenPeople }: FriendsFeedProps) 
 
       {friends.length > 0 && <ChallengesBanner />}
 
-      <StatusComposer />
+      <TourAnchor name="social-composer">
+        <StatusComposer />
+      </TourAnchor>
 
       {hasError ? (
         <EmptyCard

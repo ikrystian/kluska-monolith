@@ -3,12 +3,13 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { useToast } from '@/hooks/use-toast';
+import { exitActiveTour } from '@/lib/tours/engine';
 
 /** Root screens where "back" means "leave the app" rather than "go up". */
 const ROOT_PATHS = ['/athlete/dashboard'];
 
 /** Radix keeps every open overlay marked; any match means something is layered on top. */
-const OPEN_OVERLAY_SELECTOR = [
+export const OPEN_OVERLAY_SELECTOR = [
   '[role="dialog"][data-state="open"]',
   '[role="alertdialog"][data-state="open"]',
   '[role="menu"][data-state="open"]',
@@ -26,8 +27,8 @@ const EXIT_CONFIRM_WINDOW_MS = 2000;
  * would skip past it, and a stray press on the dashboard would drop the athlete
  * out of a running session.
  *
- * Priority: dismiss an open overlay → step out of an active workout → go up in
- * the router → require a second press to actually exit.
+ * Priority: close a running tour → dismiss an open overlay → step out of an
+ * active workout → go up in the router → require a second press to actually exit.
  */
 export function useAndroidBackButton() {
   const navigate = useNavigate();
@@ -46,6 +47,9 @@ export function useAndroidBackButton() {
     let cancelled = false;
 
     const handleBack = ({ canGoBack }: { canGoBack: boolean }) => {
+      // 0. A first-run tour sits above everything, so it goes first.
+      if (exitActiveTour()) return;
+
       // 1. An open dialog/sheet/menu owns the gesture. Radix dismisses on
       // Escape, which the hardware button doesn't emit on its own.
       if (document.querySelector(OPEN_OVERLAY_SELECTOR)) {

@@ -80,6 +80,7 @@ import { FeaturedTemplate, NewTemplateTile, TemplateTile, WorkoutExercisesPrevie
 import { FOCUS_META, FOCUS_ORDER, lastSessionOf, recommendTemplate, templateFocus, type TemplateFocus } from '@/components/workout/template-meta';
 import gymPhoto from '@/assets/auth-gym.jpg';
 import runCover from '@/assets/workout-covers/run.svg';
+import { TourAnchor } from '@/components/tour/TourAnchor';
 
 /**
  * Every locally-held `workoutLogs` list read (the active-workout lookup, the
@@ -1928,7 +1929,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
   return (
     <div className="stagger-rise space-y-6">
 
-      <div className={cn('grid gap-2 grid-cols-1')}>
+      <div data-tour="log-quick-start" className={cn('grid gap-2 grid-cols-1')}>
         <QuickTile image={gymPhoto} icon={Plus} iconClassName="bg-primary text-primary-foreground" title="Od zera" subtitle="Pusty trening" onClick={handleStartEmpty} />
         {supportsGeolocation && (
           <QuickTile image={runCover} icon={Footprints} iconClassName="bg-run text-white" title="Bieg" subtitle="Trasa z GPS" onClick={() => setStartRunDialogOpen(true)} />
@@ -1936,10 +1937,14 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
       </div>
       <StartRunDialog open={startRunDialogOpen} onOpenChange={setStartRunDialogOpen} programs={runningPrograms} />
 
-      {historyLogs && <MuscleRecovery logs={historyLogs} />}
+      {historyLogs && (
+        <TourAnchor name="log-recovery">
+          <MuscleRecovery logs={historyLogs} />
+        </TourAnchor>
+      )}
 
       {historyLogs && historyLogs.length > 0 && (
-        <section>
+        <section data-tour="log-recent">
           <SectionHeader
             title="Ostatnie"
             action={<Link to="/athlete/history" className="pb-0.5 text-sm font-semibold text-primary">Cała historia</Link>}
@@ -1969,7 +1974,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
         </section>
       )}
 
-      <section>
+      <section data-tour="log-templates">
         <SectionHeader
           title="Szablony"
           count={templates.length}
@@ -2032,7 +2037,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
       </section>
 
       {(plansLoading || workoutPlans.length > 0) && (
-        <section>
+        <section data-tour="log-plans">
           <SectionHeader title="Plany" count={workoutPlans.length} />
           {plansLoading && workoutPlans.length === 0 ? (
             <div className="space-y-2.5">

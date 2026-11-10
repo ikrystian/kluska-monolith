@@ -286,7 +286,7 @@ export default function AthleteWorkoutsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div data-tour="workouts-actions" className="flex items-center gap-2">
           <Button
             asChild
             variant="secondary"
@@ -413,7 +413,7 @@ export default function AthleteWorkoutsPage() {
       )}
 
       {/* Search & Filter Controls */}
-      <div className="space-y-2.5">
+      <div data-tour="workouts-filters" className="space-y-2.5">
         {/* Search Input */}
         <div className="relative">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

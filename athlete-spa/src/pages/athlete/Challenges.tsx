@@ -81,6 +81,7 @@ export default function ChallengesPage() {
         <button
           type="button"
           onClick={() => openSheet()}
+          data-tour="challenges-new"
           className="flex min-w-0 items-center justify-between gap-3 rounded-2xl bg-lime p-4 text-left text-lime-foreground transition-transform active:scale-[0.98]"
         >
           <span className="min-w-0">
@@ -93,6 +94,7 @@ export default function ChallengesPage() {
         </button>
         <div
           className="flex w-[6.5rem] flex-col justify-center rounded-2xl bg-card px-3 text-center"
+          data-tour="challenges-record"
           aria-label={`Bilans: ${record.win} wygranych, ${record.draw} remisów, ${record.loss} przegranych`}
         >
           <Trophy className="mx-auto h-4 w-4 text-food" />

@@ -1,0 +1,2510 @@
+
+====================================================================================================
+RAPORT PRZYPISANYCH ANIMACJI - KLUSKA MONOLITH (admin: http://localhost:3001/admin/exercises)
+Rozpoczęto: 2026-11-10T17:41:41.946Z
+====================================================================================================
+[6:41:47 PM] [PRZYPISANO] [4/361] PLIK: "Treinos  (283).mp4"
+  -> ĆWICZENIE: "Wznosy ramion bokiem z hantlami" (dumbbell lateral raise) [ID: 6ae2ecab4a34c8e0d18e7557]
+  -> NOWY ZASÓB: /upload-data/0eda0d76-aa54-4391-9b92-29bd1890bb8b.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0334-anim.mp4
+  -> Wynik dopasowania: 134 (rozpoznano: "Dumbbell Lateral Raise")
+  -> Plik źródłowy "Treinos  (283).mp4" USUNIĘTO po uploadzie.
+
+[6:41:47 PM] [PRZYPISANO] [3/361] PLIK: "Treinos  (281).mp4"
+  -> ĆWICZENIE: "Ściąganie drążka wyciągu górnego szerokim chwytem do klatki" (cable wide grip lat pulldown) [ID: 6ae2ecaa4a34c8e0d18e6600]
+  -> NOWY ZASÓB: /upload-data/346bb99f-32cc-478d-848c-8eb7c8441ac7.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-2291-anim.mp4
+  -> Wynik dopasowania: 115 (rozpoznano: "Lat Pulldown")
+  -> Plik źródłowy "Treinos  (281).mp4" USUNIĘTO po uploadzie.
+
+[6:41:48 PM] [PRZYPISANO] [1/361] PLIK: "Treinos  (275).mp4"
+  -> ĆWICZENIE: "Wznosy tułowia na ławce rzymskiej" (hyperextension) [ID: 6ae2ecac4a34c8e0d18e9085]
+  -> NOWY ZASÓB: /upload-data/949f1aa7-2139-4bd5-8257-ba38458270e7.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0489-anim.mp4
+  -> Wynik dopasowania: 108 (rozpoznano: "Hyperextension")
+  -> Plik źródłowy "Treinos  (275).mp4" USUNIĘTO po uploadzie.
+
+[6:41:48 PM] [PRZYPISANO] [2/361] PLIK: "Treinos  (276).mp4"
+  -> ĆWICZENIE: "Wiosłowanie siedząc na wyciągu poziomym" (cable seated row) [ID: 6ae2ecaa4a34c8e0d18e6150]
+  -> NOWY ZASÓB: /upload-data/cd8891c4-f663-41b1-8efa-71f34741b9e4.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0861-anim.mp4
+  -> Wynik dopasowania: 114 (rozpoznano: "Seated Cable Row")
+  -> Plik źródłowy "Treinos  (276).mp4" USUNIĘTO po uploadzie.
+
+[6:41:49 PM] [PRZYPISANO] [5/361] PLIK: "Treinos  (284).mp4"
+  -> ĆWICZENIE: "Wiosłowanie siedząc na wyciągu dolnym" (cable low seated row) [ID: 6ae2ecaa4a34c8e0d18e5d1d]
+  -> NOWY ZASÓB: /upload-data/476c3705-ed92-430e-bc6c-4b1c5ff91015.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0180-anim.mp4
+  -> Wynik dopasowania: 113 (rozpoznano: "Seated Cable Row")
+  -> Plik źródłowy "Treinos  (284).mp4" USUNIĘTO po uploadzie.
+
+[6:41:49 PM] [PRZYPISANO] [6/361] PLIK: "Treinos  (290).mp4"
+  -> ĆWICZENIE: "Rozpiętki z hantlami na ławce skośnej dodatniej" (dumbbell incline fly) [ID: 6ae2ecab4a34c8e0d18e7358]
+  -> NOWY ZASÓB: /upload-data/c65a71c0-1d1f-4a68-adc2-5032f89128d6.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0319-anim.mp4
+  -> Wynik dopasowania: 113 (rozpoznano: "Incline Dumbbell Fly")
+  -> Plik źródłowy "Treinos  (290).mp4" USUNIĘTO po uploadzie.
+
+[6:41:49 PM] [PRZYPISANO] [7/361] PLIK: "Treinos  (291).mp4"
+  -> ĆWICZENIE: "Wiosłowanie hantlami w opadzie tułowia" (dumbbell deadlift bent over row) [ID: 6ae2ecab4a34c8e0d18e6fd3]
+  -> NOWY ZASÓB: /upload-data/f4d3b844-d655-4177-b754-6a10b8295c9a.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-5232-anim.mp4
+  -> Wynik dopasowania: 130 (rozpoznano: "Bent Over Dumbbell Row")
+  -> Plik źródłowy "Treinos  (291).mp4" USUNIĘTO po uploadzie.
+
+[6:41:50 PM] [PRZYPISANO] [8/361] PLIK: "Treinos  (292).mp4"
+  -> ĆWICZENIE: "Pompka klasyczna" (push-up) [ID: 6ae2ecae4a34c8e0d18eb4e5]
+  -> NOWY ZASÓB: /upload-data/f1cab200-681a-400a-83b1-8b0fd3480bc2.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0662-anim.mp4
+  -> Wynik dopasowania: 135 (rozpoznano: "Push-up")
+  -> Plik źródłowy "Treinos  (292).mp4" USUNIĘTO po uploadzie.
+
+[6:41:50 PM] [PRZYPISANO] [9/361] PLIK: "Treinos  (293).mp4"
+  -> ĆWICZENIE: "Uginanie przedramion z hantlami na ławce skośnej" (dumbbell incline curl) [ID: 6ae2ecab4a34c8e0d18e734a]
+  -> NOWY ZASÓB: /upload-data/ec3de44b-94ae-413a-840f-60a38ced1390.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0318-anim.mp4
+  -> Wynik dopasowania: 113 (rozpoznano: "Incline Dumbbell Curl")
+  -> Plik źródłowy "Treinos  (293).mp4" USUNIĘTO po uploadzie.
+
+[6:41:50 PM] [PRZYPISANO] [10/361] PLIK: "Treinos  (297).mp4"
+  -> ĆWICZENIE: "Uginanie przedramion z hantlami na ławce skośnej dodatniej w oparciu klatką piersiową (spider curl)" (dumbbell spider curl) [ID: 6ae2ecab4a34c8e0d18e7f85]
+  -> NOWY ZASÓB: /upload-data/c97db65d-ebc9-4a77-84a8-b3681be0a637.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-9931-anim.mp4
+  -> Wynik dopasowania: 112 (rozpoznano: "Incline Dumbbell Bicep Curl")
+  -> Plik źródłowy "Treinos  (297).mp4" USUNIĘTO po uploadzie.
+
+[6:41:51 PM] [PRZYPISANO] [11/361] PLIK: "Treinos  (307).mp4"
+  -> ĆWICZENIE: "Wspięcia na palce stojąc" (standing calf raise) [ID: 6ae2ecb04a34c8e0d18ed6cd]
+  -> NOWY ZASÓB: /upload-data/d3eefeb9-c53e-4f30-9346-03c8c91ba4cd.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-3018-anim.mp4
+  -> Wynik dopasowania: 133 (rozpoznano: "Standing Calf Raise")
+  -> Plik źródłowy "Treinos  (307).mp4" USUNIĘTO po uploadzie.
+
+[6:41:51 PM] [PRZYPISANO] [12/361] PLIK: "Treinos  (308).mp4"
+  -> ĆWICZENIE: "Brzuszki na ławce skośnej ujemnej" (decline crunch) [ID: 6ae2ecaa4a34c8e0d18e6ab6]
+  -> NOWY ZASÓB: /upload-data/30ccc8c2-7aa8-43b5-ab66-fd1b6cfa0af8.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0277-anim.mp4
+  -> Wynik dopasowania: 130 (rozpoznano: "Decline Crunch")
+  -> Plik źródłowy "Treinos  (308).mp4" USUNIĘTO po uploadzie.
+
+[6:41:52 PM] [PRZYPISANO] [13/361] PLIK: "Treinos  (310).mp4"
+  -> ĆWICZENIE: "Dipsy na ławeczce" (bench dip on floor) [ID: 6ae2eca94a34c8e0d18e50b0]
+  -> NOWY ZASÓB: /upload-data/02bf6d2e-8f3d-4f23-96f3-0a6ed6503faa.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1399-anim.mp4
+  -> Wynik dopasowania: 103 (rozpoznano: "Triceps Dips")
+  -> Plik źródłowy "Treinos  (310).mp4" USUNIĘTO po uploadzie.
+
+[6:41:52 PM] [PRZYPISANO] [14/361] PLIK: "Treinos  (311).mp4"
+  -> ĆWICZENIE: "Rozpiętki na bramie stojąc" (cable standing fly) [ID: 6ae2ecaa4a34c8e0d18e632b]
+  -> NOWY ZASÓB: /upload-data/e9052a8a-c792-4836-9396-cd033053952b.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0227-anim.mp4
+  -> Wynik dopasowania: 131 (rozpoznano: "Standing Cable Chest Fly")
+  -> Plik źródłowy "Treinos  (311).mp4" USUNIĘTO po uploadzie.
+
+[6:41:52 PM] [PRZYPISANO] [15/361] PLIK: "Treinos  (312).mp4"
+  -> ĆWICZENIE: "Wiosłowanie hantlem jednorącz w oparciu o ławkę" (dumbbell one arm bent over row) [ID: 6ae2ecab4a34c8e0d18e7738]
+  -> NOWY ZASÓB: /upload-data/71f36b1b-fcca-4133-bc67-54b24412e932.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-2393-anim.mp4
+  -> Wynik dopasowania: 114 (rozpoznano: "Bent-Over Dumbbell Row")
+  -> Plik źródłowy "Treinos  (312).mp4" USUNIĘTO po uploadzie.
+
+[6:41:53 PM] [PRZYPISANO] [16/361] PLIK: "Treinos  (315).mp4"
+  -> ĆWICZENIE: "Wznosy hantli bokiem w zakresie częściowym" (dumbbell partials lateral raise) [ID: 6ae2ecab4a34c8e0d18e7964]
+  -> NOWY ZASÓB: /upload-data/d2b117ee-a77d-4618-9d6c-afe895722956.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-4191-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Dumbbell Lateral Raise")
+  -> Plik źródłowy "Treinos  (315).mp4" USUNIĘTO po uploadzie.
+
+[6:41:53 PM] [PRZYPISANO] [17/361] PLIK: "Treinos  (316).mp4"
+  -> ĆWICZENIE: "Wypychanie ciężaru na suwnicy poziomej siedząc" (lever seated horizontal leg press) [ID: 6ae2ecad4a34c8e0d18ea503]
+  -> NOWY ZASÓB: /upload-data/24b0e15a-521b-4a7f-90f4-da506b08e4d9.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-3768-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Leg Press")
+  -> Plik źródłowy "Treinos  (316).mp4" USUNIĘTO po uploadzie.
+
+[6:41:54 PM] [PRZYPISANO] [18/361] PLIK: "Treinos  (318).mp4"
+  -> ĆWICZENIE: "Wyciskanie sztangi na ławce poziomej" (barbell bench press) [ID: 6ae2eca94a34c8e0d18e442c]
+  -> NOWY ZASÓB: /upload-data/33224303-2555-4179-a238-030ea29ece03.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0025-anim.mp4
+  -> Wynik dopasowania: 135 (rozpoznano: "Barbell Bench Press")
+  -> Plik źródłowy "Treinos  (318).mp4" USUNIĘTO po uploadzie.
+
+[6:41:54 PM] [PRZYPISANO] [19/361] PLIK: "Treinos  (324).mp4"
+  -> ĆWICZENIE: "Ściąganie drążka wyciągu górnego do klatki" (cable pulldown (pro lat bar)) [ID: 6ae2ecaa4a34c8e0d18e5f7c]
+  -> NOWY ZASÓB: /upload-data/e4295114-35bf-4cb8-8bb9-56e978f54907.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0197-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Lat Pulldown")
+  -> Plik źródłowy "Treinos  (324).mp4" USUNIĘTO po uploadzie.
+
+[6:41:55 PM] [PRZYPISANO] [20/361] PLIK: "Treinos  (332).mp4"
+  -> ĆWICZENIE: "Wznosy ramion bokiem w opadzie tułowia metodą Poliquina" (dumbbell poliquin lateral raise) [ID: 6ae2ecab4a34c8e0d18e7983]
+  -> NOWY ZASÓB: /upload-data/adcc7615-47d0-47af-9eca-f22b92c7d6e6.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-3879-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Dumbbell Lateral Raise")
+  -> Plik źródłowy "Treinos  (332).mp4" USUNIĘTO po uploadzie.
+
+[6:41:55 PM] [PRZYPISANO] [21/361] PLIK: "Treinos  (333).mp4"
+  -> ĆWICZENIE: "Przysiad z piętami na podwyższeniu z ciężarem własnego ciała" (bodyweight heel elevated squat) [ID: 6ae2eca94a34c8e0d18e52dd]
+  -> NOWY ZASÓB: /upload-data/74723f14-96e5-4ed8-900f-2add27acf99f.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-7577-anim.mp4
+  -> Wynik dopasowania: 90 (rozpoznano: "Heels Elevated Squat")
+  -> Plik źródłowy "Treinos  (333).mp4" USUNIĘTO po uploadzie.
+
+[6:41:55 PM] [PRZYPISANO] [22/361] PLIK: "Treinos  (340).mp4"
+  -> ĆWICZENIE: "Wspięcia na palce siedząc na suwnicy" (lever seated squat calf raise on leg press machine) [ID: 6ae2ecad4a34c8e0d18ea5c7]
+  -> NOWY ZASÓB: /upload-data/d3c61706-70eb-4576-a26c-68bc3ddfd9ae.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1385-anim.mp4
+  -> Wynik dopasowania: 109 (rozpoznano: "Leg Press")
+  -> Plik źródłowy "Treinos  (340).mp4" USUNIĘTO po uploadzie.
+
+[6:41:56 PM] [PRZYPISANO] [23/361] PLIK: "Treinos  (342).mp4"
+  -> ĆWICZENIE: "Wyciskanie francuskie hantli siedząc" (dumbbell seated triceps extension) [ID: 6ae2ecab4a34c8e0d18e7db3]
+  -> NOWY ZASÓB: /upload-data/4866a2ce-836e-4b99-814a-1b40d26f5711.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-2188-anim.mp4
+  -> Wynik dopasowania: 113 (rozpoznano: "Overhead Dumbbell Triceps Extension")
+  -> Plik źródłowy "Treinos  (342).mp4" USUNIĘTO po uploadzie.
+
+[6:41:56 PM] [PRZYPISANO] [25/361] PLIK: "Treinos  (347).mp4"
+  -> ĆWICZENIE: "Wyciskanie hantli siedząc" (dumbbell seated shoulder press) [ID: 6ae2ecab4a34c8e0d18e7d8a]
+  -> NOWY ZASÓB: /upload-data/d7d6dbd0-3205-45bc-848f-014953585103.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0405-anim.mp4
+  -> Wynik dopasowania: 134 (rozpoznano: "Seated Dumbbell Shoulder Press")
+  -> Plik źródłowy "Treinos  (347).mp4" USUNIĘTO po uploadzie.
+
+[6:41:57 PM] [PRZYPISANO] [24/361] PLIK: "Treinos  (343).mp4"
+  -> ĆWICZENIE: "Wiosłowanie hantlami w oparciu o ławkę skośną" (dumbbell chest supported row) [ID: 6ae2ecab4a34c8e0d18e6ef4]
+  -> NOWY ZASÓB: /upload-data/209086f2-1c46-4ee1-b88e-5e35279933b3.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-9698-anim.mp4
+  -> Wynik dopasowania: 113 (rozpoznano: "One-Arm Dumbbell Row")
+  -> Plik źródłowy "Treinos  (343).mp4" USUNIĘTO po uploadzie.
+
+[6:41:57 PM] [PRZYPISANO] [26/361] PLIK: "Treinos  (352).mp4"
+  -> ĆWICZENIE: "Przyciąganie uchwytu linki wyciągu dolnego do brzucha siedząc" (cable rope seated row) [ID: 6ae2ecaa4a34c8e0d18e6077]
+  -> NOWY ZASÓB: /upload-data/9051b310-3189-4cf0-b729-20081a152531.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1323-anim.mp4
+  -> Wynik dopasowania: 113 (rozpoznano: "Seated Cable Row")
+  -> Plik źródłowy "Treinos  (352).mp4" USUNIĘTO po uploadzie.
+
+[6:41:58 PM] [PRZYPISANO] [27/361] PLIK: "Treinos  (358).mp4"
+  -> ĆWICZENIE: "Wznosy ramion bokiem" (lateral raise arms (form check)) [ID: 6ae2ecad4a34c8e0d18e9e7c]
+  -> NOWY ZASÓB: /upload-data/38a8e139-ccf0-4602-a8be-f2fcd0649f82.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-4967-anim.mp4
+  -> Wynik dopasowania: 130 (rozpoznano: "Single-Arm Lateral Raise")
+  -> Plik źródłowy "Treinos  (358).mp4" USUNIĘTO po uploadzie.
+
+[6:41:58 PM] [PRZYPISANO] [28/361] PLIK: "Treinos  (363).mp4"
+  -> ĆWICZENIE: "Uginanie przedramion z hantlami z supinacją na ławce skośnej dodatniej" (dumbbell incline biceps curl) [ID: 6ae2ecab4a34c8e0d18e731d]
+  -> NOWY ZASÓB: /upload-data/93d7c27d-eb4c-4112-a8c1-764c0cad8fee.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0315-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Incline Dumbbell Curl")
+  -> Plik źródłowy "Treinos  (363).mp4" USUNIĘTO po uploadzie.
+
+[6:41:59 PM] [PRZYPISANO] [29/361] PLIK: "Treinos  (370).mp4"
+  -> ĆWICZENIE: "Mostki biodrowe z hantlem" (dumbbell glute bridge) [ID: 6ae2ecab4a34c8e0d18e7141]
+  -> NOWY ZASÓB: /upload-data/ee107f46-36bd-49e5-a831-b0ef805bbe5a.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-3335-anim.mp4
+  -> Wynik dopasowania: 133 (rozpoznano: "Dumbbell Hip Thrust")
+  -> Plik źródłowy "Treinos  (370).mp4" USUNIĘTO po uploadzie.
+
+[6:41:59 PM] [PRZYPISANO] [30/361] PLIK: "Treinos  (375).mp4"
+  -> ĆWICZENIE: "Wiosłowanie sztangą w opadzie tułowia" (barbell bent over row) [ID: 6ae2eca94a34c8e0d18e44a3]
+  -> NOWY ZASÓB: /upload-data/a14062d9-2cca-42af-835b-8787f994740e.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0027-anim.mp4
+  -> Wynik dopasowania: 134 (rozpoznano: "Bent Over Barbell Row")
+  -> Plik źródłowy "Treinos  (375).mp4" USUNIĘTO po uploadzie.
+
+[6:41:59 PM] [PRZYPISANO] [31/361] PLIK: "Treinos  (376).mp4"
+  -> ĆWICZENIE: "Naprzemienne wyciskanie hantli zza głowy siedząc" (dumbbell seated alternate overhead triceps extension) [ID: 6ae2ecab4a34c8e0d18e7bfc]
+  -> NOWY ZASÓB: /upload-data/fd86fb62-f3af-4d9b-9f26-4da8e6ccf18e.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-6148-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Seated Dumbbell Overhead Triceps Extension")
+  -> Plik źródłowy "Treinos  (376).mp4" USUNIĘTO po uploadzie.
+
+[6:42:00 PM] [PRZYPISANO] [32/361] PLIK: "Treinos  (378).mp4"
+  -> ĆWICZENIE: "Wyciskanie sztangi na ławce poziomej z nogami na ławce" (barbell feet flat bench press) [ID: 6ae2eca94a34c8e0d18e4643]
+  -> NOWY ZASÓB: /upload-data/50182da4-a247-484f-87dc-f0191d710844.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-6584-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Flat Barbell Bench Press")
+  -> Plik źródłowy "Treinos  (378).mp4" USUNIĘTO po uploadzie.
+
+[6:42:00 PM] [PRZYPISANO] [33/361] PLIK: "Treinos  (380).mp4"
+  -> ĆWICZENIE: "Przyciąganie linki wyciągu górnego do ud jednorącz lub oburącz (prostymi rękami)" (cable straight arm pulldown (with rope attachment)) [ID: 6ae2ecaa4a34c8e0d18e64df]
+  -> NOWY ZASÓB: /upload-data/ff1d3912-3ad5-45fc-96eb-93c37de8b930.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-8297-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Cable Rope Pullover")
+  -> Plik źródłowy "Treinos  (380).mp4" USUNIĘTO po uploadzie.
+
+[6:42:00 PM] [PRZYPISANO] [34/361] PLIK: "Treinos  (381).mp4"
+  -> ĆWICZENIE: "Rozpiętki na maszynie siedząc" (lever pec deck fly) [ID: 6ae2ecad4a34c8e0d18ea3c9]
+  -> NOWY ZASÓB: /upload-data/f4b76f67-5664-4bef-9e65-7daa3728eb53.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1030-anim.mp4
+  -> Wynik dopasowania: 104 (rozpoznano: "Pec Deck Fly")
+  -> Plik źródłowy "Treinos  (381).mp4" USUNIĘTO po uploadzie.
+
+[6:42:01 PM] [DUPLIKAT] [38/361] PLIK: "Treinos  (396).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (358).mp4"
+  -> Przypisany do ćwiczenia: "Wznosy ramion bokiem" (ID: 6ae2ecad4a34c8e0d18e9e7c)
+  -> ZASÓB: /upload-data/38a8e139-ccf0-4602-a8be-f2fcd0649f82.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "Treinos  (396).mp4" USUNIĘTO.
+
+[6:42:01 PM] [PRZYPISANO] [35/361] PLIK: "Treinos  (383).mp4"
+  -> ĆWICZENIE: "Przysiad ze sztangą na plecach" (barbell full squat (back pov)) [ID: 6ae2eca94a34c8e0d18e46f5]
+  -> NOWY ZASÓB: /upload-data/01989bb1-200f-418a-87a8-4dd0d422dda2.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1461-anim.mp4
+  -> Wynik dopasowania: 113 (rozpoznano: "Barbell Back Squat")
+  -> Plik źródłowy "Treinos  (383).mp4" USUNIĘTO po uploadzie.
+
+[6:42:01 PM] [PRZYPISANO] [36/361] PLIK: "Treinos  (392).mp4"
+  -> ĆWICZENIE: "Wyciskanie francuskie na wyciągu jednorącz" (cable kickback) [ID: 6ae2ecaa4a34c8e0d18e5bcc]
+  -> NOWY ZASÓB: /upload-data/21d6f9b6-62af-4a5f-9816-2ea9222e197c.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0860-anim.mp4
+  -> Wynik dopasowania: 100 (rozpoznano: "Seated Cable Triceps Extension")
+  -> Plik źródłowy "Treinos  (392).mp4" USUNIĘTO po uploadzie.
+
+[6:42:02 PM] [PRZYPISANO] [37/361] PLIK: "Treinos  (395).mp4"
+  -> ĆWICZENIE: "Uginanie przedramion ze sztangą łamaną i gumą oporową w wąskim chwycie" (band ez barbell close grip curl) [ID: 6ae2eca84a34c8e0d18e3e27]
+  -> NOWY ZASÓB: /upload-data/24bebe45-65ec-46e3-8296-7ee56afa66fb.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1506-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Close-Grip Barbell Curl")
+  -> Plik źródłowy "Treinos  (395).mp4" USUNIĘTO po uploadzie.
+
+[6:42:02 PM] [PRZYPISANO] [39/361] PLIK: "Treinos  (399).mp4"
+  -> ĆWICZENIE: "Wyciskanie hantli na ławce skośnej dodatniej" (dumbbell incline bench press) [ID: 6ae2ecab4a34c8e0d18e7315]
+  -> NOWY ZASÓB: /upload-data/97cee49f-fcd7-46b0-93cb-7d569415ca22.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0314-anim.mp4
+  -> Wynik dopasowania: 134 (rozpoznano: "Incline Dumbbell Bench Press")
+  -> Plik źródłowy "Treinos  (399).mp4" USUNIĘTO po uploadzie.
+
+[6:42:03 PM] [PRZYPISANO] [40/361] PLIK: "Treinos  (405).mp4"
+  -> ĆWICZENIE: "Przysiad sumo z hantlem" (dumbbell sumo squat) [ID: 6ae2ecac4a34c8e0d18e82c0]
+  -> NOWY ZASÓB: /upload-data/6dd04dfd-315a-4de8-a965-c4bfd2c9d130.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/test-sumo-squat.mp4
+  -> Wynik dopasowania: 132 (rozpoznano: "Dumbbell Sumo Squat")
+  -> Plik źródłowy "Treinos  (405).mp4" USUNIĘTO po uploadzie.
+
+[6:42:03 PM] [PRZYPISANO] [41/361] PLIK: "Treinos  (406).mp4"
+  -> ĆWICZENIE: "Uginanie przedramion ze sztangą w siadzie (wąski uchwyt)" (barbell seated close-grip concentration curl) [ID: 6ae2eca94a34c8e0d18e4bb6]
+  -> NOWY ZASÓB: /upload-data/f402d04e-9b46-41f9-8a18-85213c003b45.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0089-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Seated Barbell Curl")
+  -> Plik źródłowy "Treinos  (406).mp4" USUNIĘTO po uploadzie.
+
+[6:42:03 PM] [PRZYPISANO] [42/361] PLIK: "Treinos  (409).mp4"
+  -> ĆWICZENIE: "Skłony w planku bocznym do kolana" (elbow to knee side plank crunch) [ID: 6ae2ecac4a34c8e0d18e849d]
+  -> NOWY ZASÓB: /upload-data/8ec7e352-1c83-4ed6-b477-5bc34ff73a82.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-3503-anim.mp4
+  -> Wynik dopasowania: 108 (rozpoznano: "Forearm Plank")
+  -> Plik źródłowy "Treinos  (409).mp4" USUNIĘTO po uploadzie.
+
+[6:42:04 PM] [PRZYPISANO] [43/361] PLIK: "Treinos  (415).mp4"
+  -> ĆWICZENIE: "Rumuński martwy ciąg ze sztangą" (barbell romanian deadlift) [ID: 6ae2eca94a34c8e0d18e4b85]
+  -> NOWY ZASÓB: /upload-data/6d0778da-d021-4193-9f3f-af2e5a0438d6.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0085-anim.mp4
+  -> Wynik dopasowania: 134 (rozpoznano: "Barbell Romanian Deadlift")
+  -> Plik źródłowy "Treinos  (415).mp4" USUNIĘTO po uploadzie.
+
+[6:42:04 PM] [PRZYPISANO] [44/361] PLIK: "Treinos  (417).mp4"
+  -> ĆWICZENIE: "Wyciskanie francuskie ze sznurem wyciągu stojąc" (cable overhead triceps extension (rope attachment)) [ID: 6ae2ecaa4a34c8e0d18e5f2f]
+  -> NOWY ZASÓB: /upload-data/9632fd11-bec2-4f35-87b1-f90f23b9b52a.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0194-anim.mp4
+  -> Wynik dopasowania: 113 (rozpoznano: "Cable Triceps Pushdown")
+  -> Plik źródłowy "Treinos  (417).mp4" USUNIĘTO po uploadzie.
+
+[6:42:05 PM] [PRZYPISANO] [45/361] PLIK: "Treinos  (418).mp4"
+  -> ĆWICZENIE: "Uginanie przedramion z hantlami stojąc" (dumbbell standing biceps curl) [ID: 6ae2ecac4a34c8e0d18e807b]
+  -> NOWY ZASÓB: /upload-data/085d2c3b-99de-4539-984e-9a39a7309796.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0416-anim.mp4
+  -> Wynik dopasowania: 131 (rozpoznano: "Dumbbell Bicep Curl")
+  -> Plik źródłowy "Treinos  (418).mp4" USUNIĘTO po uploadzie.
+
+[6:42:05 PM] [PRZYPISANO] [46/361] PLIK: "Treinos  (421).mp4"
+  -> ĆWICZENIE: "Wciąganie drążka wyciągu poziomego do klatki szerokim chwytem" (cable seated wide-grip row) [ID: 6ae2ecaa4a34c8e0d18e61a0]
+  -> NOWY ZASÓB: /upload-data/38344dc9-eb7f-464a-bf6b-a8581ff2c1cb.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0218-anim.mp4
+  -> Wynik dopasowania: 113 (rozpoznano: "Seated Cable Row")
+  -> Plik źródłowy "Treinos  (421).mp4" USUNIĘTO po uploadzie.
+
+[6:42:05 PM] [PRZYPISANO] [47/361] PLIK: "Treinos  (426).mp4"
+  -> ĆWICZENIE: "Wyciskanie sztangi na ławce skośnej dodatniej" (barbell incline bench press) [ID: 6ae2eca94a34c8e0d18e47ea]
+  -> NOWY ZASÓB: /upload-data/5c7e0a0b-0eeb-4b20-a478-3c7dfc83179a.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0047-anim.mp4
+  -> Wynik dopasowania: 114 (rozpoznano: "Barbell Bench Press")
+  -> Plik źródłowy "Treinos  (426).mp4" USUNIĘTO po uploadzie.
+
+[6:42:06 PM] [PRZYPISANO] [48/361] PLIK: "Treinos  (430).mp4"
+  -> ĆWICZENIE: "Uginanie przedramion z hantlami siedząc" (dumbbell seated bicep curl) [ID: 6ae2ecab4a34c8e0d18e7c4c]
+  -> NOWY ZASÓB: /upload-data/a247ebb2-e985-4288-9616-3416ec577233.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1677-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Seated Dumbbell Bicep Curl")
+  -> Plik źródłowy "Treinos  (430).mp4" USUNIĘTO po uploadzie.
+
+[6:42:06 PM] [PRZYPISANO] [49/361] PLIK: "Treinos  (448).mp4"
+  -> ĆWICZENIE: "Uginanie przedramion z wyciągiem dolnym" (cable curl) [ID: 6ae2ecaa4a34c8e0d18e59aa]
+  -> NOWY ZASÓB: /upload-data/04d8f0d2-5f24-4c58-b39b-8e8251fc7371.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0868-anim.mp4
+  -> Wynik dopasowania: 133 (rozpoznano: "Cable Bicep Curl")
+  -> Plik źródłowy "Treinos  (448).mp4" USUNIĘTO po uploadzie.
+
+[6:42:07 PM] [PRZYPISANO] [50/361] PLIK: "Treinos  (449).mp4"
+  -> ĆWICZENIE: "Wznosy hantli bokiem w siedzeniu" (dumbbell seated lateral raise) [ID: 6ae2ecab4a34c8e0d18e7cd1]
+  -> NOWY ZASÓB: /upload-data/9f3272d8-3809-4d1a-91ac-4c07790680fa.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0396-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Seated Dumbbell Lateral Raise")
+  -> Plik źródłowy "Treinos  (449).mp4" USUNIĘTO po uploadzie.
+
+[6:42:07 PM] [PRZYPISANO] [51/361] PLIK: "Treinos  (450).mp4"
+  -> ĆWICZENIE: "Wiosłowanie hantlami na ławce skośnej dodatniej leżąc przodem" (dumbbell incline row) [ID: 6ae2ecab4a34c8e0d18e741d]
+  -> NOWY ZASÓB: /upload-data/b0057a2d-c4ea-41bb-ae2c-527c78a5cddc.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0327-anim.mp4
+  -> Wynik dopasowania: 112 (rozpoznano: "One-Arm Dumbbell Row")
+  -> Plik źródłowy "Treinos  (450).mp4" USUNIĘTO po uploadzie.
+
+[6:42:07 PM] [PRZYPISANO] [52/361] PLIK: "Treinos  (455).mp4"
+  -> ĆWICZENIE: "Naprzemienne wznosy hantli bokiem siedząc" (dumbbell seated alternating lateral raise) [ID: 6ae2ecab4a34c8e0d18e7c14]
+  -> NOWY ZASÓB: /upload-data/83529867-57fd-459b-84cc-ca563d06c070.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-9933-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Seated Dumbbell Lateral Raise")
+  -> Plik źródłowy "Treinos  (455).mp4" USUNIĘTO po uploadzie.
+
+[6:42:08 PM] [PRZYPISANO] [53/361] PLIK: "Treinos  (458).mp4"
+  -> ĆWICZENIE: "Wypychanie ciężaru na suwnicy siedząc" (lever seated leg press) [ID: 6ae2ecad4a34c8e0d18ea531]
+  -> NOWY ZASÓB: /upload-data/36e76dc1-5a24-408c-bcb9-55b82863bca0.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-2267-anim.mp4
+  -> Wynik dopasowania: 104 (rozpoznano: "Leg Press")
+  -> Plik źródłowy "Treinos  (458).mp4" USUNIĘTO po uploadzie.
+
+[6:42:08 PM] [PRZYPISANO] [54/361] PLIK: "Treinos  (461).mp4"
+  -> ĆWICZENIE: "Ściąganie drążka maszyny dźwigniowej szerokim chwytem do klatki" (lever lateral wide pulldown) [ID: 6ae2ecad4a34c8e0d18ea298]
+  -> NOWY ZASÓB: /upload-data/c4282c9e-2e5c-418f-afc9-93cfa30febcd.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-2665-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Lat Pulldown")
+  -> Plik źródłowy "Treinos  (461).mp4" USUNIĘTO po uploadzie.
+
+[6:42:09 PM] [PRZYPISANO] [56/361] PLIK: "Treinos  (471).mp4"
+  -> ĆWICZENIE: "Prostowanie nóg na maszynie siedząc" (lever seated leg extension v. 2) [ID: 6ae2ecad4a34c8e0d18ea523]
+  -> NOWY ZASÓB: /upload-data/ac2ff2a4-158b-4e50-8c4f-78344f208076.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-3386-anim.mp4
+  -> Wynik dopasowania: 99 (rozpoznano: "Seated Leg Extension")
+  -> Plik źródłowy "Treinos  (471).mp4" USUNIĘTO po uploadzie.
+
+[6:42:09 PM] [PRZYPISANO] [55/361] PLIK: "Treinos  (469).mp4"
+  -> ĆWICZENIE: "Przysiad ze sztangą na plecach" (barbell full squat) [ID: 6ae2eca94a34c8e0d18e46eb]
+  -> NOWY ZASÓB: /upload-data/11c9d121-cd7a-4456-937d-8279a8ce3657.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0043-anim.mp4
+  -> Wynik dopasowania: 135 (rozpoznano: "Barbell Back Squat")
+  -> Plik źródłowy "Treinos  (469).mp4" USUNIĘTO po uploadzie.
+
+[6:42:10 PM] [PRZYPISANO] [57/361] PLIK: "Treinos  (474).mp4"
+  -> ĆWICZENIE: "Wiosłowanie hantlami w opadzie tułuwia" (dumbbell bent over row) [ID: 6ae2ecab4a34c8e0d18e6e47]
+  -> NOWY ZASÓB: /upload-data/124a74fc-c8fc-42bd-ab7b-ceadb47a1669.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0293-anim.mp4
+  -> Wynik dopasowania: 131 (rozpoznano: "Bent Over Dumbbell Row")
+  -> Plik źródłowy "Treinos  (474).mp4" USUNIĘTO po uploadzie.
+
+[6:42:10 PM] [PRZYPISANO] [58/361] PLIK: "Treinos  (476).mp4"
+  -> ĆWICZENIE: "Prostowanie ramienia z wyciągu górnego jednorącz podchwytem" (cable one arm tricep pushdown) [ID: 6ae2ecaa4a34c8e0d18e5ef0]
+  -> NOWY ZASÓB: /upload-data/f1374922-1da6-4c4d-97c5-ff350f58ec9a.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1723-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Cable Tricep Pushdown")
+  -> Plik źródłowy "Treinos  (476).mp4" USUNIĘTO po uploadzie.
+
+[6:42:11 PM] [PRZYPISANO] [59/361] PLIK: "Treinos  (482).mp4"
+  -> ĆWICZENIE: "Uginanie nadgarstków nachwytem siedząc ze sztangą łamaną" (ez barbell seated wrist reverse curl) [ID: 6ae2ecac4a34c8e0d18e879d]
+  -> NOWY ZASÓB: /upload-data/9f4fbf58-fcd2-40ff-9b45-4094aafa8183.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-6364-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Seated Barbell Curl")
+  -> Plik źródłowy "Treinos  (482).mp4" USUNIĘTO po uploadzie.
+
+[6:42:11 PM] [PRZYPISANO] [60/361] PLIK: "Treinos  (494).mp4"
+  -> ĆWICZENIE: "Wyciskanie hantli nad głowę z rotacją tułowia w siadzie równoważnym" (dumbbell military press russian twist with legs floor off) [ID: 6ae2ecab4a34c8e0d18e7704]
+  -> NOWY ZASÓB: /upload-data/b0a8c6f7-6544-40a5-9ba1-307f379d00ec.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-6800-anim.mp4
+  -> Wynik dopasowania: 64 (rozpoznano: "Russian Twist With Plate")
+  -> Plik źródłowy "Treinos  (494).mp4" USUNIĘTO po uploadzie.
+
+[6:42:12 PM] [PRZYPISANO] [61/361] PLIK: "Treinos  (498).mp4"
+  -> ĆWICZENIE: "Uginanie przedramion na maszynie siedząc" (lever bicep curl) [ID: 6ae2ecad4a34c8e0d18ea0e2]
+  -> NOWY ZASÓB: /upload-data/c7267735-698f-43f1-af20-432ce2d9ac7b.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0575-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Seated Leg Extension")
+  -> Plik źródłowy "Treinos  (498).mp4" USUNIĘTO po uploadzie.
+
+[6:42:12 PM] [PRZYPISANO] [62/361] PLIK: "Treinos  (500).mp4"
+  -> ĆWICZENIE: "Brama – przyciąganie rąk linki wyciągu górnego" (cable standing crossover) [ID: 6ae2ecaa4a34c8e0d18e62ff]
+  -> NOWY ZASÓB: /upload-data/f4be781d-226a-42ed-b8b3-f08b33dfa5b2.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/d26aa223-4ce7-416b-ba40-f985e3746127.webm
+  -> Wynik dopasowania: 114 (rozpoznano: "Flat Bench Cable Fly")
+  -> Plik źródłowy "Treinos  (500).mp4" USUNIĘTO po uploadzie.
+
+[6:42:12 PM] [PRZYPISANO] [63/361] PLIK: "Treinos  (501).mp4"
+  -> ĆWICZENIE: "Wykrok z pompką" (lunge push up) [ID: 6ae2ecad4a34c8e0d18ea7d1]
+  -> NOWY ZASÓB: /upload-data/e0373b6b-43ba-486f-94d1-83b06078f73e.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0611-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Push-up")
+  -> Plik źródłowy "Treinos  (501).mp4" USUNIĘTO po uploadzie.
+
+[6:42:13 PM] [PRZYPISANO] [64/361] PLIK: "Treinos  (505).mp4"
+  -> ĆWICZENIE: "Uginanie jednonóż leżąc na maszynie" (lever lying single leg curl) [ID: 6ae2ecad4a34c8e0d18ea303]
+  -> NOWY ZASÓB: /upload-data/3739c4d2-2cf8-486a-837f-4c87b701723d.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1590-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Lying Leg Curl")
+  -> Plik źródłowy "Treinos  (505).mp4" USUNIĘTO po uploadzie.
+
+[6:42:13 PM] [PRZYPISANO] [66/361] PLIK: "Treinos  (512).mp4"
+  -> ĆWICZENIE: "Wyciskanie hantli na ławce skośnej dodatniej" (dumbbell incline breeding) [ID: 6ae2ecab4a34c8e0d18e733a]
+  -> NOWY ZASÓB: /upload-data/4e9d84a3-75e8-4ad4-a7fe-d4c310fe415a.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0316-anim.mp4
+  -> Wynik dopasowania: 130 (rozpoznano: "Incline Dumbbell Bench Press")
+  -> Plik źródłowy "Treinos  (512).mp4" USUNIĘTO po uploadzie.
+
+[6:42:13 PM] [DUPLIKAT] [69/361] PLIK: "Treinos  (536).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (392).mp4"
+  -> Przypisany do ćwiczenia: "Wyciskanie francuskie na wyciągu jednorącz" (ID: 6ae2ecaa4a34c8e0d18e5bcc)
+  -> ZASÓB: /upload-data/21d6f9b6-62af-4a5f-9816-2ea9222e197c.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "Treinos  (536).mp4" USUNIĘTO.
+
+[6:42:14 PM] [PRZYPISANO] [65/361] PLIK: "Treinos  (510).mp4"
+  -> ĆWICZENIE: "Ściąganie drążka wyciągu górnego szerokim chwytem do klatki" (cable wide grip rear pulldown behind neck) [ID: 6ae2ecaa4a34c8e0d18e6608]
+  -> NOWY ZASÓB: /upload-data/bfee6715-cc5f-403b-93bb-f96dc284dbd5.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1325-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Wide-Grip Lat Pulldown")
+  -> Plik źródłowy "Treinos  (510).mp4" USUNIĘTO po uploadzie.
+
+[6:42:14 PM] [PRZYPISANO] [67/361] PLIK: "Treinos  (527).mp4"
+  -> ĆWICZENIE: "Rozpiętki na wyciągu środkowym" (cable middle fly) [ID: 6ae2ecaa4a34c8e0d18e5e27]
+  -> NOWY ZASÓB: /upload-data/3698756b-e765-44ee-b045-40019f9879f5.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0188-anim.mp4
+  -> Wynik dopasowania: 113 (rozpoznano: "Cable Crossover")
+  -> Plik źródłowy "Treinos  (527).mp4" USUNIĘTO po uploadzie.
+
+[6:42:15 PM] [PRZYPISANO] [68/361] PLIK: "Treinos  (535).mp4"
+  -> ĆWICZENIE: "Wyciskanie sztangi wąskim chwytem na ławce poziomej" (barbell close-grip bench press) [ID: 6ae2eca94a34c8e0d18e455c]
+  -> NOWY ZASÓB: /upload-data/4fea2764-d6c1-4aea-b19c-d1e9c9fbe36a.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0030-anim.mp4
+  -> Wynik dopasowania: 113 (rozpoznano: "Barbell Bench Press")
+  -> Plik źródłowy "Treinos  (535).mp4" USUNIĘTO po uploadzie.
+
+[6:42:15 PM] [PRZYPISANO] [70/361] PLIK: "Treinos  (537).mp4"
+  -> ĆWICZENIE: "Wyciskanie hantli siedząc" (dumbbell bench seated press) [ID: 6ae2ecab4a34c8e0d18e6dda]
+  -> NOWY ZASÓB: /upload-data/3bfdb504-6511-420b-97d2-d4a71d0bb0bd.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0290-anim.mp4
+  -> Wynik dopasowania: 130 (rozpoznano: "Seated Dumbbell Shoulder Press")
+  -> Plik źródłowy "Treinos  (537).mp4" USUNIĘTO po uploadzie.
+
+[6:42:15 PM] [PRZYPISANO] [71/361] PLIK: "Treinos  (541).mp4"
+  -> ĆWICZENIE: "Dzień dobry na maszynie do przysiadów hantlowych" (lever good morning on the hack squat machine) [ID: 6ae2ecad4a34c8e0d18ea186]
+  -> NOWY ZASÓB: /upload-data/d504a4e8-6394-4d3b-a417-f5f6a0db01a3.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-6733-anim.mp4
+  -> Wynik dopasowania: 109 (rozpoznano: "Hack Squat")
+  -> Plik źródłowy "Treinos  (541).mp4" USUNIĘTO po uploadzie.
+
+[6:42:16 PM] [PRZYPISANO] [72/361] PLIK: "Treinos  (549).mp4"
+  -> ĆWICZENIE: "Prostowanie nóg na maszynie siedząc" (lever leg extension) [ID: 6ae2ecad4a34c8e0d18ea29f]
+  -> NOWY ZASÓB: /upload-data/0044b548-7710-45d4-b293-42abad1df709.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0585-anim.mp4
+  -> Wynik dopasowania: 104 (rozpoznano: "Leg Extension")
+  -> Plik źródłowy "Treinos  (549).mp4" USUNIĘTO po uploadzie.
+
+[6:42:16 PM] [PRZYPISANO] [73/361] PLIK: "Treinos  (553).mp4"
+  -> ĆWICZENIE: "Rozpiętki na wyciągu w dół" (cable decline fly) [ID: 6ae2ecaa4a34c8e0d18e59c1]
+  -> NOWY ZASÓB: /upload-data/126848d2-5a5d-4d6b-b100-b7f91230f1b9.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0158-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Cable Crossover")
+  -> Plik źródłowy "Treinos  (553).mp4" USUNIĘTO po uploadzie.
+
+[6:42:17 PM] [PRZYPISANO] [74/361] PLIK: "Treinos  (554).mp4"
+  -> ĆWICZENIE: "Wznosy bioder w leżeniu tyłem" (reverse crunch) [ID: 6ae2ecae4a34c8e0d18ebcd1]
+  -> NOWY ZASÓB: /upload-data/43bec96b-5cb7-4bb3-ab77-beea4753ad7a.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0872-anim.mp4
+  -> Wynik dopasowania: 133 (rozpoznano: "Reverse Crunch")
+  -> Plik źródłowy "Treinos  (554).mp4" USUNIĘTO po uploadzie.
+
+[6:42:17 PM] [PRZYPISANO] [75/361] PLIK: "Treinos  (563).mp4"
+  -> ĆWICZENIE: "Uginanie przedramion ze sztangą łamaną na modlitewniku" (ez barbell preacher curl) [ID: 6ae2ecac4a34c8e0d18e877a]
+  -> NOWY ZASÓB: /upload-data/5b303ddf-706a-40a1-8425-052a29a8c5d2.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-6406-anim.mp4
+  -> Wynik dopasowania: 105 (rozpoznano: "Preacher Curl")
+  -> Plik źródłowy "Treinos  (563).mp4" USUNIĘTO po uploadzie.
+
+[6:42:17 PM] [NIEPRZYPISANE] [76/361] PLIK: "Treinos  (573).mp4"
+  -> Rozpoznano: "undefined" / "undefined" (brak sprzętu, brak mięśnia)
+  -> Najlepszy kandydat: "undefined" (undefined) - wynik za niski (0 < 45)
+  -> Plik źródłowy zachowano do weryfikacji.
+
+[6:42:18 PM] [PRZYPISANO] [77/361] PLIK: "Treinos  (577).mp4"
+  -> ĆWICZENIE: "Russian twist" (russian twist) [ID: 6ae2ecaf4a34c8e0d18ec273]
+  -> NOWY ZASÓB: /upload-data/b928939e-9e68-4c37-b4f0-dc87f7b9a55c.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0687-anim.mp4
+  -> Wynik dopasowania: 133 (rozpoznano: "Seated Russian Twist")
+  -> Plik źródłowy "Treinos  (577).mp4" USUNIĘTO po uploadzie.
+
+[6:42:18 PM] [PRZYPISANO] [78/361] PLIK: "Treinos  (580).mp4"
+  -> ĆWICZENIE: "Podciąganie sztangi wyciągu dolnego w the up" (cable upright row) [ID: 6ae2ecaa4a34c8e0d18e65f1]
+  -> NOWY ZASÓB: /upload-data/94dcbc53-5a74-4796-9dd9-eafafd61f28f.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0246-anim.mp4
+  -> Wynik dopasowania: 112 (rozpoznano: "Seated Cable Row")
+  -> Plik źródłowy "Treinos  (580).mp4" USUNIĘTO po uploadzie.
+
+[6:42:19 PM] [PRZYPISANO] [79/361] PLIK: "Treinos  (585).mp4"
+  -> ĆWICZENIE: "Brzuszki na wyciągu siedząc" (cable seated crunch) [ID: 6ae2ecaa4a34c8e0d18e609d]
+  -> NOWY ZASÓB: /upload-data/9d91e34a-6667-49be-a505-6f452719e6bf.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0212-anim.mp4
+  -> Wynik dopasowania: 88 (rozpoznano: "Seated Crunches")
+  -> Plik źródłowy "Treinos  (585).mp4" USUNIĘTO po uploadzie.
+
+[6:42:19 PM] [PRZYPISANO] [80/361] PLIK: "Treinos  (589).mp4"
+  -> ĆWICZENIE: "Uginanie przedramion z hantlami z supinacją" (dumbbell biceps curl) [ID: 6ae2ecab4a34c8e0d18e6e8f]
+  -> NOWY ZASÓB: /upload-data/2cdf3060-2bc7-413b-8df0-3fd1a975f5a8.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0294-anim.mp4
+  -> Wynik dopasowania: 114 (rozpoznano: "Dumbbell Bicep Curl")
+  -> Plik źródłowy "Treinos  (589).mp4" USUNIĘTO po uploadzie.
+
+[6:42:19 PM] [PRZYPISANO] [81/361] PLIK: "Treinos  (591).mp4"
+  -> ĆWICZENIE: "Pompka klasyczna" (push-up) [ID: 6ae2ecae4a34c8e0d18eb4e5]
+  -> NOWY ZASÓB: /upload-data/245a9c34-82a0-475c-aa4d-6eb5be11f692.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/f1cab200-681a-400a-83b1-8b0fd3480bc2.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Push-up")
+  -> Plik źródłowy "Treinos  (591).mp4" USUNIĘTO po uploadzie.
+
+[6:42:20 PM] [PRZYPISANO] [82/361] PLIK: "Treinos  (592).mp4"
+  -> ĆWICZENIE: "Rozciąganie klatki piersiowej jednorącz przy ścianie" (standing one arm chest stretch) [ID: 6ae2ecb04a34c8e0d18ed882]
+  -> NOWY ZASÓB: /upload-data/a8a2d662-3d4d-41ef-9158-058e36fa8fd7.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1058-anim.mp4
+  -> Wynik dopasowania: 107 (rozpoznano: "Wall Chest Stretch")
+  -> Plik źródłowy "Treinos  (592).mp4" USUNIĘTO po uploadzie.
+
+[6:42:20 PM] [PRZYPISANO] [83/361] PLIK: "Treinos  (595).mp4"
+  -> ĆWICZENIE: "Przenoszenie hantle leżąc na ławce poziomej" (dumbbell pullover) [ID: 6ae2ecab4a34c8e0d18e7a25]
+  -> NOWY ZASÓB: /upload-data/9b86622e-01d2-41e4-9357-ff26df8e26f1.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0375-anim.mp4
+  -> Wynik dopasowania: 133 (rozpoznano: "Dumbbell Pullover")
+  -> Plik źródłowy "Treinos  (595).mp4" USUNIĘTO po uploadzie.
+
+[6:42:21 PM] [PRZYPISANO] [84/361] PLIK: "Treinos  (603).mp4"
+  -> ĆWICZENIE: "Pozycja Bohatera" (hero pose virasana) [ID: 6ae2ecac4a34c8e0d18e8e6e]
+  -> NOWY ZASÓB: /upload-data/ac4d5247-0218-409a-bcc5-3a0f5826c972.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0954-anim.mp4
+  -> Wynik dopasowania: 80 (rozpoznano: "Supine Hero Pose Variation")
+  -> Plik źródłowy "Treinos  (603).mp4" USUNIĘTO po uploadzie.
+
+[6:42:21 PM] [PRZYPISANO] [85/361] PLIK: "Treinos  (606).mp4"
+  -> ĆWICZENIE: "Wyciskanie francuskie na ławce skośnej dodatniej z wyciągu dolnego" (cable incline skull crusher) [ID: 6ae2ecaa4a34c8e0d18e5b9b]
+  -> NOWY ZASÓB: /upload-data/8c53b7cb-19b8-455d-9315-78c5c86acf94.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-4351-anim.mp4
+  -> Wynik dopasowania: 97 (rozpoznano: "Seated Triceps Pushdown (Cable)")
+  -> Plik źródłowy "Treinos  (606).mp4" USUNIĘTO po uploadzie.
+
+[6:42:22 PM] [PRZYPISANO] [86/361] PLIK: "Treinos  (611).mp4"
+  -> ĆWICZENIE: "Jednonóż martwy ciąg na maszynie Smitha / suwnicy" (leverage single leg deadlift on hack squat machine) [ID: 6ae2ecad4a34c8e0d18ea720]
+  -> NOWY ZASÓB: /upload-data/aba48351-17a8-486e-8a97-8a77727d8621.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-8799-anim.mp4
+  -> Wynik dopasowania: 109 (rozpoznano: "Hack Squat")
+  -> Plik źródłowy "Treinos  (611).mp4" USUNIĘTO po uploadzie.
+
+[6:42:22 PM] [PRZYPISANO] [87/361] PLIK: "Treinos  (615).mp4"
+  -> ĆWICZENIE: "Pompki na podwyższeniu" (incline push-up) [ID: 6ae2ecac4a34c8e0d18e911b]
+  -> NOWY ZASÓB: /upload-data/8cabf76a-872a-4d15-9f42-d343eb172bcd.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0493-anim.mp4
+  -> Wynik dopasowania: 133 (rozpoznano: "Incline Push-Up")
+  -> Plik źródłowy "Treinos  (615).mp4" USUNIĘTO po uploadzie.
+
+[6:42:23 PM] [PRZYPISANO] [88/361] PLIK: "Treinos  (617).mp4"
+  -> ĆWICZENIE: "Wyciskanie sztangi na ławce skośnej ujemnej" (barbell decline bench press) [ID: 6ae2eca94a34c8e0d18e45ea]
+  -> NOWY ZASÓB: /upload-data/4fe3e188-5670-4c4b-ac14-9b804957b396.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0033-anim.mp4
+  -> Wynik dopasowania: 113 (rozpoznano: "Flat Barbell Bench Press")
+  -> Plik źródłowy "Treinos  (617).mp4" USUNIĘTO po uploadzie.
+
+[6:42:23 PM] [PRZYPISANO] [89/361] PLIK: "Treinos  (626).mp4"
+  -> ĆWICZENIE: "Rozpiętki na bramie leżąc" (cable lying fly) [ID: 6ae2ecaa4a34c8e0d18e5d97]
+  -> NOWY ZASÓB: /upload-data/a75466d8-62d3-48ab-bde0-e2c19097367c.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0185-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Flat Bench Cable Fly")
+  -> Plik źródłowy "Treinos  (626).mp4" USUNIĘTO po uploadzie.
+
+[6:42:23 PM] [PRZYPISANO] [90/361] PLIK: "Treinos  (632).mp4"
+  -> ĆWICZENIE: "Wyciskanie francuskie ze sztangą leżąc" (barbell lying triceps extension skull crusher) [ID: 6ae2eca94a34c8e0d18e4926]
+  -> NOWY ZASÓB: /upload-data/6b1d03b6-8185-4e26-b258-c61167b4db02.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0060-anim.mp4
+  -> Wynik dopasowania: 88 (rozpoznano: "Lying Triceps Extension")
+  -> Plik źródłowy "Treinos  (632).mp4" USUNIĘTO po uploadzie.
+
+[6:42:24 PM] [PRZYPISANO] [91/361] PLIK: "Treinos  (636).mp4"
+  -> ĆWICZENIE: "Rozpiętki z gumami oporowymi stojąc" (band chest fly) [ID: 6ae2eca84a34c8e0d18e3dbf]
+  -> NOWY ZASÓB: /upload-data/4b796d54-0471-459c-8bc0-f38a316a87d1.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-4075-anim.mp4
+  -> Wynik dopasowania: 104 (rozpoznano: "Resistance Band Chest Fly")
+  -> Plik źródłowy "Treinos  (636).mp4" USUNIĘTO po uploadzie.
+
+[6:42:24 PM] [PRZYPISANO] [92/361] PLIK: "Treinos  (642).mp4"
+  -> ĆWICZENIE: "Deska" (front plank) [ID: 6ae2ecac4a34c8e0d18e8a76]
+  -> NOWY ZASÓB: /upload-data/85250c41-77df-46e4-adc4-4fc58ef4fdfa.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0463-anim.mp4
+  -> Wynik dopasowania: 134 (rozpoznano: "Plank")
+  -> Plik źródłowy "Treinos  (642).mp4" USUNIĘTO po uploadzie.
+
+[6:42:25 PM] [PRZYPISANO] [93/361] PLIK: "Treinos  (645).mp4"
+  -> ĆWICZENIE: "Wyciskanie sztangi wąskim chwytem na ławce skośnej dodatniej" (barbell incline close grip bench press) [ID: 6ae2eca94a34c8e0d18e47f2]
+  -> NOWY ZASÓB: /upload-data/d5eac619-5c7d-47a4-954a-4e4f8f97438c.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1719-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Incline Barbell Bench Press")
+  -> Plik źródłowy "Treinos  (645).mp4" USUNIĘTO po uploadzie.
+
+[6:42:25 PM] [PRZYPISANO] [94/361] PLIK: "Treinos  (647).mp4"
+  -> ĆWICZENIE: "Prostowanie nóg siedząc jednonurcz na maszynie ze stosu" (lever alternate leg extension (plate loaded)) [ID: 6ae2ecad4a34c8e0d18e9fe2]
+  -> NOWY ZASÓB: /upload-data/8b05bffc-1f38-4950-8e5f-c02b3d2e0ab3.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1874-anim.mp4
+  -> Wynik dopasowania: 100 (rozpoznano: "Seated Leg Extension")
+  -> Plik źródłowy "Treinos  (647).mp4" USUNIĘTO po uploadzie.
+
+[6:42:25 PM] [PRZYPISANO] [95/361] PLIK: "Treinos  (654).mp4"
+  -> ĆWICZENIE: "Przysiad ze sztangą" (barbell squat) [ID: 6ae2eca94a34c8e0d18e4cf3]
+  -> NOWY ZASÓB: /upload-data/7715da3e-ea79-4794-b5de-bb00cca18004.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-3593-anim.mp4
+  -> Wynik dopasowania: 133 (rozpoznano: "Barbell Squat")
+  -> Plik źródłowy "Treinos  (654).mp4" USUNIĘTO po uploadzie.
+
+[6:42:25 PM] [DUPLIKAT] [99/361] PLIK: "entrenamientos  (274).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (284).mp4"
+  -> Przypisany do ćwiczenia: "Wiosłowanie siedząc na wyciągu dolnym" (ID: 6ae2ecaa4a34c8e0d18e5d1d)
+  -> ZASÓB: /upload-data/476c3705-ed92-430e-bc6c-4b1c5ff91015.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (274).mp4" USUNIĘTO.
+
+[6:42:25 PM] [DUPLIKAT] [100/361] PLIK: "entrenamientos  (275).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (275).mp4"
+  -> Przypisany do ćwiczenia: "Wznosy tułowia na ławce rzymskiej" (ID: 6ae2ecac4a34c8e0d18e9085)
+  -> ZASÓB: /upload-data/949f1aa7-2139-4bd5-8257-ba38458270e7.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (275).mp4" USUNIĘTO.
+
+[6:42:26 PM] [PRZYPISANO] [96/361] PLIK: "Treinos  (673).mp4"
+  -> ĆWICZENIE: "Wypychanie nogi w tył na wyciągu dolnym" (cable donkey kickback) [ID: 6ae2ecaa4a34c8e0d18e59e9]
+  -> NOWY ZASÓB: /upload-data/f1c358c3-247f-41e9-bbcf-8a803abbc102.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-4421-anim.mp4
+  -> Wynik dopasowania: 113 (rozpoznano: "Cable Glute Kickback")
+  -> Plik źródłowy "Treinos  (673).mp4" USUNIĘTO po uploadzie.
+
+[6:42:26 PM] [PRZYPISANO] [97/361] PLIK: "Treinos  (677).mp4"
+  -> ĆWICZENIE: "Wznosy hantli w opadzie tułowia" (dumbbell rear lateral raise) [ID: 6ae2ecab4a34c8e0d18e7ace]
+  -> NOWY ZASÓB: /upload-data/9a5594e4-2a4c-47a5-825d-688a59baad73.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0380-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Dumbbell Lateral Raise")
+  -> Plik źródłowy "Treinos  (677).mp4" USUNIĘTO po uploadzie.
+
+[6:42:27 PM] [PRZYPISANO] [98/361] PLIK: "entrenamientos  (1).mp4"
+  -> ĆWICZENIE: "Przysiad sumo z kettlem" (kettlebell sumo squat) [ID: 6ae2ecad4a34c8e0d18e999a]
+  -> NOWY ZASÓB: /upload-data/09abebae-c3a3-42d3-96d0-8e73a3f1a1af.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-4089-anim.mp4
+  -> Wynik dopasowania: 130 (rozpoznano: "Kettlebell Sumo Squat")
+  -> Plik źródłowy "entrenamientos  (1).mp4" USUNIĘTO po uploadzie.
+
+[6:42:27 PM] [PRZYPISANO] [101/361] PLIK: "entrenamientos  (282).mp4"
+  -> ĆWICZENIE: "Hip thrust na maszynie Smitha" (smith hip thrust) [ID: 6ae2ecaf4a34c8e0d18ed196]
+  -> NOWY ZASÓB: /upload-data/9d50ccd0-f943-4fbf-8f75-264adf9c76f8.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-3110-anim.mp4
+  -> Wynik dopasowania: 131 (rozpoznano: "Smith Machine Hip Thrust")
+  -> Plik źródłowy "entrenamientos  (282).mp4" USUNIĘTO po uploadzie.
+
+[6:42:27 PM] [DUPLIKAT] [105/361] PLIK: "entrenamientos  (291).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (291).mp4"
+  -> Przypisany do ćwiczenia: "Wiosłowanie hantlami w opadzie tułowia" (ID: 6ae2ecab4a34c8e0d18e6fd3)
+  -> ZASÓB: /upload-data/f4d3b844-d655-4177-b754-6a10b8295c9a.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (291).mp4" USUNIĘTO.
+
+[6:42:27 PM] [DUPLIKAT] [106/361] PLIK: "entrenamientos  (292).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (292).mp4"
+  -> Przypisany do ćwiczenia: "Pompka klasyczna" (ID: 6ae2ecae4a34c8e0d18eb4e5)
+  -> ZASÓB: /upload-data/f1cab200-681a-400a-83b1-8b0fd3480bc2.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (292).mp4" USUNIĘTO.
+
+[6:42:27 PM] [PRZYPISANO] [102/361] PLIK: "entrenamientos  (285).mp4"
+  -> ĆWICZENIE: "Prostowanie nóg na maszynie siedząc (palce do wewnątrz)" (lever leg extension (inward toes)) [ID: 6ae2ecad4a34c8e0d18ea2a6]
+  -> NOWY ZASÓB: /upload-data/32634b21-7f6d-4f30-8152-1e1cacccfb7a.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-7327-anim.mp4
+  -> Wynik dopasowania: 100 (rozpoznano: "Seated Leg Extension")
+  -> Plik źródłowy "entrenamientos  (285).mp4" USUNIĘTO po uploadzie.
+
+[6:42:27 PM] [DUPLIKAT] [108/361] PLIK: "entrenamientos  (297).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (297).mp4"
+  -> Przypisany do ćwiczenia: "Uginanie przedramion z hantlami na ławce skośnej dodatniej w oparciu klatką piersiową (spider curl)" (ID: 6ae2ecab4a34c8e0d18e7f85)
+  -> ZASÓB: /upload-data/c97db65d-ebc9-4a77-84a8-b3681be0a637.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (297).mp4" USUNIĘTO.
+
+[6:42:28 PM] [PRZYPISANO] [103/361] PLIK: "entrenamientos  (287).mp4"
+  -> ĆWICZENIE: "Wkopywanie nogi w tył na wyciągu dolnym w klęku podpartym" (cable kneeling glute kickback) [ID: 6ae2ecaa4a34c8e0d18e5bf6]
+  -> NOWY ZASÓB: /upload-data/ef139586-0468-4ab9-a349-212631200750.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-7589-anim.mp4
+  -> Wynik dopasowania: 113 (rozpoznano: "Cable Kickback")
+  -> Plik źródłowy "entrenamientos  (287).mp4" USUNIĘTO po uploadzie.
+
+[6:42:28 PM] [DUPLIKAT] [110/361] PLIK: "entrenamientos  (306).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (376).mp4"
+  -> Przypisany do ćwiczenia: "Naprzemienne wyciskanie hantli zza głowy siedząc" (ID: 6ae2ecab4a34c8e0d18e7bfc)
+  -> ZASÓB: /upload-data/fd86fb62-f3af-4d9b-9f26-4da8e6ccf18e.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (306).mp4" USUNIĘTO.
+
+[6:42:28 PM] [PRZYPISANO] [104/361] PLIK: "entrenamientos  (289).mp4"
+  -> ĆWICZENIE: "Pompki tyłem na ławce" (three bench dip) [ID: 6ae2ecb04a34c8e0d18ee2d1]
+  -> NOWY ZASÓB: /upload-data/3123610b-2d26-4235-b2c4-d7a4030e6b65.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1753-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Bench Dip")
+  -> Plik źródłowy "entrenamientos  (289).mp4" USUNIĘTO po uploadzie.
+
+[6:42:28 PM] [DUPLIKAT] [112/361] PLIK: "entrenamientos  (310).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (310).mp4"
+  -> Przypisany do ćwiczenia: "Dipsy na ławeczce" (ID: 6ae2eca94a34c8e0d18e50b0)
+  -> ZASÓB: /upload-data/02bf6d2e-8f3d-4f23-96f3-0a6ed6503faa.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (310).mp4" USUNIĘTO.
+
+[6:42:29 PM] [PRZYPISANO] [107/361] PLIK: "entrenamientos  (295).mp4"
+  -> ĆWICZENIE: "Wyciskanie sztangi chwytem neutralnym na ławce skośnej dodatniej" (barbell incline reverse-grip press) [ID: 6ae2eca94a34c8e0d18e4813]
+  -> NOWY ZASÓB: /upload-data/fc25ad66-9462-41d2-80c4-a8db0006f80c.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0048-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Incline Barbell Bench Press")
+  -> Plik źródłowy "entrenamientos  (295).mp4" USUNIĘTO po uploadzie.
+
+[6:42:29 PM] [DUPLIKAT] [114/361] PLIK: "entrenamientos  (316).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (316).mp4"
+  -> Przypisany do ćwiczenia: "Wypychanie ciężaru na suwnicy poziomej siedząc" (ID: 6ae2ecad4a34c8e0d18ea503)
+  -> ZASÓB: /upload-data/24b0e15a-521b-4a7f-90f4-da506b08e4d9.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (316).mp4" USUNIĘTO.
+
+[6:42:29 PM] [DUPLIKAT] [115/361] PLIK: "entrenamientos  (317).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "entrenamientos  (287).mp4"
+  -> Przypisany do ćwiczenia: "Wkopywanie nogi w tył na wyciągu dolnym w klęku podpartym" (ID: 6ae2ecaa4a34c8e0d18e5bf6)
+  -> ZASÓB: /upload-data/ef139586-0468-4ab9-a349-212631200750.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (317).mp4" USUNIĘTO.
+
+[6:42:29 PM] [PRZYPISANO] [109/361] PLIK: "entrenamientos  (301).mp4"
+  -> ĆWICZENIE: "Wyciskanie jednonóż na suwnicy" (lever seated one leg squat) [ID: 6ae2ecad4a34c8e0d18ea558]
+  -> NOWY ZASÓB: /upload-data/18bfabc5-d8b7-4ddd-95a1-404e6f2cd2f5.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1573-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Single Leg Press")
+  -> Plik źródłowy "entrenamientos  (301).mp4" USUNIĘTO po uploadzie.
+
+[6:42:30 PM] [PRZYPISANO] [111/361] PLIK: "entrenamientos  (309).mp4"
+  -> ĆWICZENIE: "Uginanie przedramion ze sztangą na ławce Scotta" (barbell preacher curl) [ID: 6ae2eca94a34c8e0d18e4a84]
+  -> NOWY ZASÓB: /upload-data/99975f33-be6e-4ddc-9472-1473b79d5c72.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0070-anim.mp4
+  -> Wynik dopasowania: 133 (rozpoznano: "Preacher Curl")
+  -> Plik źródłowy "entrenamientos  (309).mp4" USUNIĘTO po uploadzie.
+
+[6:42:30 PM] [PRZYPISANO] [116/361] PLIK: "entrenamientos  (322).mp4"
+  -> ĆWICZENIE: "Uginanie ramion z hantlami wertykalne (Drag Curl)" (dumbbell drag bicep curl) [ID: 6ae2ecab4a34c8e0d18e7061]
+  -> NOWY ZASÓB: /upload-data/986583b3-8e20-4a5c-813f-ee9ab0f0ce39.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-3687-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Seated Dumbbell Bicep Curl")
+  -> Plik źródłowy "entrenamientos  (322).mp4" USUNIĘTO po uploadzie.
+
+[6:42:31 PM] [PRZYPISANO] [113/361] PLIK: "entrenamientos  (314).mp4"
+  -> ĆWICZENIE: "Naprzemienne uginanie przedramion z hantlami na ławce skośnej dodatniej" (dumbbell incline alternate bicep curl) [ID: 6ae2ecab4a34c8e0d18e72ee]
+  -> NOWY ZASÓB: /upload-data/65a94a3f-c459-4604-a35f-93a41c460a24.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-3682-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Standing Dumbbell Bicep Curl")
+  -> Plik źródłowy "entrenamientos  (314).mp4" USUNIĘTO po uploadzie.
+
+[6:42:31 PM] [PRZYPISANO] [117/361] PLIK: "entrenamientos  (323).mp4"
+  -> ĆWICZENIE: "Przysiad przedni z hantlami" (dumbbell front squat) [ID: 6ae2ecab4a34c8e0d18e711c]
+  -> NOWY ZASÓB: /upload-data/873e74c7-8300-4684-9ee6-b79eefcf4766.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-2966-anim.mp4
+  -> Wynik dopasowania: 132 (rozpoznano: "Dumbbell Squat")
+  -> Plik źródłowy "entrenamientos  (323).mp4" USUNIĘTO po uploadzie.
+
+[6:42:31 PM] [PRZYPISANO] [118/361] PLIK: "entrenamientos  (326).mp4"
+  -> ĆWICZENIE: "Naprzemienne odwrotne rozpiętki na ławce skośnej dodatniej z hantlami" (dumbbell incline alternate reverse fly) [ID: 6ae2ecab4a34c8e0d18e7304]
+  -> NOWY ZASÓB: /upload-data/c1b67f0a-3b4f-4f5a-9fae-b512ecdfba9d.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-3694-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Incline Dumbbell Fly")
+  -> Plik źródłowy "entrenamientos  (326).mp4" USUNIĘTO po uploadzie.
+
+[6:42:32 PM] [PRZYPISANO] [119/361] PLIK: "entrenamientos  (329).mp4"
+  -> ĆWICZENIE: "Wiosłowanie w podporze przodem z hantlami" (dumbbell renegade row) [ID: 6ae2ecab4a34c8e0d18e7b05]
+  -> NOWY ZASÓB: /upload-data/7f3d1111-8c00-4d17-9a72-6d09350b9ca6.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-2980-anim.mp4
+  -> Wynik dopasowania: 112 (rozpoznano: "One-Arm Dumbbell Row")
+  -> Plik źródłowy "entrenamientos  (329).mp4" USUNIĘTO po uploadzie.
+
+[6:42:32 PM] [PRZYPISANO] [120/361] PLIK: "entrenamientos  (330).mp4"
+  -> ĆWICZENIE: "Przysiad goblet z hantlem" (dumbbell goblet squat) [ID: 6ae2ecab4a34c8e0d18e71b5]
+  -> NOWY ZASÓB: /upload-data/846cd611-845f-4a01-980b-f08093ff6a2b.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1760-anim.mp4
+  -> Wynik dopasowania: 134 (rozpoznano: "Goblet Squat")
+  -> Plik źródłowy "entrenamientos  (330).mp4" USUNIĘTO po uploadzie.
+
+[6:42:33 PM] [PRZYPISANO] [121/361] PLIK: "entrenamientos  (331).mp4"
+  -> ĆWICZENIE: "Pompka klasyczna" (push-up) [ID: 6ae2ecae4a34c8e0d18eb4e5]
+  -> NOWY ZASÓB: /upload-data/1600912c-1102-4c25-8191-009d983165b5.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/245a9c34-82a0-475c-aa4d-6eb5be11f692.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Push-up")
+  -> Plik źródłowy "entrenamientos  (331).mp4" USUNIĘTO po uploadzie.
+
+[6:42:33 PM] [DUPLIKAT] [125/361] PLIK: "entrenamientos  (340).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (340).mp4"
+  -> Przypisany do ćwiczenia: "Wspięcia na palce siedząc na suwnicy" (ID: 6ae2ecad4a34c8e0d18ea5c7)
+  -> ZASÓB: /upload-data/d3c61706-70eb-4576-a26c-68bc3ddfd9ae.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (340).mp4" USUNIĘTO.
+
+[6:42:33 PM] [DUPLIKAT] [126/361] PLIK: "entrenamientos  (342).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (342).mp4"
+  -> Przypisany do ćwiczenia: "Wyciskanie francuskie hantli siedząc" (ID: 6ae2ecab4a34c8e0d18e7db3)
+  -> ZASÓB: /upload-data/4866a2ce-836e-4b99-814a-1b40d26f5711.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (342).mp4" USUNIĘTO.
+
+[6:42:33 PM] [PRZYPISANO] [122/361] PLIK: "entrenamientos  (334).mp4"
+  -> ĆWICZENIE: "Wznosy ramion bokiem z hantlami" (dumbbell iron cross) [ID: 6ae2ecab4a34c8e0d18e74a0]
+  -> NOWY ZASÓB: /upload-data/4f547c91-2897-41af-ad8a-99c39e4e57b4.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0332-anim.mp4
+  -> Wynik dopasowania: 130 (rozpoznano: "Dumbbell Lateral Raise")
+  -> Plik źródłowy "entrenamientos  (334).mp4" USUNIĘTO po uploadzie.
+
+[6:42:33 PM] [DUPLIKAT] [128/361] PLIK: "entrenamientos  (345).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "entrenamientos  (289).mp4"
+  -> Przypisany do ćwiczenia: "Pompki tyłem na ławce" (ID: 6ae2ecb04a34c8e0d18ee2d1)
+  -> ZASÓB: /upload-data/3123610b-2d26-4235-b2c4-d7a4030e6b65.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (345).mp4" USUNIĘTO.
+
+[6:42:34 PM] [PRZYPISANO] [123/361] PLIK: "entrenamientos  (335).mp4"
+  -> ĆWICZENIE: "Przyciąganie uchwytu wyciągu do klatki piersiowej w oparciu" (cable elevated row) [ID: 6ae2ecaa4a34c8e0d18e59f9]
+  -> NOWY ZASÓB: /upload-data/cf46aa21-8c7d-4154-88f0-53741e37fcfc.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1046-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Seated Cable Row")
+  -> Plik źródłowy "entrenamientos  (335).mp4" USUNIĘTO po uploadzie.
+
+[6:42:34 PM] [PRZYPISANO] [124/361] PLIK: "entrenamientos  (337).mp4"
+  -> ĆWICZENIE: "Naprzemienne wyprostowanie przedramion z wyciągu górnego" (cable alternate triceps extension) [ID: 6ae2ecaa4a34c8e0d18e58f7]
+  -> NOWY ZASÓB: /upload-data/62ac94ea-f5b0-45da-bd65-cbf2ae8c07d8.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0149-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Cable Rope Triceps Pushdown")
+  -> Plik źródłowy "entrenamientos  (337).mp4" USUNIĘTO po uploadzie.
+
+[6:42:34 PM] [PRZYPISANO] [127/361] PLIK: "entrenamientos  (344).mp4"
+  -> ĆWICZENIE: "Rozpiętki na ławce poziomej z użyciem wyciągu dolnego" (cable lying fly v. 3) [ID: 6ae2ecaa4a34c8e0d18e5d9f]
+  -> NOWY ZASÓB: /upload-data/05628767-ae8c-4408-a4ae-83b4135cdb31.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-11273-anim.mp4
+  -> Wynik dopasowania: 109 (rozpoznano: "Flat Bench Cable Fly")
+  -> Plik źródłowy "entrenamientos  (344).mp4" USUNIĘTO po uploadzie.
+
+[6:42:34 PM] [DUPLIKAT] [132/361] PLIK: "entrenamientos  (358).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (358).mp4"
+  -> Przypisany do ćwiczenia: "Wznosy ramion bokiem" (ID: 6ae2ecad4a34c8e0d18e9e7c)
+  -> ZASÓB: /upload-data/38a8e139-ccf0-4602-a8be-f2fcd0649f82.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (358).mp4" USUNIĘTO.
+
+[6:42:34 PM] [DUPLIKAT] [133/361] PLIK: "entrenamientos  (360).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "entrenamientos  (314).mp4"
+  -> Przypisany do ćwiczenia: "Naprzemienne uginanie przedramion z hantlami na ławce skośnej dodatniej" (ID: 6ae2ecab4a34c8e0d18e72ee)
+  -> ZASÓB: /upload-data/65a94a3f-c459-4604-a35f-93a41c460a24.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (360).mp4" USUNIĘTO.
+
+[6:42:34 PM] [DUPLIKAT] [134/361] PLIK: "entrenamientos  (363).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (363).mp4"
+  -> Przypisany do ćwiczenia: "Uginanie przedramion z hantlami z supinacją na ławce skośnej dodatniej" (ID: 6ae2ecab4a34c8e0d18e731d)
+  -> ZASÓB: /upload-data/93d7c27d-eb4c-4112-a8c1-764c0cad8fee.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (363).mp4" USUNIĘTO.
+
+[6:42:35 PM] [PRZYPISANO] [130/361] PLIK: "entrenamientos  (353).mp4"
+  -> ĆWICZENIE: "Wznosy ramion bokiem na wyciągu" (cable lateral raise) [ID: 6ae2ecaa4a34c8e0d18e5cea]
+  -> NOWY ZASÓB: /upload-data/6139652b-5565-412f-ba2e-e15f312306c7.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0178-anim.mp4
+  -> Wynik dopasowania: 133 (rozpoznano: "Cable Lateral Raise")
+  -> Plik źródłowy "entrenamientos  (353).mp4" USUNIĘTO po uploadzie.
+
+[6:42:35 PM] [DUPLIKAT] [136/361] PLIK: "entrenamientos  (368).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (291).mp4"
+  -> Przypisany do ćwiczenia: "Wiosłowanie hantlami w opadzie tułowia" (ID: 6ae2ecab4a34c8e0d18e6fd3)
+  -> ZASÓB: /upload-data/f4d3b844-d655-4177-b754-6a10b8295c9a.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (368).mp4" USUNIĘTO.
+
+[6:42:35 PM] [DUPLIKAT] [137/361] PLIK: "entrenamientos  (369).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (417).mp4"
+  -> Przypisany do ćwiczenia: "Wyciskanie francuskie ze sznurem wyciągu stojąc" (ID: 6ae2ecaa4a34c8e0d18e5f2f)
+  -> ZASÓB: /upload-data/9632fd11-bec2-4f35-87b1-f90f23b9b52a.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (369).mp4" USUNIĘTO.
+
+[6:42:35 PM] [DUPLIKAT] [138/361] PLIK: "entrenamientos  (370).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (370).mp4"
+  -> Przypisany do ćwiczenia: "Mostki biodrowe z hantlem" (ID: 6ae2ecab4a34c8e0d18e7141)
+  -> ZASÓB: /upload-data/ee107f46-36bd-49e5-a831-b0ef805bbe5a.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (370).mp4" USUNIĘTO.
+
+[6:42:35 PM] [DUPLIKAT] [139/361] PLIK: "entrenamientos  (376).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (376).mp4"
+  -> Przypisany do ćwiczenia: "Naprzemienne wyciskanie hantli zza głowy siedząc" (ID: 6ae2ecab4a34c8e0d18e7bfc)
+  -> ZASÓB: /upload-data/fd86fb62-f3af-4d9b-9f26-4da8e6ccf18e.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (376).mp4" USUNIĘTO.
+
+[6:42:35 PM] [PRZYPISANO] [131/361] PLIK: "entrenamientos  (354).mp4"
+  -> ĆWICZENIE: "Face pull z wyciągu górnego ze sznurem" (cable standing face pull (with rope)) [ID: 6ae2ecaa4a34c8e0d18e6323]
+  -> NOWY ZASÓB: /upload-data/c1407d5f-84ac-4259-b487-fe5a5d61062a.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-5656-anim.mp4
+  -> Wynik dopasowania: 113 (rozpoznano: "Rope Face Pull")
+  -> Plik źródłowy "entrenamientos  (354).mp4" USUNIĘTO po uploadzie.
+
+[6:42:35 PM] [DUPLIKAT] [141/361] PLIK: "entrenamientos  (380).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (380).mp4"
+  -> Przypisany do ćwiczenia: "Przyciąganie linki wyciągu górnego do ud jednorącz lub oburącz (prostymi rękami)" (ID: 6ae2ecaa4a34c8e0d18e64df)
+  -> ZASÓB: /upload-data/ff1d3912-3ad5-45fc-96eb-93c37de8b930.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (380).mp4" USUNIĘTO.
+
+[6:42:36 PM] [PRZYPISANO] [135/361] PLIK: "entrenamientos  (365).mp4"
+  -> ĆWICZENIE: "Wyciskanie francuskie ze sznurkiem wyciągu dolnego leżąc" (cable lying triceps extension (with rope)) [ID: 6ae2ecaa4a34c8e0d18e5dfe]
+  -> NOWY ZASÓB: /upload-data/82075299-a8d6-475d-a83a-f6d63c23b9c3.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-4353-anim.mp4
+  -> Wynik dopasowania: 109 (rozpoznano: "Cable Triceps Pushdown (Rope Attachment)")
+  -> Plik źródłowy "entrenamientos  (365).mp4" USUNIĘTO po uploadzie.
+
+[6:42:37 PM] [PRZYPISANO] [140/361] PLIK: "entrenamientos  (379).mp4"
+  -> ĆWICZENIE: "Wypady z kółkami gimnastycznymi w klęku" (ring kneeling ab rollout) [ID: 6ae2ecae4a34c8e0d18ebe39]
+  -> NOWY ZASÓB: /upload-data/15022361-deca-49de-a146-d3f4754fdd2a.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-4978-anim.mp4
+  -> Wynik dopasowania: 73 (rozpoznano: "Ab Rollout")
+  -> Plik źródłowy "entrenamientos  (379).mp4" USUNIĘTO po uploadzie.
+
+[6:42:37 PM] [PRZYPISANO] [142/361] PLIK: "entrenamientos  (382).mp4"
+  -> ĆWICZENIE: "Przyciąganie uchwytu wyciągu dolnego do tułowia stojąc" (cable standing row) [ID: 6ae2ecaa4a34c8e0d18e6442]
+  -> NOWY ZASÓB: /upload-data/52dc4a8f-d9db-413a-b56d-bcb8fd082fe5.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-5090-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Seated Cable Row")
+  -> Plik źródłowy "entrenamientos  (382).mp4" USUNIĘTO po uploadzie.
+
+[6:42:38 PM] [PRZYPISANO] [143/361] PLIK: "entrenamientos  (384).mp4"
+  -> ĆWICZENIE: "Spacer farmera" (farmers walk) [ID: 6ae2ecac4a34c8e0d18e87fb]
+  -> NOWY ZASÓB: /upload-data/3823e4c2-990c-405d-a6d0-47fd4d21f67d.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-2133-anim.mp4
+  -> Wynik dopasowania: 133 (rozpoznano: "Dumbbell Farmers Walk")
+  -> Plik źródłowy "entrenamientos  (384).mp4" USUNIĘTO po uploadzie.
+
+[6:42:38 PM] [PRZYPISANO] [144/361] PLIK: "entrenamientos  (387).mp4"
+  -> ĆWICZENIE: "Wyciskanie hantli w tył w opadzie tułowia siedząc" (dumbbell seated kickback) [ID: 6ae2ecab4a34c8e0d18e7cca]
+  -> NOWY ZASÓB: /upload-data/fb55acef-aea2-45d7-b4a5-7a30ba47469d.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0394-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Seated Dumbbell Shoulder Press")
+  -> Plik źródłowy "entrenamientos  (387).mp4" USUNIĘTO po uploadzie.
+
+[6:42:38 PM] [DUPLIKAT] [147/361] PLIK: "entrenamientos  (392).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (392).mp4"
+  -> Przypisany do ćwiczenia: "Wyciskanie francuskie na wyciągu jednorącz" (ID: 6ae2ecaa4a34c8e0d18e5bcc)
+  -> ZASÓB: /upload-data/21d6f9b6-62af-4a5f-9816-2ea9222e197c.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (392).mp4" USUNIĘTO.
+
+[6:42:38 PM] [DUPLIKAT] [148/361] PLIK: "entrenamientos  (393).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "entrenamientos  (314).mp4"
+  -> Przypisany do ćwiczenia: "Naprzemienne uginanie przedramion z hantlami na ławce skośnej dodatniej" (ID: 6ae2ecab4a34c8e0d18e72ee)
+  -> ZASÓB: /upload-data/65a94a3f-c459-4604-a35f-93a41c460a24.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (393).mp4" USUNIĘTO.
+
+[6:42:38 PM] [DUPLIKAT] [149/361] PLIK: "entrenamientos  (394).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (541).mp4"
+  -> Przypisany do ćwiczenia: "Dzień dobry na maszynie do przysiadów hantlowych" (ID: 6ae2ecad4a34c8e0d18ea186)
+  -> ZASÓB: /upload-data/d504a4e8-6394-4d3b-a417-f5f6a0db01a3.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (394).mp4" USUNIĘTO.
+
+[6:42:38 PM] [DUPLIKAT] [150/361] PLIK: "entrenamientos  (395).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (395).mp4"
+  -> Przypisany do ćwiczenia: "Uginanie przedramion ze sztangą łamaną i gumą oporową w wąskim chwycie" (ID: 6ae2eca84a34c8e0d18e3e27)
+  -> ZASÓB: /upload-data/24bebe45-65ec-46e3-8296-7ee56afa66fb.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (395).mp4" USUNIĘTO.
+
+[6:42:38 PM] [DUPLIKAT] [151/361] PLIK: "entrenamientos  (396).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (358).mp4"
+  -> Przypisany do ćwiczenia: "Wznosy ramion bokiem" (ID: 6ae2ecad4a34c8e0d18e9e7c)
+  -> ZASÓB: /upload-data/38a8e139-ccf0-4602-a8be-f2fcd0649f82.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (396).mp4" USUNIĘTO.
+
+[6:42:39 PM] [PRZYPISANO] [145/361] PLIK: "entrenamientos  (389).mp4"
+  -> ĆWICZENIE: "Wznosy hantli w opadzie tułowia" (dumbbell rear delt fly) [ID: 6ae2ecab4a34c8e0d18e7aa6]
+  -> NOWY ZASÓB: /upload-data/9956dd4c-7ba9-40aa-83b1-264a07c14804.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-2487-anim.mp4
+  -> Wynik dopasowania: 113 (rozpoznano: "Dumbbell Bent Over Fly")
+  -> Plik źródłowy "entrenamientos  (389).mp4" USUNIĘTO po uploadzie.
+
+[6:42:39 PM] [DUPLIKAT] [153/361] PLIK: "entrenamientos  (401).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (510).mp4"
+  -> Przypisany do ćwiczenia: "Ściąganie drążka wyciągu górnego szerokim chwytem do klatki" (ID: 6ae2ecaa4a34c8e0d18e6608)
+  -> ZASÓB: /upload-data/bfee6715-cc5f-403b-93bb-f96dc284dbd5.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (401).mp4" USUNIĘTO.
+
+[6:42:39 PM] [PRZYPISANO] [146/361] PLIK: "entrenamientos  (390).mp4"
+  -> ĆWICZENIE: "Uginanie przedramion z hantlami na modlitewniku" (dumbbell preacher curl) [ID: 6ae2ecab4a34c8e0d18e79a9]
+  -> NOWY ZASÓB: /upload-data/1297c528-d2f4-45cd-8958-ee90cb3612cb.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0372-anim.mp4
+  -> Wynik dopasowania: 88 (rozpoznano: "Preacher Curl")
+  -> Plik źródłowy "entrenamientos  (390).mp4" USUNIĘTO po uploadzie.
+
+[6:42:40 PM] [PRZYPISANO] [152/361] PLIK: "entrenamientos  (400).mp4"
+  -> ĆWICZENIE: "Uginanie przedramion z hantlami siedząc" (dumbbell seated curl) [ID: 6ae2ecab4a34c8e0d18e7c79]
+  -> NOWY ZASÓB: /upload-data/9e79138e-9437-4f84-8a80-03f45f353496.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0391-anim.mp4
+  -> Wynik dopasowania: 131 (rozpoznano: "Seated Dumbbell Bicep Curl")
+  -> Plik źródłowy "entrenamientos  (400).mp4" USUNIĘTO po uploadzie.
+
+[6:42:40 PM] [DUPLIKAT] [156/361] PLIK: "entrenamientos  (409).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (409).mp4"
+  -> Przypisany do ćwiczenia: "Skłony w planku bocznym do kolana" (ID: 6ae2ecac4a34c8e0d18e849d)
+  -> ZASÓB: /upload-data/8ec7e352-1c83-4ed6-b477-5bc34ff73a82.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (409).mp4" USUNIĘTO.
+
+[6:42:40 PM] [DUPLIKAT] [157/361] PLIK: "entrenamientos  (415).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (415).mp4"
+  -> Przypisany do ćwiczenia: "Rumuński martwy ciąg ze sztangą" (ID: 6ae2eca94a34c8e0d18e4b85)
+  -> ZASÓB: /upload-data/6d0778da-d021-4193-9f3f-af2e5a0438d6.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (415).mp4" USUNIĘTO.
+
+[6:42:40 PM] [PRZYPISANO] [154/361] PLIK: "entrenamientos  (404).mp4"
+  -> ĆWICZENIE: "Rumuński martwy ciąg z gumą oporową i sztangą" (barbell banded romanian deadlift) [ID: 6ae2eca84a34c8e0d18e43d4]
+  -> NOWY ZASÓB: /upload-data/f4bc7118-2f55-4a4d-9bea-402c751f705a.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-4173-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Barbell Romanian Deadlift")
+  -> Plik źródłowy "entrenamientos  (404).mp4" USUNIĘTO po uploadzie.
+
+[6:42:40 PM] [DUPLIKAT] [159/361] PLIK: "entrenamientos  (417).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (417).mp4"
+  -> Przypisany do ćwiczenia: "Wyciskanie francuskie ze sznurem wyciągu stojąc" (ID: 6ae2ecaa4a34c8e0d18e5f2f)
+  -> ZASÓB: /upload-data/9632fd11-bec2-4f35-87b1-f90f23b9b52a.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (417).mp4" USUNIĘTO.
+
+[6:42:41 PM] [PRZYPISANO] [155/361] PLIK: "entrenamientos  (408).mp4"
+  -> ĆWICZENIE: "Wykroki chodzone z hantlami" (dumbbell walking lunges) [ID: 6ae2ecac4a34c8e0d18e83a3]
+  -> NOWY ZASÓB: /upload-data/91c0ddb1-5646-4155-86e8-9e393bffeb47.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1557-anim.mp4
+  -> Wynik dopasowania: 131 (rozpoznano: "Dumbbell Lunges")
+  -> Plik źródłowy "entrenamientos  (408).mp4" USUNIĘTO po uploadzie.
+
+[6:42:41 PM] [DUPLIKAT] [161/361] PLIK: "entrenamientos  (421).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (421).mp4"
+  -> Przypisany do ćwiczenia: "Wciąganie drążka wyciągu poziomego do klatki szerokim chwytem" (ID: 6ae2ecaa4a34c8e0d18e61a0)
+  -> ZASÓB: /upload-data/38344dc9-eb7f-464a-bf6b-a8581ff2c1cb.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (421).mp4" USUNIĘTO.
+
+[6:42:41 PM] [PRZYPISANO] [158/361] PLIK: "entrenamientos  (416).mp4"
+  -> ĆWICZENIE: "Wyciskanie francuskie ze hantlami na ławce ujemnej" (dumbbell decline triceps extension) [ID: 6ae2ecab4a34c8e0d18e703e]
+  -> NOWY ZASÓB: /upload-data/a02bc80d-a9bb-4f55-ac5f-ee2470157b20.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0306-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Two Arm Overhead Dumbbell Extension")
+  -> Plik źródłowy "entrenamientos  (416).mp4" USUNIĘTO po uploadzie.
+
+[6:42:41 PM] [DUPLIKAT] [163/361] PLIK: "entrenamientos  (426).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (426).mp4"
+  -> Przypisany do ćwiczenia: "Wyciskanie sztangi na ławce skośnej dodatniej" (ID: 6ae2eca94a34c8e0d18e47ea)
+  -> ZASÓB: /upload-data/5c7e0a0b-0eeb-4b20-a478-3c7dfc83179a.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (426).mp4" USUNIĘTO.
+
+[6:42:42 PM] [PRZYPISANO] [160/361] PLIK: "entrenamientos  (419).mp4"
+  -> ĆWICZENIE: "Odwodzenie nóg na maszynie siedząc" (lever seated hip abduction) [ID: 6ae2ecad4a34c8e0d18ea4e5]
+  -> NOWY ZASÓB: /upload-data/26364d94-b1ac-4742-90a9-23f7f56acb75.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0597-anim.mp4
+  -> Wynik dopasowania: 113 (rozpoznano: "Seated Hip Abduction")
+  -> Plik źródłowy "entrenamientos  (419).mp4" USUNIĘTO po uploadzie.
+
+[6:42:43 PM] [PRZYPISANO] [162/361] PLIK: "entrenamientos  (423).mp4"
+  -> ĆWICZENIE: "Rozpiętki na bramie na ławce skośnej dodatniej" (cable incline fly) [ID: 6ae2ecaa4a34c8e0d18e5b68]
+  -> NOWY ZASÓB: /upload-data/7b2965d1-d3be-4cae-84d3-125d10c25f4d.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0171-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Cable Crossover")
+  -> Plik źródłowy "entrenamientos  (423).mp4" USUNIĘTO po uploadzie.
+
+[6:42:43 PM] [PRZYPISANO] [164/361] PLIK: "entrenamientos  (428).mp4"
+  -> ĆWICZENIE: "Wypychanie ciężaru na suwnicy jednonóż siedząc" (lever seated single leg press v. 2) [ID: 6ae2ecad4a34c8e0d18ea5b5]
+  -> NOWY ZASÓB: /upload-data/abe6fc17-19ba-43da-9bb9-6a5867a16a95.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-7107-anim.mp4
+  -> Wynik dopasowania: 109 (rozpoznano: "Leg Press")
+  -> Plik źródłowy "entrenamientos  (428).mp4" USUNIĘTO po uploadzie.
+
+[6:42:43 PM] [PRZYPISANO] [165/361] PLIK: "entrenamientos  (432).mp4"
+  -> ĆWICZENIE: "Rozpiętki na bramie siedząc" (cable seated chest fly) [ID: 6ae2ecaa4a34c8e0d18e6086]
+  -> NOWY ZASÓB: /upload-data/5299890e-55be-4b04-b27c-024245042b33.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-3869-anim.mp4
+  -> Wynik dopasowania: 90 (rozpoznano: "Cable Crossover Lower Chest")
+  -> Plik źródłowy "entrenamientos  (432).mp4" USUNIĘTO po uploadzie.
+
+[6:42:44 PM] [PRZYPISANO] [166/361] PLIK: "entrenamientos  (435).mp4"
+  -> ĆWICZENIE: "Uginanie ramion z hantlami z chwytem młotkowym na ławce skośnej dodatniej" (dumbbell incline hammer curl) [ID: 6ae2ecab4a34c8e0d18e7376]
+  -> NOWY ZASÓB: /upload-data/e23e222c-bd43-4ae2-ab2e-6c6bb7b2814b.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0320-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Incline Dumbbell Curl")
+  -> Plik źródłowy "entrenamientos  (435).mp4" USUNIĘTO po uploadzie.
+
+[6:42:44 PM] [PRZYPISANO] [129/361] PLIK: "entrenamientos  (351).mp4"
+  -> ĆWICZENIE: "Wyciskanie hantli na ławce skośnej dodatniej" (dumbbell incline raise) [ID: 6ae2ecab4a34c8e0d18e73fc]
+  -> NOWY ZASÓB: /upload-data/7ccd3733-e154-4ada-87fe-4cedcf948319.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0325-anim.mp4
+  -> Wynik dopasowania: 130 (rozpoznano: "Incline Dumbbell Bench Press")
+  -> Plik źródłowy "entrenamientos  (351).mp4" USUNIĘTO po uploadzie.
+
+[6:42:45 PM] [PRZYPISANO] [167/361] PLIK: "entrenamientos  (437).mp4"
+  -> ĆWICZENIE: "Wypady z hantlami" (dumbbell lunge) [ID: 6ae2ecab4a34c8e0d18e7599]
+  -> NOWY ZASÓB: /upload-data/e542a0a8-91ee-41ea-aa8a-53ed3ea5d380.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0336-anim.mp4
+  -> Wynik dopasowania: 134 (rozpoznano: "Dumbbell Lunge")
+  -> Plik źródłowy "entrenamientos  (437).mp4" USUNIĘTO po uploadzie.
+
+[6:42:45 PM] [PRZYPISANO] [168/361] PLIK: "entrenamientos  (439).mp4"
+  -> ĆWICZENIE: "Szrugsy z hantlami" (dumbbell shrug) [ID: 6ae2ecab4a34c8e0d18e7df0]
+  -> NOWY ZASÓB: /upload-data/c66c05ae-b87b-47a3-8d96-c4f4fc701d10.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0406-anim.mp4
+  -> Wynik dopasowania: 133 (rozpoznano: "Dumbbell Shrug")
+  -> Plik źródłowy "entrenamientos  (439).mp4" USUNIĘTO po uploadzie.
+
+[6:42:45 PM] [PRZYPISANO] [169/361] PLIK: "entrenamientos  (440).mp4"
+  -> ĆWICZENIE: "Przysiad jednonóż na maszynie Smitha / suwnici" (leverage single leg squat on hack squat machine) [ID: 6ae2ecad4a34c8e0d18ea729]
+  -> NOWY ZASÓB: /upload-data/59ecbe84-7ce5-433e-bf06-ceb81cf11f8d.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-9929-anim.mp4
+  -> Wynik dopasowania: 109 (rozpoznano: "Hack Squat")
+  -> Plik źródłowy "entrenamientos  (440).mp4" USUNIĘTO po uploadzie.
+
+[6:42:45 PM] [DUPLIKAT] [173/361] PLIK: "entrenamientos  (449).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (449).mp4"
+  -> Przypisany do ćwiczenia: "Wznosy hantli bokiem w siedzeniu" (ID: 6ae2ecab4a34c8e0d18e7cd1)
+  -> ZASÓB: /upload-data/9f3272d8-3809-4d1a-91ac-4c07790680fa.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (449).mp4" USUNIĘTO.
+
+[6:42:46 PM] [PRZYPISANO] [170/361] PLIK: "entrenamientos  (441).mp4"
+  -> ĆWICZENIE: "Wznosy hantli do boku w podporze przodem" (dumbbell lateral raise plank) [ID: 6ae2ecab4a34c8e0d18e755e]
+  -> NOWY ZASÓB: /upload-data/32f7f92e-b44a-4f52-8cd6-e4cb866f031a.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-8221-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Dumbbell Lateral Raise")
+  -> Plik źródłowy "entrenamientos  (441).mp4" USUNIĘTO po uploadzie.
+
+[6:42:46 PM] [PRZYPISANO] [171/361] PLIK: "entrenamientos  (442).mp4"
+  -> ĆWICZENIE: "Wznosy ramion w bok siedząc w ugięciu" (dumbbell seated bent arm lateral raise) [ID: 6ae2ecab4a34c8e0d18e7c23]
+  -> NOWY ZASÓB: /upload-data/b5eca935-fcc4-40b8-8ea1-2bd408a81e44.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-2317-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Seated Dumbbell Lateral Raise")
+  -> Plik źródłowy "entrenamientos  (442).mp4" USUNIĘTO po uploadzie.
+
+[6:42:47 PM] [PRZYPISANO] [172/361] PLIK: "entrenamientos  (445).mp4"
+  -> ĆWICZENIE: "Wyciskanie hantli na ławce skośnej dodatniej" (dumbbell incline shoulder raise) [ID: 6ae2ecab4a34c8e0d18e7425]
+  -> NOWY ZASÓB: /upload-data/fe52bfac-d9f0-4d07-b2dc-154a40085ca8.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0328-anim.mp4
+  -> Wynik dopasowania: 130 (rozpoznano: "Incline Dumbbell Press")
+  -> Plik źródłowy "entrenamientos  (445).mp4" USUNIĘTO po uploadzie.
+
+[6:42:47 PM] [PRZYPISANO] [174/361] PLIK: "entrenamientos  (451).mp4"
+  -> ĆWICZENIE: "Uginanie przedramion z hantlami na ławce skośnej dodatniej w leżeniu przodem" (dumbbell prone incline curl) [ID: 6ae2ecab4a34c8e0d18e79ff]
+  -> NOWY ZASÓB: /upload-data/5f39ac93-149d-4846-baff-311b53a08f74.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0374-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Incline Dumbbell Curl")
+  -> Plik źródłowy "entrenamientos  (451).mp4" USUNIĘTO po uploadzie.
+
+[6:42:48 PM] [PRZYPISANO] [175/361] PLIK: "entrenamientos  (452).mp4"
+  -> ĆWICZENIE: "Wykrok w przód z wyprostem ramion z hantlami nad głowę" (dumbbell forward lunge triceps extension) [ID: 6ae2ecab4a34c8e0d18e70db]
+  -> NOWY ZASÓB: /upload-data/a7eb2b66-f194-412b-af15-f814cb5b1e07.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1732-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Dumbbell Overhead Triceps Extension")
+  -> Plik źródłowy "entrenamientos  (452).mp4" USUNIĘTO po uploadzie.
+
+[6:42:48 PM] [PRZYPISANO] [176/361] PLIK: "entrenamientos  (453).mp4"
+  -> ĆWICZENIE: "Pompka klasyczna" (push-up) [ID: 6ae2ecae4a34c8e0d18eb4e5]
+  -> NOWY ZASÓB: /upload-data/ffc74ac6-dddd-4a31-a64e-bdf5fd939a90.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/1600912c-1102-4c25-8191-009d983165b5.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Push-up")
+  -> Plik źródłowy "entrenamientos  (453).mp4" USUNIĘTO po uploadzie.
+
+[6:42:48 PM] [PRZYPISANO] [177/361] PLIK: "entrenamientos  (454).mp4"
+  -> ĆWICZENIE: "Przysiad ze sztangą" (squat) [ID: 6ae2ecb04a34c8e0d18ed4c7]
+  -> NOWY ZASÓB: /upload-data/8ce27c02-ee2c-4ff3-9fd7-62561981388a.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1197-anim.mp4
+  -> Wynik dopasowania: 134 (rozpoznano: "Bodyweight Squat")
+  -> Plik źródłowy "entrenamientos  (454).mp4" USUNIĘTO po uploadzie.
+
+[6:42:48 PM] [DUPLIKAT] [181/361] PLIK: "entrenamientos  (469).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (469).mp4"
+  -> Przypisany do ćwiczenia: "Przysiad ze sztangą na plecach" (ID: 6ae2eca94a34c8e0d18e46eb)
+  -> ZASÓB: /upload-data/11c9d121-cd7a-4456-937d-8279a8ce3657.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (469).mp4" USUNIĘTO.
+
+[6:42:49 PM] [PRZYPISANO] [178/361] PLIK: "entrenamientos  (456).mp4"
+  -> ĆWICZENIE: "Martwy ciąg klasyczny" (barbell deadlift) [ID: 6ae2eca94a34c8e0d18e4593]
+  -> NOWY ZASÓB: /upload-data/e8e42d39-1569-4065-8b58-fbe6ed3f89cd.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0032-anim.mp4
+  -> Wynik dopasowania: 135 (rozpoznano: "Barbell Deadlift")
+  -> Plik źródłowy "entrenamientos  (456).mp4" USUNIĘTO po uploadzie.
+
+[6:42:49 PM] [DUPLIKAT] [183/361] PLIK: "entrenamientos  (471).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (471).mp4"
+  -> Przypisany do ćwiczenia: "Prostowanie nóg na maszynie siedząc" (ID: 6ae2ecad4a34c8e0d18ea523)
+  -> ZASÓB: /upload-data/ac2ff2a4-158b-4e50-8c4f-78344f208076.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (471).mp4" USUNIĘTO.
+
+[6:42:49 PM] [PRZYPISANO] [179/361] PLIK: "entrenamientos  (457).mp4"
+  -> ĆWICZENIE: "Krzyżowanie ramion na wyciągu dolnym" (cable low fly) [ID: 6ae2ecaa4a34c8e0d18e5d0c]
+  -> NOWY ZASÓB: /upload-data/60157efd-7821-41f5-9922-47bb435c403f.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0179-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Cable Crossover")
+  -> Plik źródłowy "entrenamientos  (457).mp4" USUNIĘTO po uploadzie.
+
+[6:42:50 PM] [PRZYPISANO] [180/361] PLIK: "entrenamientos  (463).mp4"
+  -> ĆWICZENIE: "Odwodzenie ugiętej nogi w bok w klęku podpartym z gumą" (resistance band bent leg side kick (kneeling)) [ID: 6ae2ecae4a34c8e0d18eb718]
+  -> NOWY ZASÓB: /upload-data/a950cd3e-9b87-4536-b777-f4be25c8a410.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-2418-anim.mp4
+  -> Wynik dopasowania: 82 (rozpoznano: "Resistance Band Donkey Kick")
+  -> Plik źródłowy "entrenamientos  (463).mp4" USUNIĘTO po uploadzie.
+
+[6:42:50 PM] [DUPLIKAT] [186/361] PLIK: "entrenamientos  (474).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (474).mp4"
+  -> Przypisany do ćwiczenia: "Wiosłowanie hantlami w opadzie tułuwia" (ID: 6ae2ecab4a34c8e0d18e6e47)
+  -> ZASÓB: /upload-data/124a74fc-c8fc-42bd-ab7b-ceadb47a1669.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (474).mp4" USUNIĘTO.
+
+[6:42:50 PM] [PRZYPISANO] [182/361] PLIK: "entrenamientos  (470).mp4"
+  -> ĆWICZENIE: "Podciąganie na drążku nachwytem" (pull-up) [ID: 6ae2ecae4a34c8e0d18eb3eb]
+  -> NOWY ZASÓB: /upload-data/9e58aafa-fa9f-44f0-849e-27926f7e77b5.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/866f37f7-91eb-4bf2-b5f7-dbb9eedbe8f4.webm
+  -> Wynik dopasowania: 135 (rozpoznano: "Pull-up")
+  -> Plik źródłowy "entrenamientos  (470).mp4" USUNIĘTO po uploadzie.
+
+[6:42:50 PM] [DUPLIKAT] [188/361] PLIK: "entrenamientos  (476).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (476).mp4"
+  -> Przypisany do ćwiczenia: "Prostowanie ramienia z wyciągu górnego jednorącz podchwytem" (ID: 6ae2ecaa4a34c8e0d18e5ef0)
+  -> ZASÓB: /upload-data/f1374922-1da6-4c4d-97c5-ff350f58ec9a.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (476).mp4" USUNIĘTO.
+
+[6:42:51 PM] [PRZYPISANO] [184/361] PLIK: "entrenamientos  (472).mp4"
+  -> ĆWICZENIE: "Rozpiętki z hantlami na ławce skośnej z oparciem na piłce" (dumbbell incline fly on exercise ball) [ID: 6ae2ecab4a34c8e0d18e735f]
+  -> NOWY ZASÓB: /upload-data/deda9aeb-7187-47af-a698-387d245e653c.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1278-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Incline Dumbbell Fly")
+  -> Plik źródłowy "entrenamientos  (472).mp4" USUNIĘTO po uploadzie.
+
+[6:42:51 PM] [PRZYPISANO] [185/361] PLIK: "entrenamientos  (473).mp4"
+  -> ĆWICZENIE: "Podciąganie hantli wzdłuż tułowia" (dumbbell upright row) [ID: 6ae2ecac4a34c8e0d18e835d]
+  -> NOWY ZASÓB: /upload-data/38ef5265-d905-477f-943c-5fa17233d60a.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0437-anim.mp4
+  -> Wynik dopasowania: 112 (rozpoznano: "Dumbbell Bent Over Row")
+  -> Plik źródłowy "entrenamientos  (473).mp4" USUNIĘTO po uploadzie.
+
+[6:42:52 PM] [PRZYPISANO] [187/361] PLIK: "entrenamientos  (475).mp4"
+  -> ĆWICZENIE: "Wspięcia na palce stojąc" (bodyweight standing calf raise) [ID: 6ae2eca94a34c8e0d18e549f]
+  -> NOWY ZASÓB: /upload-data/21fd92fe-aea3-472c-9aa9-387c4cc22007.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1373-anim.mp4
+  -> Wynik dopasowania: 129 (rozpoznano: "Standing Calf Raise")
+  -> Plik źródłowy "entrenamientos  (475).mp4" USUNIĘTO po uploadzie.
+
+[6:42:52 PM] [PRZYPISANO] [189/361] PLIK: "entrenamientos  (478).mp4"
+  -> ĆWICZENIE: "Przysiad sumo z kettlem" (kettlebell sumo squat v. 2) [ID: 6ae2ecad4a34c8e0d18e99a4]
+  -> NOWY ZASÓB: /upload-data/26f740bb-f19b-4d86-acf4-118313ac1347.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-5073-anim.mp4
+  -> Wynik dopasowania: 129 (rozpoznano: "Kettlebell Sumo Squat")
+  -> Plik źródłowy "entrenamientos  (478).mp4" USUNIĘTO po uploadzie.
+
+[6:42:52 PM] [PRZYPISANO] [190/361] PLIK: "entrenamientos  (479).mp4"
+  -> ĆWICZENIE: "Wspięcia na palce na maszynie siedząc" (lever calf press) [ID: 6ae2ecad4a34c8e0d18ea100]
+  -> NOWY ZASÓB: /upload-data/831ef9bd-2b0b-49a2-aa69-ddc9f66cc103.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-2289-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Seated Calf Raise")
+  -> Plik źródłowy "entrenamientos  (479).mp4" USUNIĘTO po uploadzie.
+
+[6:42:53 PM] [PRZYPISANO] [191/361] PLIK: "entrenamientos  (481).mp4"
+  -> ĆWICZENIE: "Uginanie przedramion z hantlami na modlitewniku w stylu dynamicznym" (dumbbell preacher swing curl) [ID: 6ae2ecab4a34c8e0d18e79be]
+  -> NOWY ZASÓB: /upload-data/64dad7c0-e878-47cd-a6e4-d8880c839ef5.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-8613-anim.mp4
+  -> Wynik dopasowania: 86 (rozpoznano: "Preacher Curl")
+  -> Plik źródłowy "entrenamientos  (481).mp4" USUNIĘTO po uploadzie.
+
+[6:42:53 PM] [PRZYPISANO] [192/361] PLIK: "entrenamientos  (488).mp4"
+  -> ĆWICZENIE: "Prostowanie ramion z wyciągu górnego" (cable high triceps extension) [ID: 6ae2ecaa4a34c8e0d18e5afc]
+  -> NOWY ZASÓB: /upload-data/603366f6-ac27-4220-bcff-e86875862840.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-4960-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Cable Triceps Pushdown")
+  -> Plik źródłowy "entrenamientos  (488).mp4" USUNIĘTO po uploadzie.
+
+[6:42:54 PM] [PRZYPISANO] [193/361] PLIK: "entrenamientos  (489).mp4"
+  -> ĆWICZENIE: "Przyciąganie uchwytu wyciągu górnego do klatki piersiowej stojąc" (cable upper row) [ID: 6ae2ecaa4a34c8e0d18e65e9]
+  -> NOWY ZASÓB: /upload-data/5beebf88-3f7f-4080-b8c5-bc4487a04f38.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1324-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Seated Cable Row")
+  -> Plik źródłowy "entrenamientos  (489).mp4" USUNIĘTO po uploadzie.
+
+[6:42:54 PM] [DUPLIKAT] [197/361] PLIK: "entrenamientos  (499).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "entrenamientos  (353).mp4"
+  -> Przypisany do ćwiczenia: "Wznosy ramion bokiem na wyciągu" (ID: 6ae2ecaa4a34c8e0d18e5cea)
+  -> ZASÓB: /upload-data/6139652b-5565-412f-ba2e-e15f312306c7.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (499).mp4" USUNIĘTO.
+
+[6:42:54 PM] [DUPLIKAT] [198/361] PLIK: "entrenamientos  (500).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (500).mp4"
+  -> Przypisany do ćwiczenia: "Brama – przyciąganie rąk linki wyciągu górnego" (ID: 6ae2ecaa4a34c8e0d18e62ff)
+  -> ZASÓB: /upload-data/f4be781d-226a-42ed-b8b3-f08b33dfa5b2.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (500).mp4" USUNIĘTO.
+
+[6:42:54 PM] [DUPLIKAT] [199/361] PLIK: "entrenamientos  (501).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (501).mp4"
+  -> Przypisany do ćwiczenia: "Wykrok z pompką" (ID: 6ae2ecad4a34c8e0d18ea7d1)
+  -> ZASÓB: /upload-data/e0373b6b-43ba-486f-94d1-83b06078f73e.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (501).mp4" USUNIĘTO.
+
+[6:42:54 PM] [PRZYPISANO] [194/361] PLIK: "entrenamientos  (492).mp4"
+  -> ĆWICZENIE: "Rozpiętki na maszynie siedząc" (lever seated fly) [ID: 6ae2ecad4a34c8e0d18ea4c5]
+  -> NOWY ZASÓB: /upload-data/d4912c05-d114-449b-ad6d-667b6e812d1d.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0596-anim.mp4
+  -> Wynik dopasowania: 97 (rozpoznano: "Machine Rear Delt Fly")
+  -> Plik źródłowy "entrenamientos  (492).mp4" USUNIĘTO po uploadzie.
+
+[6:42:54 PM] [PRZYPISANO] [195/361] PLIK: "entrenamientos  (493).mp4"
+  -> ĆWICZENIE: "Wspięcia na palce stojąc na maszynie Smitha" (smith toe raise) [ID: 6ae2ecb04a34c8e0d18ed34e]
+  -> NOWY ZASÓB: /upload-data/2c682ae0-4786-421b-8a22-5a14da09f113.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1396-anim.mp4
+  -> Wynik dopasowania: 130 (rozpoznano: "Smith Machine Calf Raise")
+  -> Plik źródłowy "entrenamientos  (493).mp4" USUNIĘTO po uploadzie.
+
+[6:42:54 PM] [DUPLIKAT] [202/361] PLIK: "entrenamientos  (505).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (505).mp4"
+  -> Przypisany do ćwiczenia: "Uginanie jednonóż leżąc na maszynie" (ID: 6ae2ecad4a34c8e0d18ea303)
+  -> ZASÓB: /upload-data/3739c4d2-2cf8-486a-837f-4c87b701723d.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (505).mp4" USUNIĘTO.
+
+[6:42:54 PM] [DUPLIKAT] [203/361] PLIK: "entrenamientos  (506).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "entrenamientos  (379).mp4"
+  -> Przypisany do ćwiczenia: "Wypady z kółkami gimnastycznymi w klęku" (ID: 6ae2ecae4a34c8e0d18ebe39)
+  -> ZASÓB: /upload-data/15022361-deca-49de-a146-d3f4754fdd2a.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (506).mp4" USUNIĘTO.
+
+[6:42:55 PM] [PRZYPISANO] [196/361] PLIK: "entrenamientos  (495).mp4"
+  -> ĆWICZENIE: "Ściąganie drążka wyciągu pionowego podchwytem" (reverse grip machine lat pulldown) [ID: 6ae2ecae4a34c8e0d18ebd0c]
+  -> NOWY ZASÓB: /upload-data/2b529264-06c2-4526-b36d-ac2268ea8d3b.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0673-anim.mp4
+  -> Wynik dopasowania: 90 (rozpoznano: "Lat Pulldown (wide grip)")
+  -> Plik źródłowy "entrenamientos  (495).mp4" USUNIĘTO po uploadzie.
+
+[6:42:55 PM] [DUPLIKAT] [205/361] PLIK: "entrenamientos  (509).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "entrenamientos  (382).mp4"
+  -> Przypisany do ćwiczenia: "Przyciąganie uchwytu wyciągu dolnego do tułowia stojąc" (ID: 6ae2ecaa4a34c8e0d18e6442)
+  -> ZASÓB: /upload-data/52dc4a8f-d9db-413a-b56d-bcb8fd082fe5.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (509).mp4" USUNIĘTO.
+
+[6:42:55 PM] [DUPLIKAT] [206/361] PLIK: "entrenamientos  (511).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (500).mp4"
+  -> Przypisany do ćwiczenia: "Brama – przyciąganie rąk linki wyciągu górnego" (ID: 6ae2ecaa4a34c8e0d18e62ff)
+  -> ZASÓB: /upload-data/f4be781d-226a-42ed-b8b3-f08b33dfa5b2.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (511).mp4" USUNIĘTO.
+
+[6:42:56 PM] [PRZYPISANO] [201/361] PLIK: "entrenamientos  (503).mp4"
+  -> ĆWICZENIE: "Wznosy hantli bokiem siedząc na piłce gimnastycznej" (dumbbell seated lateral raise on stability ball) [ID: 6ae2ecab4a34c8e0d18e7cd9]
+  -> NOWY ZASÓB: /upload-data/6643f84a-5a55-426b-9ab1-c2cdf6d01d3d.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-4055-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Seated Dumbbell Lateral Raise")
+  -> Plik źródłowy "entrenamientos  (503).mp4" USUNIĘTO po uploadzie.
+
+[6:42:56 PM] [PRZYPISANO] [200/361] PLIK: "entrenamientos  (502).mp4"
+  -> ĆWICZENIE: "Pompki tyłem na ławce" (triceps dip (bench leg)) [ID: 6ae2ecb04a34c8e0d18ee40f]
+  -> NOWY ZASÓB: /upload-data/30ad0e25-851d-45b5-8ab7-febbd218cae1.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0812-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Bench Dip")
+  -> Plik źródłowy "entrenamientos  (502).mp4" USUNIĘTO po uploadzie.
+
+[6:42:56 PM] [PRZYPISANO] [204/361] PLIK: "entrenamientos  (508).mp4"
+  -> ĆWICZENIE: "Hip thrust" (hip thrusts) [ID: 6ae2ecac4a34c8e0d18e9010]
+  -> NOWY ZASÓB: /upload-data/bec54853-39ab-4a2b-a9ea-67222bd30de7.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-2072-anim.mp4
+  -> Wynik dopasowania: 130 (rozpoznano: "Hip Thrust")
+  -> Plik źródłowy "entrenamientos  (508).mp4" USUNIĘTO po uploadzie.
+
+[6:42:57 PM] [PRZYPISANO] [207/361] PLIK: "entrenamientos  (516).mp4"
+  -> ĆWICZENIE: "Damskie pompki z przyciąganiem hantli w klęku" (bodyweight kneeling push up row) [ID: 6ae2eca94a34c8e0d18e52ff]
+  -> NOWY ZASÓB: /upload-data/8afec09d-8c5e-45be-a1b9-64ce13f53e36.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-3906-anim.mp4
+  -> Wynik dopasowania: 109 (rozpoznano: "Kneeling Push-Up")
+  -> Plik źródłowy "entrenamientos  (516).mp4" USUNIĘTO po uploadzie.
+
+[6:42:57 PM] [PRZYPISANO] [208/361] PLIK: "entrenamientos  (517).mp4"
+  -> ĆWICZENIE: "Odwodzenie ramion w opadzie tułowia z hantlami" (dumbbell reverse fly) [ID: 6ae2ecab4a34c8e0d18e7b37]
+  -> NOWY ZASÓB: /upload-data/862003b6-184b-4588-9b31-b6fc0c3bb603.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0383-anim.mp4
+  -> Wynik dopasowania: 133 (rozpoznano: "Reverse Dumbbell Fly")
+  -> Plik źródłowy "entrenamientos  (517).mp4" USUNIĘTO po uploadzie.
+
+[6:42:58 PM] [PRZYPISANO] [209/361] PLIK: "entrenamientos  (518).mp4"
+  -> ĆWICZENIE: "Wznosy hantli bokiem siedząc" (dumbbell seated lateral raise v. 2) [ID: 6ae2ecab4a34c8e0d18e7ce2]
+  -> NOWY ZASÓB: /upload-data/98a4b7ed-5b37-428c-9e07-116ff0ed8da0.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0395-anim.mp4
+  -> Wynik dopasowania: 109 (rozpoznano: "Seated Dumbbell Lateral Raise")
+  -> Plik źródłowy "entrenamientos  (518).mp4" USUNIĘTO po uploadzie.
+
+[6:42:58 PM] [DUPLIKAT] [213/361] PLIK: "entrenamientos  (529).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (370).mp4"
+  -> Przypisany do ćwiczenia: "Mostki biodrowe z hantlem" (ID: 6ae2ecab4a34c8e0d18e7141)
+  -> ZASÓB: /upload-data/ee107f46-36bd-49e5-a831-b0ef805bbe5a.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (529).mp4" USUNIĘTO.
+
+[6:42:58 PM] [PRZYPISANO] [210/361] PLIK: "entrenamientos  (519).mp4"
+  -> ĆWICZENIE: "Wyciskanie sztangi na ławce poziomej z gumami oporowymi" (barbell banded bench press) [ID: 6ae2eca84a34c8e0d18e43c2]
+  -> NOWY ZASÓB: /upload-data/d8690796-c56e-4702-b7bc-26dd42fbae20.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-7620-anim.mp4
+  -> Wynik dopasowania: 101 (rozpoznano: "Flat Barbell Bench Press")
+  -> Plik źródłowy "entrenamientos  (519).mp4" USUNIĘTO po uploadzie.
+
+[6:42:58 PM] [PRZYPISANO] [211/361] PLIK: "entrenamientos  (522).mp4"
+  -> ĆWICZENIE: "Odwodzenie ramion w tył na wyciągu w opadzie 45 stopni" (cable 45 degrees reverse fly) [ID: 6ae2ecaa4a34c8e0d18e58c7]
+  -> NOWY ZASÓB: /upload-data/dfa45fa3-0140-4720-b819-6d1aa6f01d37.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-8878-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Cable Crossover")
+  -> Plik źródłowy "entrenamientos  (522).mp4" USUNIĘTO po uploadzie.
+
+[6:42:59 PM] [PRZYPISANO] [212/361] PLIK: "entrenamientos  (525).mp4"
+  -> ĆWICZENIE: "Wiosłowanie hantlami na ławce skośnej dodatniej w oparciu" (dumbbell head supported row) [ID: 6ae2ecab4a34c8e0d18e7297]
+  -> NOWY ZASÓB: /upload-data/f10b8381-ac67-4b72-ab32-5d1c4f1d7004.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-4741-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Bent Over Dumbbell Row")
+  -> Plik źródłowy "entrenamientos  (525).mp4" USUNIĘTO po uploadzie.
+
+[6:42:59 PM] [PRZYPISANO] [214/361] PLIK: "entrenamientos  (532).mp4"
+  -> ĆWICZENIE: "Uginanie przedramion z hantlem w oparciu o kolano" (dumbbell concentration curl) [ID: 6ae2ecab4a34c8e0d18e6f42]
+  -> NOWY ZASÓB: /upload-data/3b7ee5dd-5b79-4912-adb3-d21bcb8a56ab.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0297-anim.mp4
+  -> Wynik dopasowania: 103 (rozpoznano: "Concentration Curl")
+  -> Plik źródłowy "entrenamientos  (532).mp4" USUNIĘTO po uploadzie.
+
+[6:43:00 PM] [PRZYPISANO] [215/361] PLIK: "entrenamientos  (533).mp4"
+  -> ĆWICZENIE: "Uginanie przedramion z hantlami chwytem młotkowym" (dumbbell hammer curl) [ID: 6ae2ecab4a34c8e0d18e722e]
+  -> NOWY ZASÓB: /upload-data/4531415f-ec5e-48bc-84e2-4a2625eda170.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0313-anim.mp4
+  -> Wynik dopasowania: 114 (rozpoznano: "Dumbbell Bicep Curl")
+  -> Plik źródłowy "entrenamientos  (533).mp4" USUNIĘTO po uploadzie.
+
+[6:43:00 PM] [PRZYPISANO] [216/361] PLIK: "entrenamientos  (534).mp4"
+  -> ĆWICZENIE: "Wspięcia na palce stojąc z hantlami" (dumbbell standing calf raise) [ID: 6ae2ecac4a34c8e0d18e808c]
+  -> NOWY ZASÓB: /upload-data/bb10b028-8cdb-4ac0-8b99-dc5cc7b4df37.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0417-anim.mp4
+  -> Wynik dopasowania: 133 (rozpoznano: "Dumbbell Standing Calf Raise")
+  -> Plik źródłowy "entrenamientos  (534).mp4" USUNIĘTO po uploadzie.
+
+[6:43:01 PM] [PRZYPISANO] [217/361] PLIK: "entrenamientos  (539).mp4"
+  -> ĆWICZENIE: "Przysiad goblet z hantlem do skrzyni" (dumbbell goblet box squat) [ID: 6ae2ecab4a34c8e0d18e717b]
+  -> NOWY ZASÓB: /upload-data/47163032-61b4-4ba8-8584-ea26524040e8.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-3692-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Goblet Squat")
+  -> Plik źródłowy "entrenamientos  (539).mp4" USUNIĘTO po uploadzie.
+
+[6:43:01 PM] [PRZYPISANO] [218/361] PLIK: "entrenamientos  (543).mp4"
+  -> ĆWICZENIE: "Wyciskanie francuskie ze sztangą na ławce skośnej dodatniej" (barbell incline triceps extension skull crusher) [ID: 6ae2eca94a34c8e0d18e482b]
+  -> NOWY ZASÓB: /upload-data/cb3ff0f4-1662-46b5-8c02-01046e22204b.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-4344-anim.mp4
+  -> Wynik dopasowania: 85 (rozpoznano: "Lying EZ-Bar Triceps Extension")
+  -> Plik źródłowy "entrenamientos  (543).mp4" USUNIĘTO po uploadzie.
+
+[6:43:02 PM] [PRZYPISANO] [219/361] PLIK: "entrenamientos  (547).mp4"
+  -> ĆWICZENIE: "Wyciskanie francuskie hantla oburącz siedząc" (dumbbell seated bench extension) [ID: 6ae2ecab4a34c8e0d18e7c1c]
+  -> NOWY ZASÓB: /upload-data/895f58df-b569-4d30-a0a6-78608c5707d2.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0389-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Seated Dumbbell Triceps Extension")
+  -> Plik źródłowy "entrenamientos  (547).mp4" USUNIĘTO po uploadzie.
+
+[6:43:02 PM] [PRZYPISANO] [220/361] PLIK: "entrenamientos  (548).mp4"
+  -> ĆWICZENIE: "Face pull z wyciągu stojąc" (cable standing face pull) [ID: 6ae2ecaa4a34c8e0d18e631b]
+  -> NOWY ZASÓB: /upload-data/5bd274a0-e835-4e39-b17e-75506a157f3a.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-5609-anim.mp4
+  -> Wynik dopasowania: 113 (rozpoznano: "Cable Face Pull")
+  -> Plik źródłowy "entrenamientos  (548).mp4" USUNIĘTO po uploadzie.
+
+[6:43:02 PM] [PRZYPISANO] [221/361] PLIK: "entrenamientos  (550).mp4"
+  -> ĆWICZENIE: "Skłony w siadzie równoważnym" (jackknife sit-up) [ID: 6ae2ecac4a34c8e0d18e92df]
+  -> NOWY ZASÓB: /upload-data/02f75194-7fef-4d01-bf03-abe54c43d2ab.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0507-anim.mp4
+  -> Wynik dopasowania: 129 (rozpoznano: "V-Up")
+  -> Plik źródłowy "entrenamientos  (550).mp4" USUNIĘTO po uploadzie.
+
+[6:43:02 PM] [DUPLIKAT] [225/361] PLIK: "entrenamientos  (563).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (563).mp4"
+  -> Przypisany do ćwiczenia: "Uginanie przedramion ze sztangą łamaną na modlitewniku" (ID: 6ae2ecac4a34c8e0d18e877a)
+  -> ZASÓB: /upload-data/5b303ddf-706a-40a1-8425-052a29a8c5d2.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (563).mp4" USUNIĘTO.
+
+[6:43:03 PM] [PRZYPISANO] [222/361] PLIK: "entrenamientos  (555).mp4"
+  -> ĆWICZENIE: "Przysiad sumo ze sztangą" (barbell sumo squat) [ID: 6ae2eca94a34c8e0d18e4e99]
+  -> NOWY ZASÓB: /upload-data/3fcaaca0-2287-4429-ba93-8738583aba77.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1063-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Sumo Squat")
+  -> Plik źródłowy "entrenamientos  (555).mp4" USUNIĘTO po uploadzie.
+
+[6:43:03 PM] [PRZYPISANO] [223/361] PLIK: "entrenamientos  (556).mp4"
+  -> ĆWICZENIE: "Pompka klasyczna" (push-up) [ID: 6ae2ecae4a34c8e0d18eb4e5]
+  -> NOWY ZASÓB: /upload-data/1c3cee05-1d5c-460d-b0d9-b873ea19b74c.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/ffc74ac6-dddd-4a31-a64e-bdf5fd939a90.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Push-up")
+  -> Plik źródłowy "entrenamientos  (556).mp4" USUNIĘTO po uploadzie.
+
+[6:43:04 PM] [PRZYPISANO] [224/361] PLIK: "entrenamientos  (557).mp4"
+  -> ĆWICZENIE: "Przysiad sumo ze sztangą" (barbell sumo squat) [ID: 6ae2eca94a34c8e0d18e4e99]
+  -> NOWY ZASÓB: /upload-data/2217ffba-d2dd-4663-932e-3bc4305297ed.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/3fcaaca0-2287-4429-ba93-8738583aba77.mp4
+  -> Wynik dopasowania: 106 (rozpoznano: "Sumo Squat with Barbell")
+  -> Plik źródłowy "entrenamientos  (557).mp4" USUNIĘTO po uploadzie.
+
+[6:43:04 PM] [PRZYPISANO] [226/361] PLIK: "entrenamientos  (566).mp4"
+  -> ĆWICZENIE: "Wyciskanie kalifornijskie ze sztangą łamaną" (ez bar california skullcrusher) [ID: 6ae2ecac4a34c8e0d18e869c]
+  -> NOWY ZASÓB: /upload-data/662cc1e1-d6c9-45e3-bef7-514b38f9537f.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-4130-anim.mp4
+  -> Wynik dopasowania: 85 (rozpoznano: "Lying EZ-Bar Triceps Extension")
+  -> Plik źródłowy "entrenamientos  (566).mp4" USUNIĘTO po uploadzie.
+
+[6:43:04 PM] [PRZYPISANO] [227/361] PLIK: "entrenamientos  (567).mp4"
+  -> ĆWICZENIE: "Naprzemienne uginanie przedramion z hantlami na ławce skośnej dodatniej chwytem młotkowym" (dumbbell incline alternate hammer curl) [ID: 6ae2ecab4a34c8e0d18e72f5]
+  -> NOWY ZASÓB: /upload-data/6e07d46c-b4ed-46a6-a41a-016b38e180cf.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1233-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Incline Dumbbell Biceps Curl")
+  -> Plik źródłowy "entrenamientos  (567).mp4" USUNIĘTO po uploadzie.
+
+[6:43:05 PM] [PRZYPISANO] [228/361] PLIK: "entrenamientos  (570).mp4"
+  -> ĆWICZENIE: "Wyciskanie uchwytów wyciągu na ławce skośnej dodatniej" (cable incline bench press) [ID: 6ae2ecaa4a34c8e0d18e5b32]
+  -> NOWY ZASÓB: /upload-data/b0d94842-81c0-43dc-a412-29a4ca08dedc.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0169-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Incline Cable Chest Press")
+  -> Plik źródłowy "entrenamientos  (570).mp4" USUNIĘTO po uploadzie.
+
+[6:43:05 PM] [PRZYPISANO] [229/361] PLIK: "entrenamientos  (572).mp4"
+  -> ĆWICZENIE: "Odwodzenie ramion w tył na ławce skośnej dodatniej z użyciem wyciągów" (cable incline cross rear fly) [ID: 6ae2ecaa4a34c8e0d18e5b60]
+  -> NOWY ZASÓB: /upload-data/4c8cf341-fb70-4e47-8b27-b3d98af64ecc.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-4012-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Incline Cable Fly")
+  -> Plik źródłowy "entrenamientos  (572).mp4" USUNIĘTO po uploadzie.
+
+[6:43:05 PM] [DUPLIKAT] [233/361] PLIK: "entrenamientos  (580).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (580).mp4"
+  -> Przypisany do ćwiczenia: "Podciąganie sztangi wyciągu dolnego w the up" (ID: 6ae2ecaa4a34c8e0d18e65f1)
+  -> ZASÓB: /upload-data/94dcbc53-5a74-4796-9dd9-eafafd61f28f.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (580).mp4" USUNIĘTO.
+
+[6:43:06 PM] [PRZYPISANO] [231/361] PLIK: "entrenamientos  (575).mp4"
+  -> ĆWICZENIE: "Pompka klasyczna" (push-up) [ID: 6ae2ecae4a34c8e0d18eb4e5]
+  -> NOWY ZASÓB: /upload-data/f3b9cf4b-0d0d-4925-a030-fc236d25ee16.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/1c3cee05-1d5c-460d-b0d9-b873ea19b74c.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Push-up")
+  -> Plik źródłowy "entrenamientos  (575).mp4" USUNIĘTO po uploadzie.
+
+[6:43:06 PM] [NIEPRZYPISANE] [230/361] PLIK: "entrenamientos  (573).mp4"
+  -> Rozpoznano: "undefined" / "undefined" (brak sprzętu, brak mięśnia)
+  -> Najlepszy kandydat: "undefined" (undefined) - wynik za niski (0 < 45)
+  -> Plik źródłowy zachowano do weryfikacji.
+
+[6:43:06 PM] [PRZYPISANO] [232/361] PLIK: "entrenamientos  (578).mp4"
+  -> ĆWICZENIE: "Odwodzenie ramienia w tył na wyciągu jednorącz stojąc" (cable one arm reverse fly) [ID: 6ae2ecaa4a34c8e0d18e5ed2]
+  -> NOWY ZASÓB: /upload-data/0b1b9811-5471-4458-a25d-de1863c1ec50.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-4122-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Cable Reverse Fly")
+  -> Plik źródłowy "entrenamientos  (578).mp4" USUNIĘTO po uploadzie.
+
+[6:43:07 PM] [PRZYPISANO] [234/361] PLIK: "entrenamientos  (581).mp4"
+  -> ĆWICZENIE: "Odwrotne rozpiętki na bramie z dolnych wyciągów" (cable cross-over revers fly) [ID: 6ae2ecaa4a34c8e0d18e599a]
+  -> NOWY ZASÓB: /upload-data/d3557b4e-a99d-4364-9789-05a8651102a0.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0154-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Cable Crossover")
+  -> Plik źródłowy "entrenamientos  (581).mp4" USUNIĘTO po uploadzie.
+
+[6:43:07 PM] [DUPLIKAT] [238/361] PLIK: "entrenamientos  (591).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (591).mp4"
+  -> Przypisany do ćwiczenia: "Pompka klasyczna" (ID: 6ae2ecae4a34c8e0d18eb4e5)
+  -> ZASÓB: /upload-data/245a9c34-82a0-475c-aa4d-6eb5be11f692.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (591).mp4" USUNIĘTO.
+
+[6:43:07 PM] [PRZYPISANO] [235/361] PLIK: "entrenamientos  (582).mp4"
+  -> ĆWICZENIE: "Wznosy nogi w tył w klęku podpartym" (reverse leg extension) [ID: 6ae2ecae4a34c8e0d18ebd3e]
+  -> NOWY ZASÓB: /upload-data/538390e8-ef8d-4a16-8b0d-ee05ed680072.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-4916-anim.mp4
+  -> Wynik dopasowania: 70 (rozpoznano: "Reverse-Grip Bench Triceps Extension")
+  -> Plik źródłowy "entrenamientos  (582).mp4" USUNIĘTO po uploadzie.
+
+[6:43:08 PM] [PRZYPISANO] [236/361] PLIK: "entrenamientos  (586).mp4"
+  -> ĆWICZENIE: "Odwodzenie nóg na maszynie siedząc" (lever seated hip abduction v. 2) [ID: 6ae2ecad4a34c8e0d18ea4ed]
+  -> NOWY ZASÓB: /upload-data/f02718e2-2c18-4b8b-972c-fe62c7b82a6c.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1869-anim.mp4
+  -> Wynik dopasowania: 98 (rozpoznano: "Seated Hip Abduction")
+  -> Plik źródłowy "entrenamientos  (586).mp4" USUNIĘTO po uploadzie.
+
+[6:43:08 PM] [PRZYPISANO] [237/361] PLIK: "entrenamientos  (588).mp4"
+  -> ĆWICZENIE: "Wyciskanie hantli naprzemiennie siedząc na podłodze (Z Press)" (dumbbell alternate z press) [ID: 6ae2ecab4a34c8e0d18e6d2e]
+  -> NOWY ZASÓB: /upload-data/40716c6b-fad5-47fc-8086-9ed2640f682f.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-6891-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Seated Dumbbell Shoulder Press")
+  -> Plik źródłowy "entrenamientos  (588).mp4" USUNIĘTO po uploadzie.
+
+[6:43:09 PM] [PRZYPISANO] [239/361] PLIK: "entrenamientos  (593).mp4"
+  -> ĆWICZENIE: "Przysiad ze sztangą na maszynie Smitha" (smith squat) [ID: 6ae2ecb04a34c8e0d18ed2d5]
+  -> NOWY ZASÓB: /upload-data/e709044d-5d2d-47fd-a197-6be15049ba49.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0770-anim.mp4
+  -> Wynik dopasowania: 113 (rozpoznano: "Smith Machine Squat")
+  -> Plik źródłowy "entrenamientos  (593).mp4" USUNIĘTO po uploadzie.
+
+[6:43:09 PM] [PRZYPISANO] [240/361] PLIK: "entrenamientos  (594).mp4"
+  -> ĆWICZENIE: "Wyciskanie sztangi na ławce ujemnej wąskim chwytem" (barbell decline close grip press) [ID: 6ae2eca94a34c8e0d18e45fa]
+  -> NOWY ZASÓB: /upload-data/08e3a152-71ff-4c12-b630-d174472f0a66.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-10115-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Decline Barbell Bench Press")
+  -> Plik źródłowy "entrenamientos  (594).mp4" USUNIĘTO po uploadzie.
+
+[6:43:09 PM] [PRZYPISANO] [241/361] PLIK: "entrenamientos  (597).mp4"
+  -> ĆWICZENIE: "Wiosłowanie hantlem w oparciu o ławkę (Kroc Row)" (dumbbell kroc row) [ID: 6ae2ecab4a34c8e0d18e7532]
+  -> NOWY ZASÓB: /upload-data/d56be51d-42ab-43b2-a704-5bb1f882a395.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-10329-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Bent-Over Dumbbell Row")
+  -> Plik źródłowy "entrenamientos  (597).mp4" USUNIĘTO po uploadzie.
+
+[6:43:09 PM] [DUPLIKAT] [245/361] PLIK: "entrenamientos  (603).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (603).mp4"
+  -> Przypisany do ćwiczenia: "Pozycja Bohatera" (ID: 6ae2ecac4a34c8e0d18e8e6e)
+  -> ZASÓB: /upload-data/ac4d5247-0218-409a-bcc5-3a0f5826c972.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (603).mp4" USUNIĘTO.
+
+[6:43:10 PM] [PRZYPISANO] [242/361] PLIK: "entrenamientos  (598).mp4"
+  -> ĆWICZENIE: "Wiosłowanie wyciągu dolnego podchwytem w opadzie tułowia" (cable bent over reverse grip row) [ID: 6ae2ecaa4a34c8e0d18e5937]
+  -> NOWY ZASÓB: /upload-data/3210c191-8eb0-4cbd-b9d2-c5042cd6c848.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-4367-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Cable bent-over row")
+  -> Plik źródłowy "entrenamientos  (598).mp4" USUNIĘTO po uploadzie.
+
+[6:43:10 PM] [DUPLIKAT] [247/361] PLIK: "entrenamientos  (606).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (606).mp4"
+  -> Przypisany do ćwiczenia: "Wyciskanie francuskie na ławce skośnej dodatniej z wyciągu dolnego" (ID: 6ae2ecaa4a34c8e0d18e5b9b)
+  -> ZASÓB: /upload-data/8c53b7cb-19b8-455d-9315-78c5c86acf94.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (606).mp4" USUNIĘTO.
+
+[6:43:10 PM] [PRZYPISANO] [244/361] PLIK: "entrenamientos  (602).mp4"
+  -> ĆWICZENIE: "Deska" (chinese plank) [ID: 6ae2ecaa4a34c8e0d18e67d6]
+  -> NOWY ZASÓB: /upload-data/094debd2-e52d-411a-8362-f58f0a7c0b47.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-8610-anim.mp4
+  -> Wynik dopasowania: 129 (rozpoznano: "Plank")
+  -> Plik źródłowy "entrenamientos  (602).mp4" USUNIĘTO po uploadzie.
+
+[6:43:11 PM] [PRZYPISANO] [243/361] PLIK: "entrenamientos  (600).mp4"
+  -> ĆWICZENIE: "Uginanie nadgarstków ze sztangą podchwytem siedząc" (barbell wrist curl v. 2) [ID: 6ae2eca94a34c8e0d18e4f54]
+  -> NOWY ZASÓB: /upload-data/9c3f9689-e9c6-4320-8d9c-03a4aa82b5f0.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0125-anim.mp4
+  -> Wynik dopasowania: 65 (rozpoznano: "Seated Plate Wrist Curls")
+  -> Plik źródłowy "entrenamientos  (600).mp4" USUNIĘTO po uploadzie.
+
+[6:43:11 PM] [DUPLIKAT] [250/361] PLIK: "entrenamientos  (611).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (611).mp4"
+  -> Przypisany do ćwiczenia: "Jednonóż martwy ciąg na maszynie Smitha / suwnicy" (ID: 6ae2ecad4a34c8e0d18ea720)
+  -> ZASÓB: /upload-data/aba48351-17a8-486e-8a97-8a77727d8621.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (611).mp4" USUNIĘTO.
+
+[6:43:11 PM] [PRZYPISANO] [246/361] PLIK: "entrenamientos  (604).mp4"
+  -> ĆWICZENIE: "Wyciskanie hantli wąskim chwytem leżąc" (dumbbell close-grip press) [ID: 6ae2ecab4a34c8e0d18e6f2f]
+  -> NOWY ZASÓB: /upload-data/d33be15d-a046-4cd3-b604-1222b5541b6e.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0296-anim.mp4
+  -> Wynik dopasowania: 130 (rozpoznano: "Lying Close-Grip Dumbbell Press")
+  -> Plik źródłowy "entrenamientos  (604).mp4" USUNIĘTO po uploadzie.
+
+[6:43:11 PM] [DUPLIKAT] [252/361] PLIK: "entrenamientos  (617).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (617).mp4"
+  -> Przypisany do ćwiczenia: "Wyciskanie sztangi na ławce skośnej ujemnej" (ID: 6ae2eca94a34c8e0d18e45ea)
+  -> ZASÓB: /upload-data/4fe3e188-5670-4c4b-ac14-9b804957b396.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (617).mp4" USUNIĘTO.
+
+[6:43:12 PM] [PRZYPISANO] [248/361] PLIK: "entrenamientos  (609).mp4"
+  -> ĆWICZENIE: "Wznosy nogi w tył w klęku podpartym z gumą oporową" (band kneeling single leg kick) [ID: 6ae2eca84a34c8e0d18e3f31]
+  -> NOWY ZASÓB: /upload-data/16beecea-881a-41a9-88a5-adb7c64dd206.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-4677-anim.mp4
+  -> Wynik dopasowania: 70 (rozpoznano: "Resistance Band Donkey Kick")
+  -> Plik źródłowy "entrenamientos  (609).mp4" USUNIĘTO po uploadzie.
+
+[6:43:12 PM] [PRZYPISANO] [251/361] PLIK: "entrenamientos  (613).mp4"
+  -> ĆWICZENIE: "Rozpiętki na maszynie siedząc" (lever crossovers) [ID: 6ae2ecad4a34c8e0d18ea13d]
+  -> NOWY ZASÓB: /upload-data/ddf1aa89-d397-4e0b-9e97-cc7a7ec96db8.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-3344-anim.mp4
+  -> Wynik dopasowania: 130 (rozpoznano: "Seated Machine Chest Fly")
+  -> Plik źródłowy "entrenamientos  (613).mp4" USUNIĘTO po uploadzie.
+
+[6:43:13 PM] [PRZYPISANO] [253/361] PLIK: "entrenamientos  (618).mp4"
+  -> ĆWICZENIE: "Uginanie przedramion z hantlem w staniu" (dumbbell standing concentration curl) [ID: 6ae2ecac4a34c8e0d18e8093]
+  -> NOWY ZASÓB: /upload-data/ab2371a3-b517-4c3e-a13e-b77d6ae9960c.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0418-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Dumbbell Bicep Curl")
+  -> Plik źródłowy "entrenamientos  (618).mp4" USUNIĘTO po uploadzie.
+
+[6:43:13 PM] [NIEPRZYPISANE] [249/361] PLIK: "entrenamientos  (610).mp4"
+  -> Rozpoznano: "undefined" / "undefined" (brak sprzętu, brak mięśnia)
+  -> Najlepszy kandydat: "undefined" (undefined) - wynik za niski (0 < 45)
+  -> Plik źródłowy zachowano do weryfikacji.
+
+[6:43:13 PM] [PRZYPISANO] [254/361] PLIK: "entrenamientos  (619).mp4"
+  -> ĆWICZENIE: "Skłony tułowia na ławce skośnej ujemnej" (decline sit-up) [ID: 6ae2ecab4a34c8e0d18e6b28]
+  -> NOWY ZASÓB: /upload-data/36292fe7-304a-49b3-9eaf-b5f5c7a167c1.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0282-anim.mp4
+  -> Wynik dopasowania: 129 (rozpoznano: "Decline Crunch")
+  -> Plik źródłowy "entrenamientos  (619).mp4" USUNIĘTO po uploadzie.
+
+[6:43:14 PM] [PRZYPISANO] [256/361] PLIK: "entrenamientos  (624).mp4"
+  -> ĆWICZENIE: "Przysiad goblet sumo z hantlem" (dumbbell goblet sumo squat) [ID: 6ae2ecab4a34c8e0d18e71d1]
+  -> NOWY ZASÓB: /upload-data/00a84065-ff8d-4a73-a50e-3dd1889fe75f.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-7547-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Dumbbell Sumo Squat")
+  -> Plik źródłowy "entrenamientos  (624).mp4" USUNIĘTO po uploadzie.
+
+[6:43:15 PM] [PRZYPISANO] [257/361] PLIK: "entrenamientos  (625).mp4"
+  -> ĆWICZENIE: "Rumuński martwy ciąg w szerokim rozkroku sumo" (barbell sumo romanian deadlift) [ID: 6ae2eca94a34c8e0d18e4e8f]
+  -> NOWY ZASÓB: /upload-data/65bd327b-614d-47a6-acc3-90886c49b6be.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-3731-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Barbell Romanian Deadlift")
+  -> Plik źródłowy "entrenamientos  (625).mp4" USUNIĘTO po uploadzie.
+
+[6:43:15 PM] [PRZYPISANO] [258/361] PLIK: "entrenamientos  (627).mp4"
+  -> ĆWICZENIE: "Wiosłowanie wyciągiem dolnym w opadzie tułowia" (cable bent over row) [ID: 6ae2ecaa4a34c8e0d18e593f]
+  -> NOWY ZASÓB: /upload-data/db9a1975-bd0e-4f83-9ee2-92ed4be04b52.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-3859-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Seated Cable Row")
+  -> Plik źródłowy "entrenamientos  (627).mp4" USUNIĘTO po uploadzie.
+
+[6:43:15 PM] [DUPLIKAT] [261/361] PLIK: "entrenamientos  (632).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (632).mp4"
+  -> Przypisany do ćwiczenia: "Wyciskanie francuskie ze sztangą leżąc" (ID: 6ae2eca94a34c8e0d18e4926)
+  -> ZASÓB: /upload-data/6b1d03b6-8185-4e26-b258-c61167b4db02.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (632).mp4" USUNIĘTO.
+
+[6:43:15 PM] [NIEPRZYPISANE] [255/361] PLIK: "entrenamientos  (623).mp4"
+  -> Rozpoznano: "undefined" / "undefined" (brak sprzętu, brak mięśnia)
+  -> Najlepszy kandydat: "undefined" (undefined) - wynik za niski (0 < 45)
+  -> Plik źródłowy zachowano do weryfikacji.
+
+[6:43:16 PM] [PRZYPISANO] [259/361] PLIK: "entrenamientos  (629).mp4"
+  -> ĆWICZENIE: "Wyskok z przysiadu jednonóż z wejściem na skrzynię" (jump pistol squat box) [ID: 6ae2ecac4a34c8e0d18e9328]
+  -> NOWY ZASÓB: /upload-data/1c090d73-1e05-48b6-8c2e-82450bdc57ef.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-4168-anim.mp4
+  -> Wynik dopasowania: 109 (rozpoznano: "Chair Squat")
+  -> Plik źródłowy "entrenamientos  (629).mp4" USUNIĘTO po uploadzie.
+
+[6:43:16 PM] [DUPLIKAT] [264/361] PLIK: "entrenamientos  (640).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (645).mp4"
+  -> Przypisany do ćwiczenia: "Wyciskanie sztangi wąskim chwytem na ławce skośnej dodatniej" (ID: 6ae2eca94a34c8e0d18e47f2)
+  -> ZASÓB: /upload-data/d5eac619-5c7d-47a4-954a-4e4f8f97438c.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (640).mp4" USUNIĘTO.
+
+[6:43:16 PM] [DUPLIKAT] [265/361] PLIK: "entrenamientos  (645).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (645).mp4"
+  -> Przypisany do ćwiczenia: "Wyciskanie sztangi wąskim chwytem na ławce skośnej dodatniej" (ID: 6ae2eca94a34c8e0d18e47f2)
+  -> ZASÓB: /upload-data/d5eac619-5c7d-47a4-954a-4e4f8f97438c.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (645).mp4" USUNIĘTO.
+
+[6:43:16 PM] [PRZYPISANO] [262/361] PLIK: "entrenamientos  (638).mp4"
+  -> ĆWICZENIE: "Wyciskanie hantli w tył w opadzie tułowia siedząc naprzemiennie" (dumbbell seated bent over alternate kickback) [ID: 6ae2ecab4a34c8e0d18e7c2b]
+  -> NOWY ZASÓB: /upload-data/cdafa6c1-8b99-4821-b11d-1466ad7a2731.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1730-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Seated Dumbbell Shoulder Press")
+  -> Plik źródłowy "entrenamientos  (638).mp4" USUNIĘTO po uploadzie.
+
+[6:43:16 PM] [DUPLIKAT] [267/361] PLIK: "entrenamientos  (647).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (647).mp4"
+  -> Przypisany do ćwiczenia: "Prostowanie nóg siedząc jednonurcz na maszynie ze stosu" (ID: 6ae2ecad4a34c8e0d18e9fe2)
+  -> ZASÓB: /upload-data/8b05bffc-1f38-4950-8e5f-c02b3d2e0ab3.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (647).mp4" USUNIĘTO.
+
+[6:43:17 PM] [PRZYPISANO] [260/361] PLIK: "entrenamientos  (631).mp4"
+  -> ĆWICZENIE: "Rumuński martwy ciąg z kettlem" (kettlebell romanian deadlift) [ID: 6ae2ecad4a34c8e0d18e97bc]
+  -> NOWY ZASÓB: /upload-data/b39445dc-efa3-42c4-93a9-50a249aed923.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-4861-anim.mp4
+  -> Wynik dopasowania: 130 (rozpoznano: "Kettlebell Romanian Deadlift")
+  -> Plik źródłowy "entrenamientos  (631).mp4" USUNIĘTO po uploadzie.
+
+[6:43:17 PM] [DUPLIKAT] [269/361] PLIK: "entrenamientos  (654).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "Treinos  (654).mp4"
+  -> Przypisany do ćwiczenia: "Przysiad ze sztangą" (ID: 6ae2eca94a34c8e0d18e4cf3)
+  -> ZASÓB: /upload-data/7715da3e-ea79-4794-b5de-bb00cca18004.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "entrenamientos  (654).mp4" USUNIĘTO.
+
+[6:43:17 PM] [PRZYPISANO] [263/361] PLIK: "entrenamientos  (639).mp4"
+  -> ĆWICZENIE: "Wypychanie ciężaru na suwnicy skośnej" (lever angled leg press) [ID: 6ae2ecad4a34c8e0d18ea000]
+  -> NOWY ZASÓB: /upload-data/075285d2-d355-4645-a410-b1a77154b016.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-8375-anim.mp4
+  -> Wynik dopasowania: 84 (rozpoznano: "Vertical Leg Press")
+  -> Plik źródłowy "entrenamientos  (639).mp4" USUNIĘTO po uploadzie.
+
+[6:43:18 PM] [PRZYPISANO] [266/361] PLIK: "entrenamientos  (646).mp4"
+  -> ĆWICZENIE: "Pullover z hantlami leżąc" (dumbbell around pullover) [ID: 6ae2ecab4a34c8e0d18e6d72]
+  -> NOWY ZASÓB: /upload-data/d74f07bf-8620-46e6-b1f5-4aff54d59fc6.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0288-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Dumbbell Pullover")
+  -> Plik źródłowy "entrenamientos  (646).mp4" USUNIĘTO po uploadzie.
+
+[6:43:18 PM] [PRZYPISANO] [268/361] PLIK: "entrenamientos  (650).mp4"
+  -> ĆWICZENIE: "Rozpiętki na wyciągu dolnym na piłce gimnastycznej" (cable incline fly (on stability ball)) [ID: 6ae2ecaa4a34c8e0d18e5b70]
+  -> NOWY ZASÓB: /upload-data/c869b1a9-8a92-4736-b799-1fce69ce5d65.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0170-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Cable Crossover")
+  -> Plik źródłowy "entrenamientos  (650).mp4" USUNIĘTO po uploadzie.
+
+[6:43:19 PM] [PRZYPISANO] [271/361] PLIK: "entrenamientos  (657).mp4"
+  -> ĆWICZENIE: "Deska boczna" (side plank) [ID: 6ae2ecaf4a34c8e0d18ec9d5]
+  -> NOWY ZASÓB: /upload-data/983e42b4-0267-4d0d-8ab8-8375559d8e35.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0715-anim.mp4
+  -> Wynik dopasowania: 133 (rozpoznano: "Side Plank")
+  -> Plik źródłowy "entrenamientos  (657).mp4" USUNIĘTO po uploadzie.
+
+[6:43:19 PM] [PRZYPISANO] [270/361] PLIK: "entrenamientos  (655).mp4"
+  -> ĆWICZENIE: "Przyciąganie uchwytu wyciągu dolnego w siadzie na ławce skośnej szerokim chwytem" (cable decline seated wide-grip row) [ID: 6ae2ecaa4a34c8e0d18e59d9]
+  -> NOWY ZASÓB: /upload-data/7a351aa5-19d3-40ca-9ae3-dabe5ea840f7.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0159-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Seated Cable Row")
+  -> Plik źródłowy "entrenamientos  (655).mp4" USUNIĘTO po uploadzie.
+
+[6:43:19 PM] [PRZYPISANO] [272/361] PLIK: "entrenamientos  (660).mp4"
+  -> ĆWICZENIE: "Brzuszki" (crunch floor) [ID: 6ae2ecaa4a34c8e0d18e6a22]
+  -> NOWY ZASÓB: /upload-data/d401812c-e2df-4eba-8e2b-581dd15b7cd5.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0274-anim.mp4
+  -> Wynik dopasowania: 134 (rozpoznano: "Sit-up")
+  -> Plik źródłowy "entrenamientos  (660).mp4" USUNIĘTO po uploadzie.
+
+[6:43:20 PM] [PRZYPISANO] [273/361] PLIK: "entrenamientos  (662).mp4"
+  -> ĆWICZENIE: "Allahy z uniesionymi nogami" (crunch (leg raise)) [ID: 6ae2ecaa4a34c8e0d18e69e4]
+  -> NOWY ZASÓB: /upload-data/8f7ef855-c85d-43ca-9892-0d5440cd0b55.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0268-anim.mp4
+  -> Wynik dopasowania: 109 (rozpoznano: "Reverse Crunch")
+  -> Plik źródłowy "entrenamientos  (662).mp4" USUNIĘTO po uploadzie.
+
+[6:43:20 PM] [PRZYPISANO] [274/361] PLIK: "entrenamientos  (664).mp4"
+  -> ĆWICZENIE: "Deska z kolan" (kneeling plank) [ID: 6ae2ecad4a34c8e0d18e9bc7]
+  -> NOWY ZASÓB: /upload-data/bf83866d-8c5d-46de-9aab-dea443565377.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-3238-anim.mp4
+  -> Wynik dopasowania: 129 (rozpoznano: "Kneeling Plank")
+  -> Plik źródłowy "entrenamientos  (664).mp4" USUNIĘTO po uploadzie.
+
+[6:43:21 PM] [PRZYPISANO] [275/361] PLIK: "entrenamientos  (666).mp4"
+  -> ĆWICZENIE: "Przysiad ze sztangą" (barbell full squat (side pov)) [ID: 6ae2eca94a34c8e0d18e46ff]
+  -> NOWY ZASÓB: /upload-data/540653dd-037f-419e-b834-e070505028fe.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1462-anim.mp4
+  -> Wynik dopasowania: 130 (rozpoznano: "Barbell Squat")
+  -> Plik źródłowy "entrenamientos  (666).mp4" USUNIĘTO po uploadzie.
+
+[6:43:21 PM] [PRZYPISANO] [276/361] PLIK: "entrenamientos  (667).mp4"
+  -> ĆWICZENIE: "Wiosłowanie na wyciągu dolnym siedząc szerokim chwytem" (cable floor seated wide-grip row) [ID: 6ae2ecaa4a34c8e0d18e5a0a]
+  -> NOWY ZASÓB: /upload-data/9a1af366-5ddb-4732-8330-5b98a61b12ba.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0160-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Seated Cable Row")
+  -> Plik źródłowy "entrenamientos  (667).mp4" USUNIĘTO po uploadzie.
+
+[6:43:21 PM] [PRZYPISANO] [277/361] PLIK: "entrenamientos  (668).mp4"
+  -> ĆWICZENIE: "Koci grzbiet" (cat stretch) [ID: 6ae2ecaa4a34c8e0d18e66cb]
+  -> NOWY ZASÓB: /upload-data/e703e306-9304-496e-a4c3-0d01b985e8b0.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-1051-anim.mp4
+  -> Wynik dopasowania: 128 (rozpoznano: "Cat-Cow Stretch")
+  -> Plik źródłowy "entrenamientos  (668).mp4" USUNIĘTO po uploadzie.
+
+[6:43:22 PM] [PRZYPISANO] [278/361] PLIK: "entrenamientos  (675).mp4"
+  -> ĆWICZENIE: "Wiosłowanie sztangą w opadzie tułowia" (bent over row back (form check)) [ID: 6ae2eca94a34c8e0d18e5159]
+  -> NOWY ZASÓB: /upload-data/6ce9d609-c056-4484-9b3f-f3f66119670a.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-2343-anim.mp4
+  -> Wynik dopasowania: 130 (rozpoznano: "Barbell Bent-Over Row")
+  -> Plik źródłowy "entrenamientos  (675).mp4" USUNIĘTO po uploadzie.
+
+[6:43:23 PM] [PRZYPISANO] [279/361] PLIK: "workouts  (318).gif"
+  -> ĆWICZENIE: "Wyciskanie sztangi na ławce poziomej do szyi" (barbell guillotine bench press) [ID: 6ae2eca94a34c8e0d18e473d]
+  -> NOWY ZASÓB: /upload-data/d83d2109-a877-4915-8e94-435416056e32.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0045-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Barbell Bench Press")
+  -> Plik źródłowy "workouts  (318).gif" USUNIĘTO po uploadzie.
+
+[6:43:23 PM] [DUPLIKAT] [283/361] PLIK: "workouts  (411).gif"
+  -> Identyczny z wcześniej przypisanym plikiem: "workouts  (318).gif"
+  -> Przypisany do ćwiczenia: "Wyciskanie sztangi na ławce poziomej do szyi" (ID: 6ae2eca94a34c8e0d18e473d)
+  -> ZASÓB: /upload-data/d83d2109-a877-4915-8e94-435416056e32.gif
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "workouts  (411).gif" USUNIĘTO.
+
+[6:43:23 PM] [PRZYPISANO] [280/361] PLIK: "workouts  (396).gif"
+  -> ĆWICZENIE: "Wznosy hantli bokiem stojąc" (dumbbell standing lateral raise) [ID: 6ae2ecac4a34c8e0d18e80fa]
+  -> NOWY ZASÓB: /upload-data/3409654b-8b27-488c-abed-aa6db5a6a934.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-2234-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Dumbbell Lateral Raise")
+  -> Plik źródłowy "workouts  (396).gif" USUNIĘTO po uploadzie.
+
+[6:43:23 PM] [PRZYPISANO] [281/361] PLIK: "workouts  (403).gif"
+  -> ĆWICZENIE: "Uginanie przedramion z hantlami na ławce modlitewnej jednorącz" (dumbbell standing preacher curl) [ID: 6ae2ecac4a34c8e0d18e813c]
+  -> NOWY ZASÓB: /upload-data/b6b33bca-26fd-4094-8133-b7d6abc6bccd.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0428-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Dumbbell Bicep Curl")
+  -> Plik źródłowy "workouts  (403).gif" USUNIĘTO po uploadzie.
+
+[6:43:24 PM] [PRZYPISANO] [282/361] PLIK: "workouts  (404).gif"
+  -> ĆWICZENIE: "Martwy ciąg sumo" (barbell sumo deadlift) [ID: 6ae2eca94a34c8e0d18e4e72]
+  -> NOWY ZASÓB: /upload-data/9c2510ff-a833-408c-af4f-c77a475926b1.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0117-anim.mp4
+  -> Wynik dopasowania: 134 (rozpoznano: "Barbell Sumo Deadlift")
+  -> Plik źródłowy "workouts  (404).gif" USUNIĘTO po uploadzie.
+
+[6:43:25 PM] [PRZYPISANO] [284/361] PLIK: "workouts  (414).gif"
+  -> ĆWICZENIE: "Uginanie przedramion z hantlami chwytem młotkowym odwrotnym" (dumbbell standing reverse curl) [ID: 6ae2ecac4a34c8e0d18e8143]
+  -> NOWY ZASÓB: /upload-data/a50d0dbd-7de7-4171-9f39-f390614b60b2.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0429-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Dumbbell Bicep Curl")
+  -> Plik źródłowy "workouts  (414).gif" USUNIĘTO po uploadzie.
+
+[6:43:25 PM] [PRZYPISANO] [285/361] PLIK: "workouts  (418).gif"
+  -> ĆWICZENIE: "Uginanie nóg z hantlem leżąc na ławce" (dumbbell lying leg curl) [ID: 6ae2ecab4a34c8e0d18e7608]
+  -> NOWY ZASÓB: /upload-data/241d4e02-aaa2-4ab3-9f7f-ea05df567bf5.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-6161-anim.mp4
+  -> Wynik dopasowania: 113 (rozpoznano: "Dumbbell Bicep Curl")
+  -> Plik źródłowy "workouts  (418).gif" USUNIĘTO po uploadzie.
+
+[6:43:26 PM] [PRZYPISANO] [287/361] PLIK: "workouts  (433).gif"
+  -> ĆWICZENIE: "Uginanie przedramion chwytem młotkowym na modlitewniku maszynowym" (lever hammer grip preacher curl) [ID: 6ae2ecad4a34c8e0d18ea1af]
+  -> NOWY ZASÓB: /upload-data/32681eac-dcbf-4796-a739-7ef56f8f76b8.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-1615-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Preacher Curl")
+  -> Plik źródłowy "workouts  (433).gif" USUNIĘTO po uploadzie.
+
+[6:43:26 PM] [DUPLIKAT] [290/361] PLIK: "workouts  (513).gif"
+  -> Identyczny z wcześniej przypisanym plikiem: "workouts  (318).gif"
+  -> Przypisany do ćwiczenia: "Wyciskanie sztangi na ławce poziomej do szyi" (ID: 6ae2eca94a34c8e0d18e473d)
+  -> ZASÓB: /upload-data/d83d2109-a877-4915-8e94-435416056e32.gif
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "workouts  (513).gif" USUNIĘTO.
+
+[6:43:26 PM] [DUPLIKAT] [291/361] PLIK: "workouts  (530).gif"
+  -> Identyczny z wcześniej przypisanym plikiem: "workouts  (403).gif"
+  -> Przypisany do ćwiczenia: "Uginanie przedramion z hantlami na ławce modlitewnej jednorącz" (ID: 6ae2ecac4a34c8e0d18e813c)
+  -> ZASÓB: /upload-data/b6b33bca-26fd-4094-8133-b7d6abc6bccd.gif
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "workouts  (530).gif" USUNIĘTO.
+
+[6:43:26 PM] [DUPLIKAT] [292/361] PLIK: "workouts  (543).mp4"
+  -> Identyczny z wcześniej przypisanym plikiem: "entrenamientos  (543).mp4"
+  -> Przypisany do ćwiczenia: "Wyciskanie francuskie ze sztangą na ławce skośnej dodatniej" (ID: 6ae2eca94a34c8e0d18e482b)
+  -> ZASÓB: /upload-data/cb3ff0f4-1662-46b5-8c02-01046e22204b.mp4
+  -> Akcja: Pominięto ponowny upload, plik źródłowy "workouts  (543).mp4" USUNIĘTO.
+
+[6:43:26 PM] [PRZYPISANO] [286/361] PLIK: "workouts  (423).gif"
+  -> ĆWICZENIE: "Przyciąganie lin wyciągu dolnego w siadzie" (cable rope crossover seated row) [ID: 6ae2ecaa4a34c8e0d18e603c]
+  -> NOWY ZASÓB: /upload-data/1cc8f035-9848-45ae-89e4-cb825fdf0897.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-1320-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Cable Crossover")
+  -> Plik źródłowy "workouts  (423).gif" USUNIĘTO po uploadzie.
+
+[6:43:26 PM] [PRZYPISANO] [288/361] PLIK: "workouts  (439).gif"
+  -> ĆWICZENIE: "Szrugsy na ławce skośnej dodatniej w leżeniu przodem" (dumbbell decline shrug) [ID: 6ae2ecab4a34c8e0d18e7027]
+  -> NOWY ZASÓB: /upload-data/4e692083-b620-4007-a66c-328bfd85bb88.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0305-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Dumbbell Shrug")
+  -> Plik źródłowy "workouts  (439).gif" USUNIĘTO po uploadzie.
+
+[6:43:27 PM] [PRZYPISANO] [289/361] PLIK: "workouts  (512).gif"
+  -> ĆWICZENIE: "Wyciskanie hantli na ławce poziomej" (dumbbell bench press) [ID: 6ae2ecab4a34c8e0d18e6dd2]
+  -> NOWY ZASÓB: /upload-data/baed2140-c892-4bb0-be11-f623cec742a8.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0289-anim.mp4
+  -> Wynik dopasowania: 134 (rozpoznano: "Flat Dumbbell Press")
+  -> Plik źródłowy "workouts  (512).gif" USUNIĘTO po uploadzie.
+
+[6:43:27 PM] [PRZYPISANO] [293/361] PLIK: "workouts  (545).gif"
+  -> ĆWICZENIE: "Skręty tułowia w leżeniu (rowerki)" (bicycle crunch) [ID: 6ae2eca94a34c8e0d18e51c8]
+  -> NOWY ZASÓB: /upload-data/6b24b4e6-35a2-49a4-96ba-dba9df1fb444.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-6211-anim.mp4
+  -> Wynik dopasowania: 97 (rozpoznano: "Seated Russian Twist")
+  -> Plik źródłowy "workouts  (545).gif" USUNIĘTO po uploadzie.
+
+[6:43:28 PM] [PRZYPISANO] [294/361] PLIK: "workouts  (547).gif"
+  -> ĆWICZENIE: "Wyciskanie hantli w opadzie tułowia w siadzie" (dumbbell seated bent over triceps extension) [ID: 6ae2ecab4a34c8e0d18e7c44]
+  -> NOWY ZASÓB: /upload-data/69527c06-303b-4280-b7da-4f4fe4f9d6b7.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-1737-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Seated Overhead Dumbbell Triceps Extension")
+  -> Plik źródłowy "workouts  (547).gif" USUNIĘTO po uploadzie.
+
+[6:43:28 PM] [PRZYPISANO] [295/361] PLIK: "workouts  (550).gif"
+  -> ĆWICZENIE: "Russian twist" (russian twist) [ID: 6ae2ecaf4a34c8e0d18ec273]
+  -> NOWY ZASÓB: /upload-data/4ee42a98-ad63-49d6-8e46-fbae3767a371.gif
+  -> POPRZEDNI ZASÓB: /upload-data/b928939e-9e68-4c37-b4f0-dc87f7b9a55c.mp4
+  -> Wynik dopasowania: 108 (rozpoznano: "Seated Bent-Knee Oblique Twist")
+  -> Plik źródłowy "workouts  (550).gif" USUNIĘTO po uploadzie.
+
+[6:43:29 PM] [PRZYPISANO] [296/361] PLIK: "workouts  (551).gif"
+  -> ĆWICZENIE: "Pompka klasyczna" (push-up) [ID: 6ae2ecae4a34c8e0d18eb4e5]
+  -> NOWY ZASÓB: /upload-data/b1c5a67b-a8af-4f18-a1ba-efa38a7ea609.gif
+  -> POPRZEDNI ZASÓB: /upload-data/f3b9cf4b-0d0d-4925-a030-fc236d25ee16.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Push-up")
+  -> Plik źródłowy "workouts  (551).gif" USUNIĘTO po uploadzie.
+
+[6:43:29 PM] [PRZYPISANO] [297/361] PLIK: "workouts  (553).gif"
+  -> ĆWICZENIE: "Przyciąganie jednorącz linki wyciągu w poprzek tułowia" (cable single arm bear fly) [ID: 6ae2ecaa4a34c8e0d18e6214]
+  -> NOWY ZASÓB: /upload-data/df7e6bb1-23e3-4203-8650-1a12876ea012.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-10095-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Cable Crossover")
+  -> Plik źródłowy "workouts  (553).gif" USUNIĘTO po uploadzie.
+
+[6:43:30 PM] [PRZYPISANO] [298/361] PLIK: "workouts  (554).gif"
+  -> ĆWICZENIE: "Wznosy bioder w leżeniu tyłem" (reverse crunch) [ID: 6ae2ecae4a34c8e0d18ebcd1]
+  -> NOWY ZASÓB: /upload-data/45436f57-7c44-4a91-814c-728f6e2ac5cf.gif
+  -> POPRZEDNI ZASÓB: /upload-data/43bec96b-5cb7-4bb3-ab77-beea4753ad7a.mp4
+  -> Wynik dopasowania: 108 (rozpoznano: "Reverse Crunch")
+  -> Plik źródłowy "workouts  (554).gif" USUNIĘTO po uploadzie.
+
+[6:43:30 PM] [PRZYPISANO] [300/361] PLIK: "workouts  (556).gif"
+  -> ĆWICZENIE: "Pompki diamentowe" (diamond push-up) [ID: 6ae2ecab4a34c8e0d18e6bc1]
+  -> NOWY ZASÓB: /upload-data/bab6dc48-eadc-4d8e-9fad-91886b8caeb9.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0283-anim.mp4
+  -> Wynik dopasowania: 133 (rozpoznano: "Close Grip Push-up")
+  -> Plik źródłowy "workouts  (556).gif" USUNIĘTO po uploadzie.
+
+[6:43:31 PM] [PRZYPISANO] [299/361] PLIK: "workouts  (555).gif"
+  -> ĆWICZENIE: "Podciąganie na drążku nachwytem" (biceps pull-up) [ID: 6ae2eca94a34c8e0d18e51b0]
+  -> NOWY ZASÓB: /upload-data/0e4b7905-dfe4-469a-86a3-254a45d2cb25.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0140-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Pull-Up")
+  -> Plik źródłowy "workouts  (555).gif" USUNIĘTO po uploadzie.
+
+[6:43:31 PM] [PRZYPISANO] [301/361] PLIK: "workouts  (557).gif"
+  -> ĆWICZENIE: "Podciąganie na drążku nachwytem" (pull-up) [ID: 6ae2ecae4a34c8e0d18eb3eb]
+  -> NOWY ZASÓB: /upload-data/c61ab668-ddbb-4de6-9686-5916ba8c7773.gif
+  -> POPRZEDNI ZASÓB: /upload-data/9e58aafa-fa9f-44f0-849e-27926f7e77b5.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Pull-up")
+  -> Plik źródłowy "workouts  (557).gif" USUNIĘTO po uploadzie.
+
+[6:43:31 PM] [PRZYPISANO] [302/361] PLIK: "workouts  (558).gif"
+  -> ĆWICZENIE: "Podciąganie na drążku chwytem neutralnym" (pull up (neutral grip)) [ID: 6ae2ecae4a34c8e0d18eb3d4]
+  -> NOWY ZASÓB: /upload-data/a60619f6-8fcd-41ac-94b7-7ce4c55dbdd9.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0651-anim.mp4
+  -> Wynik dopasowania: 128 (rozpoznano: "Neutral Grip Pull-Up")
+  -> Plik źródłowy "workouts  (558).gif" USUNIĘTO po uploadzie.
+
+[6:43:32 PM] [PRZYPISANO] [303/361] PLIK: "workouts  (559).gif"
+  -> ĆWICZENIE: "Podciąganie na drążku nachwytem" (pull-up) [ID: 6ae2ecae4a34c8e0d18eb3eb]
+  -> NOWY ZASÓB: /upload-data/9ed00476-5858-4b20-84fd-9ce0dfdf9df3.gif
+  -> POPRZEDNI ZASÓB: /upload-data/c61ab668-ddbb-4de6-9686-5916ba8c7773.gif
+  -> Wynik dopasowania: 110 (rozpoznano: "Pull-up")
+  -> Plik źródłowy "workouts  (559).gif" USUNIĘTO po uploadzie.
+
+[6:43:32 PM] [PRZYPISANO] [304/361] PLIK: "workouts  (561).gif"
+  -> ĆWICZENIE: "Szrugsy z hantlami na ławce skośnej" (dumbbell incline shrug) [ID: 6ae2ecab4a34c8e0d18e7435]
+  -> NOWY ZASÓB: /upload-data/ec0e2354-f2ce-4569-a36a-e8e7ce808bc9.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0329-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Dumbbell Shrug")
+  -> Plik źródłowy "workouts  (561).gif" USUNIĘTO po uploadzie.
+
+[6:43:33 PM] [PRZYPISANO] [306/361] PLIK: "workouts  (564).gif"
+  -> ĆWICZENIE: "Przywodzenie nóg na maszynie siedząc" (lever seated hip adduction) [ID: 6ae2ecad4a34c8e0d18ea4f4]
+  -> NOWY ZASÓB: /upload-data/2179c38b-a686-4dcc-a52a-fe01f503cf51.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0598-anim.mp4
+  -> Wynik dopasowania: 103 (rozpoznano: "Seated Hip Adduction")
+  -> Plik źródłowy "workouts  (564).gif" USUNIĘTO po uploadzie.
+
+[6:43:34 PM] [PRZYPISANO] [305/361] PLIK: "workouts  (563).gif"
+  -> ĆWICZENIE: "Uginanie przedramion ze sztangą nachwytem na modlitewniku" (barbell reverse preacher curl) [ID: 6ae2eca94a34c8e0d18e4b62]
+  -> NOWY ZASÓB: /upload-data/629a6e96-bc29-4f79-a361-79ee7ef617b6.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0081-anim.mp4
+  -> Wynik dopasowania: 86 (rozpoznano: "Preacher Curl")
+  -> Plik źródłowy "workouts  (563).gif" USUNIĘTO po uploadzie.
+
+[6:43:34 PM] [PRZYPISANO] [307/361] PLIK: "workouts  (566).gif"
+  -> ĆWICZENIE: "Wyciskanie sztangi na ławce poziomej" (barbell weighted bench press) [ID: 6ae2eca94a34c8e0d18e4ed7]
+  -> NOWY ZASÓB: /upload-data/704293f0-913e-4cad-aea1-ee430db1c570.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-3310-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Barbell Bench Press")
+  -> Plik źródłowy "workouts  (566).gif" USUNIĘTO po uploadzie.
+
+[6:43:34 PM] [PRZYPISANO] [308/361] PLIK: "workouts  (568).gif"
+  -> ĆWICZENIE: "Uginanie nadgarstków z hantlami chwytem neutralnym siedząc" (dumbbell seated neutral wrist curl) [ID: 6ae2ecab4a34c8e0d18e7d04]
+  -> NOWY ZASÓB: /upload-data/3809d799-a8f3-4261-88e2-89d1d47fb7fd.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0397-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Seated Dumbbell Wrist Curl")
+  -> Plik źródłowy "workouts  (568).gif" USUNIĘTO po uploadzie.
+
+[6:43:35 PM] [PRZYPISANO] [309/361] PLIK: "workouts  (569).gif"
+  -> ĆWICZENIE: "Uginanie nadgarstków nachwytem z hantlami" (dumbbell reverse wrist curl) [ID: 6ae2ecab4a34c8e0d18e7b8e]
+  -> NOWY ZASÓB: /upload-data/0e896920-497d-4acd-9dd5-eba6e15cefcc.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0385-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Seated Dumbbell Wrist Curl")
+  -> Plik źródłowy "workouts  (569).gif" USUNIĘTO po uploadzie.
+
+[6:43:35 PM] [PRZYPISANO] [310/361] PLIK: "workouts  (570).gif"
+  -> ĆWICZENIE: "Przemienne przyciąganie rąk z dolnych wyciągów stojąc" (cable standing alternate low fly) [ID: 6ae2ecaa4a34c8e0d18e629e]
+  -> NOWY ZASÓB: /upload-data/bbd6ad81-9cbf-41c7-a18d-820f177baf26.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-4374-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Cable Crossover")
+  -> Plik źródłowy "workouts  (570).gif" USUNIĘTO po uploadzie.
+
+[6:43:36 PM] [PRZYPISANO] [312/361] PLIK: "workouts  (573).gif"
+  -> ĆWICZENIE: "Podciąganie na drążku nachwytem" (pull-up) [ID: 6ae2ecae4a34c8e0d18eb3eb]
+  -> NOWY ZASÓB: /upload-data/d6e96129-97e3-4282-a94a-ba59a9c755c4.gif
+  -> POPRZEDNI ZASÓB: /upload-data/9ed00476-5858-4b20-84fd-9ce0dfdf9df3.gif
+  -> Wynik dopasowania: 110 (rozpoznano: "Pull-up")
+  -> Plik źródłowy "workouts  (573).gif" USUNIĘTO po uploadzie.
+
+[6:43:36 PM] [NIEPRZYPISANE] [311/361] PLIK: "workouts  (572).gif"
+  -> Rozpoznano: "undefined" / "undefined" (brak sprzętu, brak mięśnia)
+  -> Najlepszy kandydat: "undefined" (undefined) - wynik za niski (0 < 45)
+  -> Plik źródłowy zachowano do weryfikacji.
+
+[6:43:36 PM] [PRZYPISANO] [313/361] PLIK: "workouts  (574).gif"
+  -> ĆWICZENIE: "Przysiad bułgarski z hantlem przy klatce" (dumbbell goblet split squat) [ID: 6ae2ecab4a34c8e0d18e7197]
+  -> NOWY ZASÓB: /upload-data/925ce611-2941-4223-8118-f94dcfb1b1a1.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-3691-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Goblet Squat")
+  -> Plik źródłowy "workouts  (574).gif" USUNIĘTO po uploadzie.
+
+[6:43:37 PM] [PRZYPISANO] [314/361] PLIK: "workouts  (575).gif"
+  -> ĆWICZENIE: "Pompka klasyczna" (push-up) [ID: 6ae2ecae4a34c8e0d18eb4e5]
+  -> NOWY ZASÓB: /upload-data/61bbd81e-703c-46a7-bfbe-9d2fdd761868.gif
+  -> POPRZEDNI ZASÓB: /upload-data/b1c5a67b-a8af-4f18-a1ba-efa38a7ea609.gif
+  -> Wynik dopasowania: 110 (rozpoznano: "Push-up")
+  -> Plik źródłowy "workouts  (575).gif" USUNIĘTO po uploadzie.
+
+[6:43:37 PM] [PRZYPISANO] [315/361] PLIK: "workouts  (576).gif"
+  -> ĆWICZENIE: "Prostowanie ramienia z liną wyciągu górnego nad głową jednorącz" (cable overhead single arm triceps extension (rope attachment)) [ID: 6ae2ecaa4a34c8e0d18e5f15]
+  -> NOWY ZASÓB: /upload-data/d1c37377-c470-4f6d-82c7-5d4cc6b59bcb.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-4958-anim.mp4
+  -> Wynik dopasowania: 109 (rozpoznano: "Cable Triceps Pushdown (Rope Attachment)")
+  -> Plik źródłowy "workouts  (576).gif" USUNIĘTO po uploadzie.
+
+[6:43:38 PM] [PRZYPISANO] [316/361] PLIK: "workouts  (577).gif"
+  -> ĆWICZENIE: "Skręty tułowia ze sztangą siedząc" (barbell seated twist) [ID: 6ae2eca94a34c8e0d18e4bf7]
+  -> NOWY ZASÓB: /upload-data/044d882d-3473-497e-863d-e331006318b8.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0094-anim.mp4
+  -> Wynik dopasowania: 130 (rozpoznano: "Seated Barbell Twist")
+  -> Plik źródłowy "workouts  (577).gif" USUNIĘTO po uploadzie.
+
+[6:43:38 PM] [PRZYPISANO] [317/361] PLIK: "workouts  (578).gif"
+  -> ĆWICZENIE: "Wzruszanie ramionami z wyciągu" (cable shrug) [ID: 6ae2ecaa4a34c8e0d18e61cd]
+  -> NOWY ZASÓB: /upload-data/feb2f8ea-db5b-45a3-8653-14a811b51621.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0220-anim.mp4
+  -> Wynik dopasowania: 131 (rozpoznano: "Cable Shrug")
+  -> Plik źródłowy "workouts  (578).gif" USUNIĘTO po uploadzie.
+
+[6:43:38 PM] [PRZYPISANO] [318/361] PLIK: "workouts  (579).gif"
+  -> ĆWICZENIE: "Rozpiętki na maszynie siedząc" (lever pec deck fly) [ID: 6ae2ecad4a34c8e0d18ea3c9]
+  -> NOWY ZASÓB: /upload-data/2c0e31c9-f4b3-4161-9553-58ae679e76f4.gif
+  -> POPRZEDNI ZASÓB: /upload-data/f4b76f67-5664-4bef-9e65-7daa3728eb53.mp4
+  -> Wynik dopasowania: 109 (rozpoznano: "Seated Machine Chest Fly")
+  -> Plik źródłowy "workouts  (579).gif" USUNIĘTO po uploadzie.
+
+[6:43:39 PM] [PRZYPISANO] [319/361] PLIK: "workouts  (580).gif"
+  -> ĆWICZENIE: "Przyciąganie uchwytu wyciągu poziomego do brzucha siedząc" (cable front seated row) [ID: 6ae2ecaa4a34c8e0d18e5a4a]
+  -> NOWY ZASÓB: /upload-data/b85371f8-984c-4f17-8d51-48754992d160.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0163-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Seated Cable Row")
+  -> Plik źródłowy "workouts  (580).gif" USUNIĘTO po uploadzie.
+
+[6:43:40 PM] [PRZYPISANO] [320/361] PLIK: "workouts  (581).gif"
+  -> ĆWICZENIE: "Odwrotne rozpiętki na bramie z linkami na wysokości barków" (cable standing cross-over high reverse fly) [ID: 6ae2ecaa4a34c8e0d18e62f6]
+  -> NOWY ZASÓB: /upload-data/ae68fb73-51fe-4b20-830e-e8c2b1424d02.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0225-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Cable Crossover")
+  -> Plik źródłowy "workouts  (581).gif" USUNIĘTO po uploadzie.
+
+[6:43:40 PM] [PRZYPISANO] [321/361] PLIK: "workouts  (582).gif"
+  -> ĆWICZENIE: "Pompki na ławce tyłem" (triceps dip) [ID: 6ae2ecb04a34c8e0d18ee407]
+  -> NOWY ZASÓB: /upload-data/fde80008-abfe-4219-83b4-4b5d4aa62cdd.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0814-anim.mp4
+  -> Wynik dopasowania: 87 (rozpoznano: "Triceps Dips (Bench Dips)")
+  -> Plik źródłowy "workouts  (582).gif" USUNIĘTO po uploadzie.
+
+[6:43:40 PM] [PRZYPISANO] [322/361] PLIK: "workouts  (583).gif"
+  -> ĆWICZENIE: "Uginanie nadgarstków z hantlami stojąc podchwytem" (dumbbell standing wrist curl) [ID: 6ae2ecac4a34c8e0d18e81a9]
+  -> NOWY ZASÓB: /upload-data/04882e30-c1c0-4a2a-b26e-7de40a824d53.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-6359-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Dumbbell Bicep Curl")
+  -> Plik źródłowy "workouts  (583).gif" USUNIĘTO po uploadzie.
+
+[6:43:41 PM] [PRZYPISANO] [323/361] PLIK: "workouts  (584).gif"
+  -> ĆWICZENIE: "Pompki z przyciąganiem kolan" (knee tuck push up) [ID: 6ae2ecad4a34c8e0d18e9add]
+  -> NOWY ZASÓB: /upload-data/6e700396-b4d0-441f-be21-0e06cf805cbe.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-8894-anim.mp4
+  -> Wynik dopasowania: 109 (rozpoznano: "Knee Push-up")
+  -> Plik źródłowy "workouts  (584).gif" USUNIĘTO po uploadzie.
+
+[6:43:41 PM] [PRZYPISANO] [324/361] PLIK: "workouts  (585).gif"
+  -> ĆWICZENIE: "Brzuszki" (sit up) [ID: 6ae2ecaf4a34c8e0d18ecdce]
+  -> NOWY ZASÓB: /upload-data/8c826f06-f499-477a-82b2-2b87e444eb79.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0736-anim.mp4
+  -> Wynik dopasowania: 133 (rozpoznano: "Sit-up")
+  -> Plik źródłowy "workouts  (585).gif" USUNIĘTO po uploadzie.
+
+[6:43:42 PM] [PRZYPISANO] [325/361] PLIK: "workouts  (587).gif"
+  -> ĆWICZENIE: "Pompka klasyczna" (push-up) [ID: 6ae2ecae4a34c8e0d18eb4e5]
+  -> NOWY ZASÓB: /upload-data/123c7f3d-255c-4ab5-ac27-ea676a625fb8.gif
+  -> POPRZEDNI ZASÓB: /upload-data/61bbd81e-703c-46a7-bfbe-9d2fdd761868.gif
+  -> Wynik dopasowania: 110 (rozpoznano: "Push-up")
+  -> Plik źródłowy "workouts  (587).gif" USUNIĘTO po uploadzie.
+
+[6:43:42 PM] [PRZYPISANO] [327/361] PLIK: "workouts  (589).gif"
+  -> ĆWICZENIE: "Uginanie przedramion z hantlami z podparciem ramion" (dumbbell biceps curl (with arm blaster)) [ID: 6ae2ecab4a34c8e0d18e6e96]
+  -> NOWY ZASÓB: /upload-data/44f1e220-1d49-4c92-bf43-0805fbe9f0a0.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-2401-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Dumbbell Bicep Curl")
+  -> Plik źródłowy "workouts  (589).gif" USUNIĘTO po uploadzie.
+
+[6:43:42 PM] [PRZYPISANO] [326/361] PLIK: "workouts  (588).gif"
+  -> ĆWICZENIE: "Uginanie przedramion z hantlami siedząc w wersji drag curl" (dumbbell seated drag curl) [ID: 6ae2ecab4a34c8e0d18e7c8e]
+  -> NOWY ZASÓB: /upload-data/b739562c-a36e-40c3-875c-d3b3e8f301ac.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-6149-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Seated Dumbbell Bicep Curl")
+  -> Plik źródłowy "workouts  (588).gif" USUNIĘTO po uploadzie.
+
+[6:43:43 PM] [PRZYPISANO] [328/361] PLIK: "workouts  (594).gif"
+  -> ĆWICZENIE: "Wyciskanie sztangi na ławce poziomej szerokim chwytem" (barbell wide bench press) [ID: 6ae2eca94a34c8e0d18e4f09]
+  -> NOWY ZASÓB: /upload-data/450e9829-bf66-4c78-8031-6f752000adbc.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0122-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Flat Barbell Bench Press")
+  -> Plik źródłowy "workouts  (594).gif" USUNIĘTO po uploadzie.
+
+[6:43:43 PM] [PRZYPISANO] [329/361] PLIK: "workouts  (595).gif"
+  -> ĆWICZENIE: "Pullover ze hantlem leżąc na ławce" (dumbbell bent arm pullover) [ID: 6ae2ecab4a34c8e0d18e6e01]
+  -> NOWY ZASÓB: /upload-data/0284b880-ed18-4893-b661-e0bd7790bb62.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-4326-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Dumbbell Pullover")
+  -> Plik źródłowy "workouts  (595).gif" USUNIĘTO po uploadzie.
+
+[6:43:44 PM] [PRZYPISANO] [330/361] PLIK: "workouts  (596).gif"
+  -> ĆWICZENIE: "Wznosy hantli w oparciu o ławkę skośną tyłem" (dumbbell rear delt fly (45 degrees)) [ID: 6ae2ecab4a34c8e0d18e7aae]
+  -> NOWY ZASÓB: /upload-data/ca4c75ba-895b-4d91-ba33-81331691ac03.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-5303-anim.mp4
+  -> Wynik dopasowania: 100 (rozpoznano: "Bent-Over Dumbbell Reverse Fly")
+  -> Plik źródłowy "workouts  (596).gif" USUNIĘTO po uploadzie.
+
+[6:43:45 PM] [PRZYPISANO] [331/361] PLIK: "workouts  (597).gif"
+  -> ĆWICZENIE: "Wiosłowanie hantlami w opadzie tułowia podchwytem" (dumbbell bent over reverse row) [ID: 6ae2ecab4a34c8e0d18e6e3e]
+  -> NOWY ZASÓB: /upload-data/078a57cf-35d2-48f2-b197-78256fb716f1.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-3799-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Bent-Over Dumbbell Row")
+  -> Plik źródłowy "workouts  (597).gif" USUNIĘTO po uploadzie.
+
+[6:43:45 PM] [PRZYPISANO] [332/361] PLIK: "workouts  (598).gif"
+  -> ĆWICZENIE: "Przyciąganie uchwytu wyciągu górnego w klęku" (cable high row (kneeling)) [ID: 6ae2ecaa4a34c8e0d18e5aec]
+  -> NOWY ZASÓB: /upload-data/c2736dfe-3182-456f-b7b2-808037354243.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0167-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Cable Bent-Over Row")
+  -> Plik źródłowy "workouts  (598).gif" USUNIĘTO po uploadzie.
+
+[6:43:45 PM] [PRZYPISANO] [333/361] PLIK: "workouts  (599).gif"
+  -> ĆWICZENIE: "Szrugsy ze sztangą" (barbell shrug) [ID: 6ae2eca94a34c8e0d18e4c0e]
+  -> NOWY ZASÓB: /upload-data/28d5a65a-0ae4-4b2b-88fe-773c6f1cc235.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0095-anim.mp4
+  -> Wynik dopasowania: 133 (rozpoznano: "Barbell Shrug")
+  -> Plik źródłowy "workouts  (599).gif" USUNIĘTO po uploadzie.
+
+[6:43:46 PM] [PRZYPISANO] [335/361] PLIK: "workouts  (602).gif"
+  -> ĆWICZENIE: "Deska" (plank on hands) [ID: 6ae2ecae4a34c8e0d18eb18e]
+  -> NOWY ZASÓB: /upload-data/b043ab6b-5185-4414-afa7-2fcea88a600c.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-5159-anim.mp4
+  -> Wynik dopasowania: 129 (rozpoznano: "Plank")
+  -> Plik źródłowy "workouts  (602).gif" USUNIĘTO po uploadzie.
+
+[6:43:46 PM] [PRZYPISANO] [334/361] PLIK: "workouts  (600).gif"
+  -> ĆWICZENIE: "Uginanie nadgarstków z hantlami podchwytem siedząc" (dumbbell seated palms up wrist curl) [ID: 6ae2ecab4a34c8e0d18e7d5e]
+  -> NOWY ZASÓB: /upload-data/c7e0bdd3-929b-4dd3-a2aa-3ba0b4f892a0.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0401-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Seated Wrist Curl (Palms Up)")
+  -> Plik źródłowy "workouts  (600).gif" USUNIĘTO po uploadzie.
+
+[6:43:47 PM] [PRZYPISANO] [336/361] PLIK: "workouts  (603).gif"
+  -> ĆWICZENIE: "Skłony boczne ze drążkiem w przód" (stick side to front bend stretch) [ID: 6ae2ecb04a34c8e0d18edbde]
+  -> NOWY ZASÓB: /upload-data/09546ee5-1ab7-4df7-8bb0-04dbf1acfc21.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-5406-anim.mp4
+  -> Wynik dopasowania: 106 (rozpoznano: "Mermaid Stretch")
+  -> Plik źródłowy "workouts  (603).gif" USUNIĘTO po uploadzie.
+
+[6:43:47 PM] [PRZYPISANO] [337/361] PLIK: "workouts  (604).gif"
+  -> ĆWICZENIE: "Wyciskanie francuskie ze hantlami siedząc na ławce skośnej" (dumbbell incline triceps extension) [ID: 6ae2ecab4a34c8e0d18e7455]
+  -> NOWY ZASÓB: /upload-data/141076f7-d92d-4396-8b9d-3dcfe314f588.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0330-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Lying Dumbbell Triceps Extension")
+  -> Plik źródłowy "workouts  (604).gif" USUNIĘTO po uploadzie.
+
+[6:43:47 PM] [PRZYPISANO] [338/361] PLIK: "workouts  (608).gif"
+  -> ĆWICZENIE: "Wznosy sztangi wzdłuż tułowia" (barbell upright row) [ID: 6ae2eca94a34c8e0d18e4ead]
+  -> NOWY ZASÓB: /upload-data/542e5aca-62d8-4242-861e-55be8ccd1733.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0120-anim.mp4
+  -> Wynik dopasowania: 133 (rozpoznano: "Upright Row")
+  -> Plik źródłowy "workouts  (608).gif" USUNIĘTO po uploadzie.
+
+[6:43:48 PM] [PRZYPISANO] [339/361] PLIK: "workouts  (610).gif"
+  -> ĆWICZENIE: "Przysiad na maszynie hackenschmidta" (lever hack squat) [ID: 6ae2ecad4a34c8e0d18ea1a6]
+  -> NOWY ZASÓB: /upload-data/7b4ad444-3acb-4577-afcb-08a86ac4a89f.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-5516-anim.mp4
+  -> Wynik dopasowania: 103 (rozpoznano: "Hack Squat")
+  -> Plik źródłowy "workouts  (610).gif" USUNIĘTO po uploadzie.
+
+[6:43:48 PM] [PRZYPISANO] [340/361] PLIK: "workouts  (611).gif"
+  -> ĆWICZENIE: "Wypychanie ciężaru na suwnicy pionowej (hack maszynie)" (lever linear hack squat) [ID: 6ae2ecad4a34c8e0d18ea2b5]
+  -> NOWY ZASÓB: /upload-data/0ee5d8fa-4dd6-4152-8c40-844307c292e6.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-6523-anim.mp4
+  -> Wynik dopasowania: 101 (rozpoznano: "Hack Squat")
+  -> Plik źródłowy "workouts  (611).gif" USUNIĘTO po uploadzie.
+
+[6:43:49 PM] [PRZYPISANO] [342/361] PLIK: "workouts  (614).gif"
+  -> ĆWICZENIE: "Damska pompka z pozycją kobra" (kneeling cobra push up) [ID: 6ae2ecad4a34c8e0d18e9b25]
+  -> NOWY ZASÓB: /upload-data/67217798-880b-4f5b-b4a1-3f4454ab472d.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-3489-anim.mp4
+  -> Wynik dopasowania: 109 (rozpoznano: "Kneeling Push-Up")
+  -> Plik źródłowy "workouts  (614).gif" USUNIĘTO po uploadzie.
+
+[6:43:49 PM] [PRZYPISANO] [341/361] PLIK: "workouts  (613).gif"
+  -> ĆWICZENIE: "Rozpiętki na maszynie w skosie dodatnim" (lever incline fly) [ID: 6ae2ecad4a34c8e0d18ea234]
+  -> NOWY ZASÓB: /upload-data/3e61d875-84af-4caa-897f-f62f2e47f494.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-5843-anim.mp4
+  -> Wynik dopasowania: 101 (rozpoznano: "Pec Deck Fly")
+  -> Plik źródłowy "workouts  (613).gif" USUNIĘTO po uploadzie.
+
+[6:43:50 PM] [PRZYPISANO] [343/361] PLIK: "workouts  (615).gif"
+  -> ĆWICZENIE: "Pompki na podwyższeniu" (incline push-up (on box)) [ID: 6ae2ecac4a34c8e0d18e9123]
+  -> NOWY ZASÓB: /upload-data/5535be99-ebf3-409a-89d8-82241df1cfa0.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-3785-anim.mp4
+  -> Wynik dopasowania: 130 (rozpoznano: "Incline Push-up")
+  -> Plik źródłowy "workouts  (615).gif" USUNIĘTO po uploadzie.
+
+[6:43:50 PM] [PRZYPISANO] [344/361] PLIK: "workouts  (616).gif"
+  -> ĆWICZENIE: "Wyciskanie francuskie hantla oburącz siedząc" (dumbbells seated triceps extension) [ID: 6ae2ecac4a34c8e0d18e83fc]
+  -> NOWY ZASÓB: /upload-data/12d9b833-8431-429b-a30b-7fbcaebcb9c9.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-2189-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Seated Dumbbell Triceps Extension")
+  -> Plik źródłowy "workouts  (616).gif" USUNIĘTO po uploadzie.
+
+[6:43:51 PM] [PRZYPISANO] [345/361] PLIK: "workouts  (617).gif"
+  -> ĆWICZENIE: "Wyciskanie wąskim chwytem na suwnicy Smitha" (smith close-grip bench press) [ID: 6ae2ecaf4a34c8e0d18ed0ee]
+  -> NOWY ZASÓB: /upload-data/488d11c8-3b09-4256-8fdf-82c374909c46.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0751-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Smith Machine Close-Grip Bench Press")
+  -> Plik źródłowy "workouts  (617).gif" USUNIĘTO po uploadzie.
+
+[6:43:51 PM] [PRZYPISANO] [346/361] PLIK: "workouts  (618).gif"
+  -> ĆWICZENIE: "Uginanie ramion z hantlami w opadzie tułowia" (dumbbell bent over curl) [ID: 6ae2ecab4a34c8e0d18e6e2e]
+  -> NOWY ZASÓB: /upload-data/dbe886c3-6620-4fd6-ae67-f45a4f6ff7d3.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-7625-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Dumbbell Bicep Curl")
+  -> Plik źródłowy "workouts  (618).gif" USUNIĘTO po uploadzie.
+
+[6:43:52 PM] [PRZYPISANO] [348/361] PLIK: "workouts  (629).gif"
+  -> ĆWICZENIE: "Przysiad bułgarski na jedną nogę do skrzyni" (pistol squat to box) [ID: 6ae2ecae4a34c8e0d18eb103]
+  -> NOWY ZASÓB: /upload-data/18c14f09-f271-4856-afd3-8a6a48e4890e.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-2984-anim.mp4
+  -> Wynik dopasowania: 109 (rozpoznano: "Chair Squat")
+  -> Plik źródłowy "workouts  (629).gif" USUNIĘTO po uploadzie.
+
+[6:43:52 PM] [PRZYPISANO] [347/361] PLIK: "workouts  (623).gif"
+  -> ĆWICZENIE: "Wyciskanie francuskie z hantlami leżąc w poprzek" (dumbbell lying extension (across face)) [ID: 6ae2ecab4a34c8e0d18e75cb]
+  -> NOWY ZASÓB: /upload-data/10d36831-b291-4504-8597-d80a72eae003.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0337-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Lying Dumbbell Triceps Extension")
+  -> Plik źródłowy "workouts  (623).gif" USUNIĘTO po uploadzie.
+
+[6:43:52 PM] [PRZYPISANO] [349/361] PLIK: "workouts  (630).gif"
+  -> ĆWICZENIE: "Podciąganie podchwytem" (chin-up) [ID: 6ae2ecaa4a34c8e0d18e67c6]
+  -> NOWY ZASÓB: /upload-data/f5d1ce2b-255c-46f4-b5b5-9359b230aaaf.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-1326-anim.mp4
+  -> Wynik dopasowania: 134 (rozpoznano: "Pull-up")
+  -> Plik źródłowy "workouts  (630).gif" USUNIĘTO po uploadzie.
+
+[6:43:53 PM] [PRZYPISANO] [350/361] PLIK: "workouts  (635).gif"
+  -> ĆWICZENIE: "Unoszenie hantli w 4 kierunkach" (dumbbell 4 ways lateral raise) [ID: 6ae2ecab4a34c8e0d18e6ca9]
+  -> NOWY ZASÓB: /upload-data/066f4bfd-14b6-45af-ad7a-86f8c7f25785.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-4211-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Dumbbell Lateral Raise")
+  -> Plik źródłowy "workouts  (635).gif" USUNIĘTO po uploadzie.
+
+[6:43:54 PM] [PRZYPISANO] [351/361] PLIK: "workouts  (636).gif"
+  -> ĆWICZENIE: "Wywodzenie nogi w tył stojąc" (hip extension) [ID: 6ae2ecac4a34c8e0d18e8f7e]
+  -> NOWY ZASÓB: /upload-data/4d36495a-2195-4ffd-a89d-3974cc87c26e.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-2769-anim.mp4
+  -> Wynik dopasowania: 128 (rozpoznano: "Back Extension")
+  -> Plik źródłowy "workouts  (636).gif" USUNIĘTO po uploadzie.
+
+[6:43:54 PM] [PRZYPISANO] [352/361] PLIK: "workouts  (638).gif"
+  -> ĆWICZENIE: "Wyciskanie hantli chwytem neutralnym siedząc" (dumbbell seated close grip press) [ID: 6ae2ecab4a34c8e0d18e7c68]
+  -> NOWY ZASÓB: /upload-data/82d3cde3-8bdb-4a8b-afbf-9105be6d5cb7.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-4237-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Seated Dumbbell Shoulder Press")
+  -> Plik źródłowy "workouts  (638).gif" USUNIĘTO po uploadzie.
+
+[6:43:55 PM] [PRZYPISANO] [353/361] PLIK: "workouts  (641).gif"
+  -> ĆWICZENIE: "Pullover z hantlą leżąc" (dumbbell straight arm pullover) [ID: 6ae2ecac4a34c8e0d18e8254]
+  -> NOWY ZASÓB: /upload-data/6ae242d7-7de8-41de-919c-b9cb124c0661.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-0433-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Dumbbell Pullover")
+  -> Plik źródłowy "workouts  (641).gif" USUNIĘTO po uploadzie.
+
+[6:43:55 PM] [PRZYPISANO] [354/361] PLIK: "workouts  (643).gif"
+  -> ĆWICZENIE: "Unoszenie hantli bokiem w przód w siadzie" (dumbbell seated lateral to front raise) [ID: 6ae2ecab4a34c8e0d18e7cea]
+  -> NOWY ZASÓB: /upload-data/1ac3a613-fcd7-4ce1-b500-063cb093c76c.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-4238-anim.mp4
+  -> Wynik dopasowania: 109 (rozpoznano: "Seated Dumbbell Lateral Raise")
+  -> Plik źródłowy "workouts  (643).gif" USUNIĘTO po uploadzie.
+
+[6:43:56 PM] [PRZYPISANO] [356/361] PLIK: "workouts  (656).gif"
+  -> ĆWICZENIE: "Deska boczna z przywodzeniem biodra" (side plank hip adduction) [ID: 6ae2ecaf4a34c8e0d18ec9fd]
+  -> NOWY ZASÓB: /upload-data/8d9a19f7-08d3-4387-a4f1-58fd5c8b166f.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-1775-anim.mp4
+  -> Wynik dopasowania: 89 (rozpoznano: "Side Plank Hip Dip")
+  -> Plik źródłowy "workouts  (656).gif" USUNIĘTO po uploadzie.
+
+[6:43:56 PM] [PRZYPISANO] [355/361] PLIK: "workouts  (649).gif"
+  -> ĆWICZENIE: "Uginanie przedramion z hantlami chwytem młotkowym nachwytem" (dumbbell biceps curl reverse) [ID: 6ae2ecab4a34c8e0d18e6e9d]
+  -> NOWY ZASÓB: /upload-data/1c17aee3-e456-459b-a1fe-05f98b42a7ee.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-1654-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Standing Dumbbell Bicep Curl")
+  -> Plik źródłowy "workouts  (649).gif" USUNIĘTO po uploadzie.
+
+[6:43:56 PM] [PRZYPISANO] [357/361] PLIK: "workouts  (657).gif"
+  -> ĆWICZENIE: "Przywodzenie biodra w podporze bokiem (zgięte kolano)" (side plank hip adduction (bent knee)) [ID: 6ae2ecaf4a34c8e0d18eca05]
+  -> NOWY ZASÓB: /upload-data/16f8ee35-7421-4a14-8296-00a418336499.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-3460-anim.mp4
+  -> Wynik dopasowania: 89 (rozpoznano: "Side Plank Hip Dip")
+  -> Plik źródłowy "workouts  (657).gif" USUNIĘTO po uploadzie.
+
+[6:43:57 PM] [PRZYPISANO] [358/361] PLIK: "workouts  (673).gif"
+  -> ĆWICZENIE: "Odwodzenie nogi w bok na wyciągu dolnym" (cable medius kickback) [ID: 6ae2ecaa4a34c8e0d18e5e1f]
+  -> NOWY ZASÓB: /upload-data/1cedf6c0-49a7-4e37-951a-f6ece848d76e.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-5470-anim.mp4
+  -> Wynik dopasowania: 111 (rozpoznano: "Cable Kickback")
+  -> Plik źródłowy "workouts  (673).gif" USUNIĘTO po uploadzie.
+
+[6:43:57 PM] [PRZYPISANO] [359/361] PLIK: "workouts  (674).gif"
+  -> ĆWICZENIE: "Przyciąganie kolan do klatki piersiowej w siadzie" (ab tuck) [ID: 6ae2eca84a34c8e0d18e3853]
+  -> NOWY ZASÓB: /upload-data/8d69c263-5f01-4da8-a217-d08b031007c5.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-6033-anim.mp4
+  -> Wynik dopasowania: 109 (rozpoznano: "Seated Knee Tuck")
+  -> Plik źródłowy "workouts  (674).gif" USUNIĘTO po uploadzie.
+
+[6:43:57 PM] [PRZYPISANO] [360/361] PLIK: "workouts  (676).gif"
+  -> ĆWICZENIE: "Rozciąganie przedramion z rotacją i prostowaniem łokcia" (elbow extension and supination pronation forearm stretch) [ID: 6ae2ecac4a34c8e0d18e845f]
+  -> NOWY ZASÓB: /upload-data/12056300-d40a-4d7e-a229-626ff7bd3c66.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-1821-anim.mp4
+  -> Wynik dopasowania: 107 (rozpoznano: "Wrist Pronation and Supination")
+  -> Plik źródłowy "workouts  (676).gif" USUNIĘTO po uploadzie.
+
+[6:43:58 PM] [PRZYPISANO] [361/361] PLIK: "workouts  (677).gif"
+  -> ĆWICZENIE: "Naprzemienne wznosy hantli bokiem" (dumbbell alternate lateral raise) [ID: 6ae2ecab4a34c8e0d18e6d00]
+  -> NOWY ZASÓB: /upload-data/4b0f5a3c-8e72-44bd-a177-77eaed05c033.gif
+  -> POPRZEDNI ZASÓB: /upload-data/og-4852-anim.mp4
+  -> Wynik dopasowania: 110 (rozpoznano: "Dumbbell Lateral Raise")
+  -> Plik źródłowy "workouts  (677).gif" USUNIĘTO po uploadzie.
+
+
+====================================================================================================
+PODSUMOWANIE PROCESU:
+- Łącznie plików: 361
+- Pomyślnie przypisano i uploadowano: 294
+- Usunięto identycznych duplikatów: 62
+- Nieprzypisanych / wymagających weryfikacji: 5
+- Pozostało plików w katalogu źródłowym: 5
+Zakończono: 2026-11-10T17:43:58.534Z
+Panel administracyjny: http://localhost:3001/admin/exercises
+====================================================================================================
+
+[6:45:26 PM] [PRZYPISANO] PLIK: "entrenamientos  (573).mp4"
+  -> ĆWICZENIE: "Podciąganie na drążku nachwytem" (pull-up) [ID: 6ae2ecae4a34c8e0d18eb3eb]
+  -> NOWY ZASÓB: /upload-data/9cf76f6c-66dd-48e8-94ea-ec037597ad78.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/d6e96129-97e3-4282-a94a-ba59a9c755c4.gif
+  -> Plik źródłowy "entrenamientos  (573).mp4" USUNIĘTO po uploadzie.
+
+[6:45:26 PM] [DUPLIKAT] PLIK: "Treinos  (573).mp4"
+  -> Identyczny z: "entrenamientos  (573).mp4"
+  -> Przypisany do ćwiczenia: "Podciąganie na drążku nachwytem" (ID: 6ae2ecae4a34c8e0d18eb3eb)
+  -> ZASÓB: /upload-data/9cf76f6c-66dd-48e8-94ea-ec037597ad78.mp4
+  -> Akcja: Pominięto upload, plik źródłowy "Treinos  (573).mp4" USUNIĘTO.
+
+[6:45:26 PM] [PRZYPISANO] PLIK: "entrenamientos  (610).mp4"
+  -> ĆWICZENIE: "Przysiady na suwnicy pionowej" (sled hack squat) [ID: 6ae2ecaf4a34c8e0d18ecfd6]
+  -> NOWY ZASÓB: /upload-data/a1641b87-4d1b-41ad-b403-68fb8cb3584f.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0743-anim.mp4
+  -> Plik źródłowy "entrenamientos  (610).mp4" USUNIĘTO po uploadzie.
+
+[6:45:26 PM] [PRZYPISANO] PLIK: "entrenamientos  (623).mp4"
+  -> ĆWICZENIE: "Wyciskanie francuskie ze hantlami leżąc" (dumbbell lying triceps extension) [ID: 6ae2ecab4a34c8e0d18e76d6]
+  -> NOWY ZASÓB: /upload-data/d3c5b957-7613-4ed6-b85f-2cc258d8a34c.mp4
+  -> POPRZEDNI ZASÓB: /upload-data/og-0351-anim.mp4
+  -> Plik źródłowy "entrenamientos  (623).mp4" USUNIĘTO po uploadzie.
+
+[6:45:26 PM] [PRZYPISANO] PLIK: "workouts  (572).gif"
+  -> ĆWICZENIE: "Pompki na podwyższeniu" (incline push-up) [ID: 6ae2ecac4a34c8e0d18e911b]
+  -> NOWY ZASÓB: /upload-data/5898c809-7b73-4e65-9cd0-16b28125799b.gif
+  -> POPRZEDNI ZASÓB: /upload-data/8cabf76a-872a-4d15-9f42-d343eb172bcd.mp4
+  -> Plik źródłowy "workouts  (572).gif" USUNIĘTO po uploadzie.
+
+
+====================================================================================================
+OSTATECZNY STATUS:
+Wszystkie 361 plików z katalogu zostały w 100% przeanalizowane, przypisane, uploadowane i usunięte z katalogu źródłowego!
+Pozostało plików w źródle: 0
+Zakończono: 2026-11-10T17:45:26.741Z
+====================================================================================================
+

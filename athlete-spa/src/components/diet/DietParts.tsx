@@ -64,11 +64,11 @@ export function dayTotals(day: DietDay): DiaryTotals {
         (acc, { meal }) =>
             meal
                 ? {
-                      calories: acc.calories + meal.totalCalories,
-                      protein: acc.protein + meal.totalProtein,
-                      carbs: acc.carbs + meal.totalCarbs,
-                      fat: acc.fat + meal.totalFat,
-                  }
+                    calories: acc.calories + meal.totalCalories,
+                    protein: acc.protein + meal.totalProtein,
+                    carbs: acc.carbs + meal.totalCarbs,
+                    fat: acc.fat + meal.totalFat,
+                }
                 : acc,
         { calories: 0, protein: 0, carbs: 0, fat: 0 }
     );
@@ -85,7 +85,7 @@ export function DiaryStrip({ totals, goal, isLoading }: { totals?: DiaryTotals; 
 
     return (
         <Link to="/athlete/nutrition" className="pressable-sm flex items-center gap-3 rounded-2xl bg-card p-3.5">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-food/15 text-food">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-food/15 text-volt">
                 <NotebookPen className="h-5 w-5" />
             </span>
             <div className="min-w-0 flex-1">
@@ -177,7 +177,7 @@ export function DietMealCard({ dayMeal, logged, isLogging, onLog }: DietMealCard
     return (
         <article className="rounded-2xl bg-card p-4">
             <div className="flex items-start gap-3">
-                <span className={cn('grid h-11 w-11 shrink-0 place-items-center rounded-xl', logged ? 'bg-volt/15 text-volt' : 'bg-food/15 text-food')}>
+                <span className={cn('grid h-11 w-11 shrink-0 place-items-center rounded-xl', logged ? 'bg-volt/15 text-volt' : 'bg-food/15 text-volt')}>
                     {logged ? <Check className="h-5 w-5" strokeWidth={2.5} /> : <Icon className="h-5 w-5" />}
                 </span>
                 <div className="min-w-0 flex-1">

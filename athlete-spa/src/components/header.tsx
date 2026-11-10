@@ -69,7 +69,7 @@ export function AppHeader() {
           )}
         </h1>
 
-        <div className="flex shrink-0 items-center">
+        <div data-tour="header-actions" className="flex shrink-0 items-center">
           <NotificationBell />
           <QuickChatWidget />
           <Link

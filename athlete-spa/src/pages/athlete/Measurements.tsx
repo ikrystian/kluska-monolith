@@ -12,6 +12,7 @@ import { MetricTiles } from '@/components/measurements/MetricTiles';
 import { PhotoComparison } from '@/components/measurements/PhotoComparison';
 import { ProgressChart } from '@/components/measurements/ProgressChart';
 import { seriesOf, type MetricKey } from '@/components/measurements/measurement-utils';
+import { TourAnchor } from '@/components/tour/TourAnchor';
 
 export default function MeasurementsPage() {
   const { user, isUserLoading } = useUser();
@@ -56,7 +57,9 @@ export default function MeasurementsPage() {
 
   return (
     <div className="page space-y-4">
-      <MeasurementHero weights={weights} isLoading={loading} onAdd={() => setSheetOpen(true)} />
+      <TourAnchor name="measurements-hero">
+        <MeasurementHero weights={weights} isLoading={loading} onAdd={() => setSheetOpen(true)} />
+      </TourAnchor>
 
       {loading ? (
         <div className="space-y-6">
@@ -69,13 +72,17 @@ export default function MeasurementsPage() {
         </div>
       ) : measurements.length > 0 ? (
         <>
-          <MetricTiles measurements={measurements} selected={metric} onSelect={selectMetric} />
+          <TourAnchor name="measurements-tiles">
+            <MetricTiles measurements={measurements} selected={metric} onSelect={selectMetric} />
+          </TourAnchor>
 
           <div ref={chartRef} className="scroll-mt-24">
             <ProgressChart measurements={measurements} metric={metric} onMetricChange={setMetric} />
           </div>
 
-          <PhotoComparison measurements={measurements} />
+          <TourAnchor name="measurements-photos">
+            <PhotoComparison measurements={measurements} />
+          </TourAnchor>
 
           <MeasurementHistory measurements={measurements} onDelete={remove} />
         </>

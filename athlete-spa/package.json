@@ -64,6 +64,7 @@
     "framer-motion": "^14.7.1",
     "halloween.js": "^1.0.3",
     "html5-qrcode": "^2.3.8",
+    "intro.js": "^8.6.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.64.0",
     "mapbox-gl": "^3.34.1",

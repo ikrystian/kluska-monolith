@@ -98,7 +98,7 @@ export default function NutritionPage() {
     return (
         <div className="page space-y-4">
             {/* Day switcher */}
-            <div className="flex items-center justify-between gap-2">
+            <div data-tour="nutrition-day" className="flex items-center justify-between gap-2">
                 <Button variant="secondary" size="icon" onClick={() => setDate(shiftDate(date, -1))} aria-label="Poprzedni dzień">
                     <ChevronLeft className="h-5 w-5" />
                 </Button>
@@ -130,7 +130,7 @@ export default function NutritionPage() {
             ) : (
                 <>
                     {/* Day summary */}
-                    <section className="rounded-2xl bg-card p-4">
+                    <section data-tour="nutrition-summary" className="rounded-2xl bg-card p-4">
                         <p className="flex items-baseline justify-between gap-3">
                             <span>
                                 <BigNumber
@@ -173,7 +173,7 @@ export default function NutritionPage() {
                         const mealCalories = entries.reduce((acc, entry) => acc + entry.calories, 0);
 
                         return (
-                            <section key={type} className="overflow-hidden rounded-2xl bg-card">
+                            <section key={type} data-tour="nutrition-meal" className="overflow-hidden rounded-2xl bg-card">
                                 <div className="flex items-center justify-between gap-3 py-1.5 pl-4 pr-1.5">
                                     <p className="min-w-0 truncate text-[15px] font-semibold">
                                         {MEAL_TYPE_LABELS[type]}

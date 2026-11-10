@@ -14,10 +14,30 @@ import re
 import sys
 import requests
 
-DEFAULT_OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY", "")
-DEFAULT_KLUSKA_KEY = os.getenv("KLUSKA_API_KEY", "kluska-external-posts-secret-token")
+def load_env_file(env_path: str):
+    if not os.path.isfile(env_path):
+        return
+    with open(env_path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, v = line.split("=", 1)
+            k = k.strip()
+            v = v.strip().strip('"\'')
+            if k not in os.environ:
+                os.environ[k] = v
+
+# Automatyczne załadowanie .env z katalogu nadrzędnego
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_DIR = os.path.abspath(os.path.join(CURRENT_DIR, ".."))
+load_env_file(os.path.join(PROJECT_DIR, ".env"))
+
+APP_URL = os.getenv("APP_URL", "http://localhost:3001").rstrip("/")
+DEFAULT_API_URL = os.getenv("KLUSKA_API_URL", f"{APP_URL}/api/external/posts")
+DEFAULT_OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY") or os.getenv("OPEN_ROUTER_API_KEY", "")
+DEFAULT_KLUSKA_KEY = os.getenv("EXTERNAL_POSTS_API_KEY") or os.getenv("KLUSKA_API_KEY", "kluska-external-posts-secret-token")
 DEFAULT_USER_ID = os.getenv("KLUSKA_USER_ID", "6a5cf516f9fe894c859bb9af")
-DEFAULT_API_URL = os.getenv("KLUSKA_API_URL", "https://kluska.sandbox-ai.pl/api/external/posts")
 DEFAULT_MODEL = os.getenv("OPENROUTER_MODEL", "google/gemini-2.5-flash")
 
 CURATED_TOPICS = [
@@ -139,32 +159,77 @@ def generate_article(topic: str, user_id: str, openrouter_key: str, model: str) 
         "Content-Type": "application/json",
     }
     user_prompt = USER_PROMPT_TEMPLATE.format(topic=topic, user_id=user_id)
-    payload = {
-        "model": model,
-        "temperature": 0.7,
-        "response_format": {"type": "json_object"},
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT.replace("{{USER_ID}}", user_id)},
-            {"role": "user", "content": user_prompt},
-        ],
-    }
+    
+    models_to_try = [model]
+    for m in ["google/gemini-2.5-flash", "google/gemini-flash-1.5", "meta-llama/llama-3.3-70b-instruct"]:
+        if m not in models_to_try:
+            models_to_try.append(m)
 
-    print(f"[*] Wysyłanie zapytania do OpenRouter ({model}) dla tematu: '{topic}'...")
-    r = requests.post(url, headers=headers, json=payload, timeout=90)
-    if r.status_code != 200:
-        raise RuntimeError(f"OpenRouter zwrócił błąd HTTP {r.status_code}: {r.text}")
+    resp_json = None
+    last_error = None
 
-    resp_json = r.json()
+    for candidate_model in models_to_try:
+        payload = {
+            "model": candidate_model,
+            "temperature": 0.7,
+            "response_format": {"type": "json_object"},
+            "messages": [
+                {"role": "system", "content": SYSTEM_PROMPT.replace("{{USER_ID}}", user_id)},
+                {"role": "user", "content": user_prompt},
+            ],
+        }
+
+        for attempt in range(1, 3):
+            print(f"[*] Wysyłanie zapytania do OpenRouter ({candidate_model}, próba {attempt}) dla tematu: '{topic}'...")
+            try:
+                r = requests.post(url, headers=headers, json=payload, timeout=90)
+                if r.status_code == 200:
+                    resp_json = r.json()
+                    break
+                elif r.status_code == 429:
+                    print(f"[-] Model {candidate_model} jest chwilowo przeciążony (429). Czekam 3s przed ponowieniem/fallbackiem...")
+                    import time
+                    time.sleep(3)
+                    last_error = f"HTTP 429: {r.text}"
+                else:
+                    last_error = f"HTTP {r.status_code}: {r.text}"
+                    break
+            except Exception as e:
+                last_error = str(e)
+                break
+        if resp_json:
+            break
+
+    if not resp_json:
+        raise RuntimeError(f"OpenRouter zwrócił błąd: {last_error}")
+
     choices = resp_json.get("choices")
     if not choices or not choices[0].get("message"):
         raise RuntimeError(f"Brak odpowiedzi od OpenRouter: {resp_json}")
 
     raw_text = choices[0]["message"].get("content", "").strip()
-    match = re.search(r"(\{.*\})", raw_text, re.DOTALL)
-    if not match:
-        raise RuntimeError(f"Brak poprawnego JSON-a w odpowiedzi: {raw_text[:300]}")
+    clean_text = raw_text
+    if clean_text.startswith("```json"):
+        clean_text = clean_text[7:]
+    elif clean_text.startswith("```"):
+        clean_text = clean_text[3:]
+    if clean_text.endswith("```"):
+        clean_text = clean_text[:-3]
+    clean_text = clean_text.strip()
 
-    post_data = json.loads(match.group(1))
+    post_data = None
+    try:
+        post_data = json.loads(clean_text, strict=False)
+    except Exception:
+        match = re.search(r"(\{.*\})", clean_text, re.DOTALL)
+        if match:
+            try:
+                post_data = json.loads(match.group(1), strict=False)
+            except Exception:
+                pass
+
+    if not post_data:
+        raise RuntimeError(f"Brak poprawnego JSON-a w odpowiedzi: {raw_text[:300]}")
 
     title = str(post_data.get("title", "")).strip()
     content = clean_html_content(str(post_data.get("content", "")))

@@ -18,6 +18,7 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useHideOnScroll } from '@/hooks/useHideOnScroll';
 import { PullToRefreshIndicator } from '@/components/pull-to-refresh-indicator';
 import { OfflineBanner } from '@/components/offline-banner';
+import { TourHost } from '@/components/tour/TourHost';
 import { cn } from '@/lib/utils';
 
 function WrongRoleScreen() {
@@ -136,6 +137,7 @@ function AthleteLayoutContent() {
     <ActiveWorkoutProvider>
       <HeaderTitleProvider>
         <NativeWidgetBridge />
+        <TourHost />
         <main
           ref={setChromeRoot}
           data-chrome={chromeHidden ? 'hidden' : 'visible'}

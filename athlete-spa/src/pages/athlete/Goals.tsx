@@ -29,6 +29,7 @@ import { RewardsHero } from '@/components/rewards/RewardsHero';
 import { WeeklyQuests } from '@/components/rewards/WeeklyQuests';
 import { AchievementTracks } from '@/components/rewards/AchievementTracks';
 import { RewardCelebration, type Celebration } from '@/components/rewards/RewardCelebration';
+import { TourAnchor } from '@/components/tour/TourAnchor';
 
 const errorMessage = (cause: unknown, fallback: string) => (cause instanceof Error ? cause.message : fallback);
 
@@ -160,9 +161,11 @@ export default function GoalsAndRewardsPage() {
 
   return (
     <div className="page space-y-6">
-      <RewardsHero overview={overview} />
+      <TourAnchor name="goals-hero">
+        <RewardsHero overview={overview} />
+      </TourAnchor>
 
-      <section>
+      <section data-tour="goals-list">
         <SectionHeader title="Twoje cele" action={<AddButton label="Nowy cel" onClick={openCreate} />} />
         {active.length === 0 ? (
           <EmptyState
@@ -199,7 +202,7 @@ export default function GoalsAndRewardsPage() {
         </section>
       )}
 
-      <section>
+      <section data-tour="goals-tracks">
         <SectionHeader
           title="Osiągnięcia"
           action={
@@ -227,7 +230,7 @@ export default function GoalsAndRewardsPage() {
         </section>
       )}
 
-      <section>
+      <section data-tour="goals-trophies">
         <SectionHeader
           title="Trofea"
           action={

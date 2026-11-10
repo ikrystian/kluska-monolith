@@ -26,6 +26,7 @@ import { ProgressDialog } from './ProgressDialog';
 import { ExerciseDetailDialog } from './ExerciseDetailDialog';
 import { ExerciseResults, ViewModeToggle, useExerciseViewMode } from './ExerciseResults';
 import { ExercisesListViewProps, ExerciseFormData, roleDefaults } from './types';
+import { TourAnchor } from '@/components/tour/TourAnchor';
 
 export function ExercisesListView(props: ExercisesListViewProps) {
   const { role } = props;
@@ -243,7 +244,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
       <div className="mb-3 flex flex-shrink-0 flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           <p className="min-w-0 truncate text-sm text-muted-foreground">{countLabel}</p>
-          <div className="flex flex-shrink-0 items-center gap-2">
+          <div data-tour="exercises-tools" className="flex flex-shrink-0 items-center gap-2">
             <ViewModeToggle value={viewMode} onChange={setViewMode} />
             {showBulkDelete && allExercises && allExercises.length > 0 && (
               <Button
@@ -263,12 +264,14 @@ export function ExercisesListView(props: ExercisesListViewProps) {
             )}
           </div>
         </div>
-        <ExerciseFilters
-          filters={filters}
-          onChange={setFilters}
-          muscleGroupOptions={muscleGroupOptions}
-          resultCount={isLoading ? undefined : totalFiltered}
-        />
+        <TourAnchor name="exercises-filters">
+          <ExerciseFilters
+            filters={filters}
+            onChange={setFilters}
+            muscleGroupOptions={muscleGroupOptions}
+            resultCount={isLoading ? undefined : totalFiltered}
+          />
+        </TourAnchor>
       </div>
 
       <ExerciseResults

@@ -65,7 +65,7 @@ export function BottomNav() {
           !keepNavVisible && 'group-data-[chrome=hidden]/chrome:translate-y-full'
         )}
       >
-        <div className="grid h-[var(--tabbar-h)] grid-cols-7">
+        <div data-tour="tab-bar" className="grid h-[var(--tabbar-h)] grid-cols-7">
           <TabLink href="/athlete/dashboard" label="Dziś" icon={House} isActive={pathname === '/athlete/dashboard'} />
           <TabLink href="/athlete/log" label="Trening" icon={Dumbbell} isActive={pathname.startsWith('/athlete/log')} />
           <TabLink href="/athlete/diet" label="Dieta" icon={UtensilsCrossed} isActive={dietActive} />
@@ -80,6 +80,7 @@ export function BottomNav() {
               }}
               aria-label="Dodaj"
               aria-expanded={addOpen}
+              data-tour="quick-add"
               className="absolute left-1/2 top-0 grid h-[3.25rem] w-[3.25rem] -translate-x-1/2 -translate-y-3 place-items-center rounded-full bg-primary text-primary-foreground ring-4 ring-background transition-transform active:scale-90"
             >
               <span aria-hidden className="absolute inset-[5px] rounded-full border border-black/15 dark:border-black/20" />

@@ -41,6 +41,7 @@ import {
   runTitle,
   type RunActivity,
 } from '@/components/running/running-format';
+import { TourAnchor } from '@/components/tour/TourAnchor';
 
 type SourceFilter = 'all' | 'app' | 'strava';
 
@@ -221,7 +222,7 @@ export default function RunningPage() {
 
   return (
     <div className="page space-y-5">
-      <section className="grid grid-cols-[1fr_auto] gap-2.5">
+      <section data-tour="running-start" className="grid grid-cols-[1fr_auto] gap-2.5">
         <button
           type="button"
           onClick={openPrimary}
@@ -265,7 +266,9 @@ export default function RunningPage() {
         </div>
       </section>
 
-      <WeeklySummary runs={runs} isLoading={isLoading} />
+      <TourAnchor name="running-week">
+        <WeeklySummary runs={runs} isLoading={isLoading} />
+      </TourAnchor>
 
       {/* Races with friends: live ones, or a way in for people who haven't tried. */}
       {user && !user.isGuest && (
@@ -348,7 +351,7 @@ export default function RunningPage() {
         </section>
       )}
 
-      <section>
+      <section data-tour="running-history">
         <SectionTitle
           action={
             hasStrava && runs.length > 0 ? (

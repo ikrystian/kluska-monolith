@@ -38,6 +38,7 @@ import {
     type AssignedDiet,
     type DietDayMeal,
 } from '@/components/diet/DietParts';
+import { TourAnchor } from '@/components/tour/TourAnchor';
 
 const RECIPE_LIMIT = 10;
 const DIET_ARTICLE_LIMIT = 4;
@@ -57,10 +58,10 @@ function PlanHero({ diet, dayCount, avgCalories, avgMeals }: { diet: AssignedDie
     const stats = [
         { icon: CalendarDays, value: daysLabel(dayCount), label: 'w planie' },
         { icon: Flame, value: `${Math.round(avgCalories).toLocaleString('pl-PL')}`, label: 'kcal / dzień' },
-        { icon: UtensilsCrossed, value: `${Math.round(avgMeals * 10) / 10}`.replace('.', ','), label: 'posiłków / dzień' },
+        { icon: UtensilsCrossed, value: `${Math.round(avgMeals * 10) / 10}`.replace('.', ','), label: 'posiłków/dzień' },
     ];
     return (
-        <section className="rounded-2xl bg-card p-4">
+        <section data-tour="diet-hero" className="rounded-2xl bg-card p-4">
             <p className="eyebrow flex items-center gap-1.5">
                 <UserRound className="h-3.5 w-3.5 text-food" />
                 Plan od trenera
@@ -83,7 +84,7 @@ function PlanHero({ diet, dayCount, avgCalories, avgMeals }: { diet: AssignedDie
 
 function NoPlanHero({ hasTrainer }: { hasTrainer: boolean }) {
     return (
-        <section className="relative overflow-hidden rounded-2xl bg-card p-5">
+        <section data-tour="diet-hero" className="relative overflow-hidden rounded-2xl bg-card p-5">
             <div aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-food/15 blur-2xl" />
             <span className="relative grid h-12 w-12 place-items-center rounded-2xl bg-food/15 text-food">
                 <UtensilsCrossed className="h-6 w-6" />
@@ -232,7 +233,9 @@ export default function AthleteDietPage() {
                     ) : (
                         <NoPlanHero hasTrainer={Boolean(userProfile?.trainerId)} />
                     )}
-                    <DiaryStrip totals={diary?.totals} goal={diary?.goal} isLoading={diaryLoading} />
+                    <TourAnchor name="diet-diary">
+                        <DiaryStrip totals={diary?.totals} goal={diary?.goal} isLoading={diaryLoading} />
+                    </TourAnchor>
                 </div>
                 {recipeShelf}
                 <DietArticles articles={dietArticles} orderedCategories={orderedCategories} isLoading={readingLoading} />
@@ -251,35 +254,39 @@ export default function AthleteDietPage() {
         <div className="page space-y-6">
             <div className="space-y-3">
                 <PlanHero diet={diet} dayCount={sortedDays.length} avgCalories={avgCalories} avgMeals={avgMeals} />
-                <DiaryStrip totals={diary?.totals} goal={diary?.goal} isLoading={diaryLoading} />
+                <TourAnchor name="diet-diary">
+                        <DiaryStrip totals={diary?.totals} goal={diary?.goal} isLoading={diaryLoading} />
+                    </TourAnchor>
             </div>
 
             <section className="space-y-3">
                 {sortedDays.length > 1 && (
-                    <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4" role="tablist" aria-label="Dni planu">
-                        {sortedDays.map((day, index) => {
-                            const active = day.dayNumber === activeDay.dayNumber;
-                            return (
-                                <button
-                                    key={day.dayNumber}
-                                    type="button"
-                                    role="tab"
-                                    aria-selected={active}
-                                    onClick={() => selectDay(day.dayNumber)}
-                                    className={cn(
-                                        'pressable-sm flex min-w-[4.75rem] shrink-0 flex-col items-center rounded-2xl px-3 py-2 transition-colors',
-                                        active ? 'bg-foreground text-background' : 'bg-card text-foreground'
-                                    )}
-                                >
-                                    <span className={cn('text-[11px] font-semibold', active ? 'text-background/70' : 'text-muted-foreground')}>Dzień</span>
-                                    <span className="font-display text-xl font-bold leading-none tabular-nums">{day.dayNumber}</span>
-                                    <span className={cn('mt-1 text-[10px] tabular-nums', active ? 'text-background/70' : 'text-muted-foreground')}>
-                                        {Math.round(dayCalories[index])} kcal
-                                    </span>
-                                </button>
-                            );
-                        })}
-                    </div>
+                    <TourAnchor name="diet-days">
+                        <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4" role="tablist" aria-label="Dni planu">
+                            {sortedDays.map((day, index) => {
+                                const active = day.dayNumber === activeDay.dayNumber;
+                                return (
+                                    <button
+                                        key={day.dayNumber}
+                                        type="button"
+                                        role="tab"
+                                        aria-selected={active}
+                                        onClick={() => selectDay(day.dayNumber)}
+                                        className={cn(
+                                            'pressable-sm flex min-w-[4.75rem] shrink-0 flex-col items-center rounded-2xl px-3 py-2 transition-colors',
+                                            active ? 'bg-foreground text-background' : 'bg-card text-foreground'
+                                        )}
+                                    >
+                                        <span className={cn('text-[11px] font-semibold', active ? 'text-background/70' : 'text-muted-foreground')}>Dzień</span>
+                                        <span className="font-display text-xl font-bold leading-none tabular-nums">{day.dayNumber}</span>
+                                        <span className={cn('mt-1 text-[10px] tabular-nums', active ? 'text-background/70' : 'text-muted-foreground')}>
+                                            {Math.round(dayCalories[index])} kcal
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </TourAnchor>
                 )}
 
                 <AnimatePresence mode="wait" initial={false}>

@@ -556,14 +556,18 @@ export default function AthleteDashboardPage() {
     <div className="page space-y-4">
       <CompleteProfileCard profile={userProfile} />
 
-      <WeekStrip days={weekDays} doneCount={doneThisWeek.length} target={weeklyTarget} streak={gamification?.streaks.workout} />
+      <div data-tour="week-strip">
+        <WeekStrip days={weekDays} doneCount={doneThisWeek.length} target={weeklyTarget} streak={gamification?.streaks.workout} />
+      </div>
 
-      <TodayHero
-        active={activeWorkout}
-        planned={plannedToday}
-        doneToday={doneToday}
-        lastWorkout={recentWorkouts?.[0]}
-      />
+      <div data-tour="today-hero">
+        <TodayHero
+          active={activeWorkout}
+          planned={plannedToday}
+          doneToday={doneToday}
+          lastWorkout={recentWorkouts?.[0]}
+        />
+      </div>
 
       {pendingCheckIn && (
         <Link to="/athlete/check-in" className="row-tap flex items-center gap-3 rounded-2xl bg-card px-3.5 py-3">
@@ -582,12 +586,13 @@ export default function AthleteDashboardPage() {
         .filter(s => s.visible)
         .map(s => {
           const content = sectionContent[s.id];
-          return content ? <div key={s.id}>{content}</div> : null;
+          return content ? <div key={s.id} data-tour={`dashboard-${s.id}`}>{content}</div> : null;
         })}
 
       <button
         type="button"
         onClick={() => setIsEditing(true)}
+        data-tour="dashboard-customize"
         className="mx-auto flex h-11 items-center gap-2 px-4 text-sm font-medium text-muted-foreground active:text-foreground"
       >
         <SlidersHorizontal className="h-4 w-4" />

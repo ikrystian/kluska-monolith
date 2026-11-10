@@ -1,0 +1,185 @@
+@import 'intro.js/introjs.css';
+
+/*
+ * Intro.js in the "Sztanga" design system. Loaded with the library, only when
+ * a tour actually runs. Colours come from the app tokens, so the card follows
+ * the light and dark theme like any other surface.
+ */
+
+/* Spotlight: a lime ring around the element, everything else dimmed. Intro.js
+   sets the shadow inline (grey on grey, invisible on graphite), hence !important. */
+.introjs-helperLayer.app-tour-highlight {
+  border-radius: 1rem;
+  box-shadow:
+    0 0 0 2px hsl(var(--lime)),
+    0 0 0 5000px rgb(0 0 0 / 0.74) !important;
+}
+
+.introjs-tooltipReferenceLayer,
+.introjs-tooltipReferenceLayer * {
+  font-family: inherit;
+}
+
+.introjs-tooltip.app-tour {
+  box-sizing: border-box;
+  width: min(20rem, calc(100vw - 2rem));
+  min-width: 0;
+  max-width: none;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+  border-radius: 1.25rem;
+  background: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  box-shadow: 0 18px 48px -12px rgb(0 0 0 / 0.55);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Progress first: a thin lime line above the title. */
+.app-tour .introjs-progress {
+  order: -1;
+  height: 3px;
+  margin: 1rem 1rem 0;
+  border-radius: 999px;
+  background: hsl(var(--secondary));
+}
+
+.app-tour .introjs-progressbar {
+  border-radius: 999px;
+  background: hsl(var(--lime));
+  transition: width 0.25s ease-out;
+}
+
+.app-tour .introjs-tooltip-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 0;
+  padding: 0.875rem 1rem 0;
+  color: inherit;
+}
+
+.app-tour .introjs-tooltip-title {
+  width: auto;
+  min-height: 0;
+  font-family: var(--font-display-stack);
+  font-size: 1.625rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  text-wrap: balance;
+  color: inherit;
+}
+
+/* "Pomiń" as a quiet text link with a full-size touch target. */
+.app-tour .introjs-skipbutton {
+  position: static;
+  flex-shrink: 0;
+  width: auto;
+  height: 2.75rem;
+  margin: -0.75rem -0.5rem -0.75rem 0;
+  padding: 0 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 2.75rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.app-tour .introjs-skipbutton:active {
+  color: hsl(var(--foreground));
+}
+
+.app-tour .introjs-tooltiptext {
+  padding: 0.5rem 1rem 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: hsl(var(--muted-foreground));
+}
+
+.app-tour .introjs-tooltiptext strong {
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+/* Footer: step counter on the left, buttons on the right, on one line. */
+.app-tour .introjs-helperNumberLayer {
+  order: 2;
+  align-self: flex-start;
+  height: 2.75rem;
+  margin: 0.875rem 0 -3.625rem 1rem;
+  padding: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 2.75rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.app-tour .introjs-tooltipbuttons {
+  order: 3;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.875rem 1rem 1rem;
+  border-top: 0;
+}
+
+.app-tour .introjs-tooltipbuttons::after {
+  display: none;
+}
+
+.app-tour .introjs-button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  float: none;
+  height: 2.75rem;
+  min-width: 5.5rem;
+  padding: 0 1.125rem;
+  border: 0;
+  border-radius: 999px;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-shadow: none;
+  box-shadow: none;
+  transition: transform 0.15s ease-out;
+}
+
+.app-tour .introjs-button:active {
+  transform: scale(0.96);
+}
+
+.app-tour .introjs-prevbutton {
+  min-width: 0;
+  background: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+}
+
+.app-tour .introjs-button.introjs-hidden {
+  display: none;
+}
+
+.app-tour .introjs-arrow {
+  display: none !important;
+}
+
+/* The header and tab bar are part of what a tour points at: keep them on
+   screen even though the tour scrolls the page underneath. */
+html[data-tour-active] main > header,
+html[data-tour-active] #bottom-nav {
+  transform: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .introjs-helperLayer,
+  .introjs-tooltipReferenceLayer,
+  .introjs-overlay,
+  .introjs-tooltip {
+    transition: none !important;
+  }
+}

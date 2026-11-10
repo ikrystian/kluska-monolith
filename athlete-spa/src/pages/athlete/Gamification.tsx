@@ -17,6 +17,7 @@ import {
 } from '@/hooks/useGamification';
 import { useUser } from '@/contexts/AuthContext';
 import { Trophy, Gift, Crown, Target, RefreshCw } from 'lucide-react';
+import { TourAnchor } from '@/components/tour/TourAnchor';
 
 export default function GamificationPage() {
   const { user } = useUser();
@@ -71,11 +72,13 @@ export default function GamificationPage() {
       </div>
 
       {/* Stats Card */}
-      <GamificationStatsCard stats={stats} isLoading={statsLoading} />
+      <TourAnchor name="gamification-stats">
+        <GamificationStatsCard stats={stats} isLoading={statsLoading} />
+      </TourAnchor>
 
       {/* Tabs for different sections */}
       <Tabs defaultValue="rewards" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList data-tour="gamification-tabs" className="grid w-full grid-cols-3">
           <TabsTrigger value="rewards" className="flex items-center gap-2">
             <Gift className="h-4 w-4" />
             Nagrody

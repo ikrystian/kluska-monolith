@@ -875,7 +875,7 @@ export default function HabitsPage() {
 
             <div className="page">
                 {/* --- Header --- */}
-                <div className="mb-4">
+                <div data-tour="habits-add" className="mb-4">
                     <Button
                         onClick={() => {
                             setEditingHabit(null);
@@ -890,7 +890,7 @@ export default function HabitsPage() {
 
                 {/* --- Stats Card --- */}
                 {habits && habits.length > 0 && (
-                    <Card className="mb-6">
+                    <Card data-tour="habits-stats" className="mb-6">
                         <CardContent className="p-4">
                             <div className="flex flex-col gap-4">
                                 <div className="flex items-center gap-3">
@@ -919,7 +919,7 @@ export default function HabitsPage() {
                 )}
 
                 {/* --- View Toggle & Navigation --- */}
-                <div className="flex flex-col gap-3 mb-4">
+                <div data-tour="habits-view" className="flex flex-col gap-3 mb-4">
                     {/* View Mode Toggle */}
                     <div className="flex items-center justify-center gap-2">
                         <Button

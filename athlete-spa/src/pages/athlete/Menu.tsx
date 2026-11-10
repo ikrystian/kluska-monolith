@@ -1,7 +1,7 @@
-import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
-import { ChevronRight, LogOut, Monitor, Moon, Palette, Search, Sun, X } from 'lucide-react';
+import { ChevronRight, LogOut, Palette, Search, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   AlertDialog,
@@ -14,19 +14,16 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { EmptyState } from '@/components/ui/section';
-import { SettingsGroup, tint } from '@/components/profile/profile-ui';
 import { useUserProfile } from '@/contexts/UserProfileContext';
 import { useUser } from '@/lib/db-hooks';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRecentRoutes } from '@/hooks/useRecentRoutes';
-import { useActiveWorkout } from '@/hooks/useActiveWorkout';
 import { useGamificationProfile } from '@/hooks/useGamification';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import {
   findNavGroup,
   isNavGroup,
   navItemsForRole,
-  navLeafColor,
   navLeavesForRole,
   searchNavLeaves,
   type NavLeaf,
@@ -37,18 +34,31 @@ import { cn } from '@/lib/utils';
 
 const APP_VERSION = '0.9.3';
 
-/** The nav group the menu draws at the bottom as "Aplikacja", next to the theme and logout. */
+/** The nav group the menu draws at the bottom as "Konto", next to the theme and logout. */
 const SETTINGS_GROUP = 'Ustawienia';
 const PROFILE_HREF = '/athlete/you';
 const SETTINGS_HREF = '/athlete/you?tab=settings';
 
+/** How many shortcuts the top strip holds: one row, never more. */
+const SHORTCUT_COUNT = 4;
+/** Shortcuts shown until the athlete has opened enough screens of their own. */
+const DEFAULT_SHORTCUTS = ['/athlete/nutrition', '/athlete/calendar', '/athlete/progress', '/athlete/exercises'];
+
 const SEARCH_HINTS = ['trening', 'waga', 'makro', 'czat', 'kalendarz', 'strava', 'powiadomienia', 'motyw'];
 
 const THEME_OPTIONS = [
-  { id: 'light', label: 'Jasny', icon: Sun },
-  { id: 'dark', label: 'Ciemny', icon: Moon },
-  { id: 'system', label: 'Auto', icon: Monitor },
+  { id: 'light', label: 'Jasny' },
+  { id: 'dark', label: 'Ciemny' },
+  { id: 'system', label: 'Auto' },
 ] as const;
+
+/**
+ * Cells of one card sit on the border colour with a 1px gap, which draws even
+ * hairlines between them in both directions without per-cell border logic.
+ */
+const CARD = 'overflow-hidden rounded-2xl bg-border/70';
+const CELL = 'bg-card transition-colors active:bg-secondary';
+const ICON = 'h-5 w-5 shrink-0 text-muted-foreground';
 
 /** Polish plural: 1 dzień, 2–4 dni… picks the right form for `n`. */
 function plural(n: number, one: string, few: string, many: string) {
@@ -58,40 +68,102 @@ function plural(n: number, one: string, few: string, many: string) {
   return units >= 2 && units <= 4 && (tens < 12 || tens > 14) ? few : many;
 }
 
-/** Destination's icon on a rounded tile in its domain colour — the same tile the settings rows use. */
-function RowIcon({ leaf }: { leaf: NavLeaf }) {
-  const Icon = leaf.icon;
-  const color = navLeafColor(leaf);
+/**
+ * Keeps a one-letter word with the word after it, so a name that wraps never
+ * ends a line on a stray "i" or "z" ("Grywalizacja / i nagrody").
+ */
+function tidyLabel(label: string) {
+  return label.replace(/(^| )([aiouwz]) /gi, '$1$2\u00a0');
+}
+
+/** Section heading in the header's condensed face, so groups read as landmarks while scrolling. */
+function SectionTitle({ id, children }: { id?: string; children: ReactNode }) {
   return (
-    <span
-      className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
-      style={{ backgroundColor: tint(color, 15), color }}
-    >
-      <Icon className="h-[18px] w-[18px]" />
-    </span>
+    <h2 id={id} className="mb-2.5 px-1 font-display text-[1.125rem] font-bold uppercase leading-none tracking-[0.04em]">
+      {children}
+    </h2>
   );
 }
 
-/** One destination in a grouped list: icon, name, one-line hint, chevron. */
-function MenuRow({ leaf, description = leaf.description }: { leaf: NavLeaf; description?: ReactNode }) {
+/** One destination of the directory: icon and name, two to a row. */
+function DirectoryCell({ leaf, wide }: { leaf: NavLeaf; wide?: boolean }) {
+  const Icon = leaf.icon;
   return (
-    <Link
-      to={leaf.href}
-      onClick={() => haptic('tap')}
-      className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/50 active:bg-secondary"
-    >
-      <RowIcon leaf={leaf} />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[15px] font-semibold leading-snug">{leaf.label}</p>
-        {description && <p className="mt-0.5 truncate text-xs text-muted-foreground">{description}</p>}
-      </div>
-      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
-    </Link>
+    <li className={cn('min-w-0', wide && 'col-span-2')}>
+      <Link to={leaf.href} onClick={() => haptic('tap')} className={cn(CELL, 'flex h-14 items-center gap-3 px-3.5')}>
+        <Icon className={ICON} />
+        <span className="line-clamp-2 min-w-0 text-[15px] font-semibold leading-[1.2]">{tidyLabel(leaf.label)}</span>
+      </Link>
+    </li>
+  );
+}
+
+/** A nav group as a titled card of destinations. An odd last one takes the full row. */
+function DirectorySection({ title, leaves }: { title: string; leaves: NavLeaf[] }) {
+  const id = useId();
+  return (
+    <section data-tour="menu-directory" aria-labelledby={id}>
+      <SectionTitle id={id}>{title}</SectionTitle>
+      <ul className={cn(CARD, 'grid grid-cols-2 gap-px')}>
+        {leaves.map((leaf, index) => (
+          <DirectoryCell key={leaf.href} leaf={leaf} wide={leaves.length % 2 === 1 && index === leaves.length - 1} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/**
+ * The screens this athlete actually uses, one tap from the top. Always a full
+ * row in the menu's own order, so a shortcut keeps its place between visits.
+ */
+function Shortcuts({ leaves }: { leaves: NavLeaf[] }) {
+  return (
+    <section data-tour="menu-shortcuts" aria-labelledby="menu-shortcuts">
+      <SectionTitle id="menu-shortcuts">Szybki dostęp</SectionTitle>
+      <ul className={cn(CARD, 'grid grid-cols-4 gap-px')}>
+        {leaves.map(leaf => {
+          const Icon = leaf.icon;
+          return (
+            <li key={leaf.href} className="min-w-0">
+              <Link
+                to={leaf.href}
+                onClick={() => haptic('tap')}
+                className={cn(CELL, 'flex h-full flex-col items-center gap-2 px-1.5 pb-2.5 pt-3.5 text-center')}
+              >
+                <Icon className="h-[22px] w-[22px] shrink-0 text-primary" />
+                {/* Two lines are reserved either way, so icons line up across the row. */}
+                <span className="line-clamp-2 min-h-[1.75rem] text-xs font-medium leading-[0.875rem]">
+                  {tidyLabel(leaf.label)}
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+/** A full-width row with a second line: search results and the recent list. */
+function DetailRow({ leaf, description = leaf.description }: { leaf: NavLeaf; description?: ReactNode }) {
+  const Icon = leaf.icon;
+  return (
+    <li>
+      <Link to={leaf.href} onClick={() => haptic('tap')} className={cn(CELL, 'flex items-center gap-3 px-3.5 py-3')}>
+        <Icon className={ICON} />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[15px] font-semibold leading-snug">{leaf.label}</span>
+          {description && <span className="mt-0.5 block truncate text-[13px] text-muted-foreground">{description}</span>}
+        </span>
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+      </Link>
+    </li>
   );
 }
 
 /** Who is signed in, with level and streak at a glance; opens the profile. */
-function ProfileCard() {
+function ProfileRow() {
   const { userProfile } = useUserProfile();
   const { stats } = useGamificationProfile();
 
@@ -110,86 +182,21 @@ function ProfileCard() {
   }
 
   return (
-    <Link
-      to={PROFILE_HREF}
-      onClick={() => haptic('tap')}
-      className="flex items-center gap-3.5 rounded-2xl bg-card px-4 py-3.5 transition-colors hover:bg-secondary/50 active:bg-secondary"
-    >
-      <Avatar className="h-12 w-12">
+    <Link to={PROFILE_HREF} onClick={() => haptic('tap')} className={cn(CELL, 'flex items-center gap-3 px-3.5 py-3')}>
+      <Avatar className="h-10 w-10">
         {userProfile?.avatarUrl && (
           <AvatarImage src={resolveMediaUrl(userProfile.avatarUrl)} alt="" className="object-cover" />
         )}
-        <AvatarFallback className="bg-primary/10 text-base font-semibold text-primary">
-          {name.slice(0, 2).toUpperCase()}
-        </AvatarFallback>
+        <AvatarFallback className="bg-secondary text-sm font-semibold">{name.slice(0, 2).toUpperCase()}</AvatarFallback>
       </Avatar>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-base font-semibold leading-tight">{name}</p>
-        <p className="mt-1 truncate text-xs text-muted-foreground">
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[15px] font-semibold leading-snug">{name}</span>
+        <span className="mt-0.5 block truncate text-[13px] text-muted-foreground">
           {facts.length > 0 ? facts.join(' · ') : 'Profil, statystyki i dane konta'}
-        </p>
-      </div>
+        </span>
+      </span>
       <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
     </Link>
-  );
-}
-
-/** A session left running elsewhere: one tap takes the athlete back into it. */
-function ActiveWorkoutRow() {
-  const { activeWorkout, hasActiveWorkout } = useActiveWorkout();
-  if (!hasActiveWorkout || !activeWorkout) return null;
-
-  return (
-    <Link
-      to={`/athlete/log?logId=${activeWorkout.id}`}
-      onClick={() => haptic('impact')}
-      className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 transition-colors active:bg-primary/15"
-    >
-      <span className="relative flex h-2.5 w-2.5 shrink-0">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
-        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold text-primary">Trening w toku</p>
-        <p className="truncate text-[15px] font-semibold leading-snug">
-          {activeWorkout.workoutName || 'Sesja treningowa'}
-        </p>
-      </div>
-      <span className="shrink-0 rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground">
-        Wróć
-      </span>
-    </Link>
-  );
-}
-
-/** The last few screens opened (at most four), as an even two-column grid of shortcuts. */
-function RecentShortcuts({ leaves }: { leaves: NavLeaf[] }) {
-  return (
-    <section>
-      <h2 className="mb-2 px-4 text-xs font-semibold text-muted-foreground">Ostatnio otwierane</h2>
-      <div className="grid grid-cols-2 gap-2">
-        {leaves.map(leaf => {
-          const Icon = leaf.icon;
-          const color = navLeafColor(leaf);
-          return (
-            <Link
-              key={leaf.href}
-              to={leaf.href}
-              onClick={() => haptic('tap')}
-              className="flex h-12 min-w-0 items-center gap-2.5 rounded-xl bg-card px-2.5 transition-colors hover:bg-secondary/50 active:bg-secondary"
-            >
-              <span
-                className="grid h-7 w-7 shrink-0 place-items-center rounded-lg"
-                style={{ backgroundColor: tint(color, 15), color }}
-              >
-                <Icon className="h-4 w-4" />
-              </span>
-              <span className="line-clamp-2 text-[13px] font-semibold leading-tight">{leaf.label}</span>
-            </Link>
-          );
-        })}
-      </div>
-    </section>
   );
 }
 
@@ -197,18 +204,12 @@ function RecentShortcuts({ leaves }: { leaves: NavLeaf[] }) {
 function ThemeRow() {
   const { theme, setTheme } = useTheme();
   const current = theme ?? 'system';
-  const color = 'hsl(var(--chart-4))';
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3">
-      <span
-        className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
-        style={{ backgroundColor: tint(color, 15), color }}
-      >
-        <Palette className="h-[18px] w-[18px]" />
-      </span>
-      <p className="min-w-0 flex-1 truncate text-[15px] font-semibold">Motyw</p>
-      <div role="radiogroup" aria-label="Motyw aplikacji" className="flex shrink-0 gap-0.5 rounded-full bg-secondary/70 p-0.5">
+    <div className="flex h-14 items-center gap-3 bg-card pl-3.5 pr-2.5">
+      <Palette className={ICON} />
+      <p className="flex-1 text-[15px] font-semibold">Motyw</p>
+      <div role="radiogroup" aria-label="Motyw aplikacji" className="flex shrink-0 gap-0.5 rounded-full bg-secondary p-0.5">
         {THEME_OPTIONS.map(({ id, label }) => {
           const active = current === id;
           return (
@@ -222,8 +223,8 @@ function ThemeRow() {
                 setTheme(id);
               }}
               className={cn(
-                'h-8 rounded-full px-3 text-xs font-semibold transition-colors',
-                active ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground active:text-foreground'
+                'h-8 rounded-full px-2 text-[13px] font-semibold transition-colors min-[360px]:px-3',
+                active ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground active:text-foreground'
               )}
             >
               {label}
@@ -237,7 +238,7 @@ function ThemeRow() {
 
 function HintChips({ onPick }: { onPick: (hint: string) => void }) {
   return (
-    <div className="flex flex-wrap justify-center gap-2">
+    <div className="flex flex-wrap gap-2">
       {SEARCH_HINTS.map(hint => (
         <button
           key={hint}
@@ -246,7 +247,7 @@ function HintChips({ onPick }: { onPick: (hint: string) => void }) {
             haptic('tap');
             onPick(hint);
           }}
-          className="h-8 rounded-full bg-secondary px-3.5 text-xs font-semibold transition-colors active:bg-secondary/70"
+          className="h-9 rounded-full bg-card px-3.5 text-[13px] font-semibold transition-colors active:bg-secondary"
         >
           {hint}
         </button>
@@ -256,12 +257,14 @@ function HintChips({ onPick }: { onPick: (hint: string) => void }) {
 }
 
 /**
- * "Menu": every screen of the app in one ordered, grouped list.
+ * "Menu": every screen of the app on two short pages.
  *
- * Top to bottom: search, who you are (and a workout left running), the screens
- * you opened lately, then the nav groups in their fixed order, and the app
- * itself — settings, theme, logout. Groups come from `athlete-nav`, so a new
- * screen added there shows up here and in search without touching this file.
+ * Top to bottom: search, four shortcuts, then the nav groups in their fixed
+ * order as a two-column directory, and the account — profile, settings, theme,
+ * logout. A workout left running is the layout's mini-player, not a row here. Icons stay one quiet colour so the names
+ * do the talking; search results keep the one-line hints the directory drops.
+ * Groups come from `athlete-nav`, so a new screen added there shows up here
+ * and in search without touching this file.
  */
 export default function MenuPage() {
   const { userProfile } = useUserProfile();
@@ -285,12 +288,25 @@ export default function MenuPage() {
 
   const settingsLeaf = useMemo(() => navLeavesForRole(role).find(leaf => leaf.href === SETTINGS_HREF), [role]);
 
+  /** Screens opened lately, newest first — the list under an empty search. */
   const recentLeaves = useMemo(() => {
     const leaves = navLeavesForRole(role);
     return recentRoutes
       .map(href => leaves.find(leaf => leaf.href === href))
       .filter((leaf): leaf is NavLeaf => Boolean(leaf));
   }, [recentRoutes, role]);
+
+  /** The same screens topped up with defaults to a full row, in menu order. */
+  const shortcutLeaves = useMemo(() => {
+    const leaves = navLeavesForRole(role);
+    const picked = new Set(
+      [...recentLeaves.map(leaf => leaf.href), ...DEFAULT_SHORTCUTS]
+        .filter(href => leaves.some(leaf => leaf.href === href))
+        .filter((href, index, all) => all.indexOf(href) === index)
+        .slice(0, SHORTCUT_COUNT)
+    );
+    return leaves.filter(leaf => picked.has(leaf.href));
+  }, [recentLeaves, role]);
 
   const results = query.trim() ? searchNavLeaves(query, role) : null;
 
@@ -310,8 +326,8 @@ export default function MenuPage() {
     <div className="page space-y-6 pb-8">
       {/* Search */}
       <div className="flex items-center gap-2">
-        <div className="relative min-w-0 flex-1">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <div data-tour="menu-search" className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
           <input
             ref={inputRef}
             type="search"
@@ -325,7 +341,7 @@ export default function MenuPage() {
               if (e.key === 'Enter' && results?.[0]) navigate(results[0].href);
               if (e.key === 'Escape') closeSearch();
             }}
-            className="h-11 w-full rounded-xl border border-transparent bg-card pl-10 pr-10 text-[15px] outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/60 [&::-webkit-search-cancel-button]:hidden"
+            className="h-12 w-full rounded-2xl border border-transparent bg-card pl-11 pr-10 text-[15px] outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/60 [&::-webkit-search-cancel-button]:hidden"
           />
           {query && (
             <button
@@ -335,7 +351,7 @@ export default function MenuPage() {
                 inputRef.current?.focus();
               }}
               aria-label="Wyczyść wyszukiwanie"
-              className="absolute right-1 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-muted-foreground active:bg-secondary"
+              className="absolute right-1.5 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-muted-foreground active:bg-secondary"
             >
               <X className="h-4 w-4" />
             </button>
@@ -345,7 +361,7 @@ export default function MenuPage() {
           <button
             type="button"
             onClick={closeSearch}
-            className="h-11 shrink-0 px-1 text-[15px] font-semibold text-primary active:opacity-60"
+            className="h-12 shrink-0 px-1 text-[15px] font-semibold text-primary active:opacity-60"
           >
             Anuluj
           </button>
@@ -356,77 +372,93 @@ export default function MenuPage() {
         results ? (
           <div aria-live="polite" className="animate-fade-in">
             {results.length > 0 ? (
-              <SettingsGroup title={`${results.length} ${plural(results.length, 'wynik', 'wyniki', 'wyników')}`}>
-                {results.map(leaf => {
-                  const group = findNavGroup(leaf.href)?.label;
-                  const description = [group, leaf.description].filter(Boolean).join(' · ');
-                  return <MenuRow key={leaf.href} leaf={leaf} description={description} />;
-                })}
-              </SettingsGroup>
+              <section aria-labelledby="menu-results">
+                <SectionTitle id="menu-results">
+                  {results.length} {plural(results.length, 'wynik', 'wyniki', 'wyników')}
+                </SectionTitle>
+                <ul className={cn(CARD, 'grid grid-cols-1 gap-px')}>
+                  {results.map(leaf => {
+                    const group = findNavGroup(leaf.href)?.label;
+                    return (
+                      <DetailRow
+                        key={leaf.href}
+                        leaf={leaf}
+                        description={[group, leaf.description].filter(Boolean).join(' · ')}
+                      />
+                    );
+                  })}
+                </ul>
+              </section>
             ) : (
               <EmptyState
                 icon={Search}
                 title={`Brak wyników dla „${query.trim()}”`}
-                description="Sprawdź pisownię albo wybierz jedną z podpowiedzi."
-                action={<HintChips onPick={setQuery} />}
+                description="Sprawdź pisownię albo wybierz jedną z podpowiedzi poniżej."
               />
+            )}
+            {results.length === 0 && (
+              <div className="mt-6">
+                <SectionTitle>Podpowiedzi</SectionTitle>
+                <HintChips onPick={setQuery} />
+              </div>
             )}
           </div>
         ) : (
           <div className="animate-fade-in space-y-6">
             {recentLeaves.length > 0 && (
-              <SettingsGroup title="Ostatnio otwierane">
-                {recentLeaves.map(leaf => (
-                  <MenuRow key={leaf.href} leaf={leaf} />
-                ))}
-              </SettingsGroup>
+              <section aria-labelledby="menu-recent">
+                <SectionTitle id="menu-recent">Ostatnio otwierane</SectionTitle>
+                <ul className={cn(CARD, 'grid grid-cols-1 gap-px')}>
+                  {recentLeaves.map(leaf => (
+                    <DetailRow key={leaf.href} leaf={leaf} />
+                  ))}
+                </ul>
+              </section>
             )}
-            <section>
-              <h2 className="mb-2 px-4 text-xs font-semibold text-muted-foreground">Podpowiedzi</h2>
-              <div className="rounded-2xl bg-card p-4">
-                <HintChips onPick={setQuery} />
-              </div>
+            <section aria-labelledby="menu-hints">
+              <SectionTitle id="menu-hints">Podpowiedzi</SectionTitle>
+              <HintChips onPick={setQuery} />
             </section>
           </div>
         )
       ) : (
         <div className="stagger-rise space-y-6">
-          <div className="space-y-2.5">
-            <ProfileCard />
-            <ActiveWorkoutRow />
-          </div>
-
-          {recentLeaves.length > 0 && <RecentShortcuts leaves={recentLeaves} />}
+          {shortcutLeaves.length === SHORTCUT_COUNT && <Shortcuts leaves={shortcutLeaves} />}
 
           {groups.map(group => (
-            <SettingsGroup key={group.label} title={group.label}>
-              {group.items.map(leaf => (
-                <MenuRow key={leaf.href} leaf={leaf} />
-              ))}
-            </SettingsGroup>
+            <DirectorySection key={group.label} title={group.label} leaves={group.items} />
           ))}
 
-          <SettingsGroup title="Aplikacja">
-            {settingsLeaf && <MenuRow leaf={settingsLeaf} description="Powiadomienia, integracje, dane offline" />}
-            <ThemeRow />
-          </SettingsGroup>
-
-          <div className="space-y-4">
-            <div className="overflow-hidden rounded-2xl bg-card">
+          <section aria-labelledby="menu-account">
+            <SectionTitle id="menu-account">Konto</SectionTitle>
+            <div className={cn(CARD, 'grid grid-cols-1 gap-px')}>
+              <ProfileRow />
+              {settingsLeaf && (
+                <Link
+                  to={settingsLeaf.href}
+                  onClick={() => haptic('tap')}
+                  className={cn(CELL, 'flex h-14 items-center gap-3 px-3.5')}
+                >
+                  <settingsLeaf.icon className={ICON} />
+                  <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">{settingsLeaf.label}</span>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+                </Link>
+              )}
+              <ThemeRow />
               <button
                 type="button"
                 onClick={() => {
                   haptic('tap');
                   setLogoutDialogOpen(true);
                 }}
-                className="flex w-full items-center justify-center gap-2 px-4 py-3.5 text-[15px] font-semibold text-destructive transition-colors active:bg-secondary"
+                className={cn(CELL, 'flex h-14 w-full items-center gap-3 px-3.5 text-left text-destructive')}
               >
-                <LogOut className="h-4 w-4" />
-                Wyloguj się
+                <LogOut className="h-5 w-5 shrink-0" />
+                <span className="text-[15px] font-semibold">Wyloguj się</span>
               </button>
             </div>
 
-            <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+            <p className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <span>Leniwa Kluska {APP_VERSION}</span>
               <span aria-hidden>·</span>
               <span className="flex items-center gap-1.5">
@@ -434,7 +466,7 @@ export default function MenuPage() {
                 {isOnline ? 'Online' : 'Offline'}
               </span>
             </p>
-          </div>
+          </section>
         </div>
       )}
 

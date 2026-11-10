@@ -55,6 +55,27 @@
       ],
       "port": 5175,
       "autoPort": true
+    },
+    {
+      "name": "mock-challenges",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "/tmp/claude-1000/-home-krystian-Projects-kluska-monolith-athlete-spa/fb33c984-aa79-46f9-8a93-a761d370207f/scratchpad/mock-challenges.mjs"
+      ],
+      "port": 4041
+    },
+    {
+      "name": "athlete-spa-mockch",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite",
+        "--mode",
+        "mockch",
+        "--port",
+        "5181",
+        "--strictPort"
+      ],
+      "port": 5181
     }
   ]
 }
