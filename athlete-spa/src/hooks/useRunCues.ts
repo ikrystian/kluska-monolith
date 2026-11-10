@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { PluginListenerHandle } from '@capacitor/core';
 import { haptic } from '@/lib/haptics';
 import { resolveMediaUrl } from '@/lib/api-client';
-import { cancelCue, playCue, preloadCue, scheduleCue } from '@/lib/cue-audio';
-import { isNativeRunTrackingAvailable } from '@/lib/run-tracking';
-import type { RunningProgram } from '@/lib/types';
+import { playCue, preloadCue } from '@/lib/cue-audio';
+import { RunTracking, isNativeRunTrackingAvailable, type NativeRunCue } from '@/lib/run-tracking';
+import type { RunningCue, RunningProgram } from '@/lib/types';
 import type { RunStatus } from './useRunTracker';
 
 export interface ActiveCue {
@@ -11,8 +12,10 @@ export interface ActiveCue {
   firedAt: number;
 }
 
-/** How far the scheduled time cues may drift from the tracker's clock before they're rescheduled. */
-const MAX_SCHEDULE_DRIFT_S = 3;
+/** How long a cue's label stays up; a native cue reported later than this is not shown at all. */
+const CUE_BANNER_MS = 6000;
+
+const USE_NATIVE = isNativeRunTrackingAvailable();
 
 /**
  * Fires a training's audio cues as the run crosses each cue's threshold —
@@ -20,11 +23,11 @@ const MAX_SCHEDULE_DRIFT_S = 3;
  * time-based cues too, since `durationSeconds` already excludes paused time;
  * distance-based cues simply wait for the athlete to keep moving.
  *
- * Playback goes through lib/cue-audio.ts, which on Android plays natively and
- * ducks other music. Time-based cues are also scheduled natively while the run
- * is running, so they land on time with the app minimised even if the WebView
- * isn't ticking; distance-based cues fire from the native recorder's updates.
- * A cue is played at most once either way — the ids are shared.
+ * On Android the native recorder plays them (pass `recorderCues` to the
+ * tracker's start / resume): with the app minimised or the screen locked the
+ * WebView is frozen and would only notice a threshold once reopened. The
+ * recorder reports each cue it played, and this hook just shows its label.
+ * Elsewhere the hook watches the thresholds and plays through lib/cue-audio.ts.
  */
 export function useRunCues(
   program: RunningProgram | null,
@@ -34,14 +37,23 @@ export function useRunCues(
 ) {
   const firedRef = useRef<Set<number>>(new Set());
   const [activeCue, setActiveCue] = useState<ActiveCue | null>(null);
-  /** Distinguishes one run's cue ids from the next, so the native "already played" check doesn't carry over. */
-  const [runKey, setRunKey] = useState(() => Date.now());
-  /** Bumped when the tracker's clock jumps (re-sync from the native recorder) to reschedule. */
-  const [scheduleEpoch, setScheduleEpoch] = useState(0);
-  const durationRef = useRef(durationSeconds);
-  durationRef.current = durationSeconds;
-  /** Moving time and wall clock at the moment the time cues were last scheduled. */
-  const scheduleBaseRef = useRef<{ wall: number; duration: number } | null>(null);
+  const programRef = useRef(program);
+  programRef.current = program;
+
+  const recorderCues = useMemo<NativeRunCue[]>(
+    () =>
+      program?.cues.map(cue => ({
+        trigger: cue.triggerType,
+        value: cue.value,
+        src: resolveMediaUrl(cue.audioUrl),
+      })) ?? [],
+    [program]
+  );
+
+  const showCue = useCallback((cue: RunningCue | undefined, firedAt: number) => {
+    haptic('success');
+    if (cue?.label) setActiveCue({ label: cue.label, firedAt });
+  }, []);
 
   useEffect(() => {
     firedRef.current = new Set();
@@ -54,41 +66,31 @@ export function useRunCues(
     if (status === 'running' && durationSeconds === 0) {
       firedRef.current = new Set();
       setActiveCue(null);
-      setRunKey(Date.now());
     }
   }, [status, durationSeconds]);
 
-  // Schedule the upcoming time cues natively for as long as the run is running.
   useEffect(() => {
-    if (!program || status !== 'running') {
-      scheduleBaseRef.current = null;
-      return;
-    }
-    const now = Date.now();
-    const duration = durationRef.current;
-    scheduleBaseRef.current = { wall: now, duration };
+    if (!USE_NATIVE) return;
+    let cancelled = false;
+    let handle: PluginListenerHandle | undefined;
 
-    const ids: string[] = [];
-    program.cues.forEach((cue, index) => {
-      if (cue.triggerType !== 'time' || firedRef.current.has(index) || cue.value <= duration) return;
-      const id = `run-${runKey}-${index}`;
-      const at = now + (cue.value - duration) * 1000;
-      // The run recorder's foreground service already keeps the process alive.
-      if (scheduleCue(id, resolveMediaUrl(cue.audioUrl), at, { foreground: !isNativeRunTrackingAvailable() })) {
-        ids.push(id);
-      }
+    void RunTracking.addListener('cue', ({ index, firedAt }) => {
+      // Played while the app was in the background; the moment has passed.
+      if (Date.now() - firedAt > CUE_BANNER_MS) return;
+      showCue(programRef.current?.cues[index], firedAt);
+    }).then(h => {
+      if (cancelled) void h.remove();
+      else handle = h;
     });
-    return () => ids.forEach(cancelCue);
-  }, [program, status, runKey, scheduleEpoch]);
+
+    return () => {
+      cancelled = true;
+      void handle?.remove();
+    };
+  }, [showCue]);
 
   useEffect(() => {
-    if (!program || status !== 'running') return;
-
-    const base = scheduleBaseRef.current;
-    if (base) {
-      const expected = base.duration + (Date.now() - base.wall) / 1000;
-      if (Math.abs(expected - durationSeconds) > MAX_SCHEDULE_DRIFT_S) setScheduleEpoch(n => n + 1);
-    }
+    if (USE_NATIVE || !program || status !== 'running') return;
 
     program.cues.forEach((cue, index) => {
       if (firedRef.current.has(index)) return;
@@ -96,18 +98,16 @@ export function useRunCues(
       if (cue.value > progress) return;
       firedRef.current.add(index);
 
-      // Skipped natively if the schedule already played it.
-      playCue(resolveMediaUrl(cue.audioUrl), `run-${runKey}-${index}`);
-      haptic('success');
-      if (cue.label) setActiveCue({ label: cue.label, firedAt: Date.now() });
+      playCue(resolveMediaUrl(cue.audioUrl));
+      showCue(cue, Date.now());
     });
-  }, [program, status, durationSeconds, distanceMeters, runKey]);
+  }, [program, status, durationSeconds, distanceMeters, showCue]);
 
   useEffect(() => {
     if (!activeCue) return;
-    const timeout = setTimeout(() => setActiveCue(null), 6000);
+    const timeout = setTimeout(() => setActiveCue(null), CUE_BANNER_MS);
     return () => clearTimeout(timeout);
   }, [activeCue]);
 
-  return { activeCue };
+  return { activeCue, recorderCues };
 }

@@ -32,7 +32,7 @@ public class RunTrackingPlugin extends Plugin {
 
     @Override
     public void load() {
-        RunRecorder.get().setListener(update -> notifyListeners("update", update));
+        RunRecorder.get().setListener(this::notifyListeners);
     }
 
     @Override
@@ -52,7 +52,7 @@ public class RunTrackingPlugin extends Plugin {
             return;
         }
         RunRecorder recorder = RunRecorder.get();
-        recorder.start();
+        recorder.start(call.getArray("cues"));
         RunTrackingService.sync(getContext());
         call.resolve(recorder.snapshot(false));
     }

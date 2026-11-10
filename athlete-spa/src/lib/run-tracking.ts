@@ -1,11 +1,13 @@
 import { Capacitor, registerPlugin, type PluginListenerHandle } from '@capacitor/core';
 import type { GeoPoint } from '@/lib/geo';
+import type { RunningCueTrigger } from '@/models/types';
 
 /**
  * Native Android run recorder (RunTrackingPlugin + RunTrackingService in the
  * android project). A foreground service keeps GPS at full rate while the app
  * is backgrounded or the screen is locked, and shows distance / time / average
- * pace in an ongoing notification on the lock screen.
+ * pace in an ongoing notification on the lock screen. It plays the training's
+ * audio cues too, since a minimised WebView is frozen and can't.
  */
 
 export type NativeRunStatus = 'idle' | 'running' | 'paused';
@@ -32,17 +34,39 @@ export interface NativeRunUpdate extends NativeRunSnapshot {
   external?: boolean;
 }
 
+/** A training cue the recorder plays itself once the run reaches it. */
+export interface NativeRunCue {
+  trigger: RunningCueTrigger;
+  /** Seconds of moving time, or metres covered. */
+  value: number;
+  /** Absolute URL or a path into the bundled web app, as for lib/cue-audio.ts. */
+  src: string;
+}
+
+export interface NativeCueEvent {
+  /** Position of the cue in the list the run was started with. */
+  index: number;
+  /** Epoch ms it played — events wait in a queue while the WebView is frozen. */
+  firedAt: number;
+}
+
 interface RunTrackingPlugin {
-  start(): Promise<NativeRunSnapshot>;
+  start(options: { cues: NativeRunCue[] }): Promise<NativeRunSnapshot>;
   pause(): Promise<NativeRunSnapshot>;
   /** Run data is only used to restore a session the native side lost while paused. */
-  resume(run: { points: GeoPoint[]; distance: number; durationMs: number }): Promise<NativeRunSnapshot>;
+  resume(run: {
+    points: GeoPoint[];
+    distance: number;
+    durationMs: number;
+    cues: NativeRunCue[];
+  }): Promise<NativeRunSnapshot>;
   stop(): Promise<NativeRunSnapshot>;
   getState(): Promise<NativeRunSnapshot>;
   requestNotificationPermission(): Promise<{ granted: boolean }>;
   isIgnoringBatteryOptimizations(): Promise<{ granted: boolean }>;
   requestIgnoreBatteryOptimizations(): Promise<{ granted: boolean }>;
   addListener(event: 'update', listener: (update: NativeRunUpdate) => void): Promise<PluginListenerHandle>;
+  addListener(event: 'cue', listener: (cue: NativeCueEvent) => void): Promise<PluginListenerHandle>;
 }
 
 export const RunTracking = registerPlugin<RunTrackingPlugin>('RunTracking');

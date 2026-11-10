@@ -86,7 +86,9 @@ export default function RunRecordPage() {
   const { createDoc, isLoading: isSaving } = useCreateDoc();
   const { mutate: swrMutate } = useSWRConfig();
 
-  const { data: programs } = useCollection<RunningProgram>('runningPrograms', { isActive: true });
+  const { data: programs, isLoading: programsLoading } = useCollection<RunningProgram>('runningPrograms', {
+    isActive: true,
+  });
   const selectedProgram = programs?.find(p => p.id === programId) ?? null;
 
   // Ad-hoc goal for a quick run (no program): either a target distance (km)
@@ -105,7 +107,12 @@ export default function RunRecordPage() {
   const [discardOpen, setDiscardOpen] = useState(false);
   const [idlePosition, setIdlePosition] = useState<TrackPoint | null>(null);
 
-  const { activeCue } = useRunCues(selectedProgram, tracker.duration, tracker.distance, tracker.status);
+  const { activeCue, recorderCues } = useRunCues(
+    selectedProgram,
+    tracker.duration,
+    tracker.distance,
+    tracker.status
+  );
 
   const isActive = tracker.status === 'running' || tracker.status === 'paused';
   useWakeLock(isActive);
@@ -323,9 +330,11 @@ export default function RunRecordPage() {
             <Button
               size="lg"
               className="h-16 w-full rounded-full text-base font-bold"
+              // The native recorder takes the training's cues when the run starts.
+              disabled={Boolean(programId) && programsLoading}
               onClick={() => {
                 haptic('impact');
-                tracker.start();
+                tracker.start(recorderCues);
               }}
             >
               <Play className="mr-2 h-6 w-6 fill-current" /> Start
@@ -406,7 +415,7 @@ export default function RunRecordPage() {
                   aria-label="Wznów"
                   onClick={() => {
                     haptic('impact');
-                    tracker.resume();
+                    tracker.resume(recorderCues);
                   }}
                   className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground active:scale-95"
                 >

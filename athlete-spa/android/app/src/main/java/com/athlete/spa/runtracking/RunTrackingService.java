@@ -12,8 +12,10 @@ import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
 import android.location.Location;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.os.SystemClock;
 
 import androidx.annotation.NonNull;
@@ -26,6 +28,7 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
+import com.athlete.spa.cueaudio.CuePlayer;
 import com.athlete.spa.widget.SessionWidgetProvider;
 
 import java.util.Locale;
@@ -35,6 +38,10 @@ import java.util.Locale;
  * the screen locked — a WebView geolocation watch gets throttled there. The
  * ongoing notification shows distance, moving time and average pace, with
  * pause / resume buttons. Runs for as long as RunRecorder is not idle.
+ *
+ * It also plays the training's cues through CuePlayer: distance cues as the
+ * fixes come in, time cues from a timer that follows the moving-time clock, so
+ * a pause from the notification or the widget holds them back too.
  */
 public class RunTrackingService extends Service {
 
@@ -43,6 +50,7 @@ public class RunTrackingService extends Service {
     private static final long LOCATION_INTERVAL_MS = 500;
     /** The chronometer ticks on its own; the text only needs to follow distance. */
     private static final long NOTIFICATION_MIN_INTERVAL_MS = 2000;
+    private static final long CUE_WAKE_LOCK_MARGIN_MS = 30_000;
 
     private static final String ACTION_SYNC = "com.athlete.spa.runtracking.SYNC";
     private static final String ACTION_PAUSE = "com.athlete.spa.runtracking.PAUSE";
@@ -52,11 +60,17 @@ public class RunTrackingService extends Service {
     private boolean requestingUpdates;
     private long lastNotificationAt;
 
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Runnable cueTimer = this::checkCues;
+    /** Held until the next time cue: Handler delays don't advance while the CPU sleeps. */
+    private PowerManager.WakeLock cueWakeLock;
+
     private final LocationCallback locationCallback = new LocationCallback() {
         @Override
         public void onLocationResult(@NonNull LocationResult result) {
             RunRecorder recorder = RunRecorder.get();
             for (Location location : result.getLocations()) recorder.onLocation(location);
+            playDueCues();
             long now = SystemClock.elapsedRealtime();
             if (now - lastNotificationAt >= NOTIFICATION_MIN_INTERVAL_MS) updateNotification();
         }
@@ -124,6 +138,35 @@ public class RunTrackingService extends Service {
             requestingUpdates = false;
         }
         updateNotification();
+        checkCues();
+    }
+
+    /** Plays the cues the run has reached, then times the next time cue. */
+    private void checkCues() {
+        playDueCues();
+        handler.removeCallbacks(cueTimer);
+        long wait = RunRecorder.get().msUntilNextTimeCue();
+        if (wait < 0) {
+            releaseCueWakeLock();
+            return;
+        }
+        handler.postDelayed(cueTimer, wait);
+        if (cueWakeLock == null) {
+            PowerManager power = (PowerManager) getSystemService(POWER_SERVICE);
+            cueWakeLock = power.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "athlete:run-cues");
+            cueWakeLock.setReferenceCounted(false);
+        }
+        // Re-acquiring a non-counted lock just moves its timeout.
+        cueWakeLock.acquire(wait + CUE_WAKE_LOCK_MARGIN_MS);
+    }
+
+    private void playDueCues() {
+        CuePlayer player = CuePlayer.get(this);
+        for (RunRecorder.Cue cue : RunRecorder.get().fireDueCues()) player.play(null, cue.src, false);
+    }
+
+    private void releaseCueWakeLock() {
+        if (cueWakeLock != null && cueWakeLock.isHeld()) cueWakeLock.release();
     }
 
     private boolean goForeground() {
@@ -212,6 +255,8 @@ public class RunTrackingService extends Service {
             locationClient.removeLocationUpdates(locationCallback);
             requestingUpdates = false;
         }
+        handler.removeCallbacks(cueTimer);
+        releaseCueWakeLock();
         // The run is over: the widget goes back to whatever the app shows next.
         SessionWidgetProvider.refresh(this);
         super.onDestroy();

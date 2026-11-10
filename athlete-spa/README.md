@@ -129,7 +129,7 @@ Własne wtyczki Capacitora są w `android/app/src/main/java/com/athlete/spa/` i 
 
 | Wtyczka | Plik JS | Po co |
 | --- | --- | --- |
-| `RunTracking` | `src/lib/run-tracking.ts` | Foreground service z GPS: nagrywanie biegu przy zgaszonym ekranie, powiadomienie na ekranie blokady. `NativeRunBridge` wraca do rekordera, gdy bieg wciąż trwa |
+| `RunTracking` | `src/lib/run-tracking.ts` | Foreground service z GPS: nagrywanie biegu przy zgaszonym ekranie, powiadomienie na ekranie blokady. Sam odtwarza sygnały treningu (czas i dystans), bo zminimalizowany WebView jest zamrożony. `NativeRunBridge` wraca do rekordera, gdy bieg wciąż trwa |
 | `CueAudio` | `src/lib/cue-audio.ts` | Sygnały dźwiękowe (koniec przerwy, interwał) słyszalne w tle, z przyciszeniem muzyki zamiast jej pauzowania |
 | `InstagramShare` | `src/lib/instagram-share.ts` | Udostępnianie obrazka do Story lub posta. Tylko Android |
 | widżet (`SessionWidgetProvider`) | `src/lib/live-widget.ts` | Widżet ekranu głównego: aktywny trening lub bieg, statystyki tygodnia, najbliższe treningi |
