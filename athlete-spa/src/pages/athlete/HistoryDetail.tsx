@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { format, differenceInMinutes } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import {
@@ -20,6 +20,7 @@ import {
   Repeat,
   RotateCcw,
   Share2,
+  Sparkles,
   Timer,
   TrendingUp,
   Trophy,
@@ -33,6 +34,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { CoachSummaryDialog } from '@/components/workout/CoachSummaryDialog';
 import { SetTypeBadge } from '@/components/workout/SetTypeModal';
 import { rpeToRir } from '@/components/workout/RpeSelector';
 import { seriesLabel, exercisesLabel } from '@/components/schedule/WorkoutExerciseList';
@@ -70,6 +72,14 @@ export default function HistoryDetailPage() {
 
   const [isPhotoOpen, setIsPhotoOpen] = useState(false);
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+  // Finishing a workout lands here with ?summary=1 so the coach's take opens straight away.
+  const [searchParams] = useSearchParams();
+  const [isSummaryOpen, setIsSummaryOpen] = useState(() => searchParams.get('summary') === '1');
+
+  const handleSummaryOpenChange = (open: boolean) => {
+    setIsSummaryOpen(open);
+    if (!open && searchParams.has('summary')) navigate(`/athlete/history/${sessionId}`, { replace: true });
+  };
 
   const { data: workoutLog, isLoading } = useDoc<WorkoutLog>('workoutLogs', sessionId);
 
@@ -298,50 +308,63 @@ export default function HistoryDetailPage() {
     <div className="page space-y-4">
       {/* Summary */}
       <section className="rounded-2xl bg-card p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
+        {/* Details on the left, workout photo (when there is one) on the right */}
+        <div className="flex items-stretch gap-3">
+          <div className="flex min-w-0 flex-1 flex-col">
             <p className="flex items-center gap-1.5 text-[13px] font-semibold text-volt">
               <CheckCircle2 className="h-4 w-4" /> Ukończono
             </p>
-            <h1 className="mt-1 line-clamp-2 font-display text-[2.75rem] font-bold uppercase leading-[0.95]">{workoutLog.workoutName}</h1>
+            <h1
+              className={cn(
+                'mt-1 line-clamp-2 break-words font-display font-bold uppercase leading-[0.95]',
+                photoUrl ? 'text-[2.25rem]' : 'text-[2.75rem]'
+              )}
+            >
+              {workoutLog.workoutName}
+            </h1>
+
+            {completedDate && (
+              <p className="mt-2 text-sm capitalize text-muted-foreground">
+                {format(completedDate, 'EEEE, d MMMM yyyy · HH:mm', { locale: pl })}
+              </p>
+            )}
+            {workoutLog.gymName && (
+              <p className="mt-0.5 flex items-center gap-1 text-sm text-muted-foreground">
+                <MapPin className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{workoutLog.gymName}</span>
+              </p>
+            )}
+
+            <div className="-ml-2.5 mt-auto flex pt-2">
+              <Button onClick={handleShare} variant="ghost" size="icon" aria-label="Udostępnij trening">
+                <Share2 className="h-4 w-4" />
+              </Button>
+              <Button onClick={handleSaveAsTemplate} disabled={isSavingTemplate} variant="ghost" size="icon" aria-label="Zapisz jako szablon treningu">
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <div className="-mr-1.5 -mt-1.5 flex shrink-0">
-            <Button onClick={handleShare} variant="ghost" size="icon" aria-label="Udostępnij trening">
-              <Share2 className="h-4 w-4" />
-            </Button>
-            <Button onClick={handleSaveAsTemplate} disabled={isSavingTemplate} variant="ghost" size="icon" aria-label="Zapisz jako szablon treningu">
-              <Copy className="h-4 w-4" />
-            </Button>
-          </div>
+
+          {/* Workout Photo */}
+          {photoUrl && (
+            <button
+              type="button"
+              onClick={() => setIsPhotoOpen(true)}
+              aria-label="Powiększ zdjęcie"
+              className="relative block aspect-[3/4] w-36 shrink-0 self-start overflow-hidden rounded-xl bg-secondary"
+            >
+              <img
+                src={photoUrl}
+                alt={`Zdjęcie z treningu ${workoutLog.workoutName}`}
+                className="absolute inset-0 h-full w-full object-cover"
+                loading="lazy"
+              />
+            </button>
+          )}
         </div>
 
-        {completedDate && (
-          <p className="mt-2 text-sm capitalize text-muted-foreground">
-            {format(completedDate, 'EEEE, d MMMM yyyy · HH:mm', { locale: pl })}
-          </p>
-        )}
-        {workoutLog.gymName && (
-          <p className="mt-0.5 flex items-center gap-1 text-sm text-muted-foreground">
-            <MapPin className="h-3.5 w-3.5" /> {workoutLog.gymName}
-          </p>
-        )}
-
-        {/* Workout Photo */}
-        {photoUrl && (
-          <button
-            type="button"
-            onClick={() => setIsPhotoOpen(true)}
-            aria-label="Powiększ zdjęcie"
-            className="relative mt-3 block aspect-video w-full overflow-hidden rounded-xl bg-secondary"
-          >
-            <img
-              src={photoUrl}
-              alt={`Zdjęcie z treningu ${workoutLog.workoutName}`}
-              className="absolute inset-0 h-full w-full object-cover"
-              loading="lazy"
-            />
-          </button>
-        )}
+        <Button variant="secondary" className="mt-3 w-full gap-2" onClick={() => setIsSummaryOpen(true)}>
+          <Sparkles className="h-4 w-4" /> Zobacz podsumowanie
+        </Button>
       </section>
 
       {/* Key Performance Indicators (KPIs) 4-tile grid */}
@@ -716,6 +739,13 @@ export default function HistoryDetailPage() {
           </Button>
         </div>
       </section>
+
+      <CoachSummaryDialog
+        workoutLogId={workoutLog.id}
+        savedSummary={workoutLog.aiSummary}
+        open={isSummaryOpen}
+        onOpenChange={handleSummaryOpenChange}
+      />
 
       {/* Photo Lightbox Dialog */}
       <Dialog open={isPhotoOpen} onOpenChange={setIsPhotoOpen}>

@@ -66,6 +66,8 @@ export interface WorkoutLog {
   status?: 'in-progress' | 'completed';
   startTime?: string;
   feedback?: string;
+  /** AI coach summary, generated once on demand and reused afterwards. */
+  aiSummary?: string;
   newRecords?: PersonalRecord[];
   sourceWorkoutId?: string; // Track the original workout template used
 }

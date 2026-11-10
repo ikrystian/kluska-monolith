@@ -869,7 +869,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
       clearWorkoutLogsCache(swrMutate);
       refetchActiveWorkout();
 
-      navigate(`/athlete/history/${workoutLogId}`);
+      navigate(`/athlete/history/${workoutLogId}?summary=1`);
     } catch (error) {
       console.error('Error saving workout:', error);
       toast({

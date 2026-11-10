@@ -33,6 +33,8 @@ export interface IWorkoutLog extends Document {
   gymName?: string;
   status: 'in-progress' | 'completed' | 'cancelled';
   feedback?: string;
+  /** AI coach summary, generated once on demand and reused afterwards. */
+  aiSummary?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -88,6 +90,7 @@ const WorkoutLogSchema = new Schema<IWorkoutLog>(
       default: 'in-progress',
     },
     feedback: { type: String },
+    aiSummary: { type: String },
   },
   {
     timestamps: true,
