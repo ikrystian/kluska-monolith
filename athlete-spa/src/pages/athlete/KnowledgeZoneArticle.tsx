@@ -167,7 +167,7 @@ export default function ArticlePage() {
             alt={article.imageHint || ''}
             className="absolute inset-0 h-full w-full object-cover"
           />
-          
+
         </div>
 
         <div className="absolute right-4 top-3">
@@ -213,7 +213,7 @@ export default function ArticlePage() {
           </div>
         </header>
 
-        <div className="article-body mt-6" dangerouslySetInnerHTML={{ __html: article.content }} />
+        <div id="knowledge-zone-article" className="article-body mt-6" dangerouslySetInnerHTML={{ __html: article.content }} />
 
         <footer className="mt-10 flex items-center justify-between gap-3 rounded-2xl bg-card p-4">
           <div className="flex items-center gap-3">

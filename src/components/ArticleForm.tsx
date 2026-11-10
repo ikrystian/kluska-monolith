@@ -230,7 +230,7 @@ export function ArticleForm({ article, categories, onSubmit, isLoading }: Articl
                       />
                     </FormControl>
                     <FormDescription>
-                      Użyj paska narzędzi, aby formatować tekst. Przełącz się na podgląd, aby zobaczyć jak będzie wyglądał artykuł.
+                      Możesz użyć edytora wizualnego lub przełączyć się na zakładkę &quot;Kod HTML&quot;, aby bezpośrednio wpisywać znaczniki HTML. Przełącz się na podgląd, aby zobaczyć efekt.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
