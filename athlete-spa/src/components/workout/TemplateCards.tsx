@@ -108,7 +108,7 @@ export function TemplatePreviewSheet({ template, trigger, onStart, lastSession }
   return (
     <Sheet>
       <SheetTrigger asChild>{trigger}</SheetTrigger>
-      <SheetContent side="bottom" className="flex flex-col gap-0 px-0 pt-0">
+      <SheetContent side="bottom" className="template-preview-sheetflex flex-col gap-0 px-0 pt-0">
         <TemplateCover workout={template} className="h-52 shrink-0">
           <div className="absolute inset-0 bg-gradient-to-t from-popover via-popover/20 to-transparent" />
         </TemplateCover>
