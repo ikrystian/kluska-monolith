@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "612157445461",
+    "project_id": "kluska-88f17",
+    "storage_bucket": "kluska-88f17.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:612157445461:android:505ddb0428648a6061cbdc",
+        "android_client_info": {
+          "package_name": "leniwakluska.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9dGRp4fBXp8Qnq2UDBXyqpw314js2qn4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
