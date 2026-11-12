@@ -17,8 +17,8 @@ import type { SocialUserSummary } from '@/lib/friends';
 export const CHALLENGE_LIMITS = { minKm: 1, maxKm: 1000, maxDays: 90, messageMaxLength: 140 } as const;
 
 export interface ChallengeView extends Challenge {
-  challenger: SocialUserSummary;
-  challenged: SocialUserSummary;
+  challenger?: SocialUserSummary;
+  challenged?: SocialUserSummary;
 }
 
 export interface ChallengeRun {
@@ -60,9 +60,26 @@ export interface ChallengeSides {
   opponent: ChallengeSide;
 }
 
+function resolveUser(
+  user?: Partial<SocialUserSummary> | null,
+  userId?: string,
+  name?: string,
+  avatarUrl?: string
+): SocialUserSummary {
+  return {
+    userId: user?.userId || userId || '',
+    displayName: user?.displayName || name || 'Zawodnik',
+    nickname: user?.nickname,
+    avatarUrl: user?.avatarUrl || avatarUrl,
+    location: user?.location,
+  };
+}
+
 export function challengeSides(c: ChallengeView, myId: string): ChallengeSides {
-  const challenger: ChallengeSide = { user: c.challenger, km: c.challengerProgress, reachedAt: c.challengerReachedAt };
-  const challenged: ChallengeSide = { user: c.challenged, km: c.challengedProgress, reachedAt: c.challengedReachedAt };
+  const challengerUser = resolveUser(c.challenger, c.challengerId, c.challengerName, c.challengerAvatarUrl);
+  const challengedUser = resolveUser(c.challenged, c.challengedId, c.challengedName, c.challengedAvatarUrl);
+  const challenger: ChallengeSide = { user: challengerUser, km: c.challengerProgress ?? 0, reachedAt: c.challengerReachedAt };
+  const challenged: ChallengeSide = { user: challengedUser, km: c.challengedProgress ?? 0, reachedAt: c.challengedReachedAt };
   const isChallenger = c.challengerId === myId;
   return isChallenger
     ? { isChallenger, me: challenger, opponent: challenged }

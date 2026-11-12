@@ -53,14 +53,14 @@ export function ActiveChallenges({
         {shownInvites.length > 0 && (
           <ul className="space-y-3">
             {shownInvites.map(c => (
-              <ChallengeCard key={c.id} challenge={c} myId={myId} />
+              <ChallengeCard key={c.id ?? (c as any)._id} challenge={c} myId={myId} />
             ))}
           </ul>
         )}
         {shownRaces.length > 0 && (
           <ul className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card">
             {shownRaces.map(c => (
-              <RaceRow key={c.id} challenge={c} myId={myId} />
+              <RaceRow key={c.id ?? (c as any)._id} challenge={c} myId={myId} />
             ))}
           </ul>
         )}
@@ -72,9 +72,10 @@ export function ActiveChallenges({
 function RaceRow({ challenge, myId }: { challenge: ChallengeView; myId: string }) {
   const sides = challengeSides(challenge, myId);
   const lead = leadLine(sides);
+  const challengeId = challenge.id ?? (challenge as any)._id ?? '';
   return (
     <li>
-      <Link to={challengeHref(challenge.id)} className="row-tap block px-3.5 py-3">
+      <Link to={challengeHref(challengeId)} className="row-tap block px-3.5 py-3">
         <div className="flex items-center gap-3">
           <SocialAvatar user={sides.opponent.user} className="h-9 w-9" />
           <span className="min-w-0 flex-1">
