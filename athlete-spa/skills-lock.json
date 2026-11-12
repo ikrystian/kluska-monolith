@@ -1,11 +1,17 @@
 {
-  "version": 1,
+  "version": 2,
   "skills": {
+    "huashu-motion": {
+      "source": "alchaincyf/huashu-motion",
+      "sourceType": "github",
+      "skillPath": "skills/huashu-motion/SKILL.md",
+      "computedHash": "fcc86ea4d4aec4ebe5d4ac176f14a295b44d97e2637ef339d7009b527abffb46"
+    },
     "mobile-app-ui-design": {
       "source": "ceorkm/mobile-app-ui-design",
       "sourceType": "github",
       "skillPath": "SKILL.md",
-      "computedHash": "e477467d913d35f0502f4449e721df52ce6aafcad4268ccb8ed083440eae7f80"
+      "computedHash": "a7f5257845f24d24195d41dd2be378dc30843e5a50536ad0e96ebd2c65021341"
     }
   }
 }

@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="pl" data-composition-variables='[
+  {"id":"word1","type":"string","label":"Słowo 1","default":"TRENUJ.","group":"Słowa"},
+  {"id":"word2","type":"string","label":"Słowo 2","default":"BIEGAJ.","group":"Słowa"},
+  {"id":"word3","type":"string","label":"Słowo 3","default":"JEDZ.","group":"Słowa"},
+  {"id":"word4","type":"string","label":"Słowo 4","default":"WYGRYWAJ.","group":"Słowa"},
+  {"id":"line1a","type":"string","label":"Hasło, linia 1","default":"JEDNA","group":"Hasło"},
+  {"id":"line1b","type":"string","label":"Hasło, linia 2","default":"APKA.","group":"Hasło"},
+  {"id":"line2a","type":"string","label":"Dopowiedzenie, linia 1","default":"CAŁY","group":"Hasło"},
+  {"id":"line2b","type":"string","label":"Dopowiedzenie, linia 2","default":"TRENING.","group":"Hasło"},
+  {"id":"wordmark","type":"string","label":"Znak","default":"#LENIWAKLUSKA","group":"Koniec"},
+  {"id":"signoff","type":"string","label":"Podpis","default":"Lightweight, baby!","group":"Koniec"},
+  {"id":"streak","type":"number","label":"Dni serii","default":14,"min":1,"max":365,"step":1,"group":"Liczby"},
+  {"id":"lime","type":"color","label":"Limonka","default":"#C3F037","group":"Kolory"},
+  {"id":"orange","type":"color","label":"Pomarańcz","default":"#FF5B24","group":"Kolory"},
+  {"id":"ink","type":"color","label":"Czerń","default":"#0E0F11","group":"Kolory"},
+  {"id":"paper","type":"color","label":"Biel","default":"#F5F2EB","group":"Kolory"}
+]'>
+<head>
+<meta charset="utf-8">
+<title>Leniwa Kluska · Plakat</title>
+<script src="vendor/gsap.min.js"></script>
+<script src="vendor/om.js"></script>
+<style id="om-fonts">
+@font-face{font-family:"Barlow Condensed";src:url("assets/fonts/barlow-condensed-latin-700-normal.woff2") format("woff2");font-weight:700}
+@font-face{font-family:"Barlow Condensed";src:url("assets/fonts/barlow-condensed-latin-800-normal.woff2") format("woff2");font-weight:800}
+@font-face{font-family:"Barlow Condensed";src:url("assets/fonts/barlow-condensed-latin-900-normal.woff2") format("woff2");font-weight:900}
+@font-face{font-family:"Figtree";src:url("assets/fonts/figtree-latin-wght-normal.woff2") format("woff2");font-weight:300 900}
+</style>
+<style>
+:root{--cardc:#17191C;--muted:#9FA5AD}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--ink)}
+#film{position:relative;width:100%;height:100%;overflow:hidden;background:var(--ink);color:var(--paper);font-family:"Figtree",sans-serif}
+.sc{position:absolute;inset:0;opacity:0;overflow:hidden}
+#s1{opacity:1}
+.bg{position:absolute;inset:0}
+.d{font-family:"Barlow Condensed",sans-serif;text-transform:uppercase;font-weight:900;line-height:.82}
+.word{position:absolute;left:50px;width:980px;display:flex;justify-content:space-between;white-space:nowrap;letter-spacing:-.01em}
+.word.mask{overflow:hidden;line-height:.92;padding:.1em 0 .05em;margin-top:-.1em}
+.ch{display:inline-block}
+.ph{position:absolute;width:780px;height:1688px;border-radius:70px;overflow:hidden;background:#000;box-shadow:0 60px 120px #000c,0 0 0 3px #ffffff18}
+.ph img{display:block;width:100%}
+.stk{position:absolute;display:inline-flex;align-items:center;gap:22px;padding:24px 44px 26px;border-radius:999px;font-size:84px;white-space:nowrap}
+.stk svg{width:70px;height:88px;flex:none}
+#tag{position:absolute;left:60px;top:70px;font-size:54px;font-weight:800;letter-spacing:1px;color:var(--tc,#F5F2EB);z-index:20}
+#tag b{color:var(--th,#C3F037)}
+.bi{position:absolute;left:0;top:0;transform-origin:0 0;width:1170px;height:2532px}
+.lb{position:absolute;left:0;right:0;bottom:0;height:330px;display:flex;align-items:center;justify-content:center;font-size:250px;white-space:nowrap;padding-top:20px}
+.tape{position:absolute;left:-80px;top:1260px;width:1400px;height:170px;background:var(--orange);transform:rotate(7deg);overflow:hidden;box-shadow:0 20px 60px #0008}
+.tape .run{position:absolute;left:0;top:0;height:170px;display:flex;align-items:center;gap:60px;white-space:nowrap;font-size:124px;color:#160800;line-height:1}
+.tape i{font-style:normal;opacity:.35}
+.dot{position:absolute;left:480px;top:900px;width:120px;height:120px;border-radius:50%;background:var(--lime)}
+.logo{position:absolute;left:300px;top:540px;width:480px;height:480px;border-radius:110px;overflow:hidden;box-shadow:0 40px 100px #000a,0 0 0 4px #ffffff14}
+.logo img{width:100%;display:block}
+.disc{position:absolute;border-radius:50%;background:var(--orange)}
+.plus{position:absolute;inset:0}
+.plus:before,.plus:after{content:"";position:absolute;left:50%;top:50%;background:#1a0a00;border-radius:6px;transform:translate(-50%,-50%)}
+.plus:before{width:42%;height:7%}.plus:after{width:7%;height:42%}
+</style>
+</head>
+<body>
+<div id="film" data-composition-id="film" data-width="1080" data-height="1920" data-fps="30">
+  <audio id="om-sound" src="assets/sound.wav" data-start="0" data-duration="15" data-track-index="8" data-volume="1"></audio>
+
+<!-- S1 · TRENUJ. -->
+<div class="sc" id="s1" data-om-id="scene-trenuj" data-layout-allow-occlusion data-layout-allow-overflow data-layout-allow-overlap>
+  <div class="bg" style="background:var(--ink)"></div>
+  <div class="d word" id="w1ghost" style="top:430px;font-size:330px;color:var(--paper);opacity:.12">BIEGAJ.</div>
+  <div class="d word" id="w1" data-om-id="word-1" data-om-var="word1" style="top:120px;font-size:316px;color:var(--lime)"></div>
+  <div class="ph" id="ph1" style="left:150px;top:560px;transform-origin:390px 460px;transform:rotate(-5deg)"><img src="assets/screens/dashboard.png" alt=""></div>
+  <div class="d stk" id="stk1" data-om-id="sticker-streak" style="right:50px;top:690px;background:var(--lime);color:#14190a;transform:rotate(6deg)">
+    <svg viewBox="0 0 24 30" fill="none" stroke="#FF5B24" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 28c5 0 9-3.4 9-8.6 0-3.6-1.9-6-3.8-8.2-.4 2.3-1.5 3.4-2.7 3.9.6-4.6-1.3-8.8-5.3-12.1C9.6 7 5.5 10.2 4 14.6 3.2 17 3 18.6 3 19.4 3 24.6 7 28 12 28z"/></svg>
+    <span><span id="n-streak1">14</span> dni serii</span>
+  </div>
+</div>
+
+<!-- S2 · BIEGAJ. -->
+<div class="sc" id="s2" data-om-id="scene-biegaj" data-layout-allow-occlusion data-layout-allow-overflow data-layout-allow-overlap>
+  <div class="bg" style="background:var(--orange)"></div>
+  <div class="d word" id="w2" data-om-id="word-2" data-om-var="word2" style="top:120px;font-size:345px;color:var(--ink)"></div>
+  <div class="ph" id="ph2" style="left:170px;top:600px;transform-origin:390px 380px;transform:rotate(4deg)"><img src="assets/screens/running.png" alt=""></div>
+  <div class="d stk" id="stk2" data-om-id="sticker-km" style="left:50px;top:760px;background:var(--ink);color:var(--lime);transform:rotate(-6deg)"><span><span id="n-km">8,2</span> km</span></div>
+</div>
+
+<!-- S3 · JEDZ. -->
+<div class="sc" id="s3" data-om-id="scene-jedz" data-layout-allow-occlusion data-layout-allow-overflow data-layout-allow-overlap>
+  <div class="bg" style="background:var(--lime)"></div>
+  <div class="d word mask" id="w3" data-om-id="word-3" data-om-var="word3" style="top:150px;font-size:470px;color:var(--ink)"></div>
+  <div class="ph" id="ph3" style="left:150px;top:660px;transform-origin:390px 280px;transform:rotate(-3deg)"><img src="assets/screens/dashboard2.png" alt=""></div>
+  <div class="d stk" id="stk3" data-om-id="sticker-kcal" style="right:40px;top:1180px;background:var(--ink);color:var(--paper);transform:rotate(5deg)"><span><span id="n-kcal">2600</span> kcal zostało</span></div>
+</div>
+
+<!-- S4 · WYGRYWAJ. -->
+<div class="sc" id="s4" data-om-id="scene-wygrywaj" data-layout-allow-occlusion data-layout-allow-overflow data-layout-allow-overlap>
+  <div class="bg" style="background:var(--ink)"></div>
+  <div class="d word" id="w4" data-om-id="word-4" data-om-var="word4" style="top:200px;font-size:220px;color:var(--paper)"></div>
+  <div class="ph" id="ph4" style="left:150px;top:560px;transform-origin:390px 330px;transform:rotate(-4deg)"><img src="assets/screens/you.png" alt=""></div>
+  <div class="d stk" id="stk4a" data-om-id="sticker-level" style="left:40px;top:1160px;background:var(--lime);color:#14190a;transform:rotate(-5deg)"><span>Poziom 12</span></div>
+  <div class="d stk" id="stk4b" data-om-id="sticker-streak2" style="right:40px;top:1380px;background:var(--orange);color:#160800;transform:rotate(5deg)"><span><span id="n-streak2">1</span> dni serii</span></div>
+</div>
+
+<!-- BURST -->
+<div class="sc" id="sb" data-om-id="scene-burst" data-layout-allow-occlusion data-layout-allow-overflow data-layout-allow-overlap></div>
+
+<!-- STOP -->
+<div class="sc" id="sst" data-om-id="scene-stop">
+  <div class="bg" style="background:var(--ink)"></div>
+  <div class="dot" id="dot"></div>
+</div>
+
+<!-- DROP -->
+<div class="sc" id="sd" data-om-id="scene-drop" data-layout-allow-occlusion data-layout-allow-overflow data-layout-allow-overlap>
+  <div class="bg" style="background:var(--lime)"></div>
+  <div id="dcam" style="position:absolute;inset:0;transform-origin:540px 1000px">
+    <div class="d word" id="wd1" data-om-id="line-1a" data-om-var="line1a" style="top:80px;font-size:400px;color:var(--ink);justify-content:flex-start"></div>
+    <div class="d word" id="wd2" data-om-id="line-1b" data-om-var="line1b" style="top:410px;font-size:400px;color:var(--ink);justify-content:flex-start"></div>
+    <div class="ph" id="phd" style="left:90px;top:960px;width:900px;height:1948px;transform-origin:450px 300px;transform:rotate(-5deg)"><img src="assets/screens/dashboard.png" alt=""></div>
+    <div class="d tape" id="tape"><div class="run" id="run"></div></div>
+  </div>
+</div>
+
+<!-- PAYOFF -->
+<div class="sc" id="sp" data-om-id="scene-payoff" data-layout-allow-occlusion data-layout-allow-overflow data-layout-allow-overlap>
+  <div class="bg" style="background:var(--ink)"></div>
+  <div class="d word mask" id="wp1" data-om-id="line-2a" data-om-var="line2a" style="top:300px;font-size:460px;color:var(--lime)"></div>
+  <div class="d word mask" id="wp2" data-om-id="line-2b" data-om-var="line2b" style="top:770px;font-size:290px;color:var(--paper)"></div>
+  <div id="tabs" style="position:absolute;left:0;top:1380px;width:1080px;height:330px;overflow:hidden;background:#0E0F11">
+    <img src="assets/screens/dashboard.png" alt="" style="position:absolute;left:-459px;top:-3961px;width:1989px;height:4304px;max-width:none">
+  </div>
+</div>
+
+<!-- MARK -->
+<div class="sc" id="sm" data-om-id="scene-mark" data-layout-allow-occlusion data-layout-allow-overflow data-layout-allow-overlap>
+  <div class="bg" style="background:var(--ink)"></div>
+  <div class="logo" id="logo" data-om-id="logo"><img src="assets/logo.png" alt=""></div>
+  <div class="d" id="wm" data-om-id="wordmark" data-var-text="wordmark" style="position:absolute;left:0;right:0;top:1130px;text-align:center;font-size:150px;color:var(--paper);letter-spacing:2px"></div>
+  <div id="so" data-om-id="signoff" data-var-text="signoff" style="position:absolute;left:0;right:0;top:1360px;text-align:center;font:italic 800 66px Figtree,sans-serif;color:var(--lime)"></div>
+</div>
+
+<!-- carried object: the + button -->
+<div class="disc" id="disc" data-om-id="plus-button" style="opacity:0;z-index:15"><div class="plus"></div></div>
+
+<div id="tag" class="d" data-om-id="tag"><b>#</b>LENIWAKLUSKA</div>
+</div>
+
+<script type="text/vnd.abc" id="om-score">
+X:1
+T:Leniwa Kluska · Plakat
+M:4/4
+L:1/8
+Q:1/4=144
+K:Gm
+V:KK inst=drums kit=808 gain=0.9
+!mf! C,,3 C,, z2 C,,2 | C,,2 z C,, z2 C,,2 | C,,3 C,, z2 C,,2 | C,,3 C,, z C,, C,,2 | !f! C,,2 C,,2 C,,2 C,,2 |
+[M:2/4] C,,2 C,,2 | [M:2/4] z4 |
+[M:4/4] !ff! C,,2 C,,2 C,,2 C,,2 | C,,3 C,, z C,, C,,2 | C,,2 z6 |
+V:CL inst=drums kit=808 gain=0.8
+z4 D,,2 z2 | z4 D,,2 z2 | z4 D,,2 z2 | z4 D,,2 z2 | z2 D,,2 z2 D,,2 |
+[M:2/4] z2 D,,2 | [M:2/4] z4 |
+[M:4/4] z4 D,,2 z2 | z4 D,,2 z2 | z8 |
+V:HT inst=drums kit=808 gain=0.6
+!mark:trenuj! !mp! ^F,,^F,,^F,,^F,,^F,,^F,,^F,,^F,, | !mark:biegaj! ^F,,^F,,^F,,^F,,^F,,^F,,^F,,^F,, | !mark:jedz! ^F,,^F,,^F,,^F,, ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ | !mark:wygrywaj! !mf! ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ | !mark:burst! !f! ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ |
+[M:2/4] ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ | [M:2/4] !rise(! z4 |
+[M:4/4] !rise)! !mark:drop! !hit! !ff! [^C,^F,,]/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ | !mark:payoff! ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ ^F,,/^F,,/ | !mark:mark! [^C,^F,,]2 z6 |
+V:SB inst=sub808 gain=0.9
+!mf! G,,4 z2 B,,2 | G,,4 z2 D,,2 | E,,4 z2 E,,2 | F,,4 z2 F,,2 | !f! G,,2 G,,2 B,,2 B,,2 |
+[M:2/4] E,,2 E,,2 | [M:2/4] !mark:stop! z4 |
+[M:4/4] !ff! G,,4 z2 B,,2 | E,,4 F,,4 | G,,6 z2 |
+V:BL inst=bell gain=0.5
+z8 | z8 | !mp! G2 B2 d2 g2 | f2 d2 B2 z2 | !mf! g2 g2 f2 f2 |
+[M:2/4] d2 d2 | [M:2/4] z4 |
+[M:4/4] !f! [Gg]2 [Bb]2 [dd']2 [gg']2 | [ff']2 [dd']2 [BB]4 | G B d g5 |
+V:SAW inst=supersaw gain=0.45
+z8 | z8 | z8 | z8 | z8 |
+[M:2/4] z4 | [M:2/4] z4 |
+[M:4/4] !f! z[GBd] z[GBd] z[GBd] z[GBd] | z[EGB] z[EGB] z[FAc] z[FAc] | [GBd]6 z2 |
+</script>
+
+<script>
+const V = OM.vars();
+OM.music({ bpm: 144 });
+const B = (n) => OM.beat(n);
+const FPS = 30;
+const sn = (t) => (Math.floor(t * FPS + 1e-6) + 0.5) / FPS;   // cuts half a frame in
+const $ = (s) => document.querySelector(s);
+const tl = gsap.timeline({ paused: true });
+
+/* ---- variables into the DOM (words are split per letter) ---- */
+document.documentElement.style.setProperty('--lime', V.lime);
+document.documentElement.style.setProperty('--orange', V.orange);
+document.documentElement.style.setProperty('--ink', V.ink);
+document.documentElement.style.setProperty('--paper', V.paper);
+function split(sel, text, periodColor) {
+  const el = $(sel); el.innerHTML = '';
+  [...text].forEach((c) => {
+    const s = document.createElement('span'); s.className = 'ch'; s.textContent = c;
+    if (c === '.' && periodColor) s.style.color = periodColor;
+    el.appendChild(s);
+  });
+  return el.querySelectorAll('.ch');
+}
+const L1 = split('#w1', V.word1), L2 = split('#w2', V.word2), L3 = split('#w3', V.word3), L4 = split('#w4', V.word4, V.orange);
+const LD1 = split('#wd1', V.line1a), LD2 = split('#wd2', V.line1b), LP1 = split('#wp1', V.line2a), LP2 = split('#wp2', V.line2b, V.orange);
+$('#wm').textContent = V.wordmark; $('#so').textContent = V.signoff;
+const wmEl = $('#wm'); wmEl.innerHTML = '<span style="color:var(--lime)">#</span>' + V.wordmark.replace(/^#/, '');
+$('#n-streak1').textContent = V.streak;
+// the marquee of the drop: the four words, repeated
+$('#run').innerHTML = [V.word1, V.word2, V.word3, V.word4, V.word1, V.word2, V.word3, V.word4].map((w) => '<span>' + w.replace('.', '') + '</span><i>•</i>').join('');
+
+/* ---- scenes on the beat grid ---- */
+function scene(id, a, b) {
+  tl.set(id, { opacity: 1 }, a === 0 ? 0 : sn(a));
+  if (b) tl.set(id, { opacity: 0 }, sn(b));
+}
+scene('#s1', 0, B(4)); scene('#s2', B(4), B(8)); scene('#s3', B(8), B(12)); scene('#s4', B(12), B(16));
+scene('#sb', B(16), B(22)); scene('#sst', B(22), B(24)); scene('#sd', B(24), B(28));
+scene('#sp', B(28), B(32)); scene('#sm', B(32), 0);
+tl.addLabel('scene:trenuj', 0).addLabel('scene:biegaj', B(4)).addLabel('scene:jedz', B(8)).addLabel('scene:wygrywaj', B(12))
+  .addLabel('scene:burst', B(16)).addLabel('scene:stop', B(22)).addLabel('scene:drop', B(24))
+  .addLabel('scene:payoff', B(28)).addLabel('scene:mark', B(32));
+
+// the tag: on dark in lime/paper, on colour in ink
+tl.set('#tag', { '--tc': '#0E0F11', '--th': '#0E0F11' }, sn(B(4)));
+tl.set('#tag', { '--tc': '#F5F2EB', '--th': '#C3F037' }, sn(B(12)));
+tl.set('#tag', { opacity: 0 }, sn(B(16)));
+
+const pop = (sel, at) => tl.fromTo(sel, { scale: 0 }, { scale: 1, duration: 0.32, ease: 'back.out(2.2)' }, at);
+
+/* S1 · TRENUJ.  — frame 0 is the poster: word, phone, sticker already there */
+tl.fromTo('#w1', { scale: 1.05, transformOrigin: '50% 50%' }, { scale: 1, duration: 0.35, ease: 'expo.out' }, 0);
+tl.fromTo('#ph1', { y: 120 }, { y: 0, duration: 0.55, ease: 'expo.out' }, 0);
+tl.fromTo('#ph1', { scale: 1, rotation: -5, y: 0 }, { scale: 1.55, rotation: -2, y: 130, duration: 0.4, ease: 'expo.inOut', immediateRender: false }, B(2));
+tl.fromTo('#stk1', { scale: 1 }, { scale: 1.14, duration: 0.18, ease: 'power2.out', yoyo: true, repeat: 1, immediateRender: false }, B(2));
+tl.fromTo('#w1ghost', { opacity: 0 }, { opacity: 0.12, duration: 0.3, immediateRender: false }, 0);
+OM.sfx('hit', 0.02, { gain: 0.8 }); OM.sfx('whoosh', B(2) - 0.15, { gain: 0.5 }); OM.sfx('pop', B(2) + 0.1, { gain: 0.5 });
+
+/* S2 · BIEGAJ. — slides in from the right, orange ground */
+let t0 = B(4);
+tl.fromTo('#w2', { xPercent: 110 }, { xPercent: 0, duration: 0.4, ease: 'power4.out', immediateRender: false }, t0);
+tl.fromTo('#ph2', { y: 700, rotation: 8 }, { y: 0, rotation: 4, duration: 0.5, ease: 'expo.out', immediateRender: false }, t0);
+tl.fromTo('#ph2', { scale: 1 }, { scale: 1.4, y: 60, duration: 0.45, ease: 'expo.inOut', immediateRender: false }, B(6) - 0.05);
+pop('#stk2', B(6) + 0.1);
+OM.sfx('impact', t0 + 0.03, { gain: 0.6 }); OM.sfx('whoosh', t0 - 0.05, { gain: 0.35 }); OM.sfx('pop', B(6) + 0.2, { gain: 0.55 });
+
+/* S3 · JEDZ. — letters drop in, lime ground */
+t0 = B(8);
+tl.fromTo(L3, { yPercent: -150 }, { yPercent: 0, duration: 0.32, stagger: 0.045, ease: 'power4.out', immediateRender: false }, t0);
+tl.fromTo('#ph3', { y: 800, rotation: -8 }, { y: 0, rotation: -3, duration: 0.5, ease: 'expo.out', immediateRender: false }, t0 + 0.05);
+tl.fromTo('#ph3', { scale: 1 }, { scale: 1.45, y: -40, duration: 0.45, ease: 'expo.inOut', immediateRender: false }, B(10) - 0.05);
+pop('#stk3', B(10) + 0.1);
+OM.sfx('impact', t0 + 0.03, { gain: 0.6 }); OM.sfx('pop', B(10) + 0.2, { gain: 0.55, note: 3 });
+
+/* S4 · WYGRYWAJ. — letters grow from the baseline, black ground */
+t0 = B(12);
+tl.fromTo(L4, { scaleY: 0, transformOrigin: '50% 100%' }, { scaleY: 1, duration: 0.3, stagger: 0.03, ease: 'expo.out', immediateRender: false }, t0);
+tl.fromTo('#ph4', { y: 800, rotation: 6 }, { y: 0, rotation: -4, duration: 0.5, ease: 'expo.out', immediateRender: false }, t0);
+tl.fromTo('#ph4', { scale: 1 }, { scale: 1.3, y: 20, duration: 0.4, ease: 'expo.inOut', immediateRender: false }, B(14) - 0.05);
+pop('#stk4a', B(14) + 0.05); pop('#stk4b', B(14) + 0.3);
+OM.sfx('impact', t0 + 0.03, { gain: 0.6 }); OM.sfx('pop', B(14) + 0.15, { gain: 0.5, note: 5 }); OM.sfx('pop', B(14) + 0.4, { gain: 0.5, note: 8 });
+
+/* BURST · full-bleed real screens, four on one beat, four on half a beat */
+const SHOTS = [
+  { img: 'history', fx: 585, fy: 850, z: 1.03, lb: '7 SESJI', bg: 'lime', fg: '#0E0F11', fs: 250, d: 1 },
+  { img: 'log', fx: 585, fy: 1400, z: 1.05, lb: 'REGENERACJA', bg: 'ink', fg: 'lime', fs: 170, d: 1 },
+  { img: 'running', fx: 585, fy: 1000, z: 1.05, lb: '8,2 KM', bg: 'orange', fg: '#0E0F11', fs: 250, d: 1 },
+  { img: 'you', fx: 585, fy: 600, z: 1.08, lb: 'POZIOM 12', bg: 'lime', fg: '#0E0F11', fs: 230, d: 1 },
+  { img: 'gamification', fx: 585, fy: 950, z: 1.05, lb: '4820 XP', bg: 'ink', fg: 'lime', fs: 250, d: 0.5 },
+  { img: 'dashboard2', fx: 585, fy: 2050, z: 1.0, lb: '4654 KG', bg: 'orange', fg: '#0E0F11', fs: 250, d: 0.5 },
+  { img: 'dashboard', fx: 585, fy: 400, z: 1.1, lb: '2/3 W TYGODNIU', bg: 'lime', fg: '#0E0F11', fs: 140, d: 0.5 },
+  { img: 'you', fx: 585, fy: 1050, z: 1.08, lb: '14 DNI SERII', bg: 'ink', fg: 'orange', fs: 160, d: 0.5 },
+];
+const COL = { lime: V.lime, ink: V.ink, orange: V.orange };
+const sb = $('#sb'); let bt = 16;
+SHOTS.forEach((s, i) => {
+  const el = document.createElement('div');
+  el.style.cssText = 'position:absolute;inset:0;opacity:0;overflow:hidden;background:#0E0F11';
+  el.dataset.omId = 'burst-' + (i + 1);
+  const im = document.createElement('img'); im.className = 'bi'; im.src = 'assets/screens/' + s.img + '.png';
+  const lb = document.createElement('div'); lb.className = 'd lb'; lb.textContent = s.lb; lb.style.cssText += `background:${COL[s.bg]};color:${COL[s.fg] || s.fg};font-size:${s.fs}px`;
+  el.appendChild(im); el.appendChild(lb); sb.appendChild(el);
+  const sc0 = 1080 / 1170 * s.z;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const x0 = clamp(540 - s.fx * sc0, 1080 - 1170 * sc0, 0), y0 = clamp(900 - s.fy * sc0, 1920 - 2532 * sc0, 0);
+  const start = B(bt), dur = B(s.d);
+  tl.set(el, { opacity: 1 }, sn(start)); tl.set(el, { opacity: 0 }, sn(start + dur));
+  tl.fromTo(im, { scale: sc0 * 1.12, x: x0 - 40, y: y0 - 60 }, { scale: sc0, x: x0, y: y0, duration: dur, ease: 'power2.out', immediateRender: false }, start);
+  tl.fromTo(lb, { yPercent: 100 }, { yPercent: 0, duration: Math.min(0.14, dur * 0.6), ease: 'power4.out', immediateRender: false }, start);
+  OM.sfx('hit', start + 0.01, { gain: 0.55, pitch: 1 + i * 0.05 });
+  bt += s.d;
+});
+
+/* STOP · a lone full stop; it becomes the flood on the downbeat */
+tl.fromTo('#dot', { scale: 0.3 }, { scale: 1, duration: 0.12, ease: 'power4.out', immediateRender: false }, B(22));
+tl.fromTo('#dot', { scale: 1 }, { scale: 24, duration: B(24) - 0.45 - B(22) + 0.45, ease: 'power4.in', immediateRender: false }, B(22) + 0.45 - 0.02 + 0.02);
+OM.sfx('reverse', B(24), { gain: 0.6, dur: 0.8 });
+
+/* DROP · lime flood, JEDNA APKA., the big phone, the tape */
+t0 = B(24);
+tl.fromTo(LD1, { scale: 1.5, opacity: 0, transformOrigin: '50% 60%' }, { scale: 1, opacity: 1, duration: 0.28, stagger: 0.02, ease: 'expo.out', immediateRender: false }, t0);
+tl.fromTo(LD2, { scale: 1.5, opacity: 0, transformOrigin: '50% 60%' }, { scale: 1, opacity: 1, duration: 0.28, stagger: 0.02, ease: 'expo.out' }, t0 + B(1));
+tl.fromTo('#phd', { y: 1000, rotation: -12 }, { y: 0, rotation: -5, duration: 0.6, ease: 'expo.out', immediateRender: false }, t0 + 0.1);
+tl.fromTo('#run', { x: 0 }, { x: -760, duration: B(4), ease: 'none', immediateRender: false }, t0);
+tl.fromTo('#tape', { xPercent: 60 }, { xPercent: 0, duration: 0.4, ease: 'power4.out', immediateRender: false }, t0 + B(2));
+tl.fromTo('#dcam', { scale: 1 }, { scale: 1.07, duration: B(4), ease: 'none', immediateRender: false }, t0);
+OM.sfx('whoosh', t0 + B(2) - 0.1, { gain: 0.4 }); OM.sfx('thud', t0 + 0.25, { gain: 0.6 });
+
+/* PAYOFF · CAŁY / TRENING., the real tab bar rises */
+t0 = B(28);
+tl.fromTo(LP1, { yPercent: 130 }, { yPercent: 0, duration: 0.3, stagger: 0.03, ease: 'power4.out', immediateRender: false }, t0);
+tl.fromTo(LP2, { yPercent: 130 }, { yPercent: 0, duration: 0.3, stagger: 0.03, ease: 'power4.out' }, B(30));
+tl.fromTo('#tabs', { y: 600 }, { y: 0, duration: 0.5, ease: 'expo.out' }, B(30) + 0.3);
+tl.fromTo('#disc', { y: 600 }, { y: 0, duration: 0.5, ease: 'expo.out' }, B(30) + 0.3);
+tl.set('#disc', { opacity: 1 }, sn(B(30) + 0.3));
+OM.sfx('impact', t0 + 0.03, { gain: 0.55 }); OM.sfx('thud', B(30) + 0.03, { gain: 0.55 }); OM.sfx('slide', B(30) + 0.3, { gain: 0.4 });
+
+/* MARK · the + button grows into the app icon */
+t0 = B(32);
+// the disc sits exactly over the + of the tab bar (page x 535, y 1100 + 145), then grows to the centre
+Object.assign($('#disc').style, { left: '404px', top: '1325px', width: '262px', height: '262px' });
+tl.set('#disc', { opacity: 0 }, sn(t0 + 0.34));
+tl.fromTo('#disc', { y: 0, scale: 1 }, { y: -546, scale: 1.8, duration: 0.34, ease: 'expo.inOut', immediateRender: false }, t0);
+tl.fromTo('#logo', { scale: 0.7, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: 'expo.out' }, t0 + 0.12);
+tl.fromTo('#wm', { yPercent: 40, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.35, ease: 'power4.out' }, t0 + 0.3);
+tl.fromTo('#so', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: 'power3.out' }, B(34));
+OM.sfx('whoosh', t0 - 0.05, { gain: 0.4 }); OM.sfx('chime', t0 + 0.25, { gain: 0.5 }); OM.sfx('pop', B(34) + 0.1, { gain: 0.45 });
+
+/* ---- counters: computed from t alone (no history) ---- */
+const eo = (p) => (p <= 0 ? 0 : p >= 1 ? 1 : 1 - Math.pow(2, -10 * p));
+const nf = (v, d) => v.toFixed(d).replace('.', ',');
+OM.clock(tl, (t) => {
+  $('#n-km').textContent = nf(8.2 * eo((t - (B(6) + 0.1)) / 0.45), 1);
+  $('#n-kcal').textContent = String(Math.round(2600 - (2600 - 1240) * eo((t - (B(10) + 0.1)) / 0.45)));
+  $('#n-streak2').textContent = String(Math.max(1, Math.round(1 + (V.streak - 1) * eo((t - (B(14) + 0.3)) / 0.5))));
+}, B(36));
+tl.to({}, { duration: 0.001 }, B(36) - 0.001);
+
+window.__timelines = window.__timelines || {};
+window.__timelines['film'] = tl;
+</script>
+</body>
+</html>

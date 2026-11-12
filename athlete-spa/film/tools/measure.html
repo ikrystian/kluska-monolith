@@ -1,0 +1,8 @@
+<!doctype html><meta charset="utf-8"><style>
+@font-face{font-family:"Barlow Condensed";src:url("../assets/fonts/barlow-condensed-latin-900-normal.woff2");font-weight:900}
+@font-face{font-family:"Barlow Condensed";src:url("../assets/fonts/barlow-condensed-latin-800-normal.woff2");font-weight:800}
+span{font:900 100px "Barlow Condensed";text-transform:uppercase;white-space:nowrap;letter-spacing:-.01em;position:absolute}
+</style><body><script>
+const words=['TRENUJ.','BIEGAJ.','JEDZ.','WYGRYWAJ.','JEDNA','APKA.','CAŁY','TRENING.','#LENIWAKLUSKA'];
+document.fonts.load('900 100px "Barlow Condensed"').then(()=>{const o={};for(const w of words){const s=document.createElement('span');s.textContent=w;document.body.appendChild(s);o[w]=Math.round(s.getBoundingClientRect().width)}document.title=JSON.stringify(o)});
+</script>
