@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useDoc } from '@/lib/db-hooks';
+import { PetCheer } from '@/components/pet/PetCheer';
 import { apiFetch } from '@/lib/api-client';
 import { computeElevationGain, computeRunSplits } from '@/lib/geo';
 import { buildKmSegments, cumulativeDistances, samplesFromPoints, type LatLngTuple, type PaceSample } from '@/lib/run-pace';
@@ -144,7 +145,17 @@ export default function RunDetailPage() {
   }
 
   return (
-    <div className="page">
+    <div className="page space-y-4">
+      {session.rewards && (
+        <PetCheer
+          pet={session.rewards.pet}
+          coins={session.rewards.coins}
+          multiplier={session.rewards.multiplier}
+          weekStreak={session.rewards.weekStreak}
+          chest={session.rewards.chest}
+          effort={`${session.rewards.distanceKm.toLocaleString('pl-PL', { maximumFractionDigits: 1 })} km${session.rewards.longestRun ? ' — Twój najdłuższy bieg' : ''}`}
+        />
+      )}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

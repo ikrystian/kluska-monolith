@@ -25,6 +25,10 @@ export interface IRunningSession extends Document {
   programId?: string;
   /** Snapshot of the program's name at run time, so history survives edits/deletion. */
   programName?: string;
+  /** Ustawiane atomowo przy przyznaniu nagród — bieg nagradzamy raz. */
+  rewardedAt?: Date;
+  /** Podsumowanie nagród (`RunRewardSummary`) — tylko serwer. */
+  rewards?: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -51,6 +55,8 @@ const RunningSessionSchema = new Schema<IRunningSession>(
     points: { type: [RunningTrackPointSchema], default: undefined },
     programId: { type: String },
     programName: { type: String },
+    rewardedAt: { type: Date },
+    rewards: { type: Schema.Types.Mixed },
   },
   {
     timestamps: true,

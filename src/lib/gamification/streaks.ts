@@ -86,3 +86,30 @@ export function effectiveStreak(current: number, lastActiveDay: string | null | 
   if (!lastActiveDay) return 0;
   return daysBetween(lastActiveDay, todayKey) <= 1 ? current : 0;
 }
+
+/** Ile aktywnych dni w tygodniu podtrzymuje serię tygodniową. */
+export const WEEKLY_STREAK_DAYS = 3;
+
+/**
+ * Seria tygodni (pon–ndz) z co najmniej `perWeek` aktywnymi dniami.
+ * Bieżący tydzień liczy się, gdy już spełnia próg; jeśli jeszcze nie —
+ * nie zrywa serii, bo wciąż trwa.
+ */
+export function computeWeeklyStreak(days: Iterable<string>, todayKey: string, perWeek = WEEKLY_STREAK_DAYS): number {
+  const perWeekCount = new Map<string, number>();
+  for (const day of new Set(days)) {
+    const week = weekStartKey(day);
+    perWeekCount.set(week, (perWeekCount.get(week) ?? 0) + 1);
+  }
+
+  const qualifies = (week: string) => (perWeekCount.get(week) ?? 0) >= perWeek;
+  let week = weekStartKey(todayKey);
+  let streak = 0;
+  if (qualifies(week)) streak += 1;
+  week = shiftDayKey(week, -7);
+  while (qualifies(week)) {
+    streak += 1;
+    week = shiftDayKey(week, -7);
+  }
+  return streak;
+}

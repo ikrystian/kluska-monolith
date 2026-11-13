@@ -209,11 +209,10 @@ export async function awardGoalCompletionPoints(
 export async function awardWorkoutCompletionPoints(
   userId: string,
   workoutDurationMinutes: number,
-  exerciseCount: number,
-  isPlanned: boolean,
+  volumeKg: number,
   workoutId?: string
 ): Promise<{ points: number; newBalance: number }> {
-  const points = calculateWorkoutPoints(workoutDurationMinutes, exerciseCount, isPlanned);
+  const points = calculateWorkoutPoints(workoutDurationMinutes, volumeKg);
 
   const grant = await grantPoints(
     userId,

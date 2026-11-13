@@ -9,6 +9,8 @@ export {
   calculateApprovalBonus,
   calculateXPForLevel,
   calculateRunPoints,
+  runEnduranceBonus,
+  weeklyMultiplier,
   streakMilestoneCrossed,
   type PointCalculationInput,
   type PointCalculationResult,
@@ -47,6 +49,7 @@ export {
   getOverview,
   markAchievementsSeen,
   type RewardSummary,
+  type RunRewardSummary,
   type GamificationOverview,
   type SyncResult,
 } from './engine';
@@ -57,4 +60,4 @@ export { completeGoal, listGoals, syncAutoGoals, toGoalView, rawMetricValue, cur
 export { goalFraction, goalPace, isGoalReached } from './goal-progress';
 export { buildQuestViews, pickWeeklyQuests, type QuestView } from './quests';
 export { bestsFromLog, findNewRecords, detectPersonalRecords } from './records';
-export { computeStreaks, dayKey, effectiveStreak, weekStartKey } from './streaks';
+export { computeStreaks, computeWeeklyStreak, dayKey, effectiveStreak, weekStartKey } from './streaks';

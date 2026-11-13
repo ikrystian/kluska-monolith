@@ -14,7 +14,62 @@ import os
 import random
 import re
 import sys
-import requests
+
+try:
+    import requests
+except ImportError:
+    import urllib.request
+    import urllib.error
+
+    class _RequestsResponse:
+        def __init__(self, status_code: int, content: bytes):
+            self.status_code = status_code
+            self.content = content
+
+        @property
+        def text(self) -> str:
+            return self.content.decode("utf-8", errors="replace")
+
+        def json(self):
+            return json.loads(self.text)
+
+    class _RequestsCompat:
+        @staticmethod
+        def head(url: str, timeout: int = 5, allow_redirects: bool = True):
+            req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "Mozilla/5.0"})
+            try:
+                with urllib.request.urlopen(req, timeout=timeout) as resp:
+                    return _RequestsResponse(resp.status, b"")
+            except urllib.error.HTTPError as e:
+                return _RequestsResponse(e.code, b"")
+            except Exception:
+                return _RequestsResponse(500, b"")
+
+        @staticmethod
+        def post(url: str, headers: dict = None, json: dict = None, data = None, timeout: int = 30):
+            req_headers = dict(headers or {})
+            body = None
+            if json is not None:
+                import json as _json_mod
+                body = _json_mod.dumps(json).encode("utf-8")
+                req_headers["Content-Type"] = "application/json"
+            elif data is not None:
+                if isinstance(data, str):
+                    body = data.encode("utf-8")
+                else:
+                    body = data
+
+            if "User-Agent" not in req_headers:
+                req_headers["User-Agent"] = "Mozilla/5.0"
+
+            req = urllib.request.Request(url, data=body, headers=req_headers, method="POST")
+            try:
+                with urllib.request.urlopen(req, timeout=timeout) as resp:
+                    return _RequestsResponse(resp.status, resp.read())
+            except urllib.error.HTTPError as e:
+                return _RequestsResponse(e.code, e.read())
+
+    requests = _RequestsCompat()
 
 def load_env_file(env_path: str):
     if not os.path.isfile(env_path):

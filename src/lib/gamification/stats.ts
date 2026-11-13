@@ -6,7 +6,7 @@ import { PersonalRecord } from '@/models/PersonalRecord';
 import { Goal } from '@/models/Goal';
 import { HabitLog } from '@/models/HabitLog';
 import { BodyMeasurement } from '@/models/BodyMeasurement';
-import { computeStreaks, dayKey, localClock, shiftDayKey, weekStartKey } from './streaks';
+import { computeStreaks, computeWeeklyStreak, dayKey, localClock, shiftDayKey, weekStartKey } from './streaks';
 
 /** Statystyki tygodnia (pon–ndz) — napędzają wyzwania tygodnia. */
 export interface WeekStats {
@@ -37,6 +37,8 @@ export interface AthleteStats {
   currentStreakDays: number;
   longestStreakDays: number;
   lastActiveDay: string | null;
+  /** Tygodnie z rzędu z min. 3 aktywnymi dniami — mnożnik punktów. */
+  weekStreak: number;
   runKm: number;
   runCount: number;
   prCount: number;
@@ -176,6 +178,7 @@ export function summarizeActivity(input: ActivityInput, now: Date = new Date()):
     currentStreakDays: streaks.current,
     longestStreakDays: streaks.longest,
     lastActiveDay: streaks.lastActiveDay,
+    weekStreak: computeWeeklyStreak(activeDays, todayKey),
     runKm: Math.round(runKm * 10) / 10,
     runCount: input.runs.length,
     prCount: input.prCount,

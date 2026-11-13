@@ -20,6 +20,8 @@ export const POINT_SOURCES = [
   'achievement',
   'reward_redemption',
   'admin_adjustment',
+  'pet_chest',
+  'pet_purchase',
 ] as const;
 export type PointSource = (typeof POINT_SOURCES)[number];
 

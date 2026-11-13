@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { GamificationProfile, IGamificationProfile } from '@/models/GamificationProfile';
 import { AchievementBadge } from '@/models/AchievementBadge';
 import { WorkoutLog } from '@/models/WorkoutLog';
+import { RunningSession } from '@/models/RunningSession';
 import { Notification } from '@/models/Notification';
 import { PushSubscription } from '@/models/PushSubscription';
 import { sendWebPush } from '@/lib/web-push';
@@ -12,9 +13,13 @@ import {
   calculateLevelFromXP,
   calculateRunPoints,
   calculateWorkoutPoints,
+  runEnduranceBonus,
   streakMilestoneCrossed,
+  weeklyMultiplier,
 } from './point-calculator';
-import { AthleteStats, computeAthleteStats, LogLike } from './stats';
+import { AthleteStats, computeAthleteStats, LogLike, workoutVolumeKg } from './stats';
+import { grantPetChest, onPetActivity, PetWorkoutGain } from '@/lib/pet/service';
+import { liftPetXp, runPetXp } from '@/lib/pet/progression';
 import { buildTracks, evaluateCatalog, getCatalogAchievement, TrackView } from './catalog';
 import { AchievementUnlock, requirementMet, requirementValue } from './achievement-checker';
 import { GoalCompletion, syncAutoGoals } from './goals';
@@ -242,7 +247,18 @@ async function notifyRewards(
 export interface RewardSummary {
   /** Łączne punkty zdobyte przy tym treningu (trening + rekordy + osiągnięcia + cele + wyzwania). */
   xp: number;
+  /** Punkty za sam trening, już po mnożniku serii tygodniowej. */
   workoutXp: number;
+  /** FitCoins zdobyte przy tym treningu (tyle samo co `xp` — jedna waluta). */
+  coins: number;
+  /** Mnożnik za serię tygodni z min. 3 aktywnymi dniami. */
+  multiplier: number;
+  weekStreak: number;
+  /** Tonaż treningu w kg. */
+  volumeKg: number;
+  /** Skrzynia za rekord życiowy (do otwarcia u zwierzaka). */
+  chest: boolean;
+  pet: PetWorkoutGain | null;
   level: number;
   levelUp: { from: number; to: number } | null;
   streakDays: number;
@@ -284,7 +300,11 @@ export async function onWorkoutCompleted(
 
   const newRecords = await detectPersonalRecords(userId, log);
 
-  const workoutXp = calculateWorkoutPoints(log.duration ?? 0, log.exercises?.length ?? 0, false);
+  // Log jest już ukończony, więc seria tygodniowa uwzględnia dzisiejszy trening.
+  const weekStreak = (await computeAthleteStats(userId)).weekStreak;
+  const multiplier = weeklyMultiplier(weekStreak);
+  const volumeKg = Math.round(workoutVolumeKg(log));
+  const workoutXp = Math.round(calculateWorkoutPoints(log.duration ?? 0, volumeKg) * multiplier);
   await grantPoints(
     userId,
     workoutXp,
@@ -305,7 +325,10 @@ export async function onWorkoutCompleted(
       description:
         rewardedRecords === 1 ? `Rekord życiowy: ${newRecords[0].exerciseName}` : `Rekordy życiowe: ${newRecords.length}`,
     });
+    // Jedna skrzynia na trening, niezależnie od liczby rekordów.
+    await grantPetChest(userId, 'personal_record');
   }
+  const pet = await onPetActivity(userId, { liftXp: liftPetXp(volumeKg) });
 
   const sync = await syncProgress(userId);
 
@@ -325,6 +348,12 @@ export async function onWorkoutCompleted(
   const summary: RewardSummary = {
     xp: after.totalPointsEarned - before.totalPointsEarned,
     workoutXp,
+    coins: after.totalPointsEarned - before.totalPointsEarned,
+    multiplier,
+    weekStreak,
+    volumeKg,
+    chest: rewardedRecords > 0,
+    pet,
     level: levelAfter,
     levelUp: levelAfter > levelBefore ? { from: levelBefore, to: levelAfter } : null,
     streakDays: sync.stats.currentStreakDays,
@@ -360,19 +389,93 @@ export async function onWorkoutCompleted(
   return summary;
 }
 
-/** Punkty za zapisany bieg + synchronizacja celów i osiągnięć. */
-export async function onRunLogged(userId: string, run: { _id: unknown; distance?: number }): Promise<void> {
+export interface RunRewardSummary {
+  /** Łączne punkty zdobyte przy tym biegu (bieg + osiągnięcia + cele + wyzwania). */
+  xp: number;
+  /** Punkty za sam bieg, już po mnożniku. */
+  runXp: number;
+  coins: number;
+  multiplier: number;
+  weekStreak: number;
+  distanceKm: number;
+  enduranceBonus: number;
+  /** Najdłuższy bieg w historii (pierwszy bieg tylko ustala bazę). */
+  longestRun: boolean;
+  chest: boolean;
+  pet: PetWorkoutGain | null;
+  level: number;
+  levelUp: { from: number; to: number } | null;
+  unlocked: AchievementUnlock[];
+  goalsCompleted: GoalCompletion[];
+  quests: QuestReward[];
+}
+
+/**
+ * Nagrody za zapisany bieg. Idempotentne jak trening: `rewardedAt` jest
+ * zajmowane atomowo. Nie rzuca — błąd nagród nie może wywrócić zapisu biegu.
+ */
+export async function onRunLogged(
+  userId: string,
+  run: { _id: unknown; distance?: number }
+): Promise<RunRewardSummary | null> {
   try {
-    const points = calculateRunPoints(run.distance ?? 0);
-    await grantPoints(userId, points, {
+    await connectToDatabase();
+    const runId = String(run._id);
+    const claimed = await RunningSession.updateOne(
+      { _id: runId, rewardedAt: { $exists: false } },
+      { $set: { rewardedAt: new Date() } }
+    );
+    if (claimed.modifiedCount === 0) return null;
+
+    const distanceKm = Math.max(0, run.distance ?? 0);
+    const before = await getOrCreateGamificationProfile(userId);
+    const levelBefore = calculateLevelFromXP(before.experiencePoints).level;
+
+    const previousBest = await RunningSession.findOne({ ownerId: userId, _id: { $ne: runId } })
+      .sort({ distance: -1 })
+      .select('distance')
+      .lean();
+    const longestRun = Boolean(previousBest && distanceKm > previousBest.distance);
+
+    const weekStreak = (await computeAthleteStats(userId)).weekStreak;
+    const multiplier = weeklyMultiplier(weekStreak);
+    const runXp = Math.round(calculateRunPoints(distanceKm) * multiplier);
+    await grantPoints(userId, runXp, {
       source: 'run_completion',
       sourceId: String(run._id),
-      description: `Bieg: ${(run.distance ?? 0).toFixed(1)} km`,
+      description: `Bieg: ${distanceKm.toFixed(1)} km`,
     });
+
+    if (longestRun) await grantPetChest(userId, 'longest_run');
+    const pet = await onPetActivity(userId, { runXp: runPetXp(distanceKm) });
+
     const sync = await syncProgress(userId);
+    const levelAfter = calculateLevelFromXP(sync.profile.experiencePoints).level;
+    const xp = sync.profile.totalPointsEarned - before.totalPointsEarned;
+    const summary: RunRewardSummary = {
+      xp,
+      runXp,
+      coins: xp,
+      multiplier,
+      weekStreak,
+      distanceKm,
+      enduranceBonus: runEnduranceBonus(distanceKm),
+      longestRun,
+      chest: longestRun,
+      pet,
+      level: levelAfter,
+      levelUp: levelAfter > levelBefore ? { from: levelBefore, to: levelAfter } : null,
+      unlocked: sync.unlocked,
+      goalsCompleted: sync.goalsCompleted,
+      quests: sync.quests,
+    };
+
+    await RunningSession.updateOne({ _id: runId }, { $set: { rewards: summary } });
     await notifyRewards(userId, sync, { push: false });
+    return summary;
   } catch (error) {
     console.error('Failed to reward run:', error);
+    return null;
   }
 }
 

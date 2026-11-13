@@ -13,7 +13,7 @@ import { BigNumber, SectionHeader } from '@/components/ui/section';
 import { cn } from '@/lib/utils';
 import { jsonFetcher, useCollection, useDoc, useUser } from '@/lib/db-hooks';
 import type { WorkoutLog, Goal, BodyMeasurement, RunningSession, StravaActivity, PlannedWorkout, UserProfile, TrainingPlan } from '@/lib/types';
-import { Target, Weight, ClipboardCheck, Calendar as CalendarIcon, Award, User, CheckSquare, Check, GripVertical, Eye, EyeOff, RotateCcw, LayoutGrid, Trophy, SlidersHorizontal, Users, Activity, UtensilsCrossed, BookOpen, type AnimatedIcon } from '@/components/animated-icons';
+import { Target, Weight, ClipboardCheck, Calendar as CalendarIcon, Award, User, CheckSquare, Check, GripVertical, Eye, EyeOff, RotateCcw, LayoutGrid, Trophy, SlidersHorizontal, Users, Activity, UtensilsCrossed, BookOpen, PawPrint, type AnimatedIcon } from '@/components/animated-icons';
 import { ChevronRight } from 'lucide-react';
 import type { TrainingSessionData } from '@/components/schedule/SessionDetailsDialog';
 import { ActiveChallenges } from '@/components/challenges/ActiveChallenges';
@@ -28,6 +28,7 @@ import { TodayHero } from '@/components/dashboard/TodayHero';
 import { CompleteProfileCard } from '@/components/dashboard/CompleteProfileCard';
 import { HabitsToday } from '@/components/dashboard/HabitsToday';
 import { NutritionToday } from '@/components/dashboard/NutritionToday';
+import { PetCard } from '@/components/pet/PetCard';
 import { KnowledgeSlider } from '@/components/dashboard/KnowledgeSlider';
 import { todayISO, type DiaryResponse } from '@/lib/nutrition';
 import { exercisesLabel } from '@/lib/plural';
@@ -36,6 +37,7 @@ import { exercisesLabel } from '@/lib/plural';
 
 const SECTION_META: Record<DashboardSectionId, { title: string; icon: AnimatedIcon }> = {
   'daily-goals': { title: 'Cele dnia', icon: CheckSquare },
+  pet: { title: 'Zwierzak', icon: PawPrint },
   habits: { title: 'Nawyki', icon: CheckSquare },
   nutrition: { title: 'Jedzenie', icon: UtensilsCrossed },
   upcoming: { title: 'Nadchodzące', icon: CalendarIcon },
@@ -382,6 +384,8 @@ export default function AthleteDashboardPage() {
 
   const sectionContent: Record<DashboardSectionId, ReactNode> = {
     'daily-goals': <DailyGoals goals={dailyGoals} />,
+
+    pet: <PetCard />,
 
     habits: todayHabits.length > 0 ? (
       <HabitsToday habits={todayHabits} isDone={isDone} onToggle={toggleHabit} doneCount={habitsDone} />

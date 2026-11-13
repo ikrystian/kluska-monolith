@@ -76,6 +76,27 @@
         "--strictPort"
       ],
       "port": 5181
+    },
+    {
+      "name": "mock-pet",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "/tmp/claude-1000/-home-krystian--claude-spares-spare-6wK1Tz/4e49853c-1d36-4a1d-afc8-a5d796712fac/scratchpad/mock-pet.mjs"
+      ],
+      "port": 4071
+    },
+    {
+      "name": "athlete-spa-petmock",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite",
+        "--mode",
+        "petmock",
+        "--port",
+        "5187",
+        "--strictPort"
+      ],
+      "port": 5187
     }
   ]
 }

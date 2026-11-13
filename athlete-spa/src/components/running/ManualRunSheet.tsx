@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -54,6 +55,7 @@ export function ManualRunSheet({
   onSaved: () => void;
 }) {
   const { user } = useUser();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { createDoc, isLoading } = useCreateDoc();
   const form = useForm<RunFormInput, unknown, RunFormValues>({ resolver: zodResolver(runSchema), defaultValues: defaults() });
@@ -70,7 +72,7 @@ export function ManualRunSheet({
     if (!user) return;
     const duration = data.hours * 60 + data.minutes + data.seconds / 60;
     try {
-      await createDoc('runningSessions', {
+      const saved = await createDoc('runningSessions', {
         date: new Date(data.date).toISOString(),
         distance: data.distance,
         duration,
@@ -82,6 +84,7 @@ export function ManualRunSheet({
       toast({ title: 'Bieg zapisany', description: 'Dodano go do Twojej historii.' });
       onOpenChange(false);
       onSaved();
+      if (saved?.id && !saved.__offline) navigate(`/athlete/running/${saved.id}`);
     } catch (error) {
       console.error('Error saving run:', error);
       haptic('warning');

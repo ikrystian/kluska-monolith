@@ -30,6 +30,7 @@ import {
 import { useDoc, useUser, useCreateDoc } from '@/lib/db-hooks';
 import { resolveMediaUrl } from '@/lib/api-client';
 import { WorkoutRewards } from '@/components/rewards/WorkoutRewards';
+import { PetCheer } from '@/components/pet/PetCheer';
 import type { WorkoutLog, Workout } from '@/lib/types';
 import { TrainingLevel } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -482,6 +483,17 @@ export default function HistoryDetailPage() {
       </section>
 
       {workoutLog.rewards && workoutLog.rewards.xp > 0 && <WorkoutRewards rewards={workoutLog.rewards} />}
+
+      {workoutLog.rewards?.coins !== undefined && (
+        <PetCheer
+          pet={workoutLog.rewards.pet ?? null}
+          coins={workoutLog.rewards.coins}
+          multiplier={workoutLog.rewards.multiplier}
+          weekStreak={workoutLog.rewards.weekStreak}
+          chest={workoutLog.rewards.chest}
+          effort={workoutLog.rewards.volumeKg ? `${workoutLog.rewards.volumeKg.toLocaleString('pl-PL')} kg tonażu` : undefined}
+        />
+      )}
 
       {/* Personal Records Celebration Banner (Peak Moment) */}
       {workoutLog.newRecords && workoutLog.newRecords.length > 0 && (
