@@ -142,6 +142,13 @@ export interface RewardSummary {
   unlocked: AchievementUnlock[];
   goalsCompleted: { id: string; title: string; points: number }[];
   quests: { id: string; title: string; xp: number }[];
+  /** Pola zwierzaka — brak na treningach sprzed jego wdrożenia. */
+  coins?: number;
+  multiplier?: number;
+  weekStreak?: number;
+  volumeKg?: number;
+  chest?: boolean;
+  pet?: import('@/models/types/pet').PetWorkoutGain | null;
 }
 
 export interface GoalInput {

@@ -49,6 +49,7 @@ const MeasurementsPage = lazy(() => import('@/pages/athlete/Measurements'));
 const MenuPage = lazy(() => import('@/pages/athlete/Menu'));
 const NutritionPage = lazy(() => import('@/pages/athlete/Nutrition'));
 const OnboardingPage = lazy(() => import('@/pages/athlete/Onboarding'));
+const PetPage = lazy(() => import('@/pages/athlete/Pet'));
 const ProgressPage = lazy(() => import('@/pages/athlete/Progress'));
 const RunningPage = lazy(() => import('@/pages/athlete/Running'));
 const RunRecordPage = lazy(() => import('@/pages/athlete/RunRecord'));
@@ -170,6 +171,7 @@ export default function App() {
                 <Route path="menu" element={<MenuPage />} />
                 {/* Profile and settings moved into the "Ty" tab; old links keep working. */}
                 <Route path="profile" element={<LegacyProfileRedirect />} />
+                <Route path="pet" element={<PetPage />} />
                 <Route path="progress" element={<ProgressPage />} />
                 <Route path="running" element={<RunningPage />} />
                 <Route path="running/record" element={<RunRecordPage />} />

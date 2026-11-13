@@ -12,7 +12,62 @@ import os
 import random
 import re
 import sys
-import requests
+
+try:
+    import requests
+except ImportError:
+    import urllib.request
+    import urllib.error
+
+    class _RequestsResponse:
+        def __init__(self, status_code: int, content: bytes):
+            self.status_code = status_code
+            self.content = content
+
+        @property
+        def text(self) -> str:
+            return self.content.decode("utf-8", errors="replace")
+
+        def json(self):
+            return json.loads(self.text)
+
+    class _RequestsCompat:
+        @staticmethod
+        def head(url: str, timeout: int = 5, allow_redirects: bool = True):
+            req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "Mozilla/5.0"})
+            try:
+                with urllib.request.urlopen(req, timeout=timeout) as resp:
+                    return _RequestsResponse(resp.status, b"")
+            except urllib.error.HTTPError as e:
+                return _RequestsResponse(e.code, b"")
+            except Exception:
+                return _RequestsResponse(500, b"")
+
+        @staticmethod
+        def post(url: str, headers: dict = None, json: dict = None, data = None, timeout: int = 30):
+            req_headers = dict(headers or {})
+            body = None
+            if json is not None:
+                import json as _json_mod
+                body = _json_mod.dumps(json).encode("utf-8")
+                req_headers["Content-Type"] = "application/json"
+            elif data is not None:
+                if isinstance(data, str):
+                    body = data.encode("utf-8")
+                else:
+                    body = data
+
+            if "User-Agent" not in req_headers:
+                req_headers["User-Agent"] = "Mozilla/5.0"
+
+            req = urllib.request.Request(url, data=body, headers=req_headers, method="POST")
+            try:
+                with urllib.request.urlopen(req, timeout=timeout) as resp:
+                    return _RequestsResponse(resp.status, resp.read())
+            except urllib.error.HTTPError as e:
+                return _RequestsResponse(e.code, e.read())
+
+    requests = _RequestsCompat()
 
 def load_env_file(env_path: str):
     if not os.path.isfile(env_path):
@@ -107,6 +162,7 @@ ZASADY ANTY-AI (KRYTYCZNIE WAŻNE):
 
 FORMAT ODPOWIEDZI:
 Zwróć WYŁĄCZNIE poprawny, surowy obiekt JSON (bez znaczników ```json i bez żadnego komentarza przed ani po).
+Wszelkie cudzysłowy wewnątrz kodu HTML (atrybuty, cytaty w tekście) zapisuj jako apostrofy (') lub encje &quot; aby zachować poprawność formatu JSON.
 Format JSON:
 {
   "userId": "{{USER_ID}}",
@@ -152,6 +208,31 @@ def clean_html_content(content: str) -> str:
     return content.strip()
 
 
+def _parse_post_json(raw_text: str) -> dict:
+    clean_text = raw_text.strip()
+    if clean_text.startswith("```json"):
+        clean_text = clean_text[7:]
+    elif clean_text.startswith("```"):
+        clean_text = clean_text[3:]
+    if clean_text.endswith("```"):
+        clean_text = clean_text[:-3]
+    clean_text = clean_text.strip()
+
+    try:
+        return json.loads(clean_text, strict=False)
+    except Exception:
+        pass
+
+    match = re.search(r"(\{.*\})", clean_text, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group(1), strict=False)
+        except Exception:
+            pass
+
+    return None
+
+
 def generate_article(topic: str, user_id: str, openrouter_key: str, model: str) -> dict:
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
@@ -165,7 +246,7 @@ def generate_article(topic: str, user_id: str, openrouter_key: str, model: str) 
         if m not in models_to_try:
             models_to_try.append(m)
 
-    resp_json = None
+    post_data = None
     last_error = None
 
     for candidate_model in models_to_try:
@@ -185,7 +266,18 @@ def generate_article(topic: str, user_id: str, openrouter_key: str, model: str) 
                 r = requests.post(url, headers=headers, json=payload, timeout=90)
                 if r.status_code == 200:
                     resp_json = r.json()
-                    break
+                    choices = resp_json.get("choices")
+                    if choices and choices[0].get("message"):
+                        raw_text = choices[0]["message"].get("content", "")
+                        parsed = _parse_post_json(raw_text)
+                        if parsed and isinstance(parsed, dict) and "title" in parsed:
+                            post_data = parsed
+                            break
+                        else:
+                            last_error = f"Brak poprawnego JSON-a w odpowiedzi: {raw_text[:200]}"
+                            print(f"[-] Odpowiedź nie zawierała poprawnego JSON, ponawiam...")
+                    else:
+                        last_error = f"Brak treści w odpowiedzi OpenRouter: {resp_json}"
                 elif r.status_code == 429:
                     print(f"[-] Model {candidate_model} jest chwilowo przeciążony (429). Czekam 3s przed ponowieniem/fallbackiem...")
                     import time
@@ -197,39 +289,11 @@ def generate_article(topic: str, user_id: str, openrouter_key: str, model: str) 
             except Exception as e:
                 last_error = str(e)
                 break
-        if resp_json:
+        if post_data:
             break
 
-    if not resp_json:
-        raise RuntimeError(f"OpenRouter zwrócił błąd: {last_error}")
-
-    choices = resp_json.get("choices")
-    if not choices or not choices[0].get("message"):
-        raise RuntimeError(f"Brak odpowiedzi od OpenRouter: {resp_json}")
-
-    raw_text = choices[0]["message"].get("content", "").strip()
-    clean_text = raw_text
-    if clean_text.startswith("```json"):
-        clean_text = clean_text[7:]
-    elif clean_text.startswith("```"):
-        clean_text = clean_text[3:]
-    if clean_text.endswith("```"):
-        clean_text = clean_text[:-3]
-    clean_text = clean_text.strip()
-
-    post_data = None
-    try:
-        post_data = json.loads(clean_text, strict=False)
-    except Exception:
-        match = re.search(r"(\{.*\})", clean_text, re.DOTALL)
-        if match:
-            try:
-                post_data = json.loads(match.group(1), strict=False)
-            except Exception:
-                pass
-
     if not post_data:
-        raise RuntimeError(f"Brak poprawnego JSON-a w odpowiedzi: {raw_text[:300]}")
+        raise RuntimeError(f"Nie udało się wygenerować wpisu: {last_error}")
 
     title = str(post_data.get("title", "")).strip()
     content = clean_html_content(str(post_data.get("content", "")))

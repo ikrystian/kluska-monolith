@@ -80,6 +80,8 @@ export interface RunningSession {
   /** Custom name or title of the run, if saved. */
   name?: string;
   title?: string;
+  /** Nagrody przyznane przez serwer przy zapisie biegu. */
+  rewards?: import('./pet').RunRewardSummary;
 }
 
 export type RunningCueTrigger = 'time' | 'distance';

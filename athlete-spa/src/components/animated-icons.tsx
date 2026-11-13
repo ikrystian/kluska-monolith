@@ -46,6 +46,7 @@ import {
   UsersRoundIcon,
   UtensilsIcon,
   ZapIcon,
+  PawPrintIcon,
 } from '@animateicons/react/lucide';
 
 export interface AnimatedIconHandle {
@@ -161,6 +162,7 @@ export const Menu = animated(MenuIcon, 'Menu');
 export const MessageSquare = animated(MessageSquareIcon, 'MessageSquare');
 export const Newspaper = animated(BookOpenTextIcon, 'Newspaper');
 export const NotebookPen = animated(NotebookPenIcon, 'NotebookPen');
+export const PawPrint = animated(PawPrintIcon, 'PawPrint');
 export const Play = animated(PlayIcon, 'Play');
 export const RotateCcw = animated(RotateCcwIcon, 'RotateCcw');
 export const Ruler = animated(RulerIcon, 'Ruler');

@@ -50,6 +50,9 @@ export * from './SpotifyAccount';
 export * from './PushSubscription';
 // Challenge models
 export * from './Challenge';
+// Virtual pet models
+export * from './Pet';
+export * from './PetProfile';
 // Global app settings
 export * from './AppSettings';
 

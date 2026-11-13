@@ -214,7 +214,7 @@ export default function RunRecordPage() {
     if (!user) return;
     haptic('celebrate');
     try {
-      await createDoc('runningSessions', {
+      const saved = await createDoc('runningSessions', {
         date: new Date().toISOString(),
         distance: Math.round(km * 100) / 100,
         duration: Math.round((tracker.duration / 60) * 100) / 100,
@@ -233,7 +233,9 @@ export default function RunRecordPage() {
         description: `${km.toFixed(2)} km w ${Math.round(tracker.duration / 60)} min.`,
       });
       tracker.reset();
-      goBackToRunningList();
+      // Zapis online: od razu podsumowanie biegu z nagrodami. Offline bieg czeka w kolejce bez id z serwera.
+      if (saved?.id && !saved.__offline) navigate(`/athlete/running/${saved.id}`, { replace: true });
+      else goBackToRunningList();
     } catch (error) {
       console.error('Error saving tracked run:', error);
       toast({ title: 'Błąd', description: 'Nie udało się zapisać biegu.', variant: 'destructive' });

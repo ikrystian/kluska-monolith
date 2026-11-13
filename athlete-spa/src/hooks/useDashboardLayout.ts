@@ -12,6 +12,7 @@ import { useUser } from '@/lib/db-hooks';
 
 export const DASHBOARD_SECTION_IDS = [
   'daily-goals',
+  'pet',
   'habits',
   'nutrition',
   'upcoming',

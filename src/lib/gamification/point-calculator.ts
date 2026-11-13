@@ -119,19 +119,22 @@ export function calculateLevelFromXP(totalXP: number): { level: number; currentX
 }
 
 /**
- * Calculate workout completion points
+ * Punkty za trening siłowy: 20 bazowo + 5 za każde 10 min (maks. 30)
+ * + 1 za każde 100 kg tonażu (maks. 200). Tonaż to główny składnik —
+ * czas zostaje, żeby trening bez ciężarów nie był wart prawie nic.
  */
-export function calculateWorkoutPoints(
-  workoutDurationMinutes: number,
-  exerciseCount: number,
-  isPlanned: boolean
-): number {
-  const basePoints = 50;
-  const durationBonus = Math.min(Math.floor(workoutDurationMinutes / 10) * 5, 50); // Max 50 points
-  const exerciseBonus = Math.min(exerciseCount * 5, 30); // Max 30 points
-  const plannedBonus = isPlanned ? 20 : 0;
+export function calculateWorkoutPoints(workoutDurationMinutes: number, volumeKg: number): number {
+  const durationBonus = Math.min(Math.floor(Math.max(0, workoutDurationMinutes) / 10) * 5, 30);
+  const volumeBonus = Math.min(Math.floor(Math.max(0, volumeKg) / 100), 200);
+  return 20 + durationBonus + volumeBonus;
+}
 
-  return basePoints + durationBonus + exerciseBonus + plannedBonus;
+/** Tygodnie z rzędu z min. 3 aktywnymi dniami → mnożnik punktów za trening i bieg. */
+export function weeklyMultiplier(weekStreak: number): number {
+  if (weekStreak >= 4) return 1.5;
+  if (weekStreak >= 2) return 1.25;
+  if (weekStreak >= 1) return 1.1;
+  return 1;
 }
 
 /**
@@ -158,7 +161,15 @@ export function streakMilestoneCrossed(previous: number, next: number): number {
   return STREAK_MILESTONES.reduce((sum, [days, bonus]) => (previous < days && next >= days ? sum + bonus : sum), 0);
 }
 
-/** Punkty za bieg: 30 + 5 za każdy kilometr, maksymalnie 100. */
+/** Bonus wytrzymałości za długie wybieganie. */
+export function runEnduranceBonus(distanceKm: number): number {
+  if (distanceKm >= 21) return 50;
+  if (distanceKm >= 10) return 20;
+  return 0;
+}
+
+/** Punkty za bieg: 10 za każdy kilometr + bonus wytrzymałości, maksymalnie 300. */
 export function calculateRunPoints(distanceKm: number): number {
-  return Math.min(100, 30 + Math.floor(Math.max(0, distanceKm)) * 5);
+  const km = Math.max(0, distanceKm);
+  return Math.min(300, Math.round(km * 10) + runEnduranceBonus(km));
 }

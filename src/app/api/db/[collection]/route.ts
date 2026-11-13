@@ -207,9 +207,11 @@ export async function POST(
         console.error('Failed to award workout rewards:', error);
       }
     } else if (collection === 'runningSessions' && doc.ownerId) {
-      void onRunLogged(doc.ownerId, doc.toObject());
       // A run may decide a challenge (or take the lead in one) — settle it now, not on the next read.
       void refreshUserChallenges(doc.ownerId);
+      // Czekamy na nagrody, żeby ekran podsumowania biegu dostał je od razu w odpowiedzi.
+      const rewards = await onRunLogged(doc.ownerId, doc.toObject());
+      if (rewards) return NextResponse.json({ data: { ...doc.toJSON(), rewards } }, { status: 201 });
     } else if (collection === 'bodyMeasurements' && doc.ownerId) {
       void onActivityLogged(doc.ownerId);
     }

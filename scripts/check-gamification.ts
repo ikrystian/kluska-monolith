@@ -5,7 +5,7 @@
  * (Zmienna jest wymagana przy imporcie `lib/mongodb`, ale skrypt z nikim się nie łączy.)
  */
 import assert from 'node:assert/strict';
-import { computeStreaks, dayKey, effectiveStreak, weekStartKey } from '../src/lib/gamification/streaks';
+import { computeStreaks, computeWeeklyStreak, dayKey, effectiveStreak, weekStartKey } from '../src/lib/gamification/streaks';
 import { summarizeActivity, workoutVolumeKg, LogLike } from '../src/lib/gamification/stats';
 import { buildTracks, CATALOG, evaluateCatalog } from '../src/lib/gamification/catalog';
 import { bestsFromLog, findNewRecords } from '../src/lib/gamification/records';
@@ -15,8 +15,14 @@ import { currentFromRaw } from '../src/lib/gamification/goals';
 import {
   calculateLevelFromXP,
   calculateRunPoints,
+  calculateWorkoutPoints,
   streakMilestoneCrossed,
+  weeklyMultiplier,
 } from '../src/lib/gamification/point-calculator';
+import { boostStat, decayedValue, formFromActivity, HUNGER_DECAY_PER_HOUR, petMood, petThought, timeUntilBelow } from '../src/lib/pet/state';
+import { petBuild, petProgress, liftPetXp, runPetXp } from '../src/lib/pet/progression';
+import { PET_ITEMS } from '../src/lib/pet/catalog';
+import { rollChestLoot } from '../src/lib/pet/service';
 
 let passed = 0;
 function check(name: string, fn: () => void) {
@@ -192,9 +198,93 @@ check('bonus za serię płaci raz, przy przekroczeniu progu', () => {
   assert.equal(streakMilestoneCrossed(0, 30), 250);
 });
 check('punkty za bieg i poziom z XP', () => {
-  assert.equal(calculateRunPoints(5.9), 55);
-  assert.equal(calculateRunPoints(42), 100);
+  assert.equal(calculateRunPoints(5.9), 59); // 10 pkt/km
+  assert.equal(calculateRunPoints(10), 120); // + bonus wytrzymałości
+  assert.equal(calculateRunPoints(21.1), 261);
+  assert.equal(calculateRunPoints(42), 300); // limit
   assert.deepEqual(calculateLevelFromXP(250), { level: 3, currentXP: 0, xpForNextLevel: 225 });
+});
+
+check('punkty za trening rosną z tonażem, z limitem', () => {
+  assert.equal(calculateWorkoutPoints(0, 0), 20);
+  assert.equal(calculateWorkoutPoints(60, 5000), 20 + 30 + 50);
+  assert.equal(calculateWorkoutPoints(200, 100_000), 20 + 30 + 200);
+});
+check('seria tygodniowa: 3 aktywne dni w tygodniu, bieżący tydzień nie zrywa', () => {
+  const lastWeek = ['2026-11-02', '2026-11-04', '2026-11-06'];
+  const twoWeeksAgo = ['2026-10-26', '2026-10-27', '2026-10-31'];
+  // wtorek 10.11, w tym tygodniu dopiero 1 dzień — liczą się dwa poprzednie tygodnie
+  assert.equal(computeWeeklyStreak([...twoWeeksAgo, ...lastWeek, '2026-11-09'], '2026-11-10'), 2);
+  assert.equal(computeWeeklyStreak([...lastWeek, '2026-11-09', '2026-11-10', '2026-11-11'], '2026-11-11'), 2);
+  // dziura: poprzedni tydzień miał 2 dni
+  assert.equal(computeWeeklyStreak([...twoWeeksAgo, '2026-11-02', '2026-11-04'], '2026-11-10'), 0);
+  assert.equal(computeWeeklyStreak([], '2026-11-10'), 0);
+});
+check('mnożnik tygodniowy', () => {
+  assert.deepEqual([0, 1, 2, 3, 4, 9].map(weeklyMultiplier), [1, 1.1, 1.25, 1.25, 1.5, 1.5]);
+});
+
+console.log('Zwierzak');
+const at = (iso: string) => new Date(iso);
+check('sytość spada do zera w 48 h, a sycący posiłek wstrzymuje zanik', () => {
+  const fed = { value: 100, updatedAt: at('2026-11-10T08:00:00Z') };
+  assert.equal(decayedValue(fed, HUNGER_DECAY_PER_HOUR, at('2026-11-11T08:00:00Z')), 50);
+  assert.equal(decayedValue(fed, HUNGER_DECAY_PER_HOUR, at('2026-11-20T08:00:00Z')), 0);
+  const held = boostStat({ value: 20, updatedAt: at('2026-11-10T08:00:00Z') }, HUNGER_DECAY_PER_HOUR, 85, at('2026-11-10T08:00:00Z'), 24);
+  assert.equal(held.value, 100);
+  assert.equal(decayedValue(held, HUNGER_DECAY_PER_HOUR, at('2026-11-11T08:00:00Z')), 100);
+  assert.equal(decayedValue(held, HUNGER_DECAY_PER_HOUR, at('2026-11-12T08:00:00Z')), 50);
+});
+check('moment zgłodnienia do powiadomień', () => {
+  const fed = { value: 100, updatedAt: at('2026-11-10T08:00:00Z') };
+  assert.equal(timeUntilBelow(fed, HUNGER_DECAY_PER_HOUR, 25, at('2026-11-10T08:00:00Z'))?.toISOString(), '2026-11-11T20:00:00.000Z');
+  assert.equal(timeUntilBelow({ value: 10, updatedAt: at('2026-11-10T08:00:00Z') }, HUNGER_DECAY_PER_HOUR, 25, at('2026-11-10T08:00:00Z')), null);
+});
+check('forma: przerwa rozleniwia, ale nie karze; trening od razu przywraca', () => {
+  assert.equal(formFromActivity('2026-11-10', '2026-11-10'), 100);
+  assert.equal(formFromActivity('2026-11-09', '2026-11-10'), 100);
+  assert.equal(formFromActivity('2026-11-07', '2026-11-10'), 70);
+  assert.equal(formFromActivity('2026-09-01', '2026-11-10'), 20);
+  assert.equal(formFromActivity(null, '2026-11-10'), 20);
+});
+check('nastrój i myśl zwierzaka', () => {
+  assert.equal(petMood({ hunger: 80, joy: 80, form: 100 }), 'energetic');
+  assert.equal(petMood({ hunger: 10, joy: 80, form: 100 }), 'hungry');
+  assert.equal(petMood({ hunger: 80, joy: 10, form: 100 }), 'sad');
+  assert.equal(petMood({ hunger: 80, joy: 80, form: 40 }), 'lazy');
+  assert.equal(petMood({ hunger: 0, joy: 0, form: 20 }), 'sleepy');
+  assert.equal(petThought({ hunger: 30, joy: 80, form: 100 }), 'food');
+  assert.equal(petThought({ hunger: 80, joy: 80, form: 55 }), 'workout');
+  assert.equal(petThought({ hunger: 80, joy: 80, form: 100 }), null);
+});
+check('rozwój: XP z km i ton, etapy, sylwetka', () => {
+  assert.equal(runPetXp(5.2), 52);
+  assert.equal(liftPetXp(12_000), 60);
+  assert.deepEqual(
+    [0, 499, 500, 2500, 8000].map(xp => petProgress(xp, 0).stage),
+    ['baby', 'baby', 'junior', 'adult', 'master']
+  );
+  const p = petProgress(1000, 500);
+  assert.deepEqual([p.level, p.nextStage, p.stageProgress, p.xpToNextStage], [8, 'adult', 0.5, 1000]);
+  assert.equal(petProgress(9000, 0).stageProgress, 1);
+  assert.equal(petBuild(100, 50), 'balanced'); // za mało danych
+  assert.equal(petBuild(800, 200), 'runner');
+  assert.equal(petBuild(200, 800), 'strong');
+  assert.equal(petBuild(500, 500), 'balanced');
+});
+check('katalog sklepu: unikalne klucze, każda kategoria ma przedmioty', () => {
+  assert.equal(new Set(PET_ITEMS.map(i => i.key)).size, PET_ITEMS.length);
+  for (const category of ['food', 'toy', 'clothes', 'decor']) {
+    assert.ok(PET_ITEMS.some(i => i.category === category));
+  }
+  assert.ok(PET_ITEMS.filter(i => i.category === 'clothes').every(i => i.slot));
+});
+check('skrzynia: przedmiot, którego nie masz, albo paczka monet', () => {
+  const item = rollChestLoot([], () => 0);
+  assert.equal(item.kind, 'item');
+  const everything = PET_ITEMS.map(i => i.key);
+  const coins = rollChestLoot(everything, () => 0.9);
+  assert.deepEqual(coins, { kind: 'coins', amount: 250 });
 });
 
 console.log(`\nWszystkie sprawdzenia przeszły (${passed}).`);

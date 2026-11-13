@@ -230,7 +230,7 @@ const policies: Record<string, CollectionPolicy> = {
     ...owned('ownerId'),
     read: async ctx => or({ ownerId: { $in: await ctx.actorIds() } }, { trainerId: ctx.user!.id }),
   },
-  runningSessions: owned('ownerId'),
+  runningSessions: { ...owned('ownerId'), protectedFields: ['rewardedAt', 'rewards'] },
   achievements: owned('ownerId'),
   habits: owned('ownerId'),
   habitlogs: owned('ownerId'),

@@ -9,6 +9,7 @@ import { ActiveWorkoutProvider } from '@/contexts/ActiveWorkoutContext';
 import { HeaderTitleProvider } from '@/contexts/HeaderTitleContext';
 import { ActiveWorkoutWidget } from '@/components/workout/ActiveWorkoutWidget';
 import { NativeWidgetBridge } from '@/components/native-widget-bridge';
+import { PetNotificationsBridge } from '@/components/pet/PetNotificationsBridge';
 import { UserProfileProvider, useUserProfile } from '@/contexts/UserProfileContext';
 import { useAuth, ONBOARDING_PENDING_KEY, ONBOARDING_SKIPPED_KEY } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -137,6 +138,7 @@ function AthleteLayoutContent() {
     <ActiveWorkoutProvider>
       <HeaderTitleProvider>
         <NativeWidgetBridge />
+        <PetNotificationsBridge />
         <TourHost />
         <main
           ref={setChromeRoot}
