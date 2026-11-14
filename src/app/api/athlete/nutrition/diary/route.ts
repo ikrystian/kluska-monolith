@@ -8,9 +8,11 @@ import { NutritionGoal } from '@/models/NutritionGoal';
 import { SavedMeal } from '@/models/SavedMeal';
 import { User } from '@/models/User';
 import { visibleMealsFilter } from '@/lib/meal-catalog';
+import { servingsUnit } from '@/lib/food-diary';
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack'] as const;
+const SOURCES = ['search', 'barcode', 'manual', 'meal', 'recipe'] as const;
 
 // GET /api/athlete/nutrition/diary?date=YYYY-MM-DD
 // Diary entries for the given day plus totals and the athlete's active nutrition goal.
@@ -52,6 +54,7 @@ export async function GET(request: NextRequest) {
                       dailyProtein: goal.dailyProtein,
                       dailyCarbs: goal.dailyCarbs,
                       dailyFat: goal.dailyFat,
+                      setByTrainer: Boolean(goal.trainerId),
                   }
                 : null,
         });
@@ -88,6 +91,10 @@ export async function POST(request: NextRequest) {
         // Dish from a knowledge-zone recipe article.
         if (body.articleId !== undefined) {
             return addRecipe(user.id, date, mealType, body.articleId, body.servings, body.nutrition);
+        }
+        // Ready totals with no per-100 g base: a quick calorie note, or an entry put back after "undo".
+        if (body.entry !== undefined) {
+            return addRawEntry(user.id, date, mealType, body.entry);
         }
         if (typeof name !== 'string' || !name.trim()) {
             return NextResponse.json({ error: 'Product name is required' }, { status: 400 });
@@ -234,9 +241,52 @@ async function addRecipe(
     return NextResponse.json({ entry: entry.toJSON() }, { status: 201 });
 }
 
-/** Polish plural for "serving": 1 porcja, 2–4 porcje, 5+ and fractions porcji. */
-function servingsUnit(n: number): string {
-    if (n === 1) return 'porcja';
-    if (Number.isInteger(n) && n >= 2 && n <= 4) return 'porcje';
-    return 'porcji';
+/**
+ * Stores an entry whose totals the client already knows: calories typed in
+ * without a product ("quick entry"), or a deleted entry being restored. It is
+ * the athlete's own diary, so the numbers are only checked for sanity.
+ */
+async function addRawEntry(userId: string, date: string, mealType: FoodDiaryMealType, raw: unknown) {
+    const input = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+    const inRange = (value: unknown, max: number): number | null => {
+        const n = Number(value ?? 0);
+        return Number.isFinite(n) && n >= 0 && n <= max ? n : null;
+    };
+
+    const calories = input.calories === undefined || input.calories === '' ? null : inRange(input.calories, 10000);
+    const protein = inRange(input.protein, 1000);
+    const carbs = inRange(input.carbs, 1000);
+    const fat = inRange(input.fat, 1000);
+    if (calories === null || protein === null || carbs === null || fat === null) {
+        return NextResponse.json({ error: 'Invalid nutrition values' }, { status: 400 });
+    }
+
+    const inGrams = input.unit === 'g';
+    const amount = Number(input.amount ?? 1);
+    if (!Number.isFinite(amount) || amount <= 0 || amount > (inGrams ? 5000 : 10)) {
+        return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
+    }
+
+    const round1 = (n: number) => Math.round(n * 10) / 10;
+    const name = typeof input.name === 'string' ? input.name.trim().slice(0, 160) : '';
+    const source = SOURCES.find((value) => value === input.source) ?? 'manual';
+
+    await connectToDatabase();
+    const entry = await FoodDiaryEntry.create({
+        ownerId: userId,
+        date,
+        mealType,
+        name: name || 'Szybki wpis',
+        amount,
+        unit: inGrams ? 'g' : servingsUnit(amount),
+        calories: Math.round(calories),
+        protein: round1(protein),
+        carbs: round1(carbs),
+        fat: round1(fat),
+        productId: typeof input.productId === 'string' ? input.productId.slice(0, 64) : undefined,
+        barcode: typeof input.barcode === 'string' ? input.barcode.slice(0, 32) : undefined,
+        source,
+    });
+
+    return NextResponse.json({ entry: entry.toJSON() }, { status: 201 });
 }
