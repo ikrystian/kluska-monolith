@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useUser } from '@/lib/db-hooks';
 
 /**
@@ -71,26 +71,33 @@ function normalizeStoredLayout(stored: unknown): DashboardSectionState[] {
   return result;
 }
 
+function loadLayout(storageKey: string | null): DashboardSectionState[] {
+  if (!storageKey) return DEFAULT_LAYOUT;
+  try {
+    const raw = localStorage.getItem(storageKey);
+    return raw ? normalizeStoredLayout(JSON.parse(raw)) : DEFAULT_LAYOUT;
+  } catch {
+    return DEFAULT_LAYOUT;
+  }
+}
+
 export function useDashboardLayout() {
   const { user } = useUser();
   const storageKey = user?.uid ? `athlete-spa:dashboard-layout:${user.uid}` : null;
 
-  const [layout, setLayout] = useState<DashboardSectionState[]>(DEFAULT_LAYOUT);
+  // Read synchronously for the first render: starting from the all-visible
+  // default and correcting it in an effect mounted every hidden section for one
+  // frame — long enough for each of them to fire its requests.
+  const [layout, setLayout] = useState<DashboardSectionState[]>(() => loadLayout(storageKey));
   const [isEditing, setIsEditing] = useState(false);
 
-  // (Re)load the stored layout whenever the active user changes.
+  // Reload the stored layout whenever the active user changes.
+  const loadedKeyRef = useRef(storageKey);
   useEffect(() => {
+    if (loadedKeyRef.current === storageKey) return;
+    loadedKeyRef.current = storageKey;
     setIsEditing(false);
-    if (!storageKey) {
-      setLayout(DEFAULT_LAYOUT);
-      return;
-    }
-    try {
-      const raw = localStorage.getItem(storageKey);
-      setLayout(raw ? normalizeStoredLayout(JSON.parse(raw)) : DEFAULT_LAYOUT);
-    } catch {
-      setLayout(DEFAULT_LAYOUT);
-    }
+    setLayout(loadLayout(storageKey));
   }, [storageKey]);
 
   const persist = useCallback(

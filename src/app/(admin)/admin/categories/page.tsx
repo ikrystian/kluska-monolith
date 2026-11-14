@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCollection, useCreateDoc, useUpdateDoc, useDeleteDoc } from '@/lib/db-hooks';
-import type { ArticleCategory } from '@/lib/types';
+import type { Article, ArticleCategory } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -48,7 +48,7 @@ export default function ManageCategoriesPage() {
   const [categoryToDelete, setCategoryToDelete] = useState<ArticleCategory | null>(null);
 
   const { data: categories, isLoading, refetch: refetchCategories } = useCollection<ArticleCategory>('articleCategories');
-  const { data: articles } = useCollection('articles');
+  const { data: articles } = useCollection<Article>('articles');
   const { createDoc, isLoading: isCreating } = useCreateDoc();
   const { updateDoc, isLoading: isUpdating } = useUpdateDoc();
   const { deleteDoc, isLoading: isDeleting } = useDeleteDoc();
@@ -81,6 +81,12 @@ export default function ManageCategoriesPage() {
       if (editingCategory) {
         // Update existing category
         await updateDoc('articleCategories', editingCategory.id, data);
+        // Artykuły wskazują kategorię po nazwie — po zmianie nazwy trzeba je przepiąć,
+        // inaczej zostałyby z kategorią, której już nie ma.
+        if (editingCategory.name !== data.name) {
+          const affected = (articles ?? []).filter((article) => article.category === editingCategory.name);
+          await Promise.all(affected.map((article) => updateDoc('articles', article.id, { category: data.name })));
+        }
         toast({
           title: 'Kategoria zaktualizowana!',
           description: `Kategoria "${data.name}" została pomyślnie zaktualizowana.`
@@ -133,7 +139,7 @@ export default function ManageCategoriesPage() {
   };
 
   const getArticleCount = (categoryName: string) => {
-    return articles?.filter((article: any) => article.category === categoryName).length || 0;
+    return articles?.filter((article) => article.category === categoryName).length || 0;
   };
 
   const canDeleteCategory = (categoryName: string) => {

@@ -1,7 +1,10 @@
 import { Exercise, WorkoutLog } from '@/models';
+import { cached, cacheKeys } from '@/lib/server-cache';
 
 /** Publiczne ćwiczenia to wyłącznie biblioteka (ownerId = 'public'). */
 const PUBLIC_OWNER_ID = 'public';
+
+const STATS_TTL_MS = 10 * 60_000;
 
 const OBJECT_ID_RE = /^[a-f0-9]{24}$/i;
 
@@ -66,7 +69,13 @@ interface StatsGroupRow {
  * Agreguje ukończone serie danego ćwiczenia ze wszystkich treningów.
  * Grupowanie po nazwie sali pozwala policzyć zarówno sumy, jak i ranking sal.
  */
-export async function getExerciseStats(exerciseId: string): Promise<PublicExerciseStats> {
+export function getExerciseStats(exerciseId: string): Promise<PublicExerciseStats> {
+  // Agregacja po wszystkich treningach wszystkich użytkowników — wynik zmienia się
+  // powoli, a strona jest publiczna, więc liczymy go najwyżej raz na 10 minut.
+  return cached(cacheKeys.publicExercise(exerciseId), { ttlMs: STATS_TTL_MS }, () => computeExerciseStats(exerciseId));
+}
+
+async function computeExerciseStats(exerciseId: string): Promise<PublicExerciseStats> {
   const rows = await WorkoutLog.aggregate<StatsGroupRow>([
     { $match: { status: 'completed', 'exercises.exerciseId': exerciseId } },
     { $unwind: '$exercises' },

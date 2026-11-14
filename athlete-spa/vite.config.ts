@@ -72,6 +72,21 @@ function vendorChunk(id: string): string | undefined {
   return undefined;
 }
 
+/**
+ * Rolldown groups built from `vendorChunk`. A group also takes the dependencies
+ * of the modules it captures, so with one flat `manualChunks` function the
+ * charts chunk swallowed React itself (recharts imports it) and the entry then
+ * had to load all of recharts at startup. Priorities settle it: the startup
+ * chunks claim their modules first, and the lazy ones only get what is left.
+ */
+const STARTUP_CHUNKS = ['vendor-react', 'vendor-utils', 'vendor-motion', 'vendor-radix', 'vendor-date'];
+const LAZY_CHUNKS = ['vendor-charts', 'vendor-maps', 'vendor-mapbox', 'vendor-scanner', 'vendor-forms'];
+
+const vendorGroups = [
+  ...STARTUP_CHUNKS.map((name) => ({ name, priority: 20, test: (id: string) => vendorChunk(id) === name })),
+  ...LAZY_CHUNKS.map((name) => ({ name, priority: 10, test: (id: string) => vendorChunk(id) === name })),
+];
+
 export default defineConfig(({ mode }) => {
   // Open Graph needs absolute URLs; index.html reads this via %VITE_SITE_URL%.
   const env = loadEnv(mode, __dirname, '');
@@ -87,7 +102,7 @@ export default defineConfig(({ mode }) => {
     build: {
       rollupOptions: {
         output: {
-          manualChunks: vendorChunk,
+          codeSplitting: { groups: vendorGroups },
         },
       },
     },

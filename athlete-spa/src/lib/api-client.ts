@@ -87,12 +87,21 @@ export function clearStoredToken() {
   sessionStorage.removeItem(TOKEN_STORAGE_KEY);
 }
 
+export interface ApiFetchExtras {
+  /**
+   * Limits which cached reads a successful write marks stale. By default a
+   * write invalidates everything (it may feed any aggregate); pass this for
+   * frequent writes that are known to touch only a few reads.
+   */
+  affects?: (key: string) => boolean;
+}
+
 /**
  * Same-shaped drop-in for the relative `fetch('/api/...')` calls the ported
  * athlete pages/hooks already make: prefixes the cross-origin backend URL
  * and attaches the Bearer token this SPA uses instead of a session cookie.
  */
-export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
+export async function apiFetch(path: string, options: RequestInit = {}, extras: ApiFetchExtras = {}): Promise<Response> {
   const method = (options.method ?? 'GET').toUpperCase();
   if (method === 'GET' && localInterceptor) {
     const local = await localInterceptor.read(path);
@@ -105,7 +114,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   if (response.ok && method !== 'GET' && method !== 'HEAD') {
     // Awaited so the revalidation below already reads the updated pack.
     await localInterceptor?.afterWrite(path, method, response.clone()).catch(() => undefined);
-    invalidateAfterMutation(path);
+    invalidateAfterMutation(path, extras.affects);
   }
 
   return response;

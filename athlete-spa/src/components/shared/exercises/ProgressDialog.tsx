@@ -30,40 +30,30 @@ export function ProgressDialog({
   open,
   onOpenChange,
 }: ProgressDialogProps) {
+  // Only while the dialog is open: it reads the whole training history, and
+  // the dialog is mounted (closed) next to every exercise list.
   const { data: logs, isLoading } = useCollection<WorkoutLog>(
-    userId ? 'workoutLogs' : null,
-    userId ? { athleteId: userId, status: 'completed' } : undefined
+    userId && open ? 'workoutLogs' : null,
+    userId && open ? { athleteId: userId, status: 'completed' } : undefined
   );
 
   const chartData = useMemo(() => {
     if (!logs || !exercise) {
-      console.log('[ProgressDialog] No logs or exercise:', { logsCount: logs?.length, exerciseId: exercise?.id });
       return [];
     }
-
-    console.log('[ProgressDialog] Processing', logs.length, 'logs for exercise:', exercise.name, 'ID:', exercise.id);
 
     // Filter logs that contain this exercise
     const relevantLogs = logs.filter(log => {
       if (!log.exercises || !Array.isArray(log.exercises)) {
-        console.log('[ProgressDialog] Log has no exercises array:', log.id);
         return false;
       }
 
-      const hasExercise = log.exercises.some(ex => {
+      return log.exercises.some(ex => {
         // Check multiple possible ID locations for compatibility
         const exId = ex.exercise?.id || ex.exerciseId;
         return exId === exercise.id;
       });
-
-      if (hasExercise) {
-        console.log('[ProgressDialog] Found exercise in log:', log.id, 'at', log.endTime);
-      }
-
-      return hasExercise;
     });
-
-    console.log('[ProgressDialog] Found', relevantLogs.length, 'relevant logs');
 
     const data = relevantLogs
       .map(log => {
@@ -74,7 +64,6 @@ export function ProgressDialog({
         });
 
         if (!exLog || !exLog.sets || !Array.isArray(exLog.sets)) {
-          console.log('[ProgressDialog] No valid sets found in log:', log.id);
           return null;
         }
 
@@ -97,11 +86,8 @@ export function ProgressDialog({
         }
 
         if (value === 0) {
-          console.log('[ProgressDialog] No valid values found in log:', log.id);
           return null;
         }
-
-        console.log('[ProgressDialog] Data point:', { date: log.endTime, value, type: exercise.type });
 
         return {
           rawDate: new Date(log.endTime as unknown as string),
@@ -112,7 +98,6 @@ export function ProgressDialog({
       .filter((item): item is { rawDate: Date; date: string; value: number } => item !== null)
       .sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime());
 
-    console.log('[ProgressDialog] Final chart data points:', data.length);
     return data;
   }, [logs, exercise]);
 

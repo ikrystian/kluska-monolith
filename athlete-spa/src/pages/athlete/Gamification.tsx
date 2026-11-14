@@ -18,6 +18,7 @@ import {
 import { useUser } from '@/contexts/AuthContext';
 import { Trophy, Gift, Crown, Target, RefreshCw } from 'lucide-react';
 import { TourAnchor } from '@/components/tour/TourAnchor';
+import { AdSlot } from '@/components/ads/AdSlot';
 
 export default function GamificationPage() {
   const { user } = useUser();
@@ -133,6 +134,8 @@ export default function GamificationPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      <AdSlot placement="gamification" />
     </div>
   );
 }

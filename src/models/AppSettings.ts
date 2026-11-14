@@ -1,4 +1,5 @@
 import mongoose, { Schema, Model, Document } from 'mongoose';
+import { cacheKeys, invalidateOnWrite } from '../lib/server-cache';
 
 /** Key of the single document that holds the global, admin-managed settings. */
 export const APP_SETTINGS_KEY = 'global';
@@ -21,6 +22,9 @@ const AppSettingsSchema = new Schema<IAppSettings>(
   },
   { timestamps: true }
 );
+
+// Cached reads of this collection (lib/server-cache) are dropped on every write.
+invalidateOnWrite(AppSettingsSchema, cacheKeys.appSettings);
 
 export const AppSettings: Model<IAppSettings> =
   mongoose.models.AppSettings || mongoose.model<IAppSettings>('AppSettings', AppSettingsSchema);

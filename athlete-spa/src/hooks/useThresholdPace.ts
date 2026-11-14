@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useCollection, useUser } from '@/lib/db-hooks';
+import { RUN_LIST_OMIT, useCollection, useUser } from '@/lib/db-hooks';
 import type { RunningSession, StravaActivity } from '@/lib/types';
 
 /** Only runs at least this long say anything about sustainable pace. */
@@ -35,7 +35,7 @@ export function useThresholdPace(fallbackSecPerKm: number) {
   const { data: fastestSession } = useCollection<RunningSession>(
     user ? 'runningSessions' : null,
     { ownerId: user?.uid, distance: { $gte: MIN_RUN_KM }, avgPace: { $gt: 0 } },
-    { sort: { avgPace: 1 }, limit: 1 }
+    { sort: { avgPace: 1 }, limit: 1, omit: RUN_LIST_OMIT }
   );
 
   const { data: fastestStrava } = useCollection<StravaActivity>(

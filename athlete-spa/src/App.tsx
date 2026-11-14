@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { SWRConfig, useSWRConfig } from 'swr';
 import { bindCacheInvalidation, trackActiveKeys } from '@/lib/cache-invalidation';
+import { freshness } from '@/lib/cache-freshness';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { createPersistentCacheProvider } from '@/lib/swr-cache';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -26,8 +27,12 @@ import { RequireRole } from '@/components/role-gate';
 // default landing route, so it is worth keeping eager to avoid a spinner on
 // the very first paint.
 import DashboardPage from '@/pages/athlete/Dashboard';
-import { HalloweenScene } from './components/auth/HalloweenScene';
 import { useHalloween } from '@/hooks/useHalloween';
+
+// On screen 12 days a year — no reason for everyone to download it at startup.
+const HalloweenScene = lazy(() =>
+  import('@/components/auth/HalloweenScene').then((module) => ({ default: module.HalloweenScene }))
+);
 
 const DietPage = lazy(() => import('@/pages/athlete/Diet'));
 const CalendarPage = lazy(() => import('@/pages/athlete/Calendar'));
@@ -100,7 +105,11 @@ function LegacyProfileRedirect() {
 
 /** Seasonal overlay; a component of its own because the SWR hook needs the provider above it. */
 function HalloweenOverlay() {
-  return useHalloween() ? <HalloweenScene /> : null;
+  return useHalloween() ? (
+    <Suspense fallback={null}>
+      <HalloweenScene />
+    </Suspense>
+  ) : null;
 }
 
 export default function App() {
@@ -109,11 +118,12 @@ export default function App() {
       value={{
         provider: cacheProvider,
         // The restored snapshot can be hours old, so a screen the athlete
-        // returns to should re-check rather than trust it indefinitely.
+        // returns to should re-check rather than trust it indefinitely. How
+        // soon "re-check" means the network is decided per key by `freshness`.
         revalidateOnFocus: true,
         revalidateOnReconnect: true,
         keepPreviousData: true,
-        use: [trackActiveKeys],
+        use: [trackActiveKeys, freshness],
       }}
     >
       <CacheInvalidationBinder />

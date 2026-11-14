@@ -32,7 +32,7 @@ export default function LoginPage() {
   const { toast } = useToast();
 
   const { user, isUserLoading } = useUser();
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc(
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<{ role?: string }>(
     user ? 'users' : null,
     user?.uid || null
   );

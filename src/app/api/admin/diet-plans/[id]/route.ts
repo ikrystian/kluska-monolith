@@ -2,11 +2,15 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/db';
+import { isValidObjectId } from 'mongoose';
 import { DietPlan } from '@/models/DietPlan';
+
+// W Next 16 `params` handlera jest Promise i trzeba go rozpakować przez `await`.
+type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: RouteContext
 ) {
     try {
         const session = await getServerSession(authOptions);
@@ -14,8 +18,13 @@ export async function GET(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        const { id } = await params;
+        if (!isValidObjectId(id)) {
+            return NextResponse.json({ error: 'Diet Plan not found' }, { status: 404 });
+        }
+
         await dbConnect();
-        const plan = await DietPlan.findById(params.id).lean();
+        const plan = await DietPlan.findById(id).lean();
 
         if (!plan) {
             return NextResponse.json({ error: 'Diet Plan not found' }, { status: 404 });
@@ -34,7 +43,7 @@ export async function GET(
 
 export async function PUT(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: RouteContext
 ) {
     try {
         const session = await getServerSession(authOptions);
@@ -42,11 +51,16 @@ export async function PUT(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        const { id } = await params;
+        if (!isValidObjectId(id)) {
+            return NextResponse.json({ error: 'Diet Plan not found' }, { status: 404 });
+        }
+
         await dbConnect();
         const data = await request.json();
 
         const updatedPlan = await DietPlan.findByIdAndUpdate(
-            params.id,
+            id,
             { $set: data },
             { new: true, runValidators: true }
         );
@@ -68,7 +82,7 @@ export async function PUT(
 
 export async function DELETE(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: RouteContext
 ) {
     try {
         const session = await getServerSession(authOptions);
@@ -76,8 +90,13 @@ export async function DELETE(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        const { id } = await params;
+        if (!isValidObjectId(id)) {
+            return NextResponse.json({ error: 'Diet Plan not found' }, { status: 404 });
+        }
+
         await dbConnect();
-        const deletedPlan = await DietPlan.findByIdAndDelete(params.id);
+        const deletedPlan = await DietPlan.findByIdAndDelete(id);
 
         if (!deletedPlan) {
             return NextResponse.json({ error: 'Diet Plan not found' }, { status: 404 });

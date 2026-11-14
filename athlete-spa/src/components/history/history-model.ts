@@ -50,7 +50,8 @@ export function workoutStats(log: WorkoutLog): WorkoutStats {
 }
 
 export function workoutItem(log: WorkoutLog): WorkoutHistoryItem {
-  return { kind: 'workout', id: log.id, date: new Date(log.endTime), log, stats: workoutStats(log) };
+  // A log without an end time (imported, or edited in the admin panel) is dated by its start.
+  return { kind: 'workout', id: log.id, date: new Date(log.endTime ?? log.startTime), log, stats: workoutStats(log) };
 }
 
 export function runItem(run: RunActivity): RunHistoryItem {

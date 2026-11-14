@@ -104,7 +104,9 @@ export default function AdminMealsPage() {
             const res = await fetch(`/api/admin/meals/${meal._id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error();
             toast({ title: 'Usunięto', description: `„${meal.name}” został usunięty.` });
-            fetchMeals();
+            // Po usunięciu ostatniego posiłku na dalszej stronie wracamy o stronę, zamiast zostawiać pustą listę.
+            if (meals.length === 1 && page > 1) setPage((p) => p - 1);
+            else fetchMeals();
         } catch {
             toast({ variant: 'destructive', title: 'Błąd', description: 'Nie udało się usunąć posiłku.' });
         }

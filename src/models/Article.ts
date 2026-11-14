@@ -1,4 +1,5 @@
 import mongoose, { Schema, Model } from 'mongoose';
+import { cacheKeys, invalidateOnWrite } from '../lib/server-cache';
 import { RECIPE_LIMITS, RECIPE_MEAL_TYPES, type ArticleRecipe } from '../lib/article-recipe';
 
 export interface IArticle {
@@ -58,6 +59,11 @@ const ArticleSchema = new Schema<IArticle>(
 ArticleSchema.index({ status: 1 });
 ArticleSchema.index({ category: 1 });
 ArticleSchema.index({ authorId: 1 });
+// Knowledge zone and the dashboard slider: published articles, newest first.
+ArticleSchema.index({ status: 1, createdAt: -1 });
+
+// Cached reads of this collection (lib/server-cache) are dropped on every write.
+invalidateOnWrite(ArticleSchema, cacheKeys.collection('articles'));
 
 // In dev, HMR re-runs this file but mongoose keeps the old compiled model, so
 // schema changes (e.g. the recipe block) would be ignored until a restart.

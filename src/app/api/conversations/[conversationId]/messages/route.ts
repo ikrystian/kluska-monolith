@@ -3,6 +3,7 @@ import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { findConversationFor, listMessages, requireChatUser, sendMessage } from '@/lib/chat';
 import { chatErrorResponse } from '@/lib/chat-response';
+import { etagMatches, etagOf, notModified, sendSerialized } from '@/lib/http-cache';
 
 type Params = { params: Promise<{ conversationId: string }> };
 
@@ -13,7 +14,25 @@ export async function GET(request: NextRequest, { params }: Params) {
     const { conversationId } = await params;
     await connectToDatabase();
     const conversation = await findConversationFor(conversationId, user.id);
-    return NextResponse.json({ data: await listMessages(String(conversation._id)) });
+
+    // An open chat polls this every few seconds. Every message bumps the
+    // conversation (updatedAt, lastMessage, unread counters) in `sendMessage`,
+    // so that one document — already loaded for the access check — tells whether
+    // the list changed. Unchanged: 304 without reading the messages at all.
+    const unread = conversation.unreadCount;
+    const etag = etagOf(
+      JSON.stringify([
+        conversation._id,
+        conversation.updatedAt,
+        conversation.lastMessage?.createdAt ?? null,
+        // A Map serializes to `{}` — spell its entries out.
+        unread instanceof Map ? [...unread.entries()] : (unread ?? null),
+      ])
+    );
+    if (etagMatches(request, etag)) return notModified(etag);
+
+    const body = JSON.stringify({ data: await listMessages(String(conversation._id)) });
+    return sendSerialized(request, { body, etag });
   } catch (error) {
     return chatErrorResponse(error, 'GET /api/conversations/[id]/messages');
   }

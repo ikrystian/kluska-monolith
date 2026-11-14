@@ -14,6 +14,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Administrators are appointed in the admin panel, never self-registered.
+    if (role !== 'athlete' && role !== 'trainer') {
+      return NextResponse.json(
+        { error: 'Nieprawidłowy typ konta.' },
+        { status: 400 }
+      );
+    }
+
     if (acceptTerms !== true) {
       return NextResponse.json(
         { error: 'Musisz zaakceptować regulamin, aby założyć konto.' },

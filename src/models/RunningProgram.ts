@@ -1,4 +1,5 @@
 import mongoose, { Schema, Model, Document } from 'mongoose';
+import { cacheKeys, invalidateOnWrite } from '../lib/server-cache';
 
 export type RunningCueTrigger = 'time' | 'distance';
 
@@ -52,6 +53,9 @@ const RunningProgramSchema = new Schema<IRunningProgram>(
 );
 
 RunningProgramSchema.index({ isActive: 1 });
+
+// Cached reads of this collection (lib/server-cache) are dropped on every write.
+invalidateOnWrite(RunningProgramSchema, cacheKeys.collection('runningPrograms'));
 
 export const RunningProgram: Model<IRunningProgram> =
   mongoose.models.RunningProgram || mongoose.model<IRunningProgram>('RunningProgram', RunningProgramSchema);

@@ -182,6 +182,8 @@ const UserSchema = new Schema<IUser>(
 
 UserSchema.index({ role: 1 });
 UserSchema.index({ trainerId: 1 });
+// "Who trains at this gym" — otherwise a scan of every account.
+UserSchema.index({ favoriteGymIds: 1 });
 
 // Pre-save middleware to hash password
 UserSchema.pre('save', async function () {

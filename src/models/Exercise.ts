@@ -1,4 +1,5 @@
 import mongoose, { Schema, Model, Document } from 'mongoose';
+import { cacheKeys, invalidateOnWrite } from '../lib/server-cache';
 
 export interface IMuscleGroup {
   name: string;
@@ -84,6 +85,9 @@ ExerciseSchema.index({ type: 1 });
 ExerciseSchema.index({ name: 'text' });
 // Domyślna kolejność biblioteki: najpopularniejsze najpierw.
 ExerciseSchema.index({ popularity: -1, name: 1, _id: 1 });
+
+// Cached reads of this collection (lib/server-cache) are dropped on every write.
+invalidateOnWrite(ExerciseSchema, cacheKeys.collection('exercises'));
 
 export const Exercise: Model<IExercise> =
   mongoose.models.Exercise || mongoose.model<IExercise>('Exercise', ExerciseSchema);

@@ -79,6 +79,8 @@ export function ExerciseCard({
             <img
               src={resolveMediaUrl(exercise.mediaUrl || exercise.image || '')}
               alt={exercise.name}
+              loading="lazy"
+              decoding="async"
               className="absolute inset-0 w-full h-full object-cover"
             />
           )

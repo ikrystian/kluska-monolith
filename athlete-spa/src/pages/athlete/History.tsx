@@ -17,7 +17,7 @@ import {
 import { Button, buttonVariants } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/section';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useCollection, useUser } from '@/lib/db-hooks';
+import { RUN_LIST_OMIT, useCollection, useUser } from '@/lib/db-hooks';
 import { apiFetch } from '@/lib/api-client';
 import type { WorkoutLog, RunningSession, StravaActivity } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -36,6 +36,7 @@ import {
   type HistoryItem,
   type WorkoutHistoryItem,
 } from '@/components/history/history-model';
+import { AdSlot } from '@/components/ads/AdSlot';
 
 const PAGE_SIZE = 20;
 
@@ -84,7 +85,7 @@ export default function HistoryPage() {
   const { data: runningSessions, isLoading: runningLoading } = useCollection<RunningSession>(
     user?.uid ? 'runningSessions' : null,
     user?.uid ? { ownerId: user.uid } : undefined,
-    { sort: { date: -1 }, limit: 50 }
+    { sort: { date: -1 }, limit: 50, omit: RUN_LIST_OMIT }
   );
   const { data: stravaActivities, isLoading: stravaLoading } = useCollection<StravaActivity>(
     user?.uid ? 'stravaActivities' : null,
@@ -163,6 +164,8 @@ export default function HistoryPage() {
   return (
     <div className="page space-y-4">
       <HistorySummary items={allItems} isLoading={isHistoryLoading} />
+
+      <AdSlot placement="history" />
 
       <div className="flex items-center gap-2">
         <div className="no-scrollbar -ml-0.5 flex min-w-0 flex-1 gap-1.5 overflow-x-auto pl-0.5" role="tablist" aria-label="Rodzaj aktywności">

@@ -52,8 +52,11 @@ export default function AdminNotificationsPage() {
     try {
       const response = await fetch('/api/push/eligible-users');
       if (!response.ok) throw new Error('Failed to load users');
-      const { data } = await response.json();
+      const { data } = (await response.json()) as { data: EligibleUser[] };
       setUsers(data);
+      // Po odświeżeniu część użytkowników mogła stracić subskrypcję — nie zostawiamy ich w zaznaczeniu.
+      const eligibleIds = new Set(data.map((u) => u.id));
+      setSelectedIds((prev) => new Set([...prev].filter((id) => eligibleIds.has(id))));
     } catch (error) {
       toast({
         title: 'Błąd',

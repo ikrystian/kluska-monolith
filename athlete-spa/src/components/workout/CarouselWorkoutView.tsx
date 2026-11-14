@@ -61,7 +61,7 @@ export interface CarouselWorkoutViewProps {
   allExercises: Exercise[] | null;
   isLoadingExercises: boolean;
   onSetComplete: (exerciseIndex: number, setIndex: number) => void;
-  onAddExercise?: (exerciseId: string) => void;
+  onAddExercise?: (exerciseId: string, exercise?: Exercise) => void;
   onRemoveExercise?: (exerciseIndex: number) => void;
   userId?: string | null;
   workoutName?: string;

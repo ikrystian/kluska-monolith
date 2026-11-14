@@ -116,6 +116,8 @@ const WorkoutLogSchema = new Schema<IWorkoutLog>(
 
 // Indexes
 WorkoutLogSchema.index({ athleteId: 1, endTime: -1 });
+// "My in-progress workout" (checked on every screen) and "my completed workouts, newest first".
+WorkoutLogSchema.index({ athleteId: 1, status: 1, endTime: -1 });
 WorkoutLogSchema.index({ status: 1 });
 WorkoutLogSchema.index({ startTime: -1 });
 WorkoutLogSchema.index({ gymId: 1, status: 1, endTime: -1 });

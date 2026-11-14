@@ -55,6 +55,8 @@ export function FeaturedArticleCard({ article, href, color, isRead }: ArticleCar
         <img
           src={articleCoverUrl(article, '1200/900')}
           alt=""
+          loading="lazy"
+          decoding="async"
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/5" />

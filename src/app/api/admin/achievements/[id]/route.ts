@@ -1,19 +1,28 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getRequestUser } from '@/lib/api-auth';
 import dbConnect from '@/lib/db';
 import { AchievementBadge } from '@/models/AchievementBadge';
+
+/** Odznaki zmienia tylko administrator; `null` oznacza, że wolno. */
+async function requireAdmin(request: NextRequest): Promise<NextResponse | null> {
+    const user = await getRequestUser(request);
+    if (!user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (user.role !== 'admin') {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    return null;
+}
 
 export async function PUT(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        const denied = await requireAdmin(request);
+        if (denied) return denied;
 
         const { id } = await params;
         const body = await request.json();
@@ -47,10 +56,8 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        const denied = await requireAdmin(request);
+        if (denied) return denied;
 
         const { id } = await params;
         await dbConnect();

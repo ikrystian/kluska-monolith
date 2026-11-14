@@ -51,6 +51,8 @@ const SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
 /**
  * Merch catalogue. Static until the store has an API: add a product here and
  * it shows up on the Sklep screen; set `url` once it can actually be bought.
+ * The admin panel recommends products by `id` on the home screen — keep
+ * `SHOP_PRODUCT_OPTIONS` in the backend's `src/lib/dashboard-promos.ts` in step.
  */
 export const PRODUCTS: Product[] = [
   {

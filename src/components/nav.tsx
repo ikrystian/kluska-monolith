@@ -33,10 +33,11 @@ import {
   IdCard,
   Inbox,
   Settings,
+  Megaphone,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -141,21 +142,133 @@ const trainerNavItems = [
   { href: '/trainer/map', icon: Map, label: 'Mapa Siłowni' },
 ]
 
+// Grouped like the catalogue in lib/admin/resources. Resources without a dedicated
+// screen open in the generic data view (/admin/data/<resource>).
 const adminNavItems = [
   { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/admin/users', icon: Users, label: 'Użytkownicy' },
-  { href: '/admin/exercises', icon: Dumbbell, label: 'Wszystkie Ćwiczenia' },
-  { href: '/admin/workout-plans', icon: ClipboardList, label: 'Wszystkie Plany' },
-  { href: '/admin/workouts', icon: Dumbbell, label: 'Wszystkie Treningi' },
-  { href: '/admin/workout-logs', icon: History, label: 'Logi Treningowe' },
-  { href: '/admin/articles', icon: BookMarked, label: 'Wszystkie Artykuły' },
-  { href: '/admin/gyms', icon: Building2, label: 'Siłownie' },
-  { href: '/admin/running-programs', icon: Footprints, label: 'Treningi Biegowe' },
-  { href: '/admin/diet-plans', icon: Salad, label: 'Plany Dietetyczne' },
-  { href: '/admin/meals', icon: ChefHat, label: 'Gotowe Posiłki' },
-  { href: '/admin/notifications', icon: Bell, label: 'Powiadomienia' },
-  { href: '/admin/settings', icon: Settings, label: 'Ustawienia' },
+  {
+    label: 'Użytkownicy',
+    icon: Users,
+    items: [
+      { href: '/admin/users', label: 'Konta' },
+      { href: '/admin/data/trainerRequests', label: 'Prośby do trenerów' },
+      { href: '/admin/data/conversations', label: 'Rozmowy' },
+      { href: '/admin/data/weeklyCheckIns', label: 'Raporty tygodniowe' },
+      { href: '/admin/data/trainingSessions', label: 'Sesje z trenerem' },
+      { href: '/admin/notifications', label: 'Powiadomienia' },
+    ],
+  },
+  {
+    label: 'Trening',
+    icon: Dumbbell,
+    items: [
+      { href: '/admin/exercises', label: 'Ćwiczenia' },
+      { href: '/admin/data/muscleGroups', label: 'Grupy mięśniowe' },
+      { href: '/admin/workouts', label: 'Treningi' },
+      { href: '/admin/workout-plans', label: 'Plany treningowe' },
+      { href: '/admin/workout-logs', label: 'Dziennik treningów' },
+      { href: '/admin/data/personalRecords', label: 'Rekordy życiowe' },
+      { href: '/admin/gyms', label: 'Siłownie' },
+    ],
+  },
+  {
+    label: 'Bieganie',
+    icon: Footprints,
+    items: [
+      { href: '/admin/running-programs', label: 'Programy biegowe' },
+      { href: '/admin/data/runningSessions', label: 'Biegi' },
+      { href: '/admin/data/challenges', label: 'Wyzwania' },
+    ],
+  },
+  {
+    label: 'Żywienie',
+    icon: Salad,
+    items: [
+      { href: '/admin/diet-plans', label: 'Plany dietetyczne' },
+      { href: '/admin/meals', label: 'Gotowe posiłki' },
+      { href: '/admin/data/customProducts', label: 'Produkty' },
+      { href: '/admin/data/foodDiaryEntries', label: 'Dziennik jedzenia' },
+      { href: '/admin/data/nutritionGoals', label: 'Cele żywieniowe' },
+    ],
+  },
+  {
+    label: 'Postępy',
+    icon: TrendingUp,
+    items: [
+      { href: '/admin/data/goals', label: 'Cele' },
+      { href: '/admin/data/habits', label: 'Nawyki' },
+      { href: '/admin/data/bodyMeasurements', label: 'Pomiary ciała' },
+      { href: '/admin/data/achievements', label: 'Osiągnięcia' },
+    ],
+  },
+  {
+    label: 'Treści',
+    icon: BookMarked,
+    items: [
+      { href: '/admin/articles', label: 'Artykuły' },
+      { href: '/admin/categories', label: 'Kategorie artykułów' },
+      { href: '/admin/data/surveys', label: 'Ankiety' },
+      { href: '/admin/data/socialPosts', label: 'Posty społeczności' },
+      { href: '/admin/data/socialProfiles', label: 'Profile społecznościowe' },
+    ],
+  },
+  {
+    label: 'Grywalizacja',
+    icon: Trophy,
+    items: [
+      { href: '/admin/badges', label: 'Odznaki' },
+      { href: '/admin/data/rewards', label: 'Nagrody' },
+      { href: '/admin/data/gamificationProfiles', label: 'Profile i punkty' },
+      { href: '/admin/data/pets', label: 'Pupile' },
+    ],
+  },
+  {
+    label: 'Marketing',
+    icon: Megaphone,
+    items: [
+      { href: '/admin/ads', label: 'Reklamy' },
+      { href: '/admin/home-content', label: 'Ekran główny' },
+    ],
+  },
+  {
+    label: 'System',
+    icon: Settings,
+    items: [
+      { href: '/admin/data', label: 'Wszystkie dane' },
+      { href: '/admin/data/auditLogs', label: 'Dziennik zmian' },
+      { href: '/admin/settings', label: 'Ustawienia' },
+    ],
+  },
 ]
+
+/** Where an impersonating admin's way back is kept: survives reloads, ends with the tab. */
+const ADMIN_RESTORE_KEY = 'kluska:admin-restore';
+
+interface AdminRestore {
+  id: string;
+  email: string;
+  name: string;
+  /** Signed by /api/auth/impersonate; signs the admin back in. */
+  token: string;
+}
+
+function readAdminRestore(): AdminRestore | null {
+  try {
+    const stored = JSON.parse(sessionStorage.getItem(ADMIN_RESTORE_KEY) ?? 'null');
+    return stored && typeof stored.token === 'string' ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeAdminRestore(value: AdminRestore | null) {
+  try {
+    if (value) sessionStorage.setItem(ADMIN_RESTORE_KEY, JSON.stringify(value));
+    else sessionStorage.removeItem(ADMIN_RESTORE_KEY);
+  } catch {
+    // Storage unavailable: the way back lasts until the page is reloaded.
+  }
+}
 
 export function AppNav() {
   const pathname = usePathname();
@@ -167,7 +280,12 @@ export function AppNav() {
   const [isImpersonationDialogOpen, setIsImpersonationDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isImpersonating, setIsImpersonating] = useState(false);
-  const [adminSession, setAdminSession] = useState<{ id: string; email: string; name: string } | null>(null);
+  const [adminSession, setAdminSession] = useState<AdminRestore | null>(null);
+
+  // Read after mount (sessionStorage does not exist during server rendering).
+  useEffect(() => {
+    setAdminSession(readAdminRestore());
+  }, []);
 
   // Use user profile from context (shared with layout)
   const { userProfile } = useUserProfile();
@@ -187,6 +305,7 @@ export function AppNav() {
   const pendingInquiryCount = pendingInquiries?.length ?? 0;
 
   const handleLogout = async () => {
+    writeAdminRestore(null);
     await signOut();
     router.push('/login');
   };
@@ -200,16 +319,7 @@ export function AppNav() {
     try {
       setIsImpersonating(true);
 
-      // Store current admin session
-      if (userProfile && user) {
-        setAdminSession({
-          id: user.uid,
-          email: userProfile.email,
-          name: userProfile.name,
-        });
-      }
-
-      // Call impersonation API to verify permissions
+      // The server checks that the caller is an admin and answers with signed tokens.
       const response = await fetch('/api/auth/impersonate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -219,15 +329,22 @@ export function AppNav() {
       if (!response.ok) {
         throw new Error('Impersonation failed');
       }
+      const grant: { token: string; restoreToken: string } = await response.json();
 
-      // Use NextAuth signIn with impersonateUserId
       const signInResult = await signIn('credentials', {
-        impersonateUserId: targetUserId,
+        impersonationToken: grant.token,
         redirect: false,
       });
 
       if (signInResult?.error) {
         throw new Error(signInResult.error);
+      }
+
+      // Remember the way back only once the switch has actually happened.
+      if (userProfile && user) {
+        const restore = { id: user.uid, email: userProfile.email, name: userProfile.name, token: grant.restoreToken };
+        writeAdminRestore(restore);
+        setAdminSession(restore);
       }
 
       toast({
@@ -255,13 +372,12 @@ export function AppNav() {
     try {
       setIsImpersonating(true);
 
-      if (!adminSession?.id) {
+      if (!adminSession?.token) {
         throw new Error('No admin session to restore');
       }
 
-      // Use NextAuth signIn to restore admin session
       const signInResult = await signIn('credentials', {
-        impersonateUserId: adminSession.id,
+        impersonationToken: adminSession.token,
         redirect: false,
       });
 
@@ -274,12 +390,16 @@ export function AppNav() {
         description: 'Powrócono do konta administratora.',
       });
 
+      writeAdminRestore(null);
       setAdminSession(null);
       router.refresh();
     } catch (error) {
+      // An expired way back cannot be retried: drop it so the button does not linger.
+      writeAdminRestore(null);
+      setAdminSession(null);
       toast({
         title: 'Błąd',
-        description: 'Nie udało się powrócić do konta administratora.',
+        description: 'Nie udało się powrócić do konta administratora. Zaloguj się ponownie.',
         variant: 'destructive',
       });
     } finally {
@@ -323,7 +443,7 @@ export function AppNav() {
                     <SidebarMenuSub>
                       {item.items.map((subItem: any) => (
                         <SidebarMenuSubItem key={subItem.href}>
-                          <SidebarMenuSubButton asChild isActive={pathname === subItem.href}>
+                          <SidebarMenuSubButton asChild isActive={pathname === subItem.href || (subItem.href !== '/admin/data' && pathname.startsWith(`${subItem.href}/`))}>
                             <Link href={subItem.href}>
                               <span>{subItem.label}</span>
                             </Link>

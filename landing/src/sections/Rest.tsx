@@ -7,7 +7,7 @@ import type { PetMood, PetSpecies, PetStage } from '../pet/types';
 import { SyncScreen } from '../components/AppScreens';
 import { Wordmark } from '../components/Wordmark';
 import { CATEGORIES, FEATURES, byCat, type CategoryId } from './features';
-import { Bar, vars } from './ui';
+import { Bar, Device, vars } from './ui';
 
 const APP = 'https://app.leniwakluska.pl';
 
@@ -236,6 +236,13 @@ export function PetSection() {
               </li>
             ))}
           </ul>
+
+          <div className="mt-10 flex items-center gap-6">
+            <Device shot="pet" alt="Ekran zwierzaka w aplikacji: chomik Kluska w czapce i butach w swoim pokoju" className="w-40 shrink-0 sm:w-48" />
+            <p className="max-w-[18rem] text-ink-2">
+              W aplikacji zwierzak ma swój pokój, szafę i sklepik. Urządzasz go za FitCoins z treningów.
+            </p>
+          </div>
         </div>
       </div>
     </section>

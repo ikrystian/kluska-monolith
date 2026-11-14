@@ -55,6 +55,12 @@ export * from './Pet';
 export * from './PetProfile';
 // Global app settings
 export * from './AppSettings';
+// Admin-defined content on the athlete's home screen
+export * from './DashboardPromo';
+// Ads shown in the athlete app's ad slots
+export * from './Ad';
+// Trail of changes made in the admin panel
+export * from './AuditLog';
 
 // Export enums from types (no conflicts)
 export { MuscleGroupName, TrainingLevel, SetType } from './types/enums';

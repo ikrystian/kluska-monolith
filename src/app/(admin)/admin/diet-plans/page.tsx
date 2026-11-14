@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Plus, Search, Trash2, Edit } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { ChevronLeft, ChevronRight, Plus, Search, Trash2, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,10 +25,6 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
-import { useCollection } from '@/lib/db-hooks';
-// @ts-ignore
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-
 
 interface DietPlan {
     _id: string;
@@ -41,59 +36,47 @@ interface DietPlan {
 }
 
 export default function AdminDietPlansPage() {
-    const router = useRouter();
-    const searchParams = useSearchParams();
     const { toast } = useToast();
-    const page = parseInt(searchParams.get('page') || '1');
-    const search = searchParams.get('search') || '';
-
-    // Use useCollection (which uses SWR) or custom fetch. 
-    // Since db-hooks provides generic useCollection but might not support search/pagination params perfectly for this custom API route,
-    // I'll implement a simple fetcher effect or SWR if needed. 
-    // But wait, the task plan mentioned creating a dedicated API. useCollection usually hits generic endpoints.
-    // I will use a custom fetch here to hit my new API /api/admin/diet-plans
 
     const [plans, setPlans] = useState<DietPlan[]>([]);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [searchQuery, setSearchQuery] = useState(search);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [appliedSearch, setAppliedSearch] = useState('');
 
-    // Initial fetch
-    // Note: detailed fetch implementation inside useEffect usually
-    // For brevity/simplicity in this step, I'm creating the component structure.
-
-    // Actually, I should write the full component logic.
-
-    // Using standard fetch for now to ensure I hit my new endpoint
-    const fetchPlans = async () => {
+    const fetchPlans = useCallback(async () => {
         setLoading(true);
         try {
-            const params = new URLSearchParams({
-                page: page.toString(),
-                limit: '10',
-                search: searchQuery
-            });
+            const params = new URLSearchParams({ page: page.toString(), limit: '10' });
+            if (appliedSearch) params.set('search', appliedSearch);
             const res = await fetch(`/api/admin/diet-plans?${params}`);
+            if (!res.ok) throw new Error();
             const data = await res.json();
-            if (data.plans) {
-                setPlans(data.plans);
-                setTotalPages(data.pagination.pages);
-            }
+            setPlans(data.plans);
+            setTotalPages(Math.max(1, data.pagination.pages));
         } catch (error) {
             console.error("Failed to fetch plans", error);
+            toast({ variant: "destructive", title: "Błąd", description: "Nie udało się pobrać planów dietetycznych." });
         } finally {
             setLoading(false);
         }
+    }, [page, appliedSearch, toast]);
+
+    useEffect(() => {
+        fetchPlans();
+    }, [fetchPlans]);
+
+    const applySearch = () => {
+        setPage(1);
+        setAppliedSearch(searchQuery.trim());
     };
 
-    useState(() => {
-        fetchPlans();
-    }); // This runs once/on render which isn't ideal for 'useEffect'. Correcting:
-
-    // Actually, I'll use SWR if available or simple useEffect. 
-    // Let's stick to useEffect for simplicity.
-
-    // Rewriting to correct React hook usage in the actual file content below.
+    // Po usunięciu ostatniego planu na dalszej stronie wracamy o stronę, zamiast zostawiać pustą listę.
+    const handleDeleted = () => {
+        if (plans.length === 1 && page > 1) setPage((p) => p - 1);
+        else fetchPlans();
+    };
 
     return (
         <div className="p-6 space-y-6">
@@ -117,11 +100,11 @@ export default function AdminDietPlansPage() {
                         placeholder="Szukaj planów..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && fetchPlans()}
+                        onKeyDown={(e) => e.key === 'Enter' && applySearch()}
                         className="pl-8"
                     />
                 </div>
-                <Button variant="secondary" onClick={fetchPlans}>Szukaj</Button>
+                <Button variant="secondary" onClick={applySearch}>Szukaj</Button>
             </div>
 
             <div className="border rounded-md">
@@ -156,7 +139,7 @@ export default function AdminDietPlansPage() {
                                                     <Edit className="h-4 w-4" />
                                                 </Button>
                                             </Link>
-                                            <DeletePlanDialog planId={plan._id} onDelete={fetchPlans} />
+                                            <DeletePlanDialog planId={plan._id} onDelete={handleDeleted} />
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -165,7 +148,17 @@ export default function AdminDietPlansPage() {
                     </TableBody>
                 </Table>
             </div>
-            {/* Pagination controls would go here */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-end gap-2 text-sm text-muted-foreground">
+                    <Button variant="outline" size="icon" disabled={page <= 1 || loading} onClick={() => setPage((p) => p - 1)} aria-label="Poprzednia strona">
+                        <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span>{page} / {totalPages}</span>
+                    <Button variant="outline" size="icon" disabled={page >= totalPages || loading} onClick={() => setPage((p) => p + 1)} aria-label="Następna strona">
+                        <ChevronRight className="h-4 w-4" />
+                    </Button>
+                </div>
+            )}
         </div>
     );
 }

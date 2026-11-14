@@ -1,4 +1,5 @@
 import mongoose, { Schema, Model, Document } from 'mongoose';
+import { cacheKeys, invalidateOnWrite } from '../lib/server-cache';
 
 export interface IGym extends Document {
   _id: string;
@@ -54,6 +55,9 @@ const GymSchema = new Schema<IGym>(
 
 GymSchema.index({ name: 'text', address: 'text' });
 GymSchema.index({ 'location.lat': 1, 'location.lng': 1 });
+
+// Cached reads of this collection (lib/server-cache) are dropped on every write.
+invalidateOnWrite(GymSchema, cacheKeys.collection('gyms'), cacheKeys.gyms);
 
 export const Gym: Model<IGym> =
   mongoose.models.Gym || mongoose.model<IGym>('Gym', GymSchema);

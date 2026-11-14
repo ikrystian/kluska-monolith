@@ -3,7 +3,7 @@
 import { useMemo, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import useSWR from 'swr';
-import { format, startOfWeek, endOfWeek, isSameDay, isWithinInterval } from 'date-fns';
+import { format, startOfWeek, endOfWeek, endOfDay, isSameDay, isWithinInterval, startOfDay, subDays } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { Reorder, useDragControls } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BigNumber, SectionHeader } from '@/components/ui/section';
 import { cn } from '@/lib/utils';
-import { jsonFetcher, useCollection, useDoc, useUser } from '@/lib/db-hooks';
+import { RUN_LIST_OMIT, jsonFetcher, useCollection, useDoc, useUser } from '@/lib/db-hooks';
 import type { WorkoutLog, Goal, BodyMeasurement, RunningSession, StravaActivity, PlannedWorkout, UserProfile, TrainingPlan } from '@/lib/types';
 import { Target, Weight, ClipboardCheck, Calendar as CalendarIcon, Award, User, CheckSquare, Check, GripVertical, Eye, EyeOff, RotateCcw, LayoutGrid, Trophy, SlidersHorizontal, Users, Activity, UtensilsCrossed, BookOpen, PawPrint, type AnimatedIcon } from '@/components/animated-icons';
 import { ChevronRight } from 'lucide-react';
@@ -23,6 +23,7 @@ import { useActiveWorkout } from '@/hooks/useActiveWorkout';
 import { useGamificationProfile } from '@/hooks/useGamification';
 import { useTodayHabits } from '@/hooks/useTodayHabits';
 import { DailyGoals, type DailyGoal } from '@/components/dashboard/DailyGoals';
+import { DashboardPromos } from '@/components/dashboard/DashboardPromos';
 import { WeekStrip, type WeekDay } from '@/components/dashboard/WeekStrip';
 import { TodayHero } from '@/components/dashboard/TodayHero';
 import { CompleteProfileCard } from '@/components/dashboard/CompleteProfileCard';
@@ -146,8 +147,9 @@ export default function AthleteDashboardPage() {
     const weekStart = startOfWeek(now, { locale: pl });
     const weekEnd = endOfWeek(now, { locale: pl });
 
-    const thirtyDaysAgo = new Date(now);
-    thirtyDaysAgo.setDate(now.getDate() - 30);
+    // Whole days: these dates end up in request keys, and a key that changes
+    // every millisecond can never be served from the cache.
+    const thirtyDaysAgo = startOfDay(subDays(now, 30));
 
     return { weekStart, weekEnd, thirtyDaysAgo };
   }, []);
@@ -176,7 +178,7 @@ export default function AthleteDashboardPage() {
   const { data: runningSessions, isLoading: runningLoading } = useCollection<RunningSession>(
     user ? 'runningSessions' : null,
     { ownerId: user?.uid, date: { $gte: thirtyDaysAgo.toISOString() } },
-    { sort: { date: -1 } }
+    { sort: { date: -1 }, omit: RUN_LIST_OMIT }
   );
 
   // Recent Strava activities (last 30 days)
@@ -220,7 +222,8 @@ export default function AthleteDashboardPage() {
     return {
       now,
       sevenDaysLater,
-      to: new Date(Math.max(weekEnd.getTime(), sevenDaysLater.getTime())).toISOString(),
+      // End of that day, so the request key stays the same all day (see above).
+      to: new Date(Math.max(weekEnd.getTime(), endOfDay(sevenDaysLater).getTime())).toISOString(),
     };
   }, [weekEnd]);
 
@@ -559,6 +562,8 @@ export default function AthleteDashboardPage() {
   return (
     <div className="page space-y-4">
       <CompleteProfileCard profile={userProfile} />
+
+      <DashboardPromos />
 
       <div data-tour="week-strip">
         <WeekStrip days={weekDays} doneCount={doneThisWeek.length} target={weeklyTarget} streak={gamification?.streaks.workout} />

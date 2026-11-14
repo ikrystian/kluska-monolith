@@ -3,6 +3,7 @@ import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { Conversation } from '@/models';
 import { chatErrorResponse } from '@/lib/chat-response';
+import { jsonWithEtag } from '@/lib/http-cache';
 import {
   conversationView,
   findOrCreateConversation,
@@ -16,7 +17,8 @@ export async function GET(request: NextRequest) {
   try {
     const user = requireChatUser(await getRequestUser(request));
     await connectToDatabase();
-    return NextResponse.json({ data: await listConversationViews(user.id) });
+    // Polled while the app is open: unchanged lists go back as an empty 304.
+    return jsonWithEtag(request, { data: await listConversationViews(user.id) });
   } catch (error) {
     return chatErrorResponse(error, 'GET /api/conversations');
   }

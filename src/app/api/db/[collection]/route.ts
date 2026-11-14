@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Model } from 'mongoose';
 import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
-import { jsonWithEtag } from '@/lib/http-cache';
+import { byteSize, compact, sendSerialized, serializeJson, type SerializedJson } from '@/lib/http-cache';
+import { cached, cacheKeys } from '@/lib/server-cache';
 import { describeFinishedActivity, notifyFriendsOfActivity } from '@/lib/friends';
 import { refreshUserChallenges } from '@/lib/challenges';
 import { AccessContext, AccessError, isPublicCollection, sanitizeBody, scopeRead } from '@/lib/db-access';
@@ -71,6 +72,41 @@ const modelMap: Record<string, any> = {
   challenges: Challenge,
 };
 
+/**
+ * Collections every caller reads the same way and that change rarely. Their
+ * list reads are answered from lib/server-cache instead of MongoDB; the models
+ * drop the cached answers on every write (see `invalidateOnWrite`).
+ */
+const SHARED_COLLECTIONS = new Set([
+  'exercises',
+  'muscleGroups',
+  'articleCategories',
+  'articles',
+  'gyms',
+  'runningPrograms',
+]);
+const SHARED_READ_TTL_MS = 60_000;
+
+/**
+ * Collections read as plain objects instead of Mongoose documents.
+ *
+ * Building 5 600 exercise documents and running `toJSON` on each takes about
+ * 1.3 s of CPU, during which the server answers nobody else; the same list as
+ * plain objects takes about 0.3 s. Each function below reproduces exactly what
+ * that model's `toJSON` would have sent: schema defaults for fields missing in
+ * the stored document, `id`, and no `__v`.
+ */
+const LEAN_SHAPERS: Record<string, (doc: any, omitted: string[]) => any> = {
+  exercises: ({ __v, ...doc }, omitted) => {
+    for (const field of ['mainMuscleGroups', 'secondaryMuscleGroups', 'setup']) {
+      if (doc[field] === undefined && !omitted.includes(field)) doc[field] = [];
+    }
+    if (doc.type === undefined && !omitted.includes('type')) doc.type = 'weight';
+    doc.id = String(doc._id);
+    return doc;
+  },
+};
+
 // GET - Fetch collection
 export async function GET(
   request: NextRequest,
@@ -100,53 +136,85 @@ export async function GET(
     const limitParam = searchParams.get('limit');
     const skipParam = searchParams.get('skip');
     const countParam = searchParams.get('count');
+    // omit=a,b → leave those fields out of every document. Lets list screens skip
+    // heavy fields they never show (a run's GPS track, an article's body).
+    // Exclusion only, so it can never surface a field a full read would not.
+    const omit = (searchParams.get('omit') ?? '')
+      .split(',')
+      .map((field) => field.trim())
+      .filter((field) => /^[A-Za-z0-9_.]+$/.test(field) && field !== '_id');
 
     // The client's filter is narrowed to the documents this user may read.
     const filter = await scopeRead(new AccessContext(user), collection, queryParam ? JSON.parse(queryParam) : {});
 
-    // count=1 → return only the number of documents matching the filter.
-    // Used for "all vs filtered" totals in paged views (e.g. exercise library).
-    if (countParam === '1') {
-      const total = await Model.countDocuments(filter);
-      return jsonWithEtag(request, { total });
-    }
+    const load = async (): Promise<SerializedJson> => {
+      // count=1 → return only the number of documents matching the filter.
+      // Used for "all vs filtered" totals in paged views (e.g. exercise library).
+      if (countParam === '1') {
+        const total = await Model.countDocuments(filter);
+        return serializeJson({ total });
+      }
 
-    let query = Model.find(filter);
+      let query = Model.find(filter);
 
-    if (sortParam) {
-      const sortObj = JSON.parse(sortParam);
-      query = query.sort(sortObj);
-    }
+      if (sortParam) {
+        const sortObj = JSON.parse(sortParam);
+        query = query.sort(sortObj);
+      }
 
-    if (skipParam) {
-      query = query.skip(parseInt(skipParam, 10) || 0);
-    }
+      if (skipParam) {
+        query = query.skip(parseInt(skipParam, 10) || 0);
+      }
 
-    if (limitParam) {
-      query = query.limit(parseInt(limitParam));
-    }
+      if (limitParam) {
+        query = query.limit(parseInt(limitParam));
+      }
 
-    const data = await query.exec();
+      if (omit.length > 0) {
+        query = query.select(omit.map((field) => `-${field}`).join(' '));
+      }
 
-    // Enrich conversations with athlete avatarUrl
-    if (collection === 'conversations' && data.length > 0) {
-      const athleteIds = [...new Set<string>(data.map((conv: any) => conv.athleteId))];
-      const athletes = await User.find({ _id: { $in: athleteIds } }).lean();
-      const athleteMap = new Map(athletes.map((a: any) => [a._id.toString(), a]));
+      const shape = LEAN_SHAPERS[collection];
+      if (shape) {
+        const docs = await query.lean().exec();
+        return serializeJson({ data: docs.map((doc: any) => shape(doc, omit)) });
+      }
 
-      const enrichedData = data.map((conv: any) => {
-        const athlete = athleteMap.get(conv.athleteId);
-        const convObj = conv.toJSON ? conv.toJSON() : conv;
-        return {
-          ...convObj,
-          athleteAvatarUrl: athlete?.avatarUrl,
-        };
-      });
+      const data = await query.exec();
 
-      return jsonWithEtag(request, { data: enrichedData });
-    }
+      // Enrich conversations with athlete avatarUrl
+      if (collection === 'conversations' && data.length > 0) {
+        const athleteIds = [...new Set<string>(data.map((conv: any) => conv.athleteId))];
+        const athletes = await User.find({ _id: { $in: athleteIds } }).select('avatarUrl').lean();
+        const athleteMap = new Map(athletes.map((a: any) => [a._id.toString(), a]));
 
-    return jsonWithEtag(request, { data });
+        const enrichedData = data.map((conv: any) => {
+          const athlete = athleteMap.get(conv.athleteId);
+          const convObj = conv.toJSON ? conv.toJSON() : conv;
+          return {
+            ...convObj,
+            athleteAvatarUrl: athlete?.avatarUrl,
+          };
+        });
+
+        return serializeJson({ data: enrichedData });
+      }
+
+      return serializeJson({ data });
+    };
+
+    // Reference data: the answer depends only on the effective filter (which is
+    // part of the key), so one computed response serves every caller.
+    const result = SHARED_COLLECTIONS.has(collection)
+      ? await cached(
+          cacheKeys.collection(collection) +
+            JSON.stringify([filter, sortParam, skipParam, limitParam, countParam, omit]),
+          { ttlMs: SHARED_READ_TTL_MS, sizeOf: byteSize },
+          async () => compact(await load())
+        )
+      : await load();
+
+    return sendSerialized(request, result);
   } catch (error) {
     if (error instanceof AccessError) {
       return NextResponse.json({ error: error.message }, { status: error.status });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/api-auth';
 import dbConnect from '@/lib/db';
 import { Notification } from '@/models';
+import { jsonWithEtag } from '@/lib/http-cache';
 
 export async function GET(req: NextRequest) {
     try {
@@ -31,7 +32,8 @@ export async function GET(req: NextRequest) {
             Notification.countDocuments({ userId: user.id, isRead: false }),
         ]);
 
-        return NextResponse.json({
+        // Polled by every open app: an unchanged list goes back as an empty 304.
+        return jsonWithEtag(req, {
             data: notifications,
             meta: {
                 total,

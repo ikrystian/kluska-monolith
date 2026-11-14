@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { Check, ExternalLink } from 'lucide-react';
@@ -205,10 +206,18 @@ function ProductSheet({ product, onClose }: { product: Product; onClose: () => v
 
 export default function ShopPage() {
   const [filter, setFilter] = useState<Filter>('all');
-  const [openId, setOpenId] = useState<string | null>(null);
+  // `?product=<id>` opens that product straight away (home-screen recommendations link here).
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [openId, setOpenId] = useState<string | null>(() => searchParams.get('product'));
 
   const products = filter === 'all' ? PRODUCTS : PRODUCTS.filter(product => product.category === filter);
   const openProduct = PRODUCTS.find(product => product.id === openId);
+
+  const closeProduct = () => {
+    setOpenId(null);
+    // Otherwise coming back to this screen would reopen the linked product.
+    if (searchParams.has('product')) setSearchParams({}, { replace: true });
+  };
 
   return (
     <div className="page space-y-4">
@@ -252,7 +261,7 @@ export default function ShopPage() {
         ))}
       </div>
 
-      {openProduct && <ProductSheet key={openProduct.id} product={openProduct} onClose={() => setOpenId(null)} />}
+      {openProduct && <ProductSheet key={openProduct.id} product={openProduct} onClose={closeProduct} />}
     </div>
   );
 }

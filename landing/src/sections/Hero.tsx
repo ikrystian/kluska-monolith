@@ -2,8 +2,8 @@ import { ArrowRight } from 'lucide-react';
 import { getSeason, useNow } from '../lib/season';
 import { usePointerVars, useScrub } from '../lib/motion';
 import { Countdown } from '../components/Countdown';
-import { FloatFood, FloatPR, FloatRest, FloatRun, TodayDemo } from './demos';
-import { vars } from './ui';
+import { FloatPR, FloatRest } from './demos';
+import { Device, vars } from './ui';
 
 const APP = 'https://app.leniwakluska.pl';
 
@@ -16,7 +16,18 @@ export function Hero() {
 
   return (
     <section id="top" ref={pointer} aria-labelledby="hero-title" className="relative isolate overflow-clip pb-16 pt-10 sm:pt-14 lg:pb-24">
-      <div aria-hidden className="hero-floor knurl absolute inset-0 -z-10" />
+      <div aria-hidden className="absolute inset-0 -z-10 overflow-hidden bg-shade">
+        <img
+          src="/images/hero-press.webp"
+          alt=""
+          width={2400}
+          height={1602}
+          fetchPriority="high"
+          className="hero-photo size-full object-cover object-[30%_22%] opacity-70 lg:object-[18%_28%]"
+        />
+        <div className="absolute inset-0 bg-linear-to-t from-paper via-paper/70 to-paper/25" />
+        <div className="absolute inset-0 hidden bg-linear-to-l from-paper/85 via-paper/30 to-transparent lg:block" />
+      </div>
 
       <div className="shell grid grid-cols-[minmax(0,1fr)] items-center gap-12 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:gap-8">
         <div>
@@ -50,29 +61,27 @@ export function Hero() {
           </div>
         </div>
 
-        <div ref={scrub} className="hero-late relative mx-auto w-full max-w-[22.5rem] lg:max-w-none" style={vars({ '--i': 4 })}>
-          <div className="drift relative mx-auto w-full max-w-[22.5rem]" style={vars({ '--dx': '-8px', '--dy': '-6px', '--sy': '50px' })}>
-            <TodayDemo />
+        <div ref={scrub} className="hero-late fan relative mx-auto w-full max-w-[26rem] lg:max-w-[29rem]" style={vars({ '--i': 4 })}>
+          <div className="relative mx-auto w-[58%]">
+            <div className="fan-l absolute -left-[62%] top-[9%] w-[88%]">
+              <Device shot="log" alt="Ekran treningu z mapą regeneracji mięśni" eager />
+            </div>
+            <div className="fan-r absolute -right-[62%] top-[9%] w-[88%]">
+              <Device shot="running" alt="Ekran biegania z kilometrami w tygodniu" eager />
+            </div>
+            <div className="fan-c relative">
+              <Device shot="dashboard" alt="Ekran Dziś z paskiem tygodnia i celami dnia" eager />
+            </div>
           </div>
 
-          <div className="drift absolute -left-3 -top-10 z-10 lg:top-[9%] sm:-left-16 lg:-left-10 xl:-left-20" style={vars({ '--dx': '22px', '--dy': '16px', '--sy': '140px' })}>
+          <div className="drift absolute -top-6 left-0 z-10 lg:top-[14%] xl:-left-8" style={vars({ '--dx': '22px', '--dy': '16px', '--sy': '140px' })}>
             <div className="bob" style={vars({ '--i': 0 })}>
               <FloatPR />
             </div>
           </div>
-          <div className="drift absolute -right-2 top-[30%] z-10 sm:-right-20 lg:-right-4 xl:-right-12" style={vars({ '--dx': '30px', '--dy': '22px', '--sy': '200px' })}>
+          <div className="drift absolute bottom-[12%] right-0 z-10 xl:-right-6" style={vars({ '--dx': '30px', '--dy': '22px', '--sy': '200px' })}>
             <div className="bob" style={vars({ '--i': 1 })}>
               <FloatRest />
-            </div>
-          </div>
-          <div className="drift absolute -left-2 bottom-[23%] z-10 hidden min-[420px]:block sm:-left-24 lg:-left-12 xl:-left-24" style={vars({ '--dx': '34px', '--dy': '26px', '--sy': '260px' })}>
-            <div className="bob" style={vars({ '--i': 2 })}>
-              <FloatRun />
-            </div>
-          </div>
-          <div className="drift absolute -right-3 bottom-[7%] z-10 hidden sm:-right-24 sm:block lg:-right-4 xl:-right-14" style={vars({ '--dx': '18px', '--dy': '14px', '--sy': '110px' })}>
-            <div className="bob" style={vars({ '--i': 3 })}>
-              <FloatFood />
             </div>
           </div>
         </div>

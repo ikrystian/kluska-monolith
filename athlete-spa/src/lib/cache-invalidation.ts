@@ -1,5 +1,6 @@
 import type { Cache, Middleware, ScopedMutator } from 'swr';
 import { useEffect } from 'react';
+import { forgetFreshness } from '@/lib/cache-freshness';
 
 /**
  * Keeps SWR's cache honest after writes.
@@ -78,18 +79,31 @@ export function staleKeyMatcher(path: string): KeyMatcher | null {
   return (key) => key.startsWith('/api/') && !CHAT_PREFIXES.some((prefix) => key.startsWith(prefix));
 }
 
-export function invalidateAfterMutation(path: string): void {
+/**
+ * `only` narrows the default "everything but chat" to the reads a write is
+ * known to affect — for writes that repeat often and feed nothing else, like
+ * the autosave of a workout in progress.
+ */
+export function invalidateAfterMutation(path: string, only?: KeyMatcher): void {
   const matcher = staleKeyMatcher(path);
-  if (matcher) invalidateMatching(matcher);
+  if (!matcher) return;
+  invalidateMatching(only ? (key) => matcher(key) && only(key) : matcher);
 }
 
 /** Drops unseen cached reads matching `matcher` and revalidates the visible ones. */
 export function invalidateMatching(matcher: KeyMatcher): void {
   if (!binding) return;
   const { mutate, cache } = binding;
+  // Reads answered from the cache while "fresh" must hit the network again.
+  forgetFreshness(matcher);
   const keys = Array.from(cache.keys()).filter(matcher);
   const inactive = keys.filter((key) => !activeKeys.has(key));
-  for (const key of inactive) cache.delete(key);
+  for (const key of inactive) {
+    // Also clears SWR's own dedupe marker for the key. Left in place, a screen
+    // opened within the dedupe window would neither find data nor fetch any.
+    void mutate(key);
+    cache.delete(key);
+  }
 
   // No data argument: revalidate in place instead of blanking visible screens.
   void mutate((key) => typeof key === 'string' && activeKeys.has(key) && matcher(key));
@@ -105,8 +119,27 @@ export async function updateCached<T>(key: string, update: (current: T | undefin
   await binding.mutate(key, update, { revalidate: false });
 }
 
+/**
+ * Re-reads the matching reads a mounted screen is showing, but only the ones
+ * no longer fresh — for "make sure this is current" moments that need no
+ * network when the data was fetched a moment ago.
+ */
+export function revalidateStale(matcher: KeyMatcher): void {
+  if (!binding) return;
+  void binding.mutate((key) => typeof key === 'string' && activeKeys.has(key) && matcher(key));
+}
+
+/** Pull-to-refresh: re-reads everything on screen from the network, fresh or not. */
+export function refreshAllVisible(): Promise<unknown> {
+  forgetFreshness();
+  if (!binding) return Promise.resolve();
+  // No data argument: passing `undefined` would blank every screen to skeletons first.
+  return binding.mutate((key) => typeof key === 'string' && activeKeys.has(key));
+}
+
 /** Empties the in-memory cache (logout) so the next account can't see this one's data. */
 export function clearMemoryCache(): void {
+  forgetFreshness();
   if (!binding) return;
   for (const key of Array.from(binding.cache.keys())) binding.cache.delete(key);
 }

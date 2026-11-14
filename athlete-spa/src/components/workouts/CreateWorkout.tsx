@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, useFieldArray, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrainingLevel, SetType, Exercise, Workout } from '@/lib/types';
-import { useCollection, useCreateDoc, useUser } from '@/lib/db-hooks';
+import { useCreateDoc, useUser } from '@/lib/db-hooks';
+import { useExercisesByIds } from '@/hooks/useExercisesByIds';
 import {
     Loader2,
     Plus,
@@ -153,28 +154,17 @@ function formatSeriesCount(n: number) {
     return `${n} serii`;
 }
 
+const NO_EXERCISES: Exercise[] = [];
+
 export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
     const { user } = useUser();
     const { toast } = useToast();
     const navigate = useNavigate();
     const { createDoc, isLoading: isCreating } = useCreateDoc();
-    const { data: exercises, isLoading: exercisesLoading } = useCollection<Exercise>('exercises');
-    const [knownExercises, setKnownExercises] = useState<Record<string, Exercise>>({});
     const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
     const [openExerciseIndex, setOpenExerciseIndex] = useState<number | null>(0);
     const [confirm, setConfirm] = useState<ConfirmState | null>(null);
     const [extrasOpen, setExtrasOpen] = useState(false);
-
-    const registerKnownExercise = useCallback((exercise: Exercise) => {
-        setKnownExercises(prev => ({ ...prev, [exercise.id]: exercise }));
-    }, []);
-
-    const allExercises = useMemo(() => {
-        const map = new Map<string, Exercise>();
-        exercises?.forEach(e => map.set(e.id, e));
-        Object.values(knownExercises).forEach(e => map.set(e.id, e));
-        return Array.from(map.values());
-    }, [exercises, knownExercises]);
 
     const { draft, lastAutoSave, saveToLocal, clearDraft } = useWorkoutDraft<WorkoutFormValues>('create-workout-draft');
 
@@ -189,6 +179,14 @@ export function CreateWorkout({ onSuccess, redirectPath }: CreateWorkoutProps) {
             status: 'draft',
         },
     });
+
+    // Only the exercises in this workout — never the whole library (12 MB).
+    // Ones picked in the library sheet are handed over, so they show at once.
+    const { exercises: workoutExercises, remember: registerKnownExercise } = useExercisesByIds(
+        (form.watch('exerciseSeries') ?? []).map(series => series.exerciseId)
+    );
+    const allExercises = workoutExercises ?? NO_EXERCISES;
+    const exercisesLoading = workoutExercises === null;
 
     // Load draft if exists
     useEffect(() => {

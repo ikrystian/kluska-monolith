@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { useForm, useFieldArray, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Workout, TrainingLevel, SetType, Exercise } from '@/lib/types';
@@ -32,21 +32,25 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
 
+// `z.coerce.number<number>()`: inputy liczbowe oddają tekst, a typ wejścia zawężamy
+// do number, żeby wejście i wyjście schematu zgadzały się dla react-hook-form.
 const workoutSchema = z.object({
     name: z.string().min(1, 'Nazwa jest wymagana.'),
-    level: z.nativeEnum(TrainingLevel, { required_error: 'Poziom jest wymagany.' }),
-    durationMinutes: z.coerce.number().min(1, 'Czas trwania musi być większy od 0.'),
+    level: z.nativeEnum(TrainingLevel, { error: 'Poziom jest wymagany.' }),
+    durationMinutes: z.coerce.number<number>().min(1, 'Czas trwania musi być większy od 0.'),
     description: z.string().optional(),
     exerciseSeries: z.array(z.object({
         exerciseId: z.string().min(1, 'Ćwiczenie jest wymagane.'), // We store ID in form, map to object on submit
         tempo: z.string().min(1, 'Tempo jest wymagane (np. 3-0-1-0).'),
         tip: z.string().optional(),
         sets: z.array(z.object({
-            number: z.coerce.number(),
+            number: z.coerce.number<number>(),
             type: z.nativeEnum(SetType),
-            reps: z.coerce.number().min(0),
-            weight: z.coerce.number().min(0),
-            restTimeSeconds: z.coerce.number().min(0),
+            reps: z.coerce.number<number>().min(0),
+            weight: z.coerce.number<number>().min(0),
+            restTimeSeconds: z.coerce.number<number>().min(0),
+            // Nieedytowane tutaj, ale musi przetrwać zapis (serie na czas) — zod usuwa nieznane pola.
+            duration: z.number().nullish(),
         })).min(1, 'Przynajmniej jedna seria jest wymagana.'),
     })).min(1, 'Przynajmniej jedno ćwiczenie jest wymagane.'),
 });
@@ -59,9 +63,31 @@ interface WorkoutFormProps {
     isLoading?: boolean;
 }
 
+/** Id ćwiczenia zapisanego w treningu (starsze kopie mają tylko `_id`). */
+const exerciseIdOf = (exercise: Exercise): string =>
+    exercise?.id ?? (exercise as Exercise & { _id?: string })?._id ?? '';
+
 export function WorkoutForm({ initialData, onSubmit, isLoading }: WorkoutFormProps) {
     const { data: exercises, isLoading: exercisesLoading } = useCollection<Exercise>('exercises');
     const [openCombobox, setOpenCombobox] = useState<Record<number, boolean>>({});
+
+    // Trening przechowuje pełne kopie ćwiczeń. Ćwiczenie mogło już zniknąć z biblioteki —
+    // wtedy używamy kopii z treningu, zamiast blokować zapis.
+    const savedExercises = useMemo(() => {
+        const saved = new Map<string, Exercise>();
+        initialData?.exerciseSeries?.forEach(series => {
+            const id = exerciseIdOf(series.exercise);
+            if (id) saved.set(id, series.exercise);
+        });
+        return saved;
+    }, [initialData]);
+
+    const exerciseOptions = useMemo(() => {
+        const library = exercises ?? [];
+        const inLibrary = new Set(library.map(exercise => exercise.id));
+        const missing = [...savedExercises].filter(([id]) => !inLibrary.has(id)).map(([id, exercise]) => ({ ...exercise, id }));
+        return [...library, ...missing];
+    }, [exercises, savedExercises]);
 
     const form = useForm<WorkoutFormValues>({
         resolver: zodResolver(workoutSchema),
@@ -71,10 +97,17 @@ export function WorkoutForm({ initialData, onSubmit, isLoading }: WorkoutFormPro
             durationMinutes: initialData?.durationMinutes || 60,
             description: initialData?.description || '',
             exerciseSeries: initialData?.exerciseSeries?.map(series => ({
-                exerciseId: series.exercise.id,
+                exerciseId: exerciseIdOf(series.exercise),
                 tempo: series.tempo,
-                tip: series.tip,
-                sets: series.sets,
+                tip: series.tip ?? '',
+                sets: series.sets.map(set => ({
+                    number: set.number,
+                    type: set.type,
+                    reps: set.reps ?? 0,
+                    weight: set.weight ?? 0,
+                    restTimeSeconds: set.restTimeSeconds ?? 0,
+                    duration: set.duration,
+                })),
             })) || [],
         },
     });
@@ -88,17 +121,22 @@ export function WorkoutForm({ initialData, onSubmit, isLoading }: WorkoutFormPro
         if (!exercises) return;
 
         // Map form data back to Workout structure
-        const mappedSeries = data.exerciseSeries.map(series => {
-            const exercise = exercises.find(e => e.id === series.exerciseId);
-            if (!exercise) throw new Error(`Exercise not found: ${series.exerciseId}`);
+        const mappedSeries = [];
+        for (const [index, series] of data.exerciseSeries.entries()) {
+            const exercise = exercises.find(e => e.id === series.exerciseId) ?? savedExercises.get(series.exerciseId);
+            if (!exercise) {
+                // Wyjątek rzucony tutaj nikt by nie złapał i zapis kończyłby się bez żadnego komunikatu.
+                form.setError(`exerciseSeries.${index}.exerciseId`, { message: 'Wybierz ćwiczenie z listy.' });
+                return;
+            }
 
-            return {
+            mappedSeries.push({
                 exercise,
                 tempo: series.tempo,
                 tip: series.tip,
                 sets: series.sets.map((set, idx) => ({ ...set, number: idx + 1 })),
-            };
-        });
+            });
+        }
 
         const workoutData: any = { // using any to bypass strict ID check which is handled by db hook or parent
             ...initialData,
@@ -192,7 +230,7 @@ export function WorkoutForm({ initialData, onSubmit, isLoading }: WorkoutFormPro
                             index={index}
                             form={form}
                             removeSeries={removeSeries}
-                            exercises={exercises || []}
+                            exercises={exerciseOptions}
                             openCombobox={openCombobox}
                             setOpenCombobox={setOpenCombobox}
                             isLoading={isLoading}
@@ -201,7 +239,8 @@ export function WorkoutForm({ initialData, onSubmit, isLoading }: WorkoutFormPro
                 </div>
 
                 <div className="flex justify-end">
-                    <Button type="submit" size="lg" disabled={isLoading}>
+                    {/* Bez biblioteki ćwiczeń zapis nie ma z czego złożyć treningu, więc czekamy na jej wczytanie. */}
+                    <Button type="submit" size="lg" disabled={isLoading || exercisesLoading || !exercises}>
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Zapisz Trening
                     </Button>
@@ -211,7 +250,17 @@ export function WorkoutForm({ initialData, onSubmit, isLoading }: WorkoutFormPro
     );
 }
 
-function ExerciseSeriesItem({ index, form, removeSeries, exercises, openCombobox, setOpenCombobox, isLoading }: any) {
+interface ExerciseSeriesItemProps {
+    index: number;
+    form: UseFormReturn<WorkoutFormValues>;
+    removeSeries: (index: number) => void;
+    exercises: Exercise[];
+    openCombobox: Record<number, boolean>;
+    setOpenCombobox: Dispatch<SetStateAction<Record<number, boolean>>>;
+    isLoading?: boolean;
+}
+
+function ExerciseSeriesItem({ index, form, removeSeries, exercises, openCombobox, setOpenCombobox, isLoading }: ExerciseSeriesItemProps) {
     const { fields: setFields, append: appendSet, remove: removeSet } = useFieldArray({
         control: form.control,
         name: `exerciseSeries.${index}.sets`,
@@ -233,7 +282,7 @@ function ExerciseSeriesItem({ index, form, removeSeries, exercises, openCombobox
                         render={({ field }) => (
                             <FormItem className="flex flex-col">
                                 <FormLabel>Ćwiczenie</FormLabel>
-                                <Popover open={openCombobox[index]} onOpenChange={(open) => setOpenCombobox(prev => ({ ...prev, [index]: open }))}>
+                                <Popover open={!!openCombobox[index]} onOpenChange={(open) => setOpenCombobox(prev => ({ ...prev, [index]: open }))}>
                                     <PopoverTrigger asChild>
                                         <FormControl>
                                             <Button
@@ -263,7 +312,7 @@ function ExerciseSeriesItem({ index, form, removeSeries, exercises, openCombobox
                                                             value={exercise.name}
                                                             key={exercise.id}
                                                             onSelect={() => {
-                                                                form.setValue(`exerciseSeries.${index}.exerciseId`, exercise.id);
+                                                                form.setValue(`exerciseSeries.${index}.exerciseId`, exercise.id, { shouldValidate: true, shouldDirty: true });
                                                                 setOpenCombobox(prev => ({ ...prev, [index]: false }));
                                                             }}
                                                         >
@@ -321,7 +370,7 @@ function ExerciseSeriesItem({ index, form, removeSeries, exercises, openCombobox
                         </Button>
                     </div>
                     <div className="space-y-2">
-                        {setFields.map((setField: any, setIndex: number) => (
+                        {setFields.map((setField, setIndex) => (
                             <div key={setField.id} className="grid grid-cols-12 gap-2 items-end">
                                 <div className="col-span-3 sm:col-span-3">
                                     <FormField

@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { BadgeList, AchievementBadgeDoc } from './BadgeList';
 import { BadgeForm, BadgeFormValues } from './BadgeForm';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import {
     AlertDialog,
@@ -126,7 +126,12 @@ export function BadgesManager() {
                 )}
             </div>
 
-            {view === 'list' ? (
+            {view === 'list' && isLoading ? (
+                // Bez tego podczas wczytywania lista pokazywała „No badges found”.
+                <div className="flex justify-center py-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            ) : view === 'list' ? (
                 <BadgeList
                     badges={badges}
                     onEdit={(badge) => {

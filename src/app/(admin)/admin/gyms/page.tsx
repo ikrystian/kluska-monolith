@@ -32,6 +32,17 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
   Form,
   FormControl,
   FormField,
@@ -54,7 +65,8 @@ const idOf = (gym: Gym) => gym.id || (gym as Gym & { _id?: string })._id!;
 
 const importSchema = z.object({
   query: z.string().min(1, 'Fraza wyszukiwania jest wymagana.'),
-  page: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().min(1, 'Strona musi być liczbą większą od 0.')).or(z.number().min(1)),
+  // `coerce`, bo input liczbowy oddaje tekst; typ wejścia zawężony do number dla react-hook-form.
+  page: z.coerce.number<number>().int('Strona musi być liczbą całkowitą.').min(1, 'Strona musi być liczbą większą od 0.'),
 });
 
 type ImportFormValues = z.infer<typeof importSchema>;
@@ -108,11 +120,11 @@ export default function GymsPage() {
         body: JSON.stringify(data),
       });
 
+      const result = await response.json().catch(() => null);
       if (!response.ok) {
-        throw new Error('Import failed');
+        throw new Error(result?.error || 'Nie udało się zaimportować danych.');
       }
 
-      const result = await response.json();
       toast({
         title: 'Import zakończony!',
         description: result.message || `Zaimportowano ${result.count} siłowni.`
@@ -121,7 +133,11 @@ export default function GymsPage() {
       importForm.reset();
       refetchGyms();
     } catch (error) {
-      toast({ title: 'Błąd Importu', description: 'Nie udało się zaimportować danych.', variant: 'destructive' });
+      toast({
+        title: 'Błąd Importu',
+        description: error instanceof Error ? error.message : 'Nie udało się zaimportować danych.',
+        variant: 'destructive',
+      });
     } finally {
       setIsImporting(false);
     }
@@ -257,10 +273,26 @@ export default function GymsPage() {
                       <Edit className="mr-2 h-3 w-3" />
                       Edytuj
                     </Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDelete(idOf(gym))}>
-                      <Trash2 className="mr-2 h-3 w-3" />
-                      Usuń
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm">
+                          <Trash2 className="mr-2 h-3 w-3" />
+                          Usuń
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Usunąć siłownię „{gym.name}”?</AlertDialogTitle>
+                          <AlertDialogDescription>Tej operacji nie można cofnąć.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(idOf(gym))} className="bg-destructive hover:bg-destructive/90">
+                            Usuń
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </TableCell>
                 </TableRow>
               ))}

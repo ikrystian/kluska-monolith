@@ -1,4 +1,5 @@
 import { connectToDatabase } from '@/lib/mongodb';
+import { cached, cacheKeys } from '@/lib/server-cache';
 import { GamificationProfile, IGamificationProfile, IPointTransaction } from '@/models/GamificationProfile';
 import { Goal } from '@/models/Goal';
 import { Reward, IReward } from '@/models/Reward';
@@ -11,6 +12,8 @@ import {
   streakMilestoneCrossed,
   PointCalculationInput
 } from './point-calculator';
+
+const LEADERBOARD_TTL_MS = 60_000;
 
 export interface GamificationStats {
   totalPointsEarned: number;
@@ -42,6 +45,11 @@ export interface LeaderboardEntry {
  */
 export async function getOrCreateGamificationProfile(userId: string): Promise<IGamificationProfile> {
   await connectToDatabase();
+
+  // Profil prawie zawsze już istnieje, a ta funkcja stoi na początku niemal
+  // każdego odczytu gamifikacji — zwykły odczyt zamiast zapisu przy każdym żądaniu.
+  const existing = await GamificationProfile.findOne({ userId });
+  if (existing) return existing;
 
   // Atomowy upsert: dwa równoległe żądania nie stworzą dwóch profili.
   const profile = await GamificationProfile.findOneAndUpdate(
@@ -303,8 +311,6 @@ export async function redeemReward(
 export async function getAvailableRewards(userId: string): Promise<IReward[]> {
   await connectToDatabase();
 
-  const profile = await getOrCreateGamificationProfile(userId);
-
   const rewards = await Reward.find({
     isActive: true,
     $and: [
@@ -333,29 +339,33 @@ export async function getLeaderboard(
   limit: number = 10,
   trainerId?: string
 ): Promise<LeaderboardEntry[]> {
-  await connectToDatabase();
-
   const safeLimit = Math.max(1, Math.min(Number.isFinite(limit) ? limit : 10, 100));
 
-  // Konta gości nie trafiają do rankingu; opcjonalnie tylko podopieczni trenera.
-  const eligible = await User.find({ isGuest: { $ne: true }, ...(trainerId ? { trainerId } : {}) })
-    .select('_id name')
-    .lean();
-  const names = new Map(eligible.map(u => [String(u._id), u.name]));
+  // Ranking jest taki sam dla wszystkich i wymaga przejrzenia wszystkich kont,
+  // więc liczymy go najwyżej raz na minutę zamiast przy każdym wejściu na ekran.
+  return cached(`${cacheKeys.leaderboard}${trainerId ?? ''}:${safeLimit}`, { ttlMs: LEADERBOARD_TTL_MS }, async () => {
+    await connectToDatabase();
 
-  const profiles = await GamificationProfile.find({ userId: { $in: [...names.keys()] } })
-    .sort({ totalPointsEarned: -1 })
-    .limit(safeLimit)
-    .select('userId totalPointsEarned experiencePoints')
-    .lean();
+    // Konta gości nie trafiają do rankingu; opcjonalnie tylko podopieczni trenera.
+    const eligible = await User.find({ isGuest: { $ne: true }, ...(trainerId ? { trainerId } : {}) })
+      .select('_id name')
+      .lean();
+    const names = new Map(eligible.map(u => [String(u._id), u.name]));
 
-  return profiles.map((profile, index) => ({
-    rank: index + 1,
-    userId: profile.userId,
-    userName: names.get(profile.userId) || 'Sportowiec',
-    totalPoints: profile.totalPointsEarned,
-    level: calculateLevelFromXP(profile.experiencePoints).level,
-  }));
+    const profiles = await GamificationProfile.find({ userId: { $in: [...names.keys()] } })
+      .sort({ totalPointsEarned: -1 })
+      .limit(safeLimit)
+      .select('userId totalPointsEarned experiencePoints')
+      .lean();
+
+    return profiles.map((profile, index) => ({
+      rank: index + 1,
+      userId: profile.userId,
+      userName: names.get(profile.userId) || 'Sportowiec',
+      totalPoints: profile.totalPointsEarned,
+      level: calculateLevelFromXP(profile.experiencePoints).level,
+    }));
+  });
 }
 
 /**

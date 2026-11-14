@@ -34,7 +34,7 @@ export default function RegisterPage() {
   const { toast } = useToast();
 
   const { user, isUserLoading } = useUser();
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc(
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<{ role?: string }>(
     user ? 'users' : null,
     user?.uid || null
   );
@@ -197,10 +197,6 @@ export default function RegisterPage() {
               <div className="flex items-center space-x-2 rounded-lg border border-input p-3 has-[:checked]:border-primary has-[:checked]:bg-primary/5">
                 <RadioGroupItem value="trainer" id="r-trainer" />
                 <Label htmlFor="r-trainer" className="cursor-pointer font-normal">Trener</Label>
-              </div>
-              <div className="flex items-center space-x-2 rounded-lg border border-input p-3 has-[:checked]:border-primary has-[:checked]:bg-primary/5 col-span-2">
-                <RadioGroupItem value="admin" id="r-admin" />
-                <Label htmlFor="r-admin" className="cursor-pointer font-normal">Administrator</Label>
               </div>
             </RadioGroup>
           </div>

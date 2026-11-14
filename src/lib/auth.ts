@@ -1,4 +1,5 @@
 import { NextAuthOptions } from 'next-auth';
+import { verifyImpersonationToken } from '@/lib/jwt';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { connectToDatabase } from '@/lib/mongodb';
@@ -56,15 +57,22 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
         rememberMe: { label: 'Remember Me', type: 'checkbox' },
-        impersonateUserId: { label: 'Impersonate User ID', type: 'text' },
+        impersonationToken: { label: 'Impersonation token', type: 'text' },
       },
       async authorize(credentials) {
         await connectToDatabase();
 
-        // Handle impersonation
-        if (credentials?.impersonateUserId) {
-          const targetUser = await User.findById(credentials.impersonateUserId);
-          if (!targetUser) {
+        // Impersonation: only with a signed, short-lived token from /api/auth/impersonate,
+        // which is the one place that checks the caller is an admin.
+        if (credentials?.impersonationToken) {
+          const grant = verifyImpersonationToken(credentials.impersonationToken);
+          if (!grant) {
+            throw new Error('Impersonation token is invalid or expired');
+          }
+
+          const [targetUser, grantingAdmin] = await Promise.all([User.findById(grant.sub), User.findById(grant.by)]);
+          // The admin must still be an admin when the token is redeemed.
+          if (!targetUser || !grantingAdmin || grantingAdmin.role !== 'admin') {
             throw new Error('User not found');
           }
 

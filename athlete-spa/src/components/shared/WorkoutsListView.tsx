@@ -261,6 +261,8 @@ export function WorkoutsListView({
                                         <img
                                             src={workout.imageUrl}
                                             alt={workout.name}
+                                            loading="lazy"
+                                            decoding="async"
                                             className="absolute inset-0 w-full h-full object-cover"
                                         />
                                     ) : (

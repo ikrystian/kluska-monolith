@@ -31,6 +31,7 @@ import {
 import { resolveMediaUrl } from '@/lib/api-client';
 import { haptic } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
+import { AdSlot } from '@/components/ads/AdSlot';
 
 const APP_VERSION = '0.9.3';
 
@@ -467,6 +468,8 @@ export default function MenuPage() {
               </span>
             </p>
           </section>
+
+          <AdSlot placement="menu" />
         </div>
       )}
 

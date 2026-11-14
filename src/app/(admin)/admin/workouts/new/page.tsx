@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCreateDoc } from '@/lib/db-hooks';
+import { useCreateDoc, useUser } from '@/lib/db-hooks';
 import { WorkoutForm } from '@/components/admin/workout-form';
 import { useToast } from '@/hooks/use-toast';
 import { Workout } from '@/lib/types';
@@ -13,10 +13,13 @@ export default function NewWorkoutPage() {
     const router = useRouter();
     const { toast } = useToast();
     const { createDoc, isLoading } = useCreateDoc();
+    const { user: currentUser } = useUser();
 
     const handleSubmit = async (data: Workout) => {
         try {
-            await createDoc('workouts', data);
+            // `ownerId` jest wymagane w modelu, a API nie uzupełnia go administratorowi.
+            if (!currentUser) throw new Error('Brak zalogowanego użytkownika.');
+            await createDoc('workouts', { ...data, ownerId: currentUser.uid });
             toast({
                 title: "Sukces!",
                 description: "Trening został utworzony.",

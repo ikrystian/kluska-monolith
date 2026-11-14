@@ -32,10 +32,16 @@ export async function POST(request: NextRequest) {
         const { query, page = 1 } = body;
 
         if (!query) {
-            return NextResponse.json({ error: 'Query is required' }, { status: 400 });
+            return NextResponse.json({ error: 'Fraza wyszukiwania jest wymagana.' }, { status: 400 });
         }
 
-        const apiKey = 'd41aa0e966935ed3098658ac368672894a7f6e17'; // Hardcoded as requested
+        const apiKey = process.env.SERPER_API_KEY;
+        if (!apiKey) {
+            return NextResponse.json(
+                { error: 'Import siłowni jest niedostępny: brak klucza SERPER_API_KEY w konfiguracji serwera.' },
+                { status: 500 }
+            );
+        }
 
         const postData = JSON.stringify({
             q: query,
@@ -74,6 +80,9 @@ export async function POST(request: NextRequest) {
                 });
             });
 
+            // Bez tego błąd sieci (DNS, zerwane połączenie) zostawiał żądanie zawieszone na zawsze.
+            req.on("error", reject);
+
             req.write(postData);
             req.end();
         });
@@ -81,7 +90,7 @@ export async function POST(request: NextRequest) {
         const responseData = JSON.parse(serperResponse);
 
         if (!responseData.places || !Array.isArray(responseData.places)) {
-            return NextResponse.json({ error: 'No places found or invalid API response', raw: responseData }, { status: 404 });
+            return NextResponse.json({ error: 'Nie znaleziono miejsc dla tej frazy albo API zwróciło nieprawidłową odpowiedź.', raw: responseData }, { status: 404 });
         }
 
         await connectToDatabase();
@@ -164,7 +173,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         console.error('Import Gyms Error:', error);
         return NextResponse.json(
-            { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+            { error: 'Nie udało się zaimportować siłowni.', details: error instanceof Error ? error.message : 'Unknown error' },
             { status: 500 }
         );
     }

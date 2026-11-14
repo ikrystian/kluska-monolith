@@ -1,67 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isValidObjectId } from 'mongoose';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { signImpersonationToken } from '@/lib/jwt';
 import { connectToDatabase } from '@/lib/mongodb';
 import { User } from '@/models/User';
-import { signIn } from 'next-auth/react';
 
+/**
+ * POST /api/auth/impersonate  { userId }
+ *
+ * Lets an admin sign in as another user. This route is the only place that
+ * checks the caller's role; it answers with two signed tokens the client hands
+ * to NextAuth's `signIn('credentials', { impersonationToken })`:
+ *  - `token`        — valid for a minute, becomes the target user
+ *  - `restoreToken` — brings the admin back to their own account afterwards
+ */
 export async function POST(request: NextRequest) {
   try {
-    // Verify that the current user is an admin
     const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     await connectToDatabase();
 
-    // Check if current user is admin
-    const currentUser = await User.findById(session.user.id);
-    if (!currentUser || currentUser.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Only admins can impersonate users' },
-        { status: 403 }
-      );
+    // The role is read from the database, not the session: a demoted admin loses this at once.
+    const admin = await User.findById(session.user.id).select('role').lean();
+    if (!admin || admin.role !== 'admin') {
+      return NextResponse.json({ error: 'Only admins can impersonate users' }, { status: 403 });
     }
 
     const { userId } = await request.json();
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'userId is required' },
-        { status: 400 }
-      );
+    if (!userId || !isValidObjectId(userId)) {
+      return NextResponse.json({ error: 'userId is required' }, { status: 400 });
     }
 
-    // Get the target user
-    const targetUser = await User.findById(userId);
-    if (!targetUser) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+    const target = await User.findById(userId).select('name email role').lean();
+    if (!target) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Return the impersonation token data
-    // The client will handle the actual session update via signIn
+    const adminId = String(session.user.id);
     return NextResponse.json({
       success: true,
-      user: {
-        id: targetUser._id.toString(),
-        email: targetUser.email,
-        name: targetUser.name,
-        role: targetUser.role,
-      },
+      token: signImpersonationToken({ purpose: 'impersonate', sub: String(target._id), by: adminId }),
+      restoreToken: signImpersonationToken({ purpose: 'restore', sub: adminId, by: adminId }),
+      user: { id: String(target._id), email: target.email, name: target.name, role: target.role },
     });
   } catch (error) {
     console.error('Impersonation error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

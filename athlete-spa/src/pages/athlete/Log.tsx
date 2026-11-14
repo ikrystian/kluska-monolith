@@ -32,7 +32,7 @@ import { StartRunDialog } from '@/components/running/StartRunDialog';
 import { useCollection, useUser, useDoc } from '@/lib/db-hooks';
 import { useActiveWorkout } from '@/hooks/useActiveWorkout';
 import { useExerciseHistory } from '@/hooks/useExerciseHistory';
-import { visibleExercisesScope } from '@/hooks/useExerciseLibrary';
+import { noteExercises, useExercisesByIds } from '@/hooks/useExercisesByIds';
 import { useRestTimer } from '@/hooks/useRestTimer';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { useWorkoutGym } from '@/hooks/useWorkoutGym';
@@ -90,6 +90,9 @@ import { TourAnchor } from '@/components/tour/TourAnchor';
  */
 const isWorkoutLogsListKey = (key: unknown): key is string =>
   typeof key === 'string' && key.includes('/api/db/workoutLogs?');
+
+/** Every cached read of workout logs: the lists and the single documents. */
+const isWorkoutLogKey = (key: string) => key.startsWith('/api/db/workoutLogs');
 
 /**
  * Wipes those reads from local storage — both the in-memory SWR entry and the
@@ -238,7 +241,7 @@ type LogFormValues = z.infer<typeof logSchema>;
 
 // --- WORKOUT BUILDER VIEW ---
 // Allows the user to prepare the workout before starting the timer
-function WorkoutBuilderView({ initialData, onStart, onCancel, allExercises, isLoadingExercises }: { initialData: LogFormValues; onStart: (data: LogFormValues) => void; onCancel: () => void; allExercises: Exercise[] | null; isLoadingExercises: boolean }) {
+function WorkoutBuilderView({ initialData, onStart, onCancel }: { initialData: LogFormValues; onStart: (data: LogFormValues) => void; onCancel: () => void }) {
   const form = useForm<LogFormValues>({
     resolver: zodResolver(logSchema),
     defaultValues: initialData,
@@ -249,8 +252,16 @@ function WorkoutBuilderView({ initialData, onStart, onCancel, allExercises, isLo
     name: "exerciseSeries",
   });
 
-  const handleAddExercise = (exerciseId: string) => {
-    const exerciseDef = allExercises?.find(e => e.id === exerciseId);
+  // Only the exercises in this workout — never the whole library.
+  const {
+    exercises: allExercises,
+    isLoading: isLoadingExercises,
+    remember: rememberExercise,
+  } = useExercisesByIds(form.watch('exerciseSeries').map(series => series.exerciseId));
+
+  const handleAddExercise = (exerciseId: string, exercise?: Exercise) => {
+    if (exercise) rememberExercise(exercise);
+    const exerciseDef = exercise ?? allExercises?.find(e => e.id === exerciseId);
     // Add default sets based on exercise type
     let defaultSets: WorkoutSet[] = [];
     // Default to 3 working sets
@@ -399,7 +410,7 @@ function ExerciseRail({ statuses, activeIndex, onSelect }: {
 // --- ACTIVE WORKOUT VIEW ---
 type ViewMode = 'list' | 'carousel';
 
-function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLoadingExercises, initialLogId, sourceWorkoutId, pendingExerciseId }: { initialWorkout: LogFormValues; allExercises: Exercise[] | null; onFinishWorkout: () => void; isLoadingExercises: boolean; initialLogId?: string | null; sourceWorkoutId?: string | null; pendingExerciseId?: string | null }) {
+function ActiveWorkoutView({ initialWorkout, onFinishWorkout, initialLogId, sourceWorkoutId, pendingExerciseId }: { initialWorkout: LogFormValues; onFinishWorkout: () => void; initialLogId?: string | null; sourceWorkoutId?: string | null; pendingExerciseId?: string | null }) {
   const [startTime] = useState(initialWorkout.startTime ? new Date(initialWorkout.startTime) : new Date());
   const [workoutLogId, setWorkoutLogId] = useState<string | null>(initialLogId || null);
   const isCreatingWorkoutRef = useRef(false);
@@ -498,6 +509,12 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   // the athlete reaches the summary screen. Leaving this screen mid-workout
   // keeps it there (without the set button — nothing is left to act on it).
   const liveSeries = form.watch('exerciseSeries');
+  // Only the exercises in this workout — never the whole library.
+  const {
+    exercises: allExercises,
+    isLoading: isLoadingExercises,
+    remember: rememberExercise,
+  } = useExercisesByIds(liveSeries.map(series => series.exerciseId));
   const liveTotalSets = liveSeries.reduce((acc, s) => acc + (s.sets?.length ?? 0), 0);
   const liveCompletedSets = liveSeries.reduce((acc, s) => acc + (s.sets?.filter(set => set.completed).length ?? 0), 0);
   const liveCurrentSeries =
@@ -701,11 +718,20 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
     }, { replace: true });
   }, [pendingExerciseId, setSearchParams]);
 
-  // Auto-save effect
+  // Auto-save: 2 s after the last change to the form, and only when what would
+  // be sent differs from what the server already has.
+  //
+  // The effect used to depend on `form.watch()`, a new object on every render,
+  // so any re-render re-armed the timer. Each save refreshed the cached log,
+  // which re-rendered this screen, which armed the next save — a PATCH (plus a
+  // refetch of every visible read) every 2 s for the whole workout.
+  const lastAutoSavedRef = useRef<string | null>(null);
   useEffect(() => {
     if (!workoutLogId || !user || isFinished) return;
 
-    const saveTimeout = setTimeout(async () => {
+    let saveTimeout: ReturnType<typeof setTimeout> | undefined;
+
+    const save = async () => {
       const currentData = form.getValues();
       const exercisesWithNames = currentData.exerciseSeries.map(series => {
         const exerciseDetails = allExercises?.find(ex => ex.id === series.exerciseId);
@@ -730,20 +756,38 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
         // Don't update status or endTime here
       };
 
+      const body = JSON.stringify(updateData);
+      if (body === lastAutoSavedRef.current) return;
+
       try {
-        await apiFetch(`/api/db/workoutLogs/${workoutLogId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updateData),
-        });
-        console.log('Auto-saved workout progress');
+        const response = await apiFetch(
+          `/api/db/workoutLogs/${workoutLogId}`,
+          { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body },
+          // A draft of the workout in progress changes nothing but the log
+          // itself — no need to refetch the dashboard, goals, exercises….
+          { affects: isWorkoutLogKey }
+        );
+        if (response.ok) lastAutoSavedRef.current = body;
       } catch (error) {
         console.error('Error auto-saving workout:', error);
       }
-    }, 2000); // Debounce for 2 seconds
+    };
 
-    return () => clearTimeout(saveTimeout);
-  }, [form.watch(), workoutLogId, user, allExercises, isFinished]);
+    const schedule = () => {
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(save, 2000); // Debounce for 2 seconds
+    };
+
+    // Once when the session opens (or the exercise library arrives, which
+    // completes the snapshots saved with each exercise), then on every edit.
+    schedule();
+    const subscription = form.watch(schedule);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(saveTimeout);
+    };
+  }, [form, workoutLogId, user, allExercises, isFinished]);
 
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -764,7 +808,9 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
     setPhotoToCrop(null);
   };
 
-  const handleAddExercise = (exerciseId: string) => {
+  const handleAddExercise = (exerciseId: string, exercise?: Exercise) => {
+    // Picked in the library sheet: known at once, before any fetch.
+    if (exercise) rememberExercise(exercise);
     const defaultSets: WorkoutSet[] = [
       { number: 1, type: SetType.WorkingSet, reps: 0, weight: 0, restTimeSeconds: 60, completed: false },
       { number: 2, type: SetType.WorkingSet, reps: 0, weight: 0, restTimeSeconds: 60, completed: false },
@@ -1863,7 +1909,7 @@ const TEMPLATE_PAGE_SIZE = 6;
 const isOwnTemplate = (template: Workout) => Boolean(template.ownerId && template.ownerId !== 'public');
 
 // --- SELECTION VIEW COMPONENT ---
-function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder: (data: LogFormValues) => void; allExercises: Exercise[] | null }) {
+function WorkoutSelectionView({ onStartBuilder }: { onStartBuilder: (data: LogFormValues) => void }) {
   const { user } = useUser();
   const supportsGeolocation = typeof navigator !== 'undefined' && 'geolocation' in navigator;
   const [startRunDialogOpen, setStartRunDialogOpen] = useState(false);
@@ -1941,6 +1987,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
   const recommendation = useMemo(() => recommendTemplate(templates, historyLogs), [templates, historyLogs]);
 
   const handleStartWorkout = (workout: Workout) => {
+    noteExercises(workout.exerciseSeries.map(series => series.exercise));
     const workoutData: LogFormValues = {
       workoutName: workout.name,
       exerciseSeries: workout.exerciseSeries.map(series => ({
@@ -1963,6 +2010,7 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
   };
 
   const handleRepeatWorkout = (log: WorkoutLog) => {
+    noteExercises(log.exercises.map(ex => ex.exercise));
     const workoutData: LogFormValues = {
       workoutName: log.workoutName,
       exerciseSeries: log.exercises.map(ex => ({
@@ -2222,21 +2270,6 @@ export default function LogWorkoutPage() {
   const [builderData, setBuilderData] = useState<LogFormValues | null>(null);
   const [activeLogId, setActiveLogId] = useState<string | null>(null);
   const { user } = useUser();
-  const { data: userProfile } = useDoc<UserProfile>('users', user?.uid || null);
-
-  const ownerIds = useMemo(() => {
-    const ids = ['public'];
-    if (user?.uid) ids.push(user.uid);
-    if (userProfile?.trainerId) ids.push(userProfile.trainerId);
-    return ids;
-  }, [user?.uid, userProfile?.trainerId]);
-
-  // Fetch exercises (public, user's own, and trainer's + legacy exercises with no owner)
-  const { data: allExercises, isLoading: exercisesLoading } = useCollection<Exercise>(
-    'exercises',
-    user?.uid ? visibleExercisesScope(ownerIds) : undefined
-  );
-
   // Check for active workout
   const { data: activeWorkouts, isLoading: isLoadingActive } = useCollection<WorkoutLog>(
     user?.uid ? 'workoutLogs' : null,
@@ -2250,6 +2283,20 @@ export default function LogWorkoutPage() {
   const pendingExerciseId = searchParams.get('addExercise');
   const { data: preselectedWorkout, isLoading: isLoadingPreselected } = useDoc<Workout>('workouts', workoutId);
   const { data: specificWorkoutLog } = useDoc<WorkoutLog>('workoutLogs', logId);
+
+  // Older templates may hold an exercise by name only. Those few names are
+  // looked up directly; each view loads the exercises it shows by id.
+  const namesWithoutId = useMemo(
+    () =>
+      (preselectedWorkout?.exerciseSeries ?? [])
+        .filter(series => !getExerciseId(series.exercise) && series.exercise?.name)
+        .map(series => series.exercise.name),
+    [preselectedWorkout]
+  );
+  const { data: exercisesByName, isLoading: isLoadingByName } = useCollection<Exercise>(
+    namesWithoutId.length > 0 ? 'exercises' : null,
+    namesWithoutId.length > 0 ? { name: { $in: namesWithoutId } } : undefined
+  );
   const { toast } = useToast();
 
   // Handle Active Workout Resume
@@ -2261,6 +2308,8 @@ export default function LogWorkoutPage() {
         : null);
 
     if (activeLog) {
+      // The log carries a copy of each exercise: usable at once, and offline.
+      noteExercises(activeLog.exercises.map(ex => ex.exercise));
 
       // If user tried to start a new workout via URL but has an active one
       if (workoutId && activeLog.id !== workoutId) { // Note: workoutId param is a Workout ID, activeLog.id is Log ID. We can't easily compare, but existence of activeLog takes precedence.
@@ -2307,15 +2356,19 @@ export default function LogWorkoutPage() {
   useEffect(() => {
     if (activeWorkouts && activeWorkouts.length > 0) return; // Don't auto-start if active exists
 
+    // The builder starts once; wait for the name lookup rather than start with gaps.
+    if (namesWithoutId.length > 0 && isLoadingByName) return;
+
     if (workoutId && preselectedWorkout && !builderData && view === 'selection') {
+      noteExercises(preselectedWorkout.exerciseSeries.map(series => series.exercise));
       const workoutData: LogFormValues = {
         workoutName: preselectedWorkout.name,
         exerciseSeries: preselectedWorkout.exerciseSeries.map(series => {
           let exerciseId = getExerciseId(series.exercise);
 
           // Try to find by name if ID is missing
-          if (!exerciseId && allExercises) {
-            const found = allExercises.find(e => e.name === series.exercise.name);
+          if (!exerciseId && exercisesByName) {
+            const found = exercisesByName.find(e => e.name === series.exercise.name);
             if (found) exerciseId = found.id;
           }
 
@@ -2343,7 +2396,7 @@ export default function LogWorkoutPage() {
       };
       handleStartBuilder(workoutData);
     }
-  }, [workoutId, preselectedWorkout, builderData, view, activeWorkouts, allExercises]);
+  }, [workoutId, preselectedWorkout, builderData, view, activeWorkouts, exercisesByName, namesWithoutId, isLoadingByName]);
 
   // Brak trwającego treningu: przygotuj nowy trening z ćwiczeniem z kodu QR.
   useEffect(() => {
@@ -2399,8 +2452,6 @@ export default function LogWorkoutPage() {
         <ActiveWorkoutView
           initialWorkout={builderData}
           onFinishWorkout={handleFinishWorkout}
-          allExercises={allExercises}
-          isLoadingExercises={exercisesLoading}
           initialLogId={activeLogId}
           sourceWorkoutId={workoutId} // Pass the workout template ID
           pendingExerciseId={pendingExerciseId}
@@ -2416,8 +2467,6 @@ export default function LogWorkoutPage() {
           initialData={builderData}
           onStart={handleStartActive}
           onCancel={handleCancelBuilder}
-          allExercises={allExercises}
-          isLoadingExercises={exercisesLoading}
         />
       </div>
     )
@@ -2427,7 +2476,6 @@ export default function LogWorkoutPage() {
     <div className="page">
       <WorkoutSelectionView
         onStartBuilder={handleStartBuilder}
-        allExercises={allExercises}
       />
     </div>
   );

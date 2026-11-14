@@ -33,17 +33,18 @@ import { toast } from 'sonner';
 export type AchievementCategory = 'consistency' | 'performance' | 'social' | 'milestone';
 export type AchievementRarity = 'common' | 'rare' | 'epic' | 'legendary';
 
+// `z.coerce.number<number>()`: inputy liczbowe oddają tekst, a typ wejścia zawężamy do number.
 const badgeSchema = z.object({
     name: z.string().min(1, 'Name is required'),
     description: z.string().min(1, 'Description is required'),
     iconUrl: z.string().optional(),
     category: z.enum(['consistency', 'performance', 'social', 'milestone']),
     rarity: z.enum(['common', 'rare', 'epic', 'legendary']),
-    pointsReward: z.coerce.number().min(0),
+    pointsReward: z.coerce.number<number>().min(0),
     isActive: z.boolean().default(true),
     requirement: z.object({
         type: z.enum(['streak', 'goal_count', 'workout_count', 'points_earned', 'level_reached', 'total_volume', 'personal_record_count', 'streak_days', 'run_distance', 'custom']),
-        value: z.coerce.number().min(1),
+        value: z.coerce.number<number>().min(1),
         comparison: z.enum(['gte', 'lte', 'eq']).default('gte'),
         customField: z.string().optional(),
     }),
@@ -59,9 +60,15 @@ interface BadgeFormProps {
 }
 
 export function BadgeForm({ initialData, onSubmit, onCancel, isLoading }: BadgeFormProps) {
-    const form = useForm<BadgeFormValues>({
+    // Pola z `.default()` są opcjonalne na wejściu schematu, więc typ wejścia i wyjścia się różnią.
+    const form = useForm<z.input<typeof badgeSchema>, unknown, BadgeFormValues>({
         resolver: zodResolver(badgeSchema),
-        defaultValues: initialData || {
+        defaultValues: initialData ? {
+            ...initialData,
+            // Brakujące pola tekstowe jako pusty tekst, żeby inputy od początku były sterowane.
+            iconUrl: initialData.iconUrl ?? '',
+            requirement: { ...initialData.requirement, customField: initialData.requirement.customField ?? '' },
+        } : {
             name: '',
             description: '',
             iconUrl: '',
@@ -73,6 +80,7 @@ export function BadgeForm({ initialData, onSubmit, onCancel, isLoading }: BadgeF
                 type: 'workout_count',
                 value: 1,
                 comparison: 'gte',
+                customField: '',
             },
         },
     });

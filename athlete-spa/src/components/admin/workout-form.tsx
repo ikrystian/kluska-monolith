@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,11 +26,9 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Plus, Trash2, GripVertical, Loader2 } from 'lucide-react';
-import { useCollection } from '@/lib/db-hooks';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { noteExercises, useExercisesByIds } from '@/hooks/useExercisesByIds';
+import { AddExerciseSheet } from '@/components/workout/AddExerciseSheet';
 import { cn } from '@/lib/utils';
-import { Check } from 'lucide-react';
 
 const workoutSchema = z.object({
     name: z.string().min(1, 'Nazwa jest wymagana.'),
@@ -60,9 +58,6 @@ interface WorkoutFormProps {
 }
 
 export function WorkoutForm({ initialData, onSubmit, isLoading }: WorkoutFormProps) {
-    const { data: exercises, isLoading: exercisesLoading } = useCollection<Exercise>('exercises');
-    const [openCombobox, setOpenCombobox] = useState<Record<number, boolean>>({});
-
     const form = useForm<WorkoutFormValues>({
         resolver: zodResolver(workoutSchema),
         defaultValues: {
@@ -84,21 +79,39 @@ export function WorkoutForm({ initialData, onSubmit, isLoading }: WorkoutFormPro
         name: 'exerciseSeries',
     });
 
+    // A template being edited carries a copy of each of its exercises: usable
+    // at once, before (or without) asking the server.
+    useEffect(() => {
+        noteExercises(initialData?.exerciseSeries?.map(series => series.exercise) ?? []);
+    }, [initialData]);
+
+    // Only the exercises in this template. The form used to download the whole
+    // library (5 600 exercises, 12 MB) and render every one of them as an
+    // option of each "Ćwiczenie" dropdown.
+    const { exercises, remember: rememberExercise } = useExercisesByIds(
+        (form.watch('exerciseSeries') ?? []).map(series => series.exerciseId)
+    );
+
     const handleSubmit = async (data: WorkoutFormValues) => {
-        if (!exercises) return;
-
         // Map form data back to Workout structure
-        const mappedSeries = data.exerciseSeries.map(series => {
-            const exercise = exercises.find(e => e.id === series.exerciseId);
-            if (!exercise) throw new Error(`Exercise not found: ${series.exerciseId}`);
+        const mappedSeries = [];
+        for (const [index, series] of data.exerciseSeries.entries()) {
+            const exercise = exercises?.find(e => e.id === series.exerciseId);
+            if (!exercise) {
+                // Not loaded (e.g. offline) — say so instead of failing silently.
+                form.setError(`exerciseSeries.${index}.exerciseId`, {
+                    message: 'Nie udało się wczytać tego ćwiczenia. Wybierz je ponownie.',
+                });
+                return;
+            }
 
-            return {
+            mappedSeries.push({
                 exercise,
                 tempo: series.tempo,
                 tip: series.tip,
                 sets: series.sets.map((set, idx) => ({ ...set, number: idx + 1 })),
-            };
-        });
+            });
+        }
 
         const workoutData: any = { // using any to bypass strict ID check which is handled by db hook or parent
             ...initialData,
@@ -193,8 +206,7 @@ export function WorkoutForm({ initialData, onSubmit, isLoading }: WorkoutFormPro
                             form={form}
                             removeSeries={removeSeries}
                             exercises={exercises || []}
-                            openCombobox={openCombobox}
-                            setOpenCombobox={setOpenCombobox}
+                            onExercisePicked={rememberExercise}
                             isLoading={isLoading}
                         />
                     ))}
@@ -211,7 +223,7 @@ export function WorkoutForm({ initialData, onSubmit, isLoading }: WorkoutFormPro
     );
 }
 
-function ExerciseSeriesItem({ index, form, removeSeries, exercises, openCombobox, setOpenCombobox, isLoading }: any) {
+function ExerciseSeriesItem({ index, form, removeSeries, exercises, onExercisePicked, isLoading }: any) {
     const { fields: setFields, append: appendSet, remove: removeSet } = useFieldArray({
         control: form.control,
         name: `exerciseSeries.${index}.sets`,
@@ -233,56 +245,37 @@ function ExerciseSeriesItem({ index, form, removeSeries, exercises, openCombobox
                         render={({ field }) => (
                             <FormItem className="flex flex-col">
                                 <FormLabel>Ćwiczenie</FormLabel>
-                                <Popover open={openCombobox[index]} onOpenChange={(open) => setOpenCombobox(prev => ({ ...prev, [index]: open }))}>
-                                    <PopoverTrigger asChild>
+                                {/* The library sheet searches and pages on the server, 30 at a time. */}
+                                <AddExerciseSheet
+                                    title="Wybierz ćwiczenie"
+                                    onAddExercise={(exerciseId, exercise) => {
+                                        if (exercise) onExercisePicked(exercise);
+                                        form.setValue(`exerciseSeries.${index}.exerciseId`, exerciseId, {
+                                            shouldValidate: true,
+                                            shouldDirty: true,
+                                        });
+                                    }}
+                                    trigger={
                                         <FormControl>
                                             <Button
+                                                type="button"
                                                 variant="outline"
-                                                role="combobox"
                                                 className={cn(
                                                     "w-full justify-between",
                                                     !field.value && "text-muted-foreground"
                                                 )}
                                                 disabled={isLoading}
                                             >
-                                                {field.value
-                                                    ? exercises.find((exercise: Exercise) => exercise.id === field.value)?.name
-                                                    : "Wybierz ćwiczenie"}
+                                                <span className="truncate">
+                                                    {field.value
+                                                        ? exercises.find((exercise: Exercise) => exercise.id === field.value)?.name ?? 'Ładowanie…'
+                                                        : "Wybierz ćwiczenie"}
+                                                </span>
                                                 <GripVertical className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                             </Button>
                                         </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[300px] p-0">
-                                        <Command>
-                                            <CommandInput autoFocus={false} placeholder="Szukaj ćwiczenia..." />
-                                            <CommandList>
-                                                <CommandEmpty>Nie znaleziono ćwiczenia.</CommandEmpty>
-                                                <CommandGroup>
-                                                    {exercises.map((exercise: Exercise) => (
-                                                        <CommandItem
-                                                            value={exercise.name}
-                                                            key={exercise.id}
-                                                            onSelect={() => {
-                                                                form.setValue(`exerciseSeries.${index}.exerciseId`, exercise.id);
-                                                                setOpenCombobox(prev => ({ ...prev, [index]: false }));
-                                                            }}
-                                                        >
-                                                            <Check
-                                                                className={cn(
-                                                                    "mr-2 h-4 w-4",
-                                                                    exercise.id === field.value
-                                                                        ? "opacity-100"
-                                                                        : "opacity-0"
-                                                                )}
-                                                            />
-                                                            {exercise.name}
-                                                        </CommandItem>
-                                                    ))}
-                                                </CommandGroup>
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
+                                    }
+                                />
                                 <FormMessage />
                             </FormItem>
                         )}

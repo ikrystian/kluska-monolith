@@ -23,6 +23,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ fileId: 
     const response = new NextResponse(downloadStream as any, {
       headers: {
         'Content-Type': 'image/jpeg', // This should be dynamic based on the file's contentType
+        // A file id always names the same bytes, so browsers never need to ask again.
+        'Cache-Control': 'public, max-age=31536000, immutable',
       },
     });
 

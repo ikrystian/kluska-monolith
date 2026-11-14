@@ -15,6 +15,7 @@ export interface Notification {
 }
 
 const PAGE_SIZE = 20;
+const POLL_INTERVAL_MS = 60_000;
 /** Upper bound for the periodic refresh, so a long-scrolled list stays cheap to poll. */
 const MAX_REFRESH = 100;
 
@@ -118,10 +119,28 @@ export function useNotifications() {
     };
 
     useEffect(() => {
-        fetchNotifications();
-        // Poll every 60 seconds
-        const interval = setInterval(fetchNotifications, 60000);
-        return () => clearInterval(interval);
+        let lastFetchAt = 0;
+        const refresh = () => {
+            lastFetchAt = Date.now();
+            fetchNotifications();
+        };
+
+        refresh();
+        // Poll once a minute, but only while someone can see the result: a
+        // phone left in a pocket with the app in the background has no use for it.
+        const interval = setInterval(() => {
+            if (document.visibilityState === 'visible') refresh();
+        }, POLL_INTERVAL_MS);
+        // Back in the foreground: catch up at once if a tick was skipped.
+        const onVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && Date.now() - lastFetchAt >= POLL_INTERVAL_MS) refresh();
+        };
+        document.addEventListener('visibilitychange', onVisibilityChange);
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', onVisibilityChange);
+        };
     }, [fetchNotifications]);
 
     return {

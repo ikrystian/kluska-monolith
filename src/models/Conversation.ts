@@ -51,6 +51,8 @@ ConversationSchema.index({ participants: 1 });
 ConversationSchema.index({ trainerId: 1 });
 ConversationSchema.index({ athleteId: 1 });
 ConversationSchema.index({ updatedAt: -1 });
+// The chat list ("my conversations, newest first") is polled by every open app.
+ConversationSchema.index({ participants: 1, updatedAt: -1 });
 
 export const Conversation: Model<IConversation> =
   mongoose.models.Conversation || mongoose.model<IConversation>('Conversation', ConversationSchema);

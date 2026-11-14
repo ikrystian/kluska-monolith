@@ -24,7 +24,7 @@ import { EmptyState } from '@/components/ui/section';
 import { useToast } from '@/hooks/use-toast';
 import { haptic } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
-import { useCollection, useUser, useDoc } from '@/lib/db-hooks';
+import { RUN_LIST_OMIT, useCollection, useUser, useDoc } from '@/lib/db-hooks';
 import type { RunningProgram, RunningSession, StravaActivity, UserProfile } from '@/lib/types';
 import { tint } from '@/components/profile/profile-ui';
 import { StartRunDialog } from '@/components/running/StartRunDialog';
@@ -42,6 +42,7 @@ import {
   type RunActivity,
 } from '@/components/running/running-format';
 import { TourAnchor } from '@/components/tour/TourAnchor';
+import { AdSlot } from '@/components/ads/AdSlot';
 
 type SourceFilter = 'all' | 'app' | 'strava';
 
@@ -137,7 +138,7 @@ export default function RunningPage() {
   const { data: runningSessions, isLoading: isLoadingManual, refetch: refetchManual } = useCollection<RunningSession>(
     user ? 'runningSessions' : null,
     { ownerId: user?.uid },
-    { sort: { date: -1 } }
+    { sort: { date: -1 }, omit: RUN_LIST_OMIT }
   );
 
   const { data: stravaActivities, isLoading: isLoadingStrava, refetch: refetchStrava } = useCollection<StravaActivity>(
@@ -415,6 +416,8 @@ export default function RunningPage() {
           />
         )}
       </section>
+
+      <AdSlot placement="running" />
 
       <StartRunDialog open={quickRunDialogOpen} onOpenChange={setQuickRunDialogOpen} />
       <ManualRunSheet open={manualOpen} onOpenChange={setManualOpen} onSaved={refetchManual} />

@@ -104,9 +104,9 @@ export default function ManageArticlesPage() {
   };
 
   const onSubmit = async (data: ArticleFormValues) => {
-    const { isSubmitting } = form.formState;
-    if(isSubmitting) return;
-
+    // Bez sprawdzania `formState.isSubmitting`: react-hook-form ustawia tę flagę, zanim
+    // wywoła ten handler, więc taki warunek przerywał każdy zapis. Przed podwójnym
+    // wysłaniem chroni zablokowany przycisk.
     if (!editingArticle) return; // Should not happen in edit mode
 
     try {
@@ -158,6 +158,13 @@ export default function ManageArticlesPage() {
       if (editingCategory) {
         // Update existing category
         await updateDoc('articleCategories', editingCategory.id, data);
+        // Artykuły wskazują kategorię po nazwie — po zmianie nazwy trzeba je przepiąć,
+        // inaczej zostałyby z kategorią, której już nie ma.
+        if (editingCategory.name !== data.name) {
+          const affected = (articles ?? []).filter((article) => article.category === editingCategory.name);
+          await Promise.all(affected.map((article) => updateDoc('articles', article.id, { category: data.name })));
+          if (affected.length > 0) refetchArticles();
+        }
         toast({
           title: 'Kategoria zaktualizowana!',
           description: `Kategoria "${data.name}" została pomyślnie zaktualizowana.`
@@ -366,9 +373,31 @@ export default function ManageArticlesPage() {
                                     <Button variant="outline" size="icon" onClick={() => openDialog(article)}>
                                         <Edit className="h-4 w-4"/>
                                     </Button>
-                                    <Button variant="destructive" size="icon" onClick={() => handleDelete(article.id)}>
-                                        <Trash2 className="h-4 w-4"/>
-                                    </Button>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="destructive" size="icon" disabled={isDeleting}>
+                                                <Trash2 className="h-4 w-4"/>
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Czy na pewno chcesz usunąć ten artykuł?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Tej operacji nie można cofnąć. Spowoduje to trwałe usunięcie artykułu
+                                                    <span className="font-bold"> "{article.title}"</span>.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                                                <AlertDialogAction
+                                                    onClick={() => handleDelete(article.id)}
+                                                    className="bg-destructive hover:bg-destructive/90"
+                                                >
+                                                    Usuń
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 </TableCell>
                             </TableRow>
                         ))

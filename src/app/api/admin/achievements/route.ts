@@ -1,16 +1,25 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getRequestUser } from '@/lib/api-auth';
 import dbConnect from '@/lib/db';
 import { AchievementBadge } from '@/models/AchievementBadge';
 
-export async function GET() {
+/** Odznaki zmienia tylko administrator; `null` oznacza, że wolno. */
+async function requireAdmin(request: NextRequest): Promise<NextResponse | null> {
+    const user = await getRequestUser(request);
+    if (!user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (user.role !== 'admin') {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    return null;
+}
+
+export async function GET(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        const denied = await requireAdmin(request);
+        if (denied) return denied;
 
         await dbConnect();
         const achievements = await AchievementBadge.find({}).sort({ createdAt: -1 });
@@ -27,11 +36,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
-        // TODO: Add admin check here
-        if (!session) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        const denied = await requireAdmin(request);
+        if (denied) return denied;
 
         const body = await request.json();
         await dbConnect();

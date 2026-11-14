@@ -38,6 +38,8 @@ export default function DietPlanForm({ initialData, isEditing = false }: DietPla
     const [name, setName] = useState(initialData?.name || '');
     const [description, setDescription] = useState(initialData?.description || '');
     const [days, setDays] = useState<DietDay[]>(initialData?.days || [{ dayNumber: 1, meals: [] }]);
+    // Aktywna zakładka jest sterowana, żeby po dodaniu/usunięciu dnia zawsze wskazywała istniejący dzień.
+    const [activeDay, setActiveDay] = useState('day-0');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -87,12 +89,14 @@ export default function DietPlanForm({ initialData, isEditing = false }: DietPla
     // Helper to add a day
     const addDay = () => {
         setDays([...days, { dayNumber: days.length + 1, meals: [] }]);
+        setActiveDay(`day-${days.length}`);
     }
 
     // Helper to remove a day
     const removeDay = (index: number) => {
         const newDays = days.filter((_, i) => i !== index).map((d, i) => ({ ...d, dayNumber: i + 1 }));
         setDays(newDays);
+        setActiveDay(`day-${Math.max(0, Math.min(index, newDays.length - 1))}`);
     }
 
     // NOTE: Full meal editing logic would require selecting from SavedMeals.
@@ -139,7 +143,7 @@ export default function DietPlanForm({ initialData, isEditing = false }: DietPla
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <Tabs defaultValue="day-0" className="w-full">
+                    <Tabs value={activeDay} onValueChange={setActiveDay} className="w-full">
                         <TabsList className="flex flex-wrap h-auto gap-2 bg-transparent">
                             {days.map((day, idx) => (
                                 <TabsTrigger key={idx} value={`day-${idx}`} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">

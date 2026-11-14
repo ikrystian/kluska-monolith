@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import useSWR from 'swr';
 import { apiFetch } from '@/lib/api-client';
+import { expireFreshness } from '@/lib/cache-freshness';
 import { enqueueMutation } from '@/lib/offline-queue';
 import { useFrozenDuringTransition } from '@/lib/page-transition';
 
@@ -27,6 +28,20 @@ export interface UseDocResult<T> {
   error: Error | null;
   refetch: () => void;
 }
+
+export interface CollectionOptions {
+  sort?: Record<string, 1 | -1>;
+  limit?: number;
+  /**
+   * Fields the server leaves out of every document. Use it on list screens for
+   * heavy fields they never show — e.g. a run's per-second GPS `points`, which
+   * is most of the document and only the run's own detail screen draws.
+   */
+  omit?: string[];
+}
+
+/** For every list of runs: the GPS track belongs to the run's detail screen only. */
+export const RUN_LIST_OMIT = ['points'];
 
 export async function swrFetcher(url: string) {
   const response = await apiFetch(url);
@@ -56,7 +71,7 @@ export async function jsonFetcher<T = unknown>(url: string): Promise<T> {
  *
  * @param collection - Collection name or null to skip fetching
  * @param query - MongoDB query filter (optional)
- * @param options - Sort and limit options (optional)
+ * @param options - Sort, limit and omitted fields (optional)
  *
  * IMPORTANT: Pass `null` as collection to skip fetching entirely.
  * This is useful when you need to wait for other data before fetching.
@@ -64,12 +79,13 @@ export async function jsonFetcher<T = unknown>(url: string): Promise<T> {
 export function useCollection<T>(
   collection: string | null,
   query?: Record<string, any>,
-  options?: { sort?: Record<string, 1 | -1>; limit?: number }
+  options?: CollectionOptions
 ): UseCollectionResult<T> {
   // Serialize query and options for a stable cache key
   const queryString = query && Object.keys(query).length > 0 ? JSON.stringify(query) : '';
   const sortString = options?.sort ? JSON.stringify(options.sort) : '';
   const limitString = options?.limit ? options.limit.toString() : '';
+  const omitString = options?.omit?.join(',') ?? '';
 
   const key = useMemo(() => {
     if (!collection) return null;
@@ -77,14 +93,17 @@ export function useCollection<T>(
     if (queryString) params.append('query', queryString);
     if (sortString) params.append('sort', sortString);
     if (limitString) params.append('limit', limitString);
+    if (omitString) params.append('omit', omitString);
     return `/api/db/${collection}?${params.toString()}`;
-  }, [collection, queryString, sortString, limitString]);
+  }, [collection, queryString, sortString, limitString, omitString]);
 
   const { data, error, isLoading, mutate } = useSWR<T[]>(key, swrFetcher);
 
+  // An explicit refetch means "from the server", even if the key is still fresh.
   const refetch = useCallback(() => {
+    if (key) expireFreshness(key);
     void mutate();
-  }, [mutate]);
+  }, [mutate, key]);
 
   const snapshot = useMemo(
     () => ({
@@ -110,8 +129,9 @@ export function useDoc<T>(
   const { data, error, isLoading, mutate } = useSWR<T>(key, swrFetcher);
 
   const refetch = useCallback(() => {
+    if (key) expireFreshness(key);
     void mutate();
-  }, [mutate]);
+  }, [mutate, key]);
 
   const snapshot = useMemo(
     () => ({

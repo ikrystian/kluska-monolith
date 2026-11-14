@@ -40,6 +40,17 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
   Form,
   FormControl,
   FormField,
@@ -63,18 +74,20 @@ import {
 import { LocalUploadButton } from '@/components/shared/LocalUploadButton';
 import type { RunningProgram } from '@/lib/types';
 
+// `z.coerce.number<number>()`: inputy liczbowe oddają tekst, a typ wejścia zawężamy
+// do number, żeby wejście i wyjście schematu zgadzały się dla react-hook-form.
 const cueSchema = z.object({
   triggerType: z.enum(['time', 'distance']),
-  minutes: z.coerce.number().min(0, 'Min. 0').max(600, 'Zbyt duża wartość.'),
-  seconds: z.coerce.number().min(0, 'Min. 0').max(59, 'Maks. 59.'),
-  meters: z.coerce.number().min(0, 'Min. 0'),
+  minutes: z.coerce.number<number>().min(0, 'Min. 0').max(600, 'Zbyt duża wartość.'),
+  seconds: z.coerce.number<number>().min(0, 'Min. 0').max(59, 'Maks. 59.'),
+  meters: z.coerce.number<number>().min(0, 'Min. 0'),
   audioUrl: z.string().min(1, 'Wgraj plik dźwiękowy.'),
   label: z.string().optional(),
 });
 
 const programSchema = z.object({
   name: z.string().min(1, 'Nazwa jest wymagana.'),
-  targetDistanceKm: z.coerce.number().positive('Dystans musi być liczbą dodatnią.'),
+  targetDistanceKm: z.coerce.number<number>().positive('Dystans musi być liczbą dodatnią.'),
   description: z.string().optional(),
   isActive: z.boolean(),
   cues: z.array(cueSchema),
@@ -137,7 +150,8 @@ export default function RunningProgramsPage() {
     const payload = {
       name: data.name,
       targetDistanceKm: data.targetDistanceKm,
-      description: data.description?.trim() || undefined,
+      // Pusty tekst (a nie `undefined`), żeby przy edycji dało się wyczyścić opis.
+      description: data.description?.trim() ?? '',
       isActive: data.isActive,
       cues: data.cues.map((cue) => ({
         triggerType: cue.triggerType,
@@ -234,10 +248,26 @@ export default function RunningProgramsPage() {
                       <Edit className="mr-2 h-3 w-3" />
                       Edytuj
                     </Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDelete(program.id)}>
-                      <Trash2 className="mr-2 h-3 w-3" />
-                      Usuń
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm">
+                          <Trash2 className="mr-2 h-3 w-3" />
+                          Usuń
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Usunąć trening „{program.name}”?</AlertDialogTitle>
+                          <AlertDialogDescription>Tej operacji nie można cofnąć.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(program.id)} className="bg-destructive hover:bg-destructive/90">
+                            Usuń
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </TableCell>
                 </TableRow>
               ))}
@@ -283,7 +313,7 @@ export default function RunningProgramsPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Dystans docelowy (km)</FormLabel>
-                      <FormControl><Input type="number" step="0.1" min="0" {...field} /></FormControl>
+                      <FormControl><Input type="number" step="0.1" min="0" {...field} value={field.value ?? ''} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -369,6 +399,7 @@ export default function RunningProgramsPage() {
                               <FormItem className="w-24">
                                 <FormLabel className="text-xs">Metry</FormLabel>
                                 <FormControl><Input type="number" min="0" step="50" {...field} /></FormControl>
+                                <FormMessage />
                               </FormItem>
                             )}
                           />
@@ -381,6 +412,7 @@ export default function RunningProgramsPage() {
                                 <FormItem className="w-16">
                                   <FormLabel className="text-xs">Min</FormLabel>
                                   <FormControl><Input type="number" min="0" {...field} /></FormControl>
+                                  <FormMessage />
                                 </FormItem>
                               )}
                             />
@@ -391,6 +423,7 @@ export default function RunningProgramsPage() {
                                 <FormItem className="w-16">
                                   <FormLabel className="text-xs">Sek</FormLabel>
                                   <FormControl><Input type="number" min="0" max="59" {...field} /></FormControl>
+                                  <FormMessage />
                                 </FormItem>
                               )}
                             />

@@ -15,7 +15,7 @@ export default function AppLayout({
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc(
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<{ role?: string }>(
     user ? 'users' : null,
     user?.uid || null
   );

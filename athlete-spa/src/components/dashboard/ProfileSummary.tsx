@@ -16,7 +16,7 @@ import {
   fmtNumber,
   type ActivityEntry,
 } from '@/components/dashboard/summary-visuals';
-import { useCollection, useUser } from '@/lib/db-hooks';
+import { RUN_LIST_OMIT, useCollection, useUser } from '@/lib/db-hooks';
 import { haptic } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
 import type { BodyMeasurement, PersonalRecord, RunningSession, StravaActivity, WorkoutLog } from '@/lib/types';
@@ -255,7 +255,8 @@ export function ProfileSummary() {
 
   const { data: runningSessions, isLoading: runningLoading } = useCollection<RunningSession>(
     user ? 'runningSessions' : null,
-    { ownerId: user?.uid, date: dateFilter }
+    { ownerId: user?.uid, date: dateFilter },
+    { omit: RUN_LIST_OMIT }
   );
 
   const { data: stravaActivities, isLoading: stravaLoading } = useCollection<StravaActivity>(

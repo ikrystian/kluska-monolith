@@ -13,7 +13,7 @@ import { Check, Dumbbell, Plus, Trash2, ArrowRight } from 'lucide-react';
 import { AddExerciseSheet } from '@/components/workout/AddExerciseSheet';
 import { cn } from '@/lib/utils';
 import { haptic } from '@/lib/haptics';
-import { SetType } from '@/lib/types';
+import { SetType, type Exercise } from '@/lib/types';
 import { getSetTypeConfig } from '@/lib/set-type-config';
 
 export interface WorkoutOverviewExercise {
@@ -36,7 +36,7 @@ interface WorkoutOverviewSheetProps {
   currentExerciseIndex: number;
   currentSetIndex: number;
   onJumpToSet: (exerciseIndex: number, setIndex: number) => void;
-  onAddExercise?: (exerciseId: string) => void;
+  onAddExercise?: (exerciseId: string, exercise?: Exercise) => void;
   onRemoveExercise?: (exerciseIndex: number) => void;
   onFinishWorkout?: () => void;
 }

@@ -25,7 +25,13 @@ export function proxy(request: NextRequest) {
   const isMedia = request.nextUrl.pathname.startsWith('/upload-data/');
 
   if (request.method === 'OPTIONS') {
-    return applyCorsHeaders(new NextResponse(null, { status: 204 }), origin);
+    const preflight = applyCorsHeaders(new NextResponse(null, { status: 204 }), origin);
+    // Every SPA call carries an Authorization header, so the browser preflights
+    // it. Without this the answer is remembered for 5 s (Chrome's default) and
+    // most API calls cost two round trips. Browsers cap the value themselves
+    // (Chrome 2 h, Firefox 24 h).
+    preflight.headers.set('Access-Control-Max-Age', '86400');
+    return preflight;
   }
 
   const response = applyCorsHeaders(NextResponse.next(), origin);

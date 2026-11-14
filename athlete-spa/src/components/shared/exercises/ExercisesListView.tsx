@@ -27,6 +27,7 @@ import { ExerciseDetailDialog } from './ExerciseDetailDialog';
 import { ExerciseResults, ViewModeToggle, useExerciseViewMode } from './ExerciseResults';
 import { ExercisesListViewProps, ExerciseFormData, roleDefaults } from './types';
 import { TourAnchor } from '@/components/tour/TourAnchor';
+import { AdSlot } from '@/components/ads/AdSlot';
 
 export function ExercisesListView(props: ExercisesListViewProps) {
   const { role } = props;
@@ -241,6 +242,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
 
   return (
     <div className="page h-full flex flex-col">
+      <AdSlot placement="exercises" className="mb-3 flex-shrink-0" />
       <div className="mb-3 flex flex-shrink-0 flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           <p className="min-w-0 truncate text-sm text-muted-foreground">{countLabel}</p>

@@ -33,17 +33,30 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-function ExercisePicker({ selectedId, onSelect }: { selectedId?: string; onSelect: (exercise: Exercise) => void }) {
-  const { data: exercises, isLoading } = useCollection<Exercise>('exercises');
-  const [search, setSearch] = useState('');
+/** The picker shows a name per row; the long texts stay on the server. */
+const PICKER_OMIT = ['description', 'instructions', 'setup', 'original_description'];
+const PICKER_OPTIONS = { sort: { popularity: -1, name: 1 } as Record<string, 1 | -1>, limit: 30, omit: PICKER_OMIT };
 
-  const matches = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    return (exercises ?? [])
-      .filter(exercise => (exercise.type ?? 'weight') === 'weight')
-      .filter(exercise => !query || exercise.name.toLowerCase().includes(query))
-      .slice(0, 30);
-  }, [exercises, search]);
+function ExercisePicker({ selectedId, onSelect }: { selectedId?: string; onSelect: (exercise: Exercise) => void }) {
+  const [search, setSearch] = useState('');
+  // Search reaches the server only after a pause in typing.
+  const [term, setTerm] = useState('');
+  useEffect(() => {
+    const timeout = setTimeout(() => setTerm(search.trim()), 300);
+    return () => clearTimeout(timeout);
+  }, [search]);
+
+  // The server filters and returns the 30 rows shown — the picker used to
+  // download the whole library (5 600 exercises, 12 MB) to display that many.
+  const filter = useMemo(() => {
+    const weightOnly = { $or: [{ type: 'weight' }, { type: { $exists: false } }] };
+    if (!term) return weightOnly;
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return { $and: [weightOnly, { name: { $regex: escaped, $options: 'i' } }] };
+  }, [term]);
+
+  const { data: exercises, isLoading } = useCollection<Exercise>('exercises', filter, PICKER_OPTIONS);
+  const matches = exercises ?? [];
 
   return (
     <div>

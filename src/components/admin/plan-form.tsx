@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -31,7 +31,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const planSchema = z.object({
     name: z.string().min(1, 'Nazwa jest wymagana.'),
-    level: z.nativeEnum(TrainingLevel, { required_error: 'Poziom jest wymagany.' }),
+    level: z.nativeEnum(TrainingLevel, { error: 'Poziom jest wymagany.' }),
     description: z.string().optional(),
     stages: z.array(z.object({
         name: z.string().min(1, 'Nazwa etapu jest wymagana.'),
@@ -49,8 +49,30 @@ interface PlanFormProps {
     isLoading?: boolean;
 }
 
+/** Dzień planu jako wartość pola: 'Rest Day' albo id treningu (starsze wpisy mają tylko `_id`). */
+const dayToFormValue = (day: DayPlan): string =>
+    typeof day === 'string' ? day : day.id ?? (day as Workout & { _id?: string })._id ?? 'Rest Day';
+
 export function PlanForm({ initialData, onSubmit, isLoading }: PlanFormProps) {
     const { data: workouts, isLoading: workoutsLoading } = useCollection<Workout>('workouts');
+
+    // Plan przechowuje pełne kopie treningów. Trening mógł już zniknąć z biblioteki —
+    // wtedy jego kopia z planu musi przetrwać edycję, zamiast po cichu stać się dniem wolnym.
+    const savedWorkouts = useMemo(() => {
+        const saved = new Map<string, Workout>();
+        initialData?.stages?.forEach(stage => stage.weeks.forEach(week => week.days.forEach(day => {
+            const id = dayToFormValue(day);
+            if (typeof day !== 'string' && id !== 'Rest Day') saved.set(id, day);
+        })));
+        return saved;
+    }, [initialData]);
+
+    const workoutOptions = useMemo(() => {
+        const library = workouts ?? [];
+        const inLibrary = new Set(library.map(workout => workout.id));
+        const missing = [...savedWorkouts].filter(([id]) => !inLibrary.has(id)).map(([id, workout]) => ({ ...workout, id }));
+        return [...library, ...missing];
+    }, [workouts, savedWorkouts]);
 
     const form = useForm<PlanFormValues>({
         resolver: zodResolver(planSchema),
@@ -61,7 +83,7 @@ export function PlanForm({ initialData, onSubmit, isLoading }: PlanFormProps) {
             stages: initialData?.stages?.map(stage => ({
                 name: stage.name,
                 weeks: stage.weeks.map(week => ({
-                    days: week.days.map(day => (typeof day === 'string' ? day : day.id)),
+                    days: week.days.map(dayToFormValue),
                 })),
             })) || [{ name: 'Etap 1', weeks: [{ days: Array(7).fill('Rest Day') }] }],
         },
@@ -81,11 +103,8 @@ export function PlanForm({ initialData, onSubmit, isLoading }: PlanFormProps) {
             weeks: stage.weeks.map(week => ({
                 days: week.days.map(dayId => {
                     if (dayId === 'Rest Day') return 'Rest Day';
-                    const workout = workouts.find(w => w.id === dayId);
-                    // If workout not found (deleted?), fallback to Rest Day or keep ID? 
-                    // Ideally we should store the full workout object in the plan to be immutable or reference?
-                    // data.ts implies full object. Let's store full object.
-                    return workout || 'Rest Day';
+                    // Aktualna wersja z biblioteki, a gdy trening usunięto — kopia zapisana w planie.
+                    return workouts.find(w => w.id === dayId) ?? savedWorkouts.get(dayId) ?? 'Rest Day';
                 }) as [DayPlan, DayPlan, DayPlan, DayPlan, DayPlan, DayPlan, DayPlan]
             }))
         }));
@@ -189,7 +208,7 @@ export function PlanForm({ initialData, onSubmit, isLoading }: PlanFormProps) {
                                 <StageWeeks
                                     stageIndex={stageIndex}
                                     form={form}
-                                    workouts={workouts || []}
+                                    workouts={workoutOptions}
                                     daysOfWeek={daysOfWeek}
                                     isLoading={isLoading}
                                 />
@@ -199,7 +218,8 @@ export function PlanForm({ initialData, onSubmit, isLoading }: PlanFormProps) {
                 </div>
 
                 <div className="flex justify-end">
-                    <Button type="submit" size="lg" disabled={isLoading}>
+                    {/* Bez listy treningów zapis nie ma z czego złożyć planu, więc czekamy na jej wczytanie. */}
+                    <Button type="submit" size="lg" disabled={isLoading || workoutsLoading || !workouts}>
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Zapisz Plan
                     </Button>
@@ -214,16 +234,18 @@ function StageWeeks({ stageIndex, form, workouts, daysOfWeek, isLoading }: any) 
         control: form.control,
         name: `stages.${stageIndex}.weeks`,
     });
+    // Zakładka sterowana: po usunięciu tygodnia aktywna musi wskazywać istniejący tydzień.
+    const [activeWeek, setActiveWeek] = useState('week-0');
 
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <h4 className="text-sm font-medium text-muted-foreground">Tygodnie w tym etapie</h4>
-                <Button type="button" variant="secondary" size="sm" onClick={() => appendWeek({ days: Array(7).fill('Rest Day') })} disabled={isLoading}>
+                <Button type="button" variant="secondary" size="sm" onClick={() => { appendWeek({ days: Array(7).fill('Rest Day') }); setActiveWeek(`week-${weekFields.length}`); }} disabled={isLoading}>
                     <Plus className="mr-2 h-3 w-3" /> Dodaj Tydzień
                 </Button>
             </div>
-            <Tabs defaultValue="week-0" className="w-full">
+            <Tabs value={activeWeek} onValueChange={setActiveWeek} className="w-full">
                 <TabsList className="w-full justify-start overflow-x-auto">
                     {weekFields.map((_, index) => (
                         <TabsTrigger key={index} value={`week-${index}`}>Tydzień {index + 1}</TabsTrigger>
@@ -232,7 +254,7 @@ function StageWeeks({ stageIndex, form, workouts, daysOfWeek, isLoading }: any) 
                 {weekFields.map((weekField, weekIndex) => (
                     <TabsContent key={weekField.id} value={`week-${weekIndex}`} className="space-y-4 mt-4">
                         <div className="flex justify-end">
-                            <Button type="button" variant="ghost" size="sm" onClick={() => removeWeek(weekIndex)} disabled={weekFields.length === 1 || isLoading} className="text-destructive">
+                            <Button type="button" variant="ghost" size="sm" onClick={() => { removeWeek(weekIndex); setActiveWeek(`week-${Math.max(0, Math.min(weekIndex, weekFields.length - 2))}`); }} disabled={weekFields.length === 1 || isLoading} className="text-destructive">
                                 <Trash2 className="mr-2 h-3 w-3" /> Usuń Tydzień
                             </Button>
                         </div>

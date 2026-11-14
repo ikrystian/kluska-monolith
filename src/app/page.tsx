@@ -26,7 +26,7 @@ export default function LandingPage() {
   const router = useRouter();
 
   // Fetch user profile from MongoDB
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc(
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<{ role?: string }>(
     user ? 'users' : null,
     user?.uid || null
   );

@@ -10,6 +10,7 @@ import { NicknameSetup } from '@/components/social/NicknameSetup';
 import { FriendsFeed } from '@/components/social/FriendsFeed';
 import { DiscoverGrid } from '@/components/social/DiscoverGrid';
 import { PeopleTab } from '@/components/social/PeopleTab';
+import { AdSlot } from '@/components/ads/AdSlot';
 
 const SOCIAL_TABS = ['feed', 'discover', 'people'] as const;
 type SocialTab = (typeof SOCIAL_TABS)[number];
@@ -108,6 +109,8 @@ export default function AthleteSocialPage() {
             )}
           </TabsTrigger>
         </TabsList>
+
+        <AdSlot placement="social" className="mt-4" />
 
         <TabsContent value="feed" className="mt-4">
           <FriendsFeed onProfileClick={openProfile} onOpenPeople={() => setActiveTab('people')} />

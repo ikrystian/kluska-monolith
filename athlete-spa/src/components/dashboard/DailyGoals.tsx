@@ -4,11 +4,11 @@ import type { ReactNode } from 'react';
 import { Beef, Check, ChevronRight, Dumbbell, Flame, ListChecks, Target, Utensils, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { pluralForm } from '@/lib/plural';
-import trainingBg from '@/assets/goals/training.png';
-import caloriesBg from '@/assets/goals/calories.png';
-import mealsBg from '@/assets/goals/meals.png';
-import proteinBg from '@/assets/goals/protein.png';
-import habitsBg from '@/assets/goals/habits.png';
+import trainingBg from '@/assets/goals/training.webp';
+import caloriesBg from '@/assets/goals/calories.webp';
+import mealsBg from '@/assets/goals/meals.webp';
+import proteinBg from '@/assets/goals/protein.webp';
+import habitsBg from '@/assets/goals/habits.webp';
 
 export type DailyGoalTone = 'primary' | 'run' | 'food' | 'volt';
 

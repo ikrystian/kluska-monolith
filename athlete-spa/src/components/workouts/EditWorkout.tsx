@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,7 +11,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrainingLevel, SetType, Exercise, Workout } from '@/lib/types';
-import { useCollection, useDoc, useUpdateDoc, useUser } from '@/lib/db-hooks';
+import { useDoc, useUpdateDoc, useUser } from '@/lib/db-hooks';
+import { useExercisesByIds } from '@/hooks/useExercisesByIds';
 import { Loader2, Plus, Trash2, ChevronUp, ChevronDown, Copy, ChevronRight, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -100,27 +101,16 @@ interface EditWorkoutProps {
     redirectPath?: string;
 }
 
+const NO_EXERCISES: Exercise[] = [];
+
 export function EditWorkout({ workoutId, onSuccess, redirectPath }: EditWorkoutProps) {
     const { user } = useUser();
     const { toast } = useToast();
     const navigate = useNavigate();
     const { updateDoc, isLoading: isUpdating } = useUpdateDoc();
     const { data: workout, isLoading: workoutLoading, error: workoutError } = useDoc<Workout>('workouts', workoutId);
-    const { data: exercises, isLoading: exercisesLoading } = useCollection<Exercise>('exercises');
-    const [knownExercises, setKnownExercises] = useState<Record<string, Exercise>>({});
     const [openExerciseIndex, setOpenExerciseIndex] = useState<number | null>(0);
     const [isInitialized, setIsInitialized] = useState(false);
-
-    const registerKnownExercise = useCallback((exercise: Exercise) => {
-        setKnownExercises(prev => ({ ...prev, [exercise.id]: exercise }));
-    }, []);
-
-    const allExercises = useMemo(() => {
-        const map = new Map<string, Exercise>();
-        exercises?.forEach(e => map.set(e.id, e));
-        Object.values(knownExercises).forEach(e => map.set(e.id, e));
-        return Array.from(map.values());
-    }, [exercises, knownExercises]);
 
     const form = useForm<WorkoutFormValues>({
         resolver: zodResolver(workoutSchema) as any,
@@ -132,6 +122,14 @@ export function EditWorkout({ workoutId, onSuccess, redirectPath }: EditWorkoutP
             exerciseSeries: [],
         },
     });
+
+    // Only the exercises in this workout — never the whole library (12 MB).
+    // Ones picked in the library sheet are handed over, so they show at once.
+    const { exercises: workoutExercises, remember: registerKnownExercise } = useExercisesByIds(
+        (form.watch('exerciseSeries') ?? []).map(series => series.exerciseId)
+    );
+    const allExercises = workoutExercises ?? NO_EXERCISES;
+    const exercisesLoading = workoutExercises === null;
 
     // Initialize form with workout data when loaded
     useEffect(() => {

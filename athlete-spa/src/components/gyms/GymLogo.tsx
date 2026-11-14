@@ -27,7 +27,7 @@ export function GymLogo({
 
   return src && !failed ? (
     <span className={cn('grid shrink-0 place-items-center overflow-hidden bg-white', className)}>
-      <img src={src} alt="" onError={() => setFailed(true)} className="h-full w-full object-contain p-[12%]" />
+      <img src={src} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} className="h-full w-full object-contain p-[12%]" />
     </span>
   ) : (
     <span className={cn('grid shrink-0 place-items-center overflow-hidden bg-primary/10 text-primary', className)}>

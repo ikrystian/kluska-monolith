@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import useSWR from 'swr';
+import { revalidateStale } from '@/lib/cache-invalidation';
 import { addDays, format, isSameDay, startOfDay, subDays } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { useActiveWorkout } from '@/hooks/useActiveWorkout';
 import type { GamificationStats } from '@/hooks/useGamification';
-import { jsonFetcher, useCollection, useUser } from '@/lib/db-hooks';
+import { RUN_LIST_OMIT, jsonFetcher, useCollection, useUser } from '@/lib/db-hooks';
 import {
   ensureWorkoutWidget,
   isLiveWidgetSupported,
@@ -149,6 +150,14 @@ function toUpNext(planned: PlannedWorkout[]): UpNextWorkout[] {
     });
 }
 
+const WIDGET_STATS_PREFIXES = [
+  '/api/db/workoutLogs',
+  '/api/db/runningSessions',
+  '/api/db/stravaActivities',
+  '/api/gamification/profile',
+];
+const isWidgetStatsKey = (key: string) => WIDGET_STATS_PREFIXES.some(prefix => key.startsWith(prefix));
+
 /** Keeps the widget's "last 7 days" face current — it is what the home screen shows between workouts. */
 function useWeeklyStatsPublisher() {
   const { user } = useUser();
@@ -163,22 +172,25 @@ function useWeeklyStatsPublisher() {
     { athleteId: userId, status: 'completed' },
     { sort: { endTime: -1 }, limit: 30 }
   );
-  const runs = useCollection<RunningSession>(userId ? 'runningSessions' : null, { ownerId: userId, date: { $gte: since } });
+  const runs = useCollection<RunningSession>(
+    userId ? 'runningSessions' : null,
+    { ownerId: userId, date: { $gte: since } },
+    { omit: RUN_LIST_OMIT }
+  );
   const strava = useCollection<StravaActivity>(userId ? 'stravaActivities' : null, { ownerId: userId, date: { $gte: since } });
   // Same key as useGamificationProfile, so the two share one cached read.
   const gamification = useSWR<GamificationStats>(userId ? '/api/gamification/profile' : null, jsonFetcher);
   const streak = gamification.data?.streaks?.workout ?? 0;
 
-  const refetchRef = useRef<Array<() => void>>([]);
-  refetchRef.current = [workouts.refetch, runs.refetch, strava.refetch, () => void gamification.mutate()];
-
   // Going to the home screen is when the widget gets looked at: catch up with
-  // anything saved this session (a run, a synced activity) before it does.
+  // anything that changed elsewhere (a synced activity) before it does. Own
+  // writes have already refreshed these reads, so only the ones that are no
+  // longer fresh go to the network.
   useEffect(() => {
     if (!userId) return;
     const onVisibility = () => {
       if (document.visibilityState === 'hidden') {
-        refetchRef.current.forEach(refetch => refetch());
+        revalidateStale(isWidgetStatsKey);
       } else {
         setDayKey(format(new Date(), 'yyyy-MM-dd'));
       }

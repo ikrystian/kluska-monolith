@@ -123,3 +123,12 @@ export function Ring({
 }
 
 export const nf = (n: number, digits = 0) => n.toLocaleString('pl-PL', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+
+/* A real screenshot of the app in a phone. */
+export function Device({ shot, alt, className = '', eager = false }: { shot: string; alt: string; className?: string; eager?: boolean }) {
+  return (
+    <figure className={`device ${className}`}>
+      <img src={`/screens/${shot}.webp`} alt={alt} width={540} height={960} loading={eager ? 'eager' : 'lazy'} decoding="async" />
+    </figure>
+  );
+}

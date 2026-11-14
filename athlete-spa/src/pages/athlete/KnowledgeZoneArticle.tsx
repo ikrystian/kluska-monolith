@@ -25,6 +25,7 @@ import {
 import { AddRecipeSheet } from '@/components/nutrition/AddRecipeSheet';
 import { MEAL_TYPE_LABELS } from '@/lib/nutrition';
 import { plural } from '@/lib/plural';
+import { AdSlot } from '@/components/ads/AdSlot';
 
 const BASE_PATH = '/athlete/knowledge-zone';
 const RELATED_LIMIT = 3;
@@ -228,6 +229,8 @@ export default function ArticlePage() {
         {isRecipe && <RecipeCard article={article} onAdd={openRecipeSheet} />}
 
         <div id="knowledge-zone-article" className="article-body mt-6" dangerouslySetInnerHTML={{ __html: article.content }} />
+
+        <AdSlot placement="article" className="mt-8" />
 
         {isRecipe && (
           <button

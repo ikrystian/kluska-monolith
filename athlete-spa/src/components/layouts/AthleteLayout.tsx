@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { useSWRConfig } from 'swr';
+import { refreshAllVisible } from '@/lib/cache-invalidation';
 import { Loader2 } from 'lucide-react';
 import { AppHeader } from '@/components/header';
 import { useUser } from '@/lib/db-hooks';
@@ -69,13 +69,9 @@ function AthleteLayoutContent() {
   useAndroidBackButton();
 
   // Every screen reads through SWR, so one global revalidation refreshes
-  // whatever the current page happens to be showing. It must be the mutate
-  // bound to our SWRConfig cache provider — the one exported from 'swr' talks
-  // to the default cache and does nothing here. No data argument: passing
-  // `undefined` would wipe every cached screen back to skeletons first.
-  const { mutate } = useSWRConfig();
-  const refreshAll = useCallback(() => mutate(() => true), [mutate]);
-  const { indicatorRef } = usePullToRefresh(scrollRef, refreshAll, !isActiveWorkoutSession);
+  // whatever the current page happens to be showing — including reads that
+  // would otherwise still count as fresh.
+  const { indicatorRef } = usePullToRefresh(scrollRef, refreshAllVisible, !isActiveWorkoutSession);
   // The header and tab bar tuck away while reading down, and return on scroll up.
   const [chromeRoot, setChromeRoot] = useState<HTMLElement | null>(null);
   const chromeHidden = useHideOnScroll(chromeRoot, location.pathname + location.search, !isActiveWorkoutSession);

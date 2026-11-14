@@ -54,6 +54,8 @@ const FoodDiaryEntrySchema = new Schema<IFoodDiaryEntry>(
 );
 
 FoodDiaryEntrySchema.index({ ownerId: 1, date: 1 });
+// "Recently eaten" and the diary's own ordering sort by creation time.
+FoodDiaryEntrySchema.index({ ownerId: 1, createdAt: -1 });
 
 // In dev, HMR re-runs this file but mongoose keeps the old compiled model, so
 // schema changes (e.g. new enum values) would be ignored until a restart.

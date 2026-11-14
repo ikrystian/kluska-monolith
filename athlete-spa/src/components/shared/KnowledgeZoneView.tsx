@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import type { Article, ArticleCategory, UserProfile } from '@/lib/types';
 import { ArticleRow, FeaturedArticleCard } from '@/components/knowledge/ArticleCards';
 import { UNCATEGORIZED, categoryColor, stripHtml, useReadArticles } from '@/components/knowledge/knowledge-utils';
+import { AdSlot } from '@/components/ads/AdSlot';
 
 const ALL = 'all';
 
@@ -108,6 +109,8 @@ export function KnowledgeZoneView({
           </Button>
         )}
       </header>
+
+      <AdSlot placement="knowledge" className="mb-5" />
 
       <div className="sticky top-[env(safe-area-inset-top)] z-20 -mx-4 mb-5 space-y-3 bg-background/85 px-4 py-2 backdrop-blur-md">
         <div className="relative">

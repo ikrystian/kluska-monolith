@@ -22,7 +22,8 @@ export async function GET(request: Request) {
 
         const query: any = {};
         if (search) {
-            query.name = { $regex: search, $options: 'i' };
+            // Fraza to zwykły tekst, nie wyrażenie regularne — np. samo „(” wywracało zapytanie.
+            query.name = { $regex: search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' };
         }
 
         const [plans, total] = await Promise.all([

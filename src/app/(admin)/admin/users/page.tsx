@@ -75,7 +75,7 @@ const editUserSchema = z.object({
   name: z.string().min(1, 'Imię jest wymagane.'),
   email: z.string().email('Nieprawidłowy format adresu email.'),
   role: z.enum(['athlete', 'trainer', 'admin'], {
-    required_error: 'Rola jest wymagana.',
+    error: 'Rola jest wymagana.',
   }),
 });
 

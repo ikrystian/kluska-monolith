@@ -8,7 +8,7 @@ import { CalendarDays } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/section';
 import { plural } from '@/lib/plural';
-import { useCollection, useUser } from '@/lib/db-hooks';
+import { RUN_LIST_OMIT, useCollection, useUser } from '@/lib/db-hooks';
 import type { PlannedWorkout, WorkoutLog, RunningSession, StravaActivity } from '@/lib/types';
 import { SessionDetailsDialog, type TrainingSessionData } from '@/components/schedule/SessionDetailsDialog';
 import type { CalendarEvent } from '@/components/schedule/FullCalendarWrapper';
@@ -68,7 +68,8 @@ export default function CalendarPage() {
     // Biegi zapisane ręcznie/GPS oraz zaimportowane ze Strava
     const { data: runningSessions, isLoading: runningLoading } = useCollection<RunningSession>(
         user ? 'runningSessions' : null,
-        { ownerId: user?.uid }
+        { ownerId: user?.uid },
+        { omit: RUN_LIST_OMIT }
     );
     const { data: stravaActivities, isLoading: stravaLoading } = useCollection<StravaActivity>(
         user ? 'stravaActivities' : null,

@@ -1,429 +1,378 @@
 'use client';
 
-import { useCollection } from '@/lib/db-hooks';
+import Link from 'next/link';
+import useSWR from 'swr';
+import { format, formatDistanceToNow } from 'date-fns';
+import { pl } from 'date-fns/locale';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  Users,
-  Dumbbell,
-  FileText,
-  Calendar,
-  Target,
-  Utensils,
+  AlertCircle,
+  ArrowUpRight,
+  BookMarked,
+  Building2,
+  ChefHat,
+  ClipboardCheck,
   ClipboardList,
   Coins,
-  Scale,
+  Database,
+  Dumbbell,
+  FileText,
+  Footprints,
+  ListChecks,
+  MailWarning,
+  Megaphone,
+  NotebookPen,
+  RefreshCw,
+  Route,
+  Salad,
   UserPlus,
-  TrendingUp,
-  Trophy,
-  Activity,
+  Users,
+  type LucideIcon,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { adminFetch } from '@/lib/admin/client';
+import { OPTION_LABELS, getAdminResource } from '@/lib/admin/resources';
 
-type RecentSort = 'updatedAt' | 'startTime';
+interface AdminStats {
+  generatedAt: string;
+  users: { total: number; athletes: number; trainers: number; admins: number; guests: number; unverified: number; today: number; week: number; month: number };
+  activity: { workoutsToday: number; workoutsWeek: number; workoutsMonth: number; workoutsInProgress: number; runsWeek: number; runsMonth: number; diaryWeek: number; postsWeek: number };
+  content: { exercises: number; publicExercises: number; articlesPublished: number; articlesDraft: number; gyms: number; workouts: number; workoutPlans: number; savedMeals: number; dietPlans: number; runningPrograms: number };
+  attention: { pendingRequests: number; checkInsToReview: number; articlesDraft: number; unverified: number };
+  gamification: { fitCoins: number; points: number; avgLevel: number; profiles: number };
+  marketing: { adsTotal: number; adsLive: number; impressionsWeek: number; clicksWeek: number; promosActive: number };
+  topAthletes: { id: string; name: string; count: number }[];
+  recentUsers: { id: string; name: string; email: string; role: string; isGuest: boolean; createdAt: string | null }[];
+  recentChanges: { id: string; summary: string; action: string; resource: string; recordId: string; createdAt: string }[];
+  series: { day: string; users: number; workouts: number; runs: number }[];
+}
+
+const number = (value: number) => value.toLocaleString('pl-PL');
+const ago = (iso: string | null) => (iso ? formatDistanceToNow(new Date(iso), { addSuffix: true, locale: pl }) : '');
+
+function Kpi({ icon: Icon, label, value, hint, href }: { icon: LucideIcon; label: string; value: string; hint?: string; href: string }) {
+  return (
+    <Link href={href} className="group rounded-lg border bg-card p-4 transition-colors hover:border-primary/50">
+      <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <span className="flex items-center gap-2">
+          <Icon className="h-4 w-4" /> {label}
+        </span>
+        <ArrowUpRight className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
+      </div>
+      <div className="mt-2 text-3xl font-bold tabular-nums">{value}</div>
+      {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
+    </Link>
+  );
+}
 
 export default function AdminDashboardPage() {
-  const [recentSort, setRecentSort] = useState<RecentSort>('updatedAt');
-  const { data: users } = useCollection('users');
-  const { data: exercises } = useCollection('exercises');
-  const { data: articles } = useCollection('articles');
-  const { data: workoutLogs } = useCollection('workoutLogs');
-  const { data: workoutPlans } = useCollection('workoutPlans');
-  const { data: meals } = useCollection('meals');
-  const { data: goals } = useCollection('goals');
-  const { data: gamificationProfiles } = useCollection('gamificationProfiles');
-  const { data: bodyMeasurements } = useCollection('bodyMeasurements');
-  const { data: trainerRequests } = useCollection('trainerRequests');
-  const { data: recentLogs } = useCollection('workoutLogs', undefined, {
-    sort: { [recentSort]: -1 },
-    limit: 5,
+  const { data: stats, error, isLoading, isValidating, mutate } = useSWR<AdminStats>('/api/admin/stats', adminFetch, {
+    refreshInterval: 60_000,
   });
 
-  // Time-based calculations
-  const timeStats = useMemo(() => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+  if (error) {
+    return (
+      <div className="container mx-auto p-4 md:p-8">
+        <Card>
+          <CardContent className="flex flex-col items-start gap-3 p-6">
+            <div className="flex items-center gap-2 font-medium text-destructive">
+              <AlertCircle className="h-5 w-5" /> Nie udało się wczytać statystyk
+            </div>
+            <p className="text-sm text-muted-foreground">{error.message}</p>
+            <Button variant="outline" onClick={() => void mutate()}>
+              Spróbuj ponownie
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-    const usersToday = users?.filter((u: any) => new Date(u.createdAt) >= today).length || 0;
-    const usersWeek = users?.filter((u: any) => new Date(u.createdAt) >= weekAgo).length || 0;
-    const usersMonth = users?.filter((u: any) => new Date(u.createdAt) >= monthAgo).length || 0;
+  if (isLoading || !stats) {
+    return (
+      <div className="container mx-auto space-y-6 p-4 md:p-8">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }, (_, index) => (
+            <Skeleton key={index} className="h-28" />
+          ))}
+        </div>
+        <Skeleton className="h-72" />
+      </div>
+    );
+  }
 
-    const workoutsToday = workoutLogs?.filter((w: any) => new Date(w.startTime) >= today).length || 0;
-    const workoutsWeek = workoutLogs?.filter((w: any) => new Date(w.startTime) >= weekAgo).length || 0;
-    const workoutsMonth = workoutLogs?.filter((w: any) => new Date(w.startTime) >= monthAgo).length || 0;
+  const attention = [
+    { count: stats.attention.pendingRequests, label: 'próśb do trenerów czeka na decyzję', href: '/admin/data/trainerRequests?f.status=pending', icon: UserPlus },
+    { count: stats.attention.checkInsToReview, label: 'raportów tygodniowych czeka na sprawdzenie', href: '/admin/data/weeklyCheckIns?f.status=submitted', icon: ClipboardCheck },
+    { count: stats.attention.articlesDraft, label: 'artykułów w szkicach', href: '/admin/data/articles?f.status=draft', icon: FileText },
+    { count: stats.attention.unverified, label: 'kont bez potwierdzonego e-maila', href: '/admin/data/users?f.emailVerified=false&f.isGuest=false', icon: MailWarning },
+  ].filter((item) => item.count > 0);
 
-    return { usersToday, usersWeek, usersMonth, workoutsToday, workoutsWeek, workoutsMonth };
-  }, [users, workoutLogs]);
-
-  // Top statistics
-  const topStats = useMemo(() => {
-    // Top users by workout count
-    const userWorkoutCounts: Record<string, { count: number; name: string }> = {};
-    workoutLogs?.forEach((log: any) => {
-      if (!userWorkoutCounts[log.ownerId]) {
-        const user = users?.find((u: any) => u._id === log.ownerId || u.id === log.ownerId);
-        userWorkoutCounts[log.ownerId] = { count: 0, name: user?.name || 'Nieznany' };
-      }
-      userWorkoutCounts[log.ownerId].count++;
-    });
-    const topActiveUsers = Object.entries(userWorkoutCounts)
-      .map(([id, data]) => ({ id, ...data }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-
-    // Top trainers by athlete count
-    const trainers = users?.filter((u: any) => u.role === 'trainer') || [];
-    const trainerAthleteCounts = trainers.map((trainer: any) => {
-      const acceptedRequests = trainerRequests?.filter(
-        (r: any) => r.trainerId === (trainer._id || trainer.id) && r.status === 'accepted'
-      ).length || 0;
-      return { id: trainer._id || trainer.id, name: trainer.name || 'Nieznany', count: acceptedRequests };
-    }).sort((a: any, b: any) => b.count - a.count).slice(0, 5);
-
-    return { topActiveUsers, topTrainers: trainerAthleteCounts };
-  }, [users, workoutLogs, trainerRequests]);
-
-  // Gamification stats
-  const gamificationStats = useMemo(() => {
-    if (!gamificationProfiles || gamificationProfiles.length === 0) {
-      return { totalFitCoins: 0, avgLevel: 0 };
-    }
-    const totalFitCoins = gamificationProfiles.reduce((sum: number, p: any) => sum + (p.currentFitCoins || 0), 0);
-    const avgLevel = gamificationProfiles.reduce((sum: number, p: any) => sum + (p.level || 1), 0) / gamificationProfiles.length;
-    return { totalFitCoins, avgLevel: avgLevel.toFixed(1) };
-  }, [gamificationProfiles]);
-
-  const stats = [
-    {
-      title: 'Użytkownicy',
-      value: users?.length || 0,
-      description: 'Wszyscy użytkownicy w systemie',
-      icon: Users,
-      breakdown: {
-        athletes: users?.filter((u: any) => u.role === 'athlete').length || 0,
-        trainers: users?.filter((u: any) => u.role === 'trainer').length || 0,
-        admins: users?.filter((u: any) => u.role === 'admin').length || 0,
-      },
-    },
-    {
-      title: 'Ćwiczenia',
-      value: exercises?.length || 0,
-      description: 'Dostępne ćwiczenia',
-      icon: Dumbbell,
-      breakdown: {
-        system: exercises?.filter((e: any) => e.type === 'system').length || 0,
-        custom: exercises?.filter((e: any) => e.type === 'custom').length || 0,
-      },
-    },
-    {
-      title: 'Artykuły',
-      value: articles?.length || 0,
-      description: 'Opublikowane artykuły',
-      icon: FileText,
-      breakdown: {
-        published: articles?.filter((a: any) => a.status === 'published').length || 0,
-        draft: articles?.filter((a: any) => a.status === 'draft').length || 0,
-      },
-    },
-    {
-      title: 'Treningi',
-      value: workoutLogs?.length || 0,
-      description: 'Wszystkie treningi',
-      icon: Calendar,
-      breakdown: {
-        completed: workoutLogs?.filter((w: any) => w.status === 'completed').length || 0,
-        inProgress: workoutLogs?.filter((w: any) => w.status === 'in-progress').length || 0,
-      },
-    },
-    {
-      title: 'Plany Treningowe',
-      value: workoutPlans?.length || 0,
-      description: 'Wszystkie plany',
-      icon: ClipboardList,
-      breakdown: {
-        opublikowane: workoutPlans?.filter((p: any) => !p.isDraft).length || 0,
-        drafty: workoutPlans?.filter((p: any) => p.isDraft).length || 0,
-      },
-    },
-    {
-      title: 'Posiłki',
-      value: meals?.length || 0,
-      description: 'Zarejestrowane posiłki',
-      icon: Utensils,
-      breakdown: {
-        Breakfast: meals?.filter((m: any) => m.type === 'Breakfast').length || 0,
-        Lunch: meals?.filter((m: any) => m.type === 'Lunch').length || 0,
-        Dinner: meals?.filter((m: any) => m.type === 'Dinner').length || 0,
-        Snack: meals?.filter((m: any) => m.type === 'Snack').length || 0,
-      },
-    },
-    {
-      title: 'Cele',
-      value: goals?.length || 0,
-      description: 'Cele użytkowników',
-      icon: Target,
-      breakdown: {
-        aktywne: goals?.filter((g: any) => g.status === 'active').length || 0,
-        ukończone: goals?.filter((g: any) => g.status === 'completed').length || 0,
-        anulowane: goals?.filter((g: any) => g.status === 'cancelled').length || 0,
-      },
-    },
-    {
-      title: 'Gamifikacja',
-      value: gamificationProfiles?.length || 0,
-      description: 'Profile gamifikacyjne',
-      icon: Coins,
-      breakdown: {
-        'FitCoins łącznie': gamificationStats.totalFitCoins,
-        'Średni poziom': gamificationStats.avgLevel,
-      },
-    },
-    {
-      title: 'Pomiary Ciała',
-      value: bodyMeasurements?.length || 0,
-      description: 'Zarejestrowane pomiary',
-      icon: Scale,
-      breakdown: {
-        'z fotozdjęciem': bodyMeasurements?.filter((m: any) => m.photoURLs && m.photoURLs.length > 0).length || 0,
-        'udostępnione': bodyMeasurements?.filter((m: any) => m.sharedWithTrainer).length || 0,
-      },
-    },
-    {
-      title: 'Prośby o Trenera',
-      value: trainerRequests?.length || 0,
-      description: 'Wszystkie prośby',
-      icon: UserPlus,
-      breakdown: {
-        oczekujące: trainerRequests?.filter((r: any) => r.status === 'pending').length || 0,
-        zaakceptowane: trainerRequests?.filter((r: any) => r.status === 'accepted').length || 0,
-        odrzucone: trainerRequests?.filter((r: any) => r.status === 'rejected').length || 0,
-      },
-    },
+  const content: { label: string; value: number; hint?: string; href: string; icon: LucideIcon }[] = [
+    { label: 'Ćwiczenia', value: stats.content.exercises, hint: `${number(stats.content.publicExercises)} w bibliotece wspólnej`, href: '/admin/exercises', icon: Dumbbell },
+    { label: 'Treningi', value: stats.content.workouts, href: '/admin/workouts', icon: ListChecks },
+    { label: 'Plany treningowe', value: stats.content.workoutPlans, href: '/admin/workout-plans', icon: ClipboardList },
+    { label: 'Artykuły', value: stats.content.articlesPublished, hint: `+ ${stats.content.articlesDraft} szkiców`, href: '/admin/articles', icon: BookMarked },
+    { label: 'Siłownie', value: stats.content.gyms, href: '/admin/gyms', icon: Building2 },
+    { label: 'Programy biegowe', value: stats.content.runningPrograms, href: '/admin/running-programs', icon: Footprints },
+    { label: 'Gotowe posiłki', value: stats.content.savedMeals, href: '/admin/meals', icon: ChefHat },
+    { label: 'Plany dietetyczne', value: stats.content.dietPlans, href: '/admin/diet-plans', icon: Salad },
   ];
 
-  return (
-    <div className="container mx-auto p-4 md:p-8">
-      <h1 className="mb-6 font-headline text-3xl font-bold">Panel Administratora</h1>
+  const chartData = stats.series.map((day) => ({
+    ...day,
+    label: format(new Date(`${day.day}T12:00:00`), 'd MMM', { locale: pl }),
+  }));
 
-      {/* Main Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={stat.title}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                <Icon className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <p className="text-xs text-muted-foreground">{stat.description}</p>
-                {stat.breakdown && (
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    {Object.entries(stat.breakdown).map(([key, value]) => (
-                      <div key={key}>
-                        {key}: {value as number}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
+  return (
+    <div className="container mx-auto space-y-6 p-4 md:p-8">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="font-headline text-3xl font-bold">Panel administratora</h1>
+          <p className="text-muted-foreground">Stan systemu na {format(new Date(stats.generatedAt), 'd MMMM yyyy, HH:mm', { locale: pl })}.</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => void mutate()} disabled={isValidating}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${isValidating ? 'animate-spin' : ''}`} /> Odśwież
+          </Button>
+          <Button asChild>
+            <Link href="/admin/data">
+              <Database className="mr-2 h-4 w-4" /> Wszystkie dane
+            </Link>
+          </Button>
+        </div>
       </div>
 
-      {/* Time-based Stats */}
-      <div className="mt-8">
-        <h2 className="mb-4 text-xl font-semibold flex items-center gap-2">
-          <TrendingUp className="h-5 w-5" />
-          Statystyki Czasowe
-        </h2>
-        <div className="grid gap-4 md:grid-cols-2">
+      {attention.length > 0 && (
+        <Card className="border-amber-500/40 bg-amber-500/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <AlertCircle className="h-4 w-4 text-amber-600" /> Wymaga uwagi
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-2 sm:grid-cols-2">
+            {attention.map((item) => (
+              <Link key={item.href} href={item.href} className="flex items-center gap-3 rounded-md border bg-card p-3 text-sm transition-colors hover:border-primary/50">
+                <item.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="font-bold tabular-nums">{number(item.count)}</span>
+                <span className="min-w-0 flex-1 truncate text-muted-foreground">{item.label}</span>
+                <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Kpi
+          icon={Users}
+          label="Użytkownicy"
+          value={number(stats.users.total)}
+          hint={`+${stats.users.today} dziś · +${stats.users.week} w 7 dni · ${number(stats.users.guests)} gości`}
+          href="/admin/data/users"
+        />
+        <Kpi
+          icon={Dumbbell}
+          label="Treningi (7 dni)"
+          value={number(stats.activity.workoutsWeek)}
+          hint={`${stats.activity.workoutsToday} dziś · ${stats.activity.workoutsInProgress} w trakcie`}
+          href="/admin/data/workoutLogs"
+        />
+        <Kpi
+          icon={Route}
+          label="Biegi (7 dni)"
+          value={number(stats.activity.runsWeek)}
+          hint={`${number(stats.activity.runsMonth)} w 30 dni`}
+          href="/admin/data/runningSessions"
+        />
+        <Kpi
+          icon={NotebookPen}
+          label="Wpisy jedzenia (7 dni)"
+          value={number(stats.activity.diaryWeek)}
+          hint={`${stats.activity.postsWeek} nowych postów w społeczności`}
+          href="/admin/data/foodDiaryEntries"
+        />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Aktywność — ostatnie 30 dni</CardTitle>
+            <CardDescription>Nowe konta, treningi i biegi dzień po dniu.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} minTickGap={24} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis tickLine={false} axisLine={false} fontSize={12} allowDecimals={false} stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'hsl(var(--popover))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: 8,
+                      color: 'hsl(var(--popover-foreground))',
+                      fontSize: 12,
+                    }}
+                  />
+                  <Area type="monotone" dataKey="workouts" name="Treningi" stroke="hsl(var(--chart-1))" fill="hsl(var(--chart-1))" fillOpacity={0.15} strokeWidth={2} />
+                  <Area type="monotone" dataKey="runs" name="Biegi" stroke="hsl(var(--chart-2))" fill="hsl(var(--chart-2))" fillOpacity={0.15} strokeWidth={2} />
+                  <Area type="monotone" dataKey="users" name="Nowe konta" stroke="hsl(var(--chart-3))" fill="hsl(var(--chart-3))" fillOpacity={0.15} strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Nowi Użytkownicy</CardTitle>
-              <CardDescription>Rejestracje w czasie</CardDescription>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Konta według roli</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Dzisiaj</span>
-                  <span className="font-bold">{timeStats.usersToday}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Ostatnie 7 dni</span>
-                  <span className="font-bold">{timeStats.usersWeek}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Ostatnie 30 dni</span>
-                  <span className="font-bold">{timeStats.usersMonth}</span>
-                </div>
-              </div>
+            <CardContent className="space-y-2 text-sm">
+              {[
+                ['Sportowcy', stats.users.athletes, 'athlete'],
+                ['Trenerzy', stats.users.trainers, 'trainer'],
+                ['Administratorzy', stats.users.admins, 'admin'],
+              ].map(([label, count, role]) => (
+                <Link key={role} href={`/admin/data/users?f.role=${role}`} className="flex items-center justify-between rounded px-1 py-0.5 hover:bg-muted">
+                  <span className="text-muted-foreground">{label}</span>
+                  <span className="font-semibold tabular-nums">{number(count as number)}</span>
+                </Link>
+              ))}
             </CardContent>
           </Card>
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Aktywność Treningowa</CardTitle>
-              <CardDescription>Treningi w czasie</CardDescription>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Megaphone className="h-4 w-4 text-muted-foreground" /> Marketing
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Dzisiaj</span>
-                  <span className="font-bold">{timeStats.workoutsToday}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Ostatnie 7 dni</span>
-                  <span className="font-bold">{timeStats.workoutsWeek}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Ostatnie 30 dni</span>
-                  <span className="font-bold">{timeStats.workoutsMonth}</span>
-                </div>
+            <CardContent className="space-y-2 text-sm">
+              <Link href="/admin/ads" className="flex items-center justify-between rounded px-1 py-0.5 hover:bg-muted">
+                <span className="text-muted-foreground">Reklamy wyświetlane</span>
+                <span className="font-semibold tabular-nums">{stats.marketing.adsLive} z {stats.marketing.adsTotal}</span>
+              </Link>
+              <Link href="/admin/ads" className="flex items-center justify-between rounded px-1 py-0.5 hover:bg-muted">
+                <span className="text-muted-foreground">Wyświetlenia / kliknięcia (7 dni)</span>
+                <span className="font-semibold tabular-nums">{number(stats.marketing.impressionsWeek)} / {number(stats.marketing.clicksWeek)}</span>
+              </Link>
+              <Link href="/admin/home-content" className="flex items-center justify-between rounded px-1 py-0.5 hover:bg-muted">
+                <span className="text-muted-foreground">Treści ekranu głównego</span>
+                <span className="font-semibold tabular-nums">{stats.marketing.promosActive}</span>
+              </Link>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Coins className="h-4 w-4 text-muted-foreground" /> Grywalizacja
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <Link href="/admin/data/gamificationProfiles" className="flex items-center justify-between rounded px-1 py-0.5 hover:bg-muted">
+                <span className="text-muted-foreground">FitCoins w obiegu</span>
+                <span className="font-semibold tabular-nums">{number(stats.gamification.fitCoins)}</span>
+              </Link>
+              <div className="flex items-center justify-between px-1 py-0.5">
+                <span className="text-muted-foreground">Średni poziom</span>
+                <span className="font-semibold tabular-nums">{stats.gamification.avgLevel.toLocaleString('pl-PL')}</span>
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
 
-      {/* Top Stats & Recent Activity */}
-      <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <Card>
+        <CardHeader>
+          <CardTitle>Treści w systemie</CardTitle>
+          <CardDescription>Kliknij, aby przejść do edytora.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {content.map((item) => (
+            <Link key={item.href} href={item.href} className="flex items-center gap-3 rounded-md border p-3 transition-colors hover:border-primary/50 hover:bg-muted/40">
+              <item.icon className="h-5 w-5 shrink-0 text-muted-foreground" />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm text-muted-foreground">{item.label}</div>
+                {item.hint && <div className="truncate text-xs text-muted-foreground/80">{item.hint}</div>}
+              </div>
+              <span className="text-xl font-bold tabular-nums">{number(item.value)}</span>
+            </Link>
+          ))}
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 lg:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-yellow-500" />
-              Top 5 Aktywnych Użytkowników
-            </CardTitle>
-            <CardDescription>Według liczby treningów</CardDescription>
+            <CardTitle className="text-base">Najaktywniejsi (30 dni)</CardTitle>
+            <CardDescription>Ukończone treningi.</CardDescription>
           </CardHeader>
-          <CardContent>
-            {topStats.topActiveUsers.length > 0 ? (
-              <div className="space-y-2">
-                {topStats.topActiveUsers.map((user, index) => (
-                  <div key={user.id} className="flex items-center justify-between border-b pb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">#{index + 1}</span>
-                      <span className="font-medium">{user.name}</span>
-                    </div>
-                    <span className="text-sm text-muted-foreground">{user.count} treningów</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">Brak danych</p>
-            )}
+          <CardContent className="space-y-2">
+            {stats.topAthletes.length === 0 && <p className="text-sm text-muted-foreground">Brak ukończonych treningów w tym okresie.</p>}
+            {stats.topAthletes.map((athlete, index) => (
+              <Link key={athlete.id} href={`/admin/data/workoutLogs?f.athleteId=${athlete.id}`} className="flex items-center gap-3 rounded px-1 py-1 text-sm hover:bg-muted">
+                <span className="w-5 text-center font-semibold tabular-nums text-muted-foreground">{index + 1}</span>
+                <span className="min-w-0 flex-1 truncate">{athlete.name}</span>
+                <Badge variant="secondary">{athlete.count}</Badge>
+              </Link>
+            ))}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-blue-500" />
-              Top 5 Trenerów
-            </CardTitle>
-            <CardDescription>Według liczby podopiecznych</CardDescription>
+            <CardTitle className="text-base">Nowe konta</CardTitle>
+            <CardDescription>+{stats.users.month} w ostatnich 30 dniach.</CardDescription>
           </CardHeader>
-          <CardContent>
-            {topStats.topTrainers.length > 0 ? (
-              <div className="space-y-2">
-                {topStats.topTrainers.map((trainer: any, index: number) => (
-                  <div key={trainer.id} className="flex items-center justify-between border-b pb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">#{index + 1}</span>
-                      <span className="font-medium">{trainer.name}</span>
-                    </div>
-                    <span className="text-sm text-muted-foreground">{trainer.count} sportowców</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">Brak danych</p>
-            )}
+          <CardContent className="space-y-2">
+            {stats.recentUsers.map((user) => (
+              <Link key={user.id} href={`/admin/data/users?record=${user.id}`} className="flex items-center gap-3 rounded px-1 py-1 text-sm hover:bg-muted">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate">{user.name}</div>
+                  <div className="truncate text-xs text-muted-foreground">{user.isGuest ? 'Konto gościa' : user.email}</div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <Badge variant="outline">{OPTION_LABELS[user.role] ?? user.role}</Badge>
+                  <div className="text-xs text-muted-foreground">{ago(user.createdAt)}</div>
+                </div>
+              </Link>
+            ))}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
-            <div className="space-y-1.5">
-              <CardTitle>Ostatnia aktywność</CardTitle>
-              <CardDescription>Treningi w systemie</CardDescription>
-            </div>
-            <Select value={recentSort} onValueChange={(value) => setRecentSort(value as RecentSort)}>
-              <SelectTrigger className="h-8 w-auto gap-2 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="updatedAt">Ostatnio edytowane</SelectItem>
-                <SelectItem value="startTime">Ostatnio rozpoczęte</SelectItem>
-              </SelectContent>
-            </Select>
-          </CardHeader>
-          <CardContent>
-            {recentLogs && recentLogs.length > 0 ? (
-              <div className="space-y-2">
-                {recentLogs.map((log: any) => (
-                  <div key={log._id} className="flex items-center justify-between border-b pb-2">
-                    <div>
-                      <p className="font-medium">{log.workoutName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {recentSort === 'updatedAt' ? 'Edytowano' : 'Rozpoczęto'}{' '}
-                        {new Date(log[recentSort]).toLocaleDateString('pl-PL')}
-                      </p>
-                    </div>
-                    <span className="text-xs text-muted-foreground">{log.status}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">Brak treningów</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="mt-8">
         <Card>
           <CardHeader>
-            <CardTitle>Szybkie akcje</CardTitle>
-            <CardDescription>Najczęściej używane funkcje</CardDescription>
+            <CardTitle className="text-base">Ostatnie zmiany w panelu</CardTitle>
+            <CardDescription>
+              <Link href="/admin/data/auditLogs" className="underline underline-offset-2">Pełny dziennik zmian</Link>
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
-              <a href="/admin/users" className="block rounded-lg border p-3 hover:bg-accent">
-                <p className="font-medium">Zarządzaj użytkownikami</p>
-                <p className="text-xs text-muted-foreground">Dodaj, edytuj lub usuń użytkowników</p>
-              </a>
-              <a href="/admin/exercises" className="block rounded-lg border p-3 hover:bg-accent">
-                <p className="font-medium">Zarządzaj ćwiczeniami</p>
-                <p className="text-xs text-muted-foreground">Moderuj ćwiczenia systemowe</p>
-              </a>
-              <a href="/admin/articles" className="block rounded-lg border p-3 hover:bg-accent">
-                <p className="font-medium">Zarządzaj artykułami</p>
-                <p className="text-xs text-muted-foreground">Publikuj i moderuj treści</p>
-              </a>
-              <a href="/admin/gyms" className="block rounded-lg border p-3 hover:bg-accent">
-                <p className="font-medium">Zarządzaj siłowniami</p>
-                <p className="text-xs text-muted-foreground">Dodaj lub usuń siłownie</p>
-              </a>
-              <a href="/admin/workout-plans" className="block rounded-lg border p-3 hover:bg-accent">
-                <p className="font-medium">Plany treningowe</p>
-                <p className="text-xs text-muted-foreground">Przeglądaj wszystkie plany</p>
-              </a>
-              <a href="/admin/workouts" className="block rounded-lg border p-3 hover:bg-accent">
-                <p className="font-medium">Treningi</p>
-                <p className="text-xs text-muted-foreground">Zarządzaj szablonami treningów</p>
-              </a>
-            </div>
+          <CardContent className="space-y-2">
+            {stats.recentChanges.length === 0 && <p className="text-sm text-muted-foreground">Nie zapisano jeszcze żadnej zmiany.</p>}
+            {stats.recentChanges.map((change) => {
+              const target = getAdminResource(change.resource);
+              const body = (
+                <>
+                  <div className="line-clamp-2">{change.summary}</div>
+                  <div className="text-xs text-muted-foreground">{ago(change.createdAt)}</div>
+                </>
+              );
+              return target && change.action !== 'delete' ? (
+                <Link key={change.id} href={`/admin/data/${change.resource}?record=${change.recordId}`} className="block rounded px-1 py-1 text-sm hover:bg-muted">
+                  {body}
+                </Link>
+              ) : (
+                <div key={change.id} className="px-1 py-1 text-sm">
+                  {body}
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
       </div>

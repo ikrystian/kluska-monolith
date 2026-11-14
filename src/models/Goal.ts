@@ -105,6 +105,8 @@ const GoalSchema = new Schema<IGoal>(
 );
 
 GoalSchema.index({ ownerId: 1, status: 1 });
+// Goal lists are read newest first.
+GoalSchema.index({ ownerId: 1, createdAt: -1 });
 GoalSchema.index({ deadline: 1 });
 GoalSchema.index({ assignedByTrainerId: 1 });
 GoalSchema.index({ difficulty: 1 });

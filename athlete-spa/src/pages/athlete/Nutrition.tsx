@@ -23,6 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Macro } from '@/components/dashboard/NutritionToday';
 import { AddFoodDialog } from '@/components/nutrition/AddFoodDialog';
 import { cn } from '@/lib/utils';
+import { AdSlot } from '@/components/ads/AdSlot';
 
 async function diaryFetcher(url: string): Promise<DiaryResponse> {
     const response = await apiFetch(url);
@@ -215,6 +216,8 @@ export default function NutritionPage() {
                     })}
                 </>
             )}
+
+            <AdSlot placement="nutrition" />
 
             <AddFoodDialog
                 open={dialogOpen}

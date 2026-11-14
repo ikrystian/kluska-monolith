@@ -4,8 +4,8 @@ const STORAGE_KEY = 'athlete-spa:swr-cache';
 
 /**
  * localStorage tops out around 5 MB and is shared with auth, drafts and
- * preferences, so the cache gets a conservative slice of it. Oversized
- * snapshots are dropped rather than allowed to evict a workout draft.
+ * preferences, so the cache gets a conservative slice of it. Reads that do
+ * not fit are left out rather than allowed to evict a workout draft.
  */
 const MAX_SERIALISED_BYTES = 1_500_000;
 
@@ -59,21 +59,37 @@ function readSnapshot(): CacheEntry[] {
   }
 }
 
+/**
+ * One read above this stays out of the snapshot. The whole exercise library is
+ * a single ~12 MB read; counted in, it used to push the snapshot over its limit
+ * and take every other screen's data with it, so nothing survived a restart.
+ */
+const MAX_ENTRY_BYTES = 250_000;
+/** Lists longer than this are skipped without even being serialised. */
+const MAX_ENTRY_ROWS = 1_000;
+
 function writeSnapshot(map: Map<string, State<unknown>>): void {
   try {
-    const entries: CacheEntry[] = [];
+    const parts: string[] = [];
+    let total = 2;
     for (const [key, value] of map.entries()) {
-      if (isPersistable(key, value)) entries.push([key, { data: value.data }]);
+      if (!isPersistable(key, value)) continue;
+      if (Array.isArray(value.data) && value.data.length > MAX_ENTRY_ROWS) continue;
+
+      const serialised = JSON.stringify([key, { data: value.data }] satisfies CacheEntry);
+      if (serialised.length > MAX_ENTRY_BYTES) continue;
+      // Over budget: leave this one out, a smaller later one may still fit.
+      if (total + serialised.length + 1 > MAX_SERIALISED_BYTES) continue;
+
+      parts.push(serialised);
+      total += serialised.length + 1;
     }
 
-    const serialised = JSON.stringify(entries);
-    if (serialised.length > MAX_SERIALISED_BYTES) {
-      // Too big to be worth persisting; drop the stale snapshot rather than
-      // leaving an inconsistent half of it behind.
+    if (parts.length === 0) {
       localStorage.removeItem(STORAGE_KEY);
       return;
     }
-    localStorage.setItem(STORAGE_KEY, serialised);
+    localStorage.setItem(STORAGE_KEY, `[${parts.join(',')}]`);
   } catch {
     // Quota exceeded or storage disabled — the app works, just without a
     // warm cache on next start.
