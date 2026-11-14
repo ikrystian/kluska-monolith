@@ -13,7 +13,8 @@ import {
 } from '@/lib/nutrition';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FoodIcon, FoodList, FoodRow, MacroSummary, ServingsStepper } from '@/components/nutrition/FoodParts';
+import { FoodList, FoodRow, MacroSummary, SectionLabel, ServingsStepper } from '@/components/nutrition/FoodParts';
+import { pluralForm } from '@/lib/plural';
 import { cn } from '@/lib/utils';
 
 export const DISH_CATEGORY_LABEL = Object.fromEntries(DISH_CATEGORIES.map((c) => [c.value, c.label])) as Record<DishCategory, string>;
@@ -62,11 +63,9 @@ function mealDetail(meal: ReadyMeal) {
 export function ReadyMealRow({ meal, onSelect, trailing }: { meal: ReadyMeal; onSelect: (meal: ReadyMeal) => void; trailing?: ReactNode }) {
     return (
         <FoodRow
-            icon={<FoodIcon icon={ChefHat} className="bg-food/15 text-food" />}
             title={meal.name}
             detail={mealDetail(meal)}
             calories={meal.calories}
-            caloriesLabel="kcal / porcja"
             onClick={() => onSelect(meal)}
             trailing={trailing}
         />
@@ -148,11 +147,16 @@ export function ReadyMealList({
                     {debouncedQuery.length >= 2 ? `Brak dań pasujących do „${debouncedQuery}".` : 'Brak dań w tej kategorii.'}
                 </div>
             ) : (
-                <FoodList>
-                    {meals?.map((meal) => (
-                        <ReadyMealRow key={meal.id} meal={meal} onSelect={onSelect} trailing={trailing?.(meal)} />
-                    ))}
-                </FoodList>
+                <div className="space-y-2">
+                    <SectionLabel>
+                        {meals?.length ?? 0} {pluralForm(meals?.length ?? 0, 'danie', 'dania', 'dań')} · na porcję
+                    </SectionLabel>
+                    <FoodList>
+                        {meals?.map((meal) => (
+                            <ReadyMealRow key={meal.id} meal={meal} onSelect={onSelect} trailing={trailing?.(meal)} />
+                        ))}
+                    </FoodList>
+                </div>
             )}
         </div>
     );
@@ -204,7 +208,7 @@ export function ReadyMealDetail({ meal, date, mealType, onPreview, onSaved, onEr
     };
 
     return (
-        <div className="space-y-4">
+        <div className="flex min-h-full flex-col gap-4">
             <div className="flex items-start gap-3">
                 <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-food/15 text-food">
                     <ChefHat className="h-6 w-6" />
@@ -246,10 +250,12 @@ export function ReadyMealDetail({ meal, date, mealType, onPreview, onSaved, onEr
                 </details>
             )}
 
-            <Button className="h-12 w-full rounded-2xl text-[15px]" onClick={handleSave} disabled={isSaving}>
-                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-                Dodaj · {added.calories} kcal
-            </Button>
+            <div className="mt-auto pt-1">
+                <Button className="h-12 w-full rounded-2xl text-[15px]" onClick={handleSave} disabled={isSaving}>
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+                    Dodaj · {added.calories} kcal
+                </Button>
+            </div>
         </div>
     );
 }

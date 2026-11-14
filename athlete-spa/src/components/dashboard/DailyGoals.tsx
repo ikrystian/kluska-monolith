@@ -50,7 +50,7 @@ function GoalRing({ progress, tone, done, children }: { progress: number; tone: 
         initial={reduceMotion ? false : { scale: 0.6 }}
         animate={{ scale: 1 }}
         transition={spring}
-        className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-lime text-lime-foreground"
+        className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-lime"
       >
         <Check className="h-5 w-5" strokeWidth={3.5} />
       </motion.span>

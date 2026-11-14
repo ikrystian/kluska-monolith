@@ -23,7 +23,6 @@ import { pluralForm } from '@/lib/plural';
 import { ReadyMealCarousel, ReadyMealDetail, ReadyMealList, ReadyMealRow, useDebounced, useReadyMeals } from '@/components/nutrition/ReadyMeals';
 import {
     BudgetLine,
-    FoodIcon,
     FoodList,
     FoodRow,
     GramsStepper,
@@ -59,16 +58,22 @@ interface AddFoodDialogProps {
 }
 
 /** Full-sheet steps reached from the list; picking a product or a dish opens its portion view on top of any of them. */
-type View = 'home' | 'scan' | 'manual';
-/** What the list shows: the athlete's own foods or the catalogue of ready-made dishes. */
-type Tab = 'mine' | 'dishes';
+type View = 'home' | 'dishes' | 'scan' | 'manual';
 type SelectedProduct = FoodProduct & { entrySource: 'search' | 'barcode' | 'manual'; initialAmount?: number };
 
 const VIEW_TITLES: Record<View, string> = {
     home: 'Dodaj jedzenie',
+    dishes: 'Gotowe dania',
     scan: 'Skanuj kod kreskowy',
     manual: 'Szybki wpis',
 };
+
+/** The three other ways in, shown as one row of equal tiles under the search field. */
+const SHORTCUTS = [
+    { view: 'scan', icon: ScanBarcode, label: 'Skanuj kod' },
+    { view: 'dishes', icon: ChefHat, label: 'Gotowe dania' },
+    { view: 'manual', icon: Zap, label: 'Szybki wpis' },
+] as const;
 
 /** "Zwykle na …" — the meal in the accusative. */
 const MEAL_ACCUSATIVE: Record<MealType, string> = {
@@ -78,17 +83,30 @@ const MEAL_ACCUSATIVE: Record<MealType, string> = {
     Snack: 'przekąskę',
 };
 
-interface RecentResponse {
-    foods: RecentFood[];
-    /** Echo of the `mealType` filter; missing when the backend predates it and returned the unfiltered list. */
-    mealType: MealType | null;
-}
-
-async function recentFetcher(url: string): Promise<RecentResponse> {
+/**
+ * The plain list and the name search keep returning a bare array: their keys
+ * already sit in athletes' persisted SWR caches in that shape, and a cached
+ * value is rendered before any refetch.
+ */
+async function recentFetcher(url: string): Promise<RecentFood[]> {
     const response = await apiFetch(url);
     if (!response.ok) throw new Error('Request failed');
     const data = await response.json();
-    return { foods: data.foods ?? [], mealType: data.mealType ?? null };
+    return Array.isArray(data.foods) ? data.foods : [];
+}
+
+interface UsualResponse {
+    foods: RecentFood[];
+    /** Echo of the `mealType` filter; `null` when the backend predates it and returned the unfiltered list. */
+    mealType: MealType | null;
+}
+
+/** Foods usually logged at one meal (`?mealType=`) — a key of its own, so its shape is free to differ. */
+async function usualFetcher(url: string): Promise<UsualResponse> {
+    const response = await apiFetch(url);
+    if (!response.ok) throw new Error('Request failed');
+    const data = await response.json();
+    return { foods: Array.isArray(data.foods) ? data.foods : [], mealType: data.mealType ?? null };
 }
 
 /** Cached products only; an older backend without this route simply yields no instant matches. */
@@ -103,7 +121,6 @@ const formatAmount = (food: { amount: number; unit: string }) => `${food.amount.
 const macroLine = (food: { protein: number; carbs: number; fat: number }) => MACROS.map((macro) => `${macro.short} ${formatGrams(Math.round(food[macro.key]))}`).join(' · ');
 const productMacros = (product: FoodProduct) => MACROS.map((macro) => `${macro.short} ${formatGrams(product[macro.key])}`).join(' · ');
 const isDish = (food: RecentFood) => food.source === 'meal' || food.source === 'recipe';
-const recentIcon = (food: RecentFood) => (isDish(food) ? ChefHat : food.source === 'barcode' ? ScanBarcode : food.unit === 'g' ? Apple : Zap);
 const foodKey = (food: RecentFood) => `food:${food.name.toLowerCase()}`;
 const mealKey = (meal: ReadyMeal) => `meal:${meal.id}`;
 
@@ -123,7 +140,6 @@ interface QuickAdd {
 
 export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdded, goal, totals }: AddFoodDialogProps) {
     const [view, setView] = useState<View>('home');
-    const [tab, setTab] = useState<Tab>('mine');
     const [mealType, setMealType] = useState<MealType>(defaultMealType);
     const [selected, setSelected] = useState<SelectedProduct | null>(null);
     const [selectedMeal, setSelectedMeal] = useState<ReadyMeal | null>(null);
@@ -143,7 +159,6 @@ export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdd
     useEffect(() => {
         if (open) {
             setView('home');
-            setTab('mine');
             setMealType(defaultMealType);
             setSelected(null);
             setSelectedMeal(null);
@@ -161,12 +176,12 @@ export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdd
     const liveQuery = debouncedQuery.length >= 2 ? debouncedQuery : '';
     const searching = trimmedQuery.length >= 2;
 
-    const { data: recent, mutate: mutateRecent } = useSWR<RecentResponse>(open ? '/api/athlete/nutrition/recent' : null, recentFetcher);
-    const { data: usual, mutate: mutateUsual } = useSWR<RecentResponse>(open ? `/api/athlete/nutrition/recent?mealType=${mealType}` : null, recentFetcher, {
+    const { data: recent, mutate: mutateRecent } = useSWR<RecentFood[]>(open ? '/api/athlete/nutrition/recent' : null, recentFetcher);
+    const { data: usual, mutate: mutateUsual } = useSWR<UsualResponse>(open ? `/api/athlete/nutrition/recent?mealType=${mealType}` : null, usualFetcher, {
         keepPreviousData: true,
     });
     const { data: dishes } = useReadyMeals(open ? liveQuery : '');
-    const { data: history } = useSWR<RecentResponse>(
+    const { data: history } = useSWR<RecentFood[]>(
         open && liveQuery ? `/api/athlete/nutrition/recent?query=${encodeURIComponent(liveQuery)}` : null,
         recentFetcher,
         { keepPreviousData: true }
@@ -197,7 +212,7 @@ export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdd
     /** Looks the query up on the web — slower, so it only runs when asked for. */
     const handleWebSearch = async (event?: React.FormEvent) => {
         event?.preventDefault();
-        if (tab !== 'mine' || trimmedQuery.length < 2 || isSearching) return;
+        if (view !== 'home' || trimmedQuery.length < 2 || isSearching) return;
 
         setIsSearching(true);
         setResults(null);
@@ -272,22 +287,53 @@ export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdd
         else setView('home');
     };
     const isHome = view === 'home' && !selected && !selectedMeal;
+    /** Both lists allow adding several things in a row, so both end with "Gotowe". */
+    const isList = (view === 'home' || view === 'dishes') && !selected && !selectedMeal;
 
     // Web results (once asked for) come first; cached matches that aren't among them follow.
     const webShown = results !== null && searchedQuery === trimmedQuery;
     const cached = liveQuery && trimmedQuery.toLowerCase().includes(liveQuery.toLowerCase()) ? localProducts ?? [] : [];
     const products = webShown ? [...results, ...cached.filter((item) => !results.some((found) => productId(found) === productId(item)))] : cached;
-    const historyMatches = (liveQuery ? history?.foods ?? [] : []).filter((food) => food.name.toLowerCase().includes(trimmedQuery.toLowerCase()));
+    const historyMatches = (liveQuery && Array.isArray(history) ? history : []).filter((food) => food.name.toLowerCase().includes(trimmedQuery.toLowerCase()));
 
     // "Usually at this meal" only when the backend really scoped the list to the chosen meal.
-    const usualFoods = usual?.mealType === mealType ? usual.foods.slice(0, 5) : [];
-    const frequentFoods = recent?.foods.filter((food) => !usualFoods.some((item) => foodKey(item) === foodKey(food)));
+    const usualFoods = usual?.mealType === mealType && Array.isArray(usual.foods) ? usual.foods.slice(0, 5) : [];
+    // Values restored from the persisted cache are whatever an earlier build stored, hence the shape checks.
+    const frequentFoods = Array.isArray(recent) ? recent.filter((food) => !usualFoods.some((item) => foodKey(item) === foodKey(food))) : undefined;
+
+    /** One field for both lists: products and dishes on the start screen, dishes only in the catalogue. */
+    const searchField = (
+        <form onSubmit={handleWebSearch} className="relative">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
+            <Input
+                placeholder={view === 'dishes' ? 'Szukaj dania, np. pierogi' : 'Szukaj produktu lub dania'}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                className="h-12 rounded-2xl border-transparent bg-secondary/60 pl-11 pr-11 text-[15px]"
+                enterKeyHint="search"
+                autoComplete="off"
+            />
+            {query && (
+                <button
+                    type="button"
+                    onClick={() => {
+                        setQuery('');
+                        setResults(null);
+                    }}
+                    aria-label="Wyczyść"
+                    className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-muted-foreground active:bg-secondary"
+                >
+                    <X className="h-4 w-4" />
+                </button>
+            )}
+        </form>
+    );
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            {/* The sheet itself doesn't scroll: the meal picker and the budget stay put above the list, "Gotowe" below it. */}
+            {/* The sheet itself doesn't scroll: the budget and the meal picker stay put above the list, "Gotowe" below it. */}
             <DialogContent className="flex h-[92dvh] max-h-[92dvh] flex-col gap-0 overflow-hidden pb-0" onOpenAutoFocus={(event) => event.preventDefault()}>
-                <div className="space-y-3 pb-3.5">
+                <div className="pb-4">
                     <div className="flex min-h-9 items-center pr-10">
                         {isHome ? (
                             <DialogTitle className="text-lg">{VIEW_TITLES.home}</DialogTitle>
@@ -298,11 +344,15 @@ export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdd
                             </>
                         )}
                     </div>
-                    <MealTypePicker value={mealType} onChange={setMealType} compact />
-                    <BudgetLine goal={goal} totals={totals} pending={pending} />
+                    <div className="mt-1.5">
+                        <BudgetLine goal={goal} totals={totals} pending={pending} />
+                    </div>
+                    <div className="mt-3.5">
+                        <MealTypePicker value={mealType} onChange={setMealType} compact />
+                    </div>
                 </div>
 
-                <div className="-mx-5 min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-0.5">
+                <div className="-mx-5 min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-0.5">
                     {selected ? (
                         <ProductDetail
                             key={`${productId(selected) ?? ''}-${selected.name}`}
@@ -326,80 +376,34 @@ export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdd
                         <ScanView onFound={(product) => setSelected({ ...product, entrySource: 'barcode' })} />
                     ) : view === 'manual' ? (
                         <QuickEntry date={date} mealType={mealType} initialName={trimmedQuery} onPreview={setPending} onSaved={(entry) => afterAdd(entry, true)} />
+                    ) : view === 'dishes' ? (
+                        <div className="space-y-4">
+                            {searchField}
+                            <ReadyMealList query={trimmedQuery} onSelect={setSelectedMeal} trailing={(meal) => <MealQuickAdd meal={meal} quick={quick} />} />
+                        </div>
                     ) : (
-                        <>
-                            <form onSubmit={handleWebSearch} className="relative">
-                                <Search className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
-                                <Input
-                                    placeholder={tab === 'dishes' ? 'Szukaj dania, np. pierogi' : 'Szukaj produktu lub dania'}
-                                    value={query}
-                                    onChange={(event) => setQuery(event.target.value)}
-                                    className="h-12 rounded-2xl border-transparent bg-secondary/60 pl-11 pr-14 text-[15px]"
-                                    enterKeyHint="search"
-                                    autoComplete="off"
-                                />
-                                {query ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setQuery('');
-                                            setResults(null);
-                                        }}
-                                        aria-label="Wyczyść"
-                                        className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-muted-foreground active:bg-secondary"
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </button>
-                                ) : (
-                                    <button
-                                        type="button"
-                                        onClick={() => setView('scan')}
-                                        aria-label="Skanuj kod kreskowy"
-                                        className="pressable-sm absolute right-1.5 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-xl bg-background/70 text-volt"
-                                    >
-                                        <ScanBarcode className="h-[18px] w-[18px]" />
-                                    </button>
-                                )}
-                            </form>
+                        <div className="space-y-5">
+                            <div className="space-y-2.5">
+                                {searchField}
 
-                            <div className="flex items-center gap-1.5">
-                                {(
-                                    [
-                                        { id: 'mine', label: 'Twoje' },
-                                        { id: 'dishes', label: 'Gotowe dania' },
-                                    ] as const
-                                ).map((option) => (
-                                    <button
-                                        key={option.id}
-                                        type="button"
-                                        aria-pressed={tab === option.id}
-                                        onClick={() => setTab(option.id)}
-                                        className={cn(
-                                            'pressable-sm h-9 shrink-0 rounded-full px-3 text-[13px] font-semibold transition-colors',
-                                            tab === option.id ? 'bg-foreground text-background' : 'bg-secondary/60 text-muted-foreground'
-                                        )}
-                                    >
-                                        {option.label}
-                                    </button>
-                                ))}
-                                <button
-                                    type="button"
-                                    onClick={() => setView('manual')}
-                                    aria-label="Szybki wpis"
-                                    className="pressable-sm ml-auto flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-border px-3 text-[13px] font-semibold"
-                                >
-                                    <Zap className="h-4 w-4 text-volt" />
-                                    <span className="max-[359px]:hidden">Szybki wpis</span>
-                                </button>
+                                {!searching && (
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {SHORTCUTS.map(({ view: target, icon: Icon, label }) => (
+                                            <button
+                                                key={target}
+                                                type="button"
+                                                onClick={() => setView(target)}
+                                                className="pressable-sm flex min-w-0 flex-col items-center gap-1.5 rounded-2xl bg-secondary/40 px-1 py-2.5"
+                                            >
+                                                <Icon className="h-5 w-5 text-volt" />
+                                                <span className="w-full truncate text-center text-xs font-semibold">{label}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
-                            {tab === 'dishes' ? (
-                                <ReadyMealList
-                                    query={trimmedQuery}
-                                    onSelect={setSelectedMeal}
-                                    trailing={(meal) => <MealQuickAdd meal={meal} quick={quick} />}
-                                />
-                            ) : searching ? (
+                            {searching ? (
                                 <SearchResults
                                     query={trimmedQuery}
                                     history={historyMatches}
@@ -413,7 +417,7 @@ export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdd
                                     onSearchWeb={() => handleWebSearch()}
                                     onSelectProduct={(product) => setSelected({ ...product, entrySource: 'search' })}
                                     onSelectMeal={setSelectedMeal}
-                                    onShowAllDishes={() => setTab('dishes')}
+                                    onShowAllDishes={() => setView('dishes')}
                                     onManual={() => setView('manual')}
                                 />
                             ) : (
@@ -423,15 +427,15 @@ export function AddFoodDialog({ open, onOpenChange, date, defaultMealType, onAdd
                                     frequent={frequentFoods}
                                     quick={quick}
                                     onOpenRecent={openRecent}
-                                    onShowDishes={() => setTab('dishes')}
+                                    onShowDishes={() => setView('dishes')}
                                     onSelectMeal={setSelectedMeal}
                                 />
                             )}
-                        </>
+                        </div>
                     )}
                 </div>
 
-                {isHome && session.count > 0 && (
+                {isList && session.count > 0 && (
                     <div className="-mx-5 border-t border-border/50 px-5 pb-[calc(0.875rem+env(safe-area-inset-bottom))] pt-3">
                         <Button className="h-12 w-full justify-between rounded-2xl px-4 text-[15px]" onClick={() => onOpenChange(false)}>
                             <span className="flex min-w-0 items-center gap-2">
@@ -456,11 +460,9 @@ function RecentRow({ food, quick, onOpen }: { food: RecentFood; quick: QuickAdd;
     const key = foodKey(food);
     return (
         <FoodRow
-            icon={<FoodIcon icon={recentIcon(food)} />}
             title={food.name}
             detail={`${formatAmount(food)} · ${macroLine(food)}`}
             calories={food.calories}
-            caloriesLabel="kcal"
             onClick={() => onOpen(food)}
             trailing={<QuickAddButton label={`Dodaj ponownie: ${food.name}`} busy={quick.busyKey === key} count={quick.counts.get(key) ?? 0} onClick={() => quick.relog(food)} />}
         />
@@ -642,7 +644,7 @@ function SearchResults({
                             )
                         }
                     >
-                        Dania
+                        Dania · na porcję
                     </SectionLabel>
                     <FoodList>
                         {dishes.slice(0, 3).map((meal) => (
@@ -653,18 +655,16 @@ function SearchResults({
             )}
 
             <section className="space-y-2">
-                <SectionLabel>Produkty</SectionLabel>
+                <SectionLabel>Produkty · na 100 g</SectionLabel>
 
                 {products.length > 0 && (
                     <FoodList>
                         {products.map((product, index) => (
                             <FoodRow
                                 key={productId(product) ?? index}
-                                icon={<ProductThumb product={product} />}
                                 title={product.name}
                                 detail={`${product.brand ? `${product.brand} · ` : ''}${productMacros(product)}`}
                                 calories={product.calories}
-                                caloriesLabel="kcal / 100 g"
                                 onClick={() => onSelectProduct(product)}
                             />
                         ))}
@@ -805,7 +805,7 @@ function ProductDetail({
     };
 
     return (
-        <div className="space-y-4">
+        <div className="flex min-h-full flex-col gap-4">
             <div className="flex items-start gap-3">
                 <ProductThumb product={product} size="lg" />
                 <div className="min-w-0 pt-0.5">
@@ -821,10 +821,13 @@ function ProductDetail({
 
             <MacroSummary {...added} />
 
-            <Button className="h-12 w-full rounded-2xl text-[15px]" onClick={handleSave} disabled={isSaving || grams <= 0}>
-                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-                Dodaj · {added.calories} kcal
-            </Button>
+            {/* Pushed to the bottom of the sheet, where the thumb already is. */}
+            <div className="mt-auto pt-1">
+                <Button className="h-12 w-full rounded-2xl text-[15px]" onClick={handleSave} disabled={isSaving || grams <= 0}>
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+                    Dodaj · {added.calories} kcal
+                </Button>
+            </div>
         </div>
     );
 }

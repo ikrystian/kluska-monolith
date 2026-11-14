@@ -45,7 +45,7 @@ export const TOURS: TourDef[] = [
       {
         target: 'quick-add',
         title: 'Szybkie dodawanie',
-        body: 'Plus zapisuje to, co robisz najczęściej: trening, bieg, posiłek, wagę, pomiary albo nowy cel. Działa z każdego ekranu.',
+        body: 'Plus zapisuje to, co robisz najczęściej: trening, bieg, posiłek, wagę, pomiary albo nowy cel. Dzisiejsze nawyki odhaczysz tam jednym tapnięciem. Działa z każdego ekranu.',
       },
       {
         target: 'header-actions',

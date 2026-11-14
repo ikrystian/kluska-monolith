@@ -167,38 +167,36 @@ export function FoodList({ children, className }: { children: ReactNode; classNa
     return <ul className={cn('divide-y divide-border/40 overflow-hidden rounded-2xl bg-secondary/40', className)}>{children}</ul>;
 }
 
-/** One tappable food/dish row: name, detail line, calories on the right and an optional trailing action. Lives inside a `FoodList`. */
+/** One tappable food/dish row: name, detail line, calories on the right and a trailing action (a chevron by default). Lives inside a `FoodList`. */
 export function FoodRow({
-    icon,
     title,
     detail,
     calories,
-    caloriesLabel,
     onClick,
     trailing,
 }: {
-    icon?: ReactNode;
     title: string;
     detail: ReactNode;
     calories: number;
-    caloriesLabel: string;
     onClick: () => void;
     trailing?: ReactNode;
 }) {
     return (
-        <li className="flex items-center gap-1 pr-2">
-            <button type="button" onClick={onClick} className="row-tap flex min-w-0 flex-1 items-center gap-3 py-2.5 pl-3 text-left">
-                {icon}
+        <li className="flex items-center gap-2 pr-2.5">
+            <button type="button" onClick={onClick} className="row-tap flex min-w-0 flex-1 items-center gap-3 py-3 pl-3.5 text-left">
                 <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium">{title}</span>
-                    <span className="block truncate text-xs text-muted-foreground">{detail}</span>
+                    <span className="block truncate text-sm font-medium leading-5">{title}</span>
+                    <span className="block truncate text-xs leading-4 text-muted-foreground">{detail}</span>
                 </span>
-                <span className="shrink-0 pr-1 text-right">
-                    <span className="block text-sm font-bold tabular-nums">{formatKcal(calories)}</span>
-                    <span className="block text-[10px] text-muted-foreground">{caloriesLabel}</span>
+                <span className="shrink-0 whitespace-nowrap text-xs tabular-nums text-muted-foreground">
+                    <span className="text-sm font-bold text-foreground">{formatKcal(calories)}</span> kcal
                 </span>
             </button>
-            {trailing ?? <ChevronRight className="mr-1 h-4 w-4 shrink-0 text-muted-foreground/60" />}
+            {trailing ?? (
+                <span className="grid h-9 w-9 shrink-0 place-items-center">
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/60" />
+                </span>
+            )}
         </li>
     );
 }
@@ -212,8 +210,8 @@ export function QuickAddButton({ label, busy, count, onClick }: { label: string;
             disabled={busy}
             aria-label={label}
             className={cn(
-                'relative grid h-10 w-10 shrink-0 place-items-center rounded-full transition-colors',
-                count > 0 ? 'bg-lime text-lime-foreground' : 'bg-primary/15 text-primary active:bg-primary/25'
+                'relative grid h-9 w-9 shrink-0 place-items-center rounded-full transition-colors',
+                count > 0 ? 'bg-lime text-lime-foreground' : 'bg-background/70 text-primary active:bg-background'
             )}
         >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : count > 0 ? <Check className="h-4 w-4" /> : <Plus className="h-[18px] w-[18px]" />}
@@ -223,14 +221,6 @@ export function QuickAddButton({ label, busy, count, onClick }: { label: string;
                 </span>
             )}
         </button>
-    );
-}
-
-export function FoodIcon({ icon: Icon, className }: { icon: LucideIcon; className?: string }) {
-    return (
-        <span className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-background/60 text-muted-foreground', className)}>
-            <Icon className="h-4 w-4" />
-        </span>
     );
 }
 
