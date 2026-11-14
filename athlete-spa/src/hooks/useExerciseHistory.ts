@@ -32,21 +32,36 @@ export function useExerciseHistory(
     data: ExerciseHistoryData | null;
     isLoading: boolean;
 } {
-    // Fetch completed workout logs sorted by endTime descending
+    // Ask the server for the latest completed log that contains this exercise
+    // (indexed on `exercises.exerciseId`), instead of scanning a fixed window of
+    // recent logs, which missed anything done more than a few workouts ago.
     const { data: logs, isLoading } = useCollection<WorkoutLog>(
         exerciseId && athleteId ? 'workoutLogs' : null,
-        exerciseId && athleteId ? { athleteId, status: 'completed' } : undefined,
-        { sort: { endTime: -1 }, limit: 20 } // Fetch last 20 to find one with this exercise
+        exerciseId && athleteId
+            ? {
+                athleteId,
+                status: 'completed',
+                $or: [{ 'exercises.exerciseId': exerciseId }, { 'exercises.exercise._id': exerciseId }],
+            }
+            : undefined,
+        { sort: { endTime: -1 }, limit: 1 }
     );
 
     const historyData = useMemo(() => {
         if (!logs || !exerciseId) return null;
 
-        // Find the most recent log containing this exercise
         for (const log of logs) {
-            const exerciseData = log.exercises?.find(
-                (ex) => ex.exercise?.id === exerciseId
-            );
+            // The stored snapshot drops the client-side `id` (the schema keeps only
+            // `_id`), so match on the series-level `exerciseId` first.
+            const exerciseData = log.exercises?.find((ex) => {
+                const series = ex as typeof ex & { exerciseId?: string };
+                const snapshot = ex.exercise as (typeof ex.exercise & { _id?: unknown }) | undefined;
+                return (
+                    series.exerciseId === exerciseId ||
+                    snapshot?.id === exerciseId ||
+                    String(snapshot?._id ?? '') === exerciseId
+                );
+            });
 
             if (exerciseData) {
                 return {

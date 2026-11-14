@@ -22,7 +22,6 @@ export function ExerciseFilters({ filters, onChange, muscleGroupOptions }: Exerc
   const selects: { key: SelectFilterKey; placeholder: string; allLabel: string; options: { value: string; label: string }[] }[] = [
     { key: 'muscleGroup', placeholder: 'Partia mięśniowa', allLabel: 'Wszystkie partie', options: muscleGroupOptions },
     { key: 'type', placeholder: 'Typ', allLabel: 'Wszystkie typy', options: TYPE_OPTIONS },
-    { key: 'bodyPart', placeholder: SETUP_GROUPS.bodyPart, allLabel: 'Każda część ciała', options: toOptions(SETUP_SUGGESTIONS.bodyPart) },
     { key: 'equipment', placeholder: SETUP_GROUPS.equipment, allLabel: 'Każdy sprzęt', options: toOptions(SETUP_SUGGESTIONS.equipment) },
     { key: 'category', placeholder: SETUP_GROUPS.category, allLabel: 'Każda kategoria', options: toOptions(SETUP_SUGGESTIONS.category) },
   ];

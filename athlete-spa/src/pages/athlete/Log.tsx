@@ -1562,7 +1562,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
                 <motion.div key={setField.id} {...listItemMotion}>
                   <div
                     className={cn(
-                      'grid items-center gap-1.5 rounded-xl px-0.5 py-1 transition-colors',
+                      'grid items-center gap-2.5 rounded-xl px-0.5 py-1 transition-colors',
                       gridColumns,
                       isCompleted ? 'bg-volt/10' : isActive ? 'bg-primary/10' : ''
                     )}
@@ -2214,8 +2214,8 @@ export default function LogWorkoutPage() {
     const activeLog = (logId && specificWorkoutLog)
       ? specificWorkoutLog
       : (activeWorkouts && activeWorkouts.length > 0
-          ? (logId ? activeWorkouts.find(l => l.id === logId) || activeWorkouts[0] : activeWorkouts[0])
-          : null);
+        ? (logId ? activeWorkouts.find(l => l.id === logId) || activeWorkouts[0] : activeWorkouts[0])
+        : null);
 
     if (activeLog) {
 
