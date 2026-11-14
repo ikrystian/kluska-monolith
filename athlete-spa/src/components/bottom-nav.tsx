@@ -97,8 +97,8 @@ export function BottomNav() {
           ) : (
             <TabLink href="/athlete/menu" label="Menu" icon={LayoutGrid} isActive={menuActive} />
           )}
-          <TabLink href="/athlete/you" label={youLabel} isActive={youActive}>
-            <Avatar className={cn('h-[22px] w-[22px]', youActive && 'ring-2 ring-foreground ring-offset-1 ring-offset-background')}>
+          <TabLink href="/athlete/you" label={''} isActive={youActive}>
+            <Avatar className={cn('h-[36px] w-[36px]', youActive && 'ring-2 ring-foreground ring-offset-1 ring-offset-background')}>
               {userProfile?.avatarUrl && <AvatarImage src={resolveMediaUrl(userProfile.avatarUrl)} alt="" />}
               <AvatarFallback className="bg-secondary text-[10px] font-semibold">
                 {userProfile?.name?.[0]?.toUpperCase() ?? 'T'}

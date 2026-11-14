@@ -17,6 +17,7 @@
     "db:seed:workouts": "npx tsx scripts/seed-popular-workouts.ts",
     "db:seed:running": "npx tsx scripts/seed-running.ts",
     "db:seed:meals": "npx tsx scripts/seed-meals.ts",
+    "db:seed:goals": "npx tsx scripts/seed-daily-goals.ts",
     "landing:dev": "npm --prefix landing run dev",
     "landing:build": "npm --prefix landing run build"
   },

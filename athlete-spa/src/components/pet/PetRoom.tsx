@@ -36,52 +36,55 @@ function Cloud({ x, y, s = 1, className }: { x: number; y: number; s?: number; c
   );
 }
 
-/* ---------- Przytulny pokój ---------- */
+/* ---------- Sala siłowni (tło startowe) ---------- */
 
-function CozyRoom({ id }: { id: string }) {
+function GymHall({ id }: { id: string }) {
   return (
     <>
       <defs>
         <linearGradient id={`${id}-wall`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#FBEEDD" />
-          <stop offset="1" stopColor="#F1DABD" />
+          <stop offset="0" stopColor="#F6F3EE" />
+          <stop offset="1" stopColor="#E6E2DA" />
         </linearGradient>
         <linearGradient id={`${id}-floor`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#D9A974" />
-          <stop offset="1" stopColor="#B98253" />
+          <stop offset="0" stopColor="#C3C9D2" />
+          <stop offset="1" stopColor="#9DA5B2" />
         </linearGradient>
         <linearGradient id={`${id}-sky`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#9FD8F6" />
           <stop offset="1" stopColor="#E3F5FC" />
         </linearGradient>
         <clipPath id={`${id}-glass`}>
-          <rect x={214} y={34} width={66} height={62} rx={3} />
+          <rect x={214} y={34} width={66} height={62} rx={2} />
         </clipPath>
       </defs>
 
+      {/* Ściana z lamperią */}
       <rect width={320} height={152} fill={`url(#${id}-wall)`} />
-      {Array.from({ length: 11 }, (_, i) => (
-        <rect key={i} x={i * 32 + 8} y={0} width={10} height={152} fill="#fff" opacity={0.2} />
-      ))}
+      <rect y={108} width={320} height={44} fill="#D5DAE2" />
+      <rect y={104} width={320} height={4} fill="#FF6B2C" />
+      <path d="M64 108 V148 M128 108 V148 M192 108 V148 M256 108 V148" stroke="#fff" strokeWidth={1.2} opacity={0.5} />
 
-      {/* Chorągiewki pod sufitem */}
-      <path d="M0 6 Q80 26 160 12 T320 8" fill="none" stroke="#B98253" strokeWidth={1.4} />
-      {[
-        [22, 11, '#FF6B2C'],
-        [56, 17, '#FFC53D'],
-        [90, 19, '#3D7FF0'],
-        [124, 16, '#FF4D6D'],
-        [160, 12, '#7CE0A3'],
-        [196, 11, '#FF6B2C'],
-      ].map(([x, y, color]) => (
-        <g key={x as number} className="room-flag" style={at(x as number, y as number)}>
-          <path d={`M${(x as number) - 7} ${y} H${(x as number) + 7} L${x} ${(y as number) + 14} Z`} fill={color as string} />
+      {/* Lampy pod sufitem */}
+      {[90, 184].map(x => (
+        <g key={x} className="room-sway-slow" style={at(x, 0)}>
+          <path d={`M${x} 0 V10`} stroke="#3B4252" strokeWidth={1.4} />
+          <path d={`M${x - 11} 19 L${x - 5} 10 H${x + 5} L${x + 11} 19 Z`} fill="#3B4252" />
+          <ellipse cx={x} cy={19.4} rx={8} ry={2} fill="#FFE27A" />
+          <path d={`M${x - 8} 20 L${x - 22} 60 H${x + 22} L${x + 8} 20 Z`} fill="#FFE27A" opacity={0.1} />
         </g>
       ))}
 
-      {/* Okno */}
-      <rect x={206} y={26} width={82} height={78} rx={7} fill="#fff" />
-      <rect x={214} y={34} width={66} height={62} rx={3} fill={`url(#${id}-sky)`} />
+      {/* Zegar */}
+      <circle cx={36} cy={30} r={13} fill="#3B4252" />
+      <circle cx={36} cy={30} r={10.4} fill="#fff" />
+      <path d="M36 21.6 V23.4 M36 36.6 V38.4 M27.6 30 H29.4 M42.6 30 H44.4" stroke="#98A3B8" strokeWidth={1.2} strokeLinecap="round" />
+      <path d="M36 30 V24 M36 30 L40.4 32.4" fill="none" stroke="#3B4252" strokeWidth={1.6} strokeLinecap="round" />
+      <circle cx={36} cy={30} r={1.4} fill="#FF6B2C" />
+
+      {/* Okno w stalowej ramie */}
+      <rect x={206} y={26} width={82} height={78} rx={4} fill="#3B4252" />
+      <rect x={214} y={34} width={66} height={62} rx={2} fill={`url(#${id}-sky)`} />
       <g clipPath={`url(#${id}-glass)`}>
         <circle cx={264} cy={50} r={9} fill="#FFE27A" />
         <circle className="room-sun" cx={264} cy={50} r={15} fill="#FFE27A" opacity={0.35} style={at(264, 50)} />
@@ -91,21 +94,44 @@ function CozyRoom({ id }: { id: string }) {
         <path d="M214 96 V84 Q232 72 250 82 T280 78 V96 Z" fill="#9BD49A" />
         <path d="M214 96 V90 Q240 80 280 90 V96 Z" fill="#7CC27C" />
       </g>
-      <path d="M247 34 V96 M214 65 H280" stroke="#fff" strokeWidth={5} />
-      <rect x={200} y={100} width={94} height={8} rx={3} fill="#fff" />
-      <rect x={200} y={106} width={94} height={3} rx={1.5} fill="#E2CDB4" />
-      {/* Zasłony */}
-      <path d="M200 20 H218 C220 50 214 80 204 106 H198 Z" fill="#F4A28C" />
-      <path d="M294 20 H276 C274 50 280 80 290 106 H296 Z" fill="#F4A28C" />
-      <path d="M206 22 C208 50 204 80 200 104 M288 22 C286 50 290 80 294 104" fill="none" stroke="#E0806A" strokeWidth={1.6} />
-      <rect x={194} y={16} width={106} height={5} rx={2.5} fill="#8A5A32" />
+      <path d="M236 34 V96 M258 34 V96 M214 65 H280" stroke="#3B4252" strokeWidth={3} />
+      <rect x={200} y={102} width={94} height={6} rx={2} fill="#5B6577" />
 
       {/* Listwa i podłoga */}
-      <rect y={146} width={320} height={8} fill="#FBF4EA" />
-      <rect y={152} width={320} height={2.6} fill="#D9C2A2" />
+      <rect y={148} width={320} height={6} fill="#4A5262" />
       <rect y={154} width={320} height={66} fill={`url(#${id}-floor)`} />
-      <path d="M0 170 H320 M0 192 H320" stroke="#A8743F" strokeWidth={1.2} opacity={0.6} />
-      <path d="M40 154 L28 170 M120 154 L114 170 M200 154 L206 170 M280 154 L292 170 M74 170 L56 192 M160 170 L160 192 M246 170 L264 192 M20 192 L0 214 M110 192 L96 220 M210 192 L224 220 M300 192 L320 214" stroke="#A8743F" strokeWidth={1.2} opacity={0.5} />
+      <path d="M0 172 H320 M0 196 H320 M54 155 L24 220 M124 155 L108 220 M196 155 L212 220 M266 155 L296 220" stroke="#fff" strokeWidth={1} opacity={0.28} />
+
+      {/* Kettlebell pod ścianą */}
+      <ellipse cx={22} cy={169} rx={11} ry={2.4} fill="#000" opacity={0.18} />
+      <path d="M16 153 C14 144 30 144 28 153" fill="none" stroke="#4A5262" strokeWidth={4} strokeLinecap="round" />
+      <circle cx={22} cy={160} r={9.4} fill="#2B303B" />
+      <path d="M15 156 a8 8 0 0 1 6 -4.6" fill="none" stroke="#fff" strokeOpacity={0.3} strokeWidth={2} strokeLinecap="round" />
+      <path d="M13.6 162 H30.4" stroke="#FF6B2C" strokeWidth={3} />
+
+      {/* Stojak ze sztangą */}
+      <ellipse cx={259} cy={156} rx={50} ry={3} fill="#000" opacity={0.16} />
+      {[228, 290].map(x => (
+        <g key={x}>
+          <rect x={x - 2.5} y={116} width={5} height={38} fill="#5B6577" />
+          <rect x={x - 2.5} y={116} width={2} height={38} fill="#7C879A" />
+          <rect x={x - 9} y={152} width={18} height={4} rx={2} fill="#3B4252" />
+          <path d={`M${x - 5} 122 V129 H${x + 5} V126`} fill="none" stroke="#3B4252" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
+        </g>
+      ))}
+      <rect x={200} y={123.4} width={118} height={3.8} rx={1.9} fill="#6B7587" />
+      <rect x={200} y={123.4} width={118} height={1.2} rx={0.6} fill="#fff" opacity={0.45} />
+      {[
+        [205, 8, 38, '#FF6B2C'],
+        [213.6, 6.4, 30, '#3D7FF0'],
+        [298, 6.4, 30, '#3D7FF0'],
+        [305, 8, 38, '#FF6B2C'],
+      ].map(([x, w, h, color]) => (
+        <g key={x as number}>
+          <rect x={x as number} y={125.3 - (h as number) / 2} width={w as number} height={h as number} rx={2.6} fill={color as string} />
+          <rect x={x as number} y={125.3 - (h as number) / 2} width={2} height={h as number} rx={1} fill="#fff" opacity={0.3} />
+        </g>
+      ))}
 
       {/* Światło z okna */}
       <path className="room-beam" d="M214 96 H280 L254 220 H112 Z" fill="#FFF4C2" opacity={0.16} />
@@ -120,16 +146,18 @@ function CozyRoom({ id }: { id: string }) {
         ))}
       </g>
 
-      {/* Dywan */}
-      <ellipse cx={160} cy={199} rx={98} ry={17} fill="#D9573F" />
-      <ellipse cx={160} cy={197.6} rx={98} ry={17} fill="#EE7458" />
-      <ellipse cx={160} cy={197.6} rx={82} ry={12.6} fill="none" stroke="#FBD9A5" strokeWidth={2} strokeDasharray="6 5" />
-      <ellipse cx={160} cy={197.6} rx={62} ry={8.6} fill="#F38A6E" />
+      {/* Pomost: guma po bokach, sklejka pośrodku */}
+      <path d="M84 186 H236 L256 215 H64 Z" fill="#1B1F27" />
+      <path d="M84 184 H236 L256 212 H64 Z" fill="#313848" />
+      <path d="M112 184 H208 L220 212 H100 Z" fill="#E6BC84" />
+      <path d="M136 184 L130 212 M160 184 V212 M184 184 L190 212" stroke="#C99A5E" strokeWidth={1.2} opacity={0.8} />
+      <path d="M112 184 H208 L209.6 187.6 H110.4 Z" fill="#fff" opacity={0.3} />
+      <path d="M70 206 H96 M224 206 H250" stroke="#fff" strokeWidth={1.2} opacity={0.12} />
     </>
   );
 }
 
-/* ---------- Siłownia ---------- */
+/* ---------- Siłownia (nocna, z neonem) ---------- */
 
 function GymRoom({ id }: { id: string }) {
   return (
@@ -448,7 +476,7 @@ function Background({ bg, id }: { bg: string; id: string }) {
     case 'bg_beach':
       return <BeachRoom id={id} />;
     default:
-      return <CozyRoom id={id} />;
+      return <GymHall id={id} />;
   }
 }
 

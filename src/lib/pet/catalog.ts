@@ -77,7 +77,7 @@ export const PET_ITEMS: PetItem[] = [
   { key: 'wear_cape', category: 'clothes', name: 'Peleryna superbohatera', description: 'Dla tych, co nie odpuszczają.', price: 20000, slot: 'back' },
 
   // Wystrój otoczenia
-  { key: DEFAULT_BACKGROUND, category: 'decor', name: 'Przytulny pokój', description: 'Tu się wszystko zaczyna.', price: 0, decor: 'background' },
+  { key: DEFAULT_BACKGROUND, category: 'decor', name: 'Sala siłowni', description: 'Sztanga na stojaku i pomost. Tu się wszystko zaczyna.', price: 0, decor: 'background' },
   { key: 'bg_gym', category: 'decor', name: 'Siłownia', description: 'Lustra, guma na podłodze, stojak z hantlami.', price: 5000, decor: 'background' },
   { key: 'bg_forest', category: 'decor', name: 'Leśna polana', description: 'Miękka ścieżka do biegania.', price: 12000, decor: 'background' },
   { key: 'bg_beach', category: 'decor', name: 'Tropikalna plaża', description: 'Palmy, piasek i szum fal.', price: 30000, decor: 'background' },

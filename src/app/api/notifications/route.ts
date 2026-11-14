@@ -46,6 +46,32 @@ export async function GET(req: NextRequest) {
     }
 }
 
+/** Bulk update of the caller's own notifications: `{ isRead: true }` marks every unread one as read. */
+export async function PATCH(req: NextRequest) {
+    try {
+        const user = await getRequestUser(req);
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const body = await req.json();
+        if (body.isRead !== true) {
+            return NextResponse.json({ error: 'Only { isRead: true } is supported' }, { status: 400 });
+        }
+
+        await dbConnect();
+        const result = await Notification.updateMany(
+            { userId: user.id, isRead: false },
+            { $set: { isRead: true } }
+        );
+
+        return NextResponse.json({ data: { modified: result.modifiedCount } });
+    } catch (error) {
+        console.error('Error marking notifications as read:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}
+
 export async function POST(req: NextRequest) {
     try {
         const user = await getRequestUser(req);

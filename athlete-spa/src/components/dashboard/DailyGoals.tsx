@@ -4,6 +4,11 @@ import type { ReactNode } from 'react';
 import { Beef, Check, ChevronRight, Dumbbell, Flame, ListChecks, Target, Utensils, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { pluralForm } from '@/lib/plural';
+import trainingBg from '@/assets/goals/training.svg';
+import caloriesBg from '@/assets/goals/calories.svg';
+import mealsBg from '@/assets/goals/meals.svg';
+import proteinBg from '@/assets/goals/protein.svg';
+import habitsBg from '@/assets/goals/habits.svg';
 
 export type DailyGoalTone = 'primary' | 'run' | 'food' | 'volt';
 
@@ -94,6 +99,15 @@ const ICON_TONE: Record<DailyGoalTone, string> = {
   volt: 'text-volt',
 };
 
+/** Each goal's generated background (src/assets/goals). A card-colored scrim sits on top so the label and hint stay readable. */
+const BACKGROUNDS: Record<string, string> = {
+  training: trainingBg,
+  calories: caloriesBg,
+  meals: mealsBg,
+  protein: proteinBg,
+  habits: habitsBg,
+};
+
 const FILL: Record<DailyGoalTone, string> = {
   primary: 'bg-primary',
   run: 'bg-run',
@@ -152,21 +166,25 @@ export function DailyGoals({ goals }: { goals: DailyGoal[] }) {
         })}
       </div>
 
-      <ul className="mt-3 grid grid-cols-2 gap-2" aria-label="Cele na dziś">
+      <ul className="mt-3 grid grid-cols-2 gap-2 goals-for-today" aria-label="Cele na dziś">
         {goals.map((goal, index) => {
           const done = isDone(goal);
           const wide = hasWideTile && index === 0;
           const Icon = ICONS[goal.id] ?? Target;
+          const background = BACKGROUNDS[goal.id];
           return (
             <li key={goal.id} className={cn(wide && 'col-span-2')}>
               <Link
                 to={goal.href}
                 state={goal.state}
                 className={cn(
-                  'flex h-full min-h-[4.5rem] gap-3 rounded-xl p-3 transition-transform active:scale-[0.98]',
+                  'flex h-full min-h-[4.5rem] gap-3 overflow-hidden rounded-xl bg-cover bg-center p-3 transition-transform active:scale-[0.98]',
                   wide ? 'items-center' : 'flex-col',
-                  done ? 'bg-lime/10' : 'bg-secondary/60'
+                  !background && (done ? 'bg-lime/10' : 'bg-secondary/60')
                 )}
+                style={background ? {
+                  backgroundImage: `linear-gradient(hsl(var(--card) / 0.85), hsl(var(--card) / 0.85)), url(${background})`,
+                } : undefined}
                 aria-label={`${goal.label}: ${goal.hint}${done ? ', zaliczone' : ''}`}
               >
                 <span className="flex items-center justify-between gap-2">
