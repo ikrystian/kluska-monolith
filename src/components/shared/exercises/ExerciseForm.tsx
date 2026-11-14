@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -43,10 +43,17 @@ import {
   Sparkles,
   Link,
   X,
+  Camera,
 } from 'lucide-react';
 import { ExerciseFormData, ExerciseFormProps } from './types';
 import { SETUP_GROUPS, SETUP_SUGGESTIONS, getSetupValue, isVideoFileUrl } from './setup';
 import { ExerciseImageCropDialog } from './ExerciseImageCropDialog';
+import { ExerciseFrameCaptureDialog } from './ExerciseFrameCaptureDialog';
+
+/** Co ile sekund formularz pyta serwer o status generowanej animacji. */
+const ANIMATION_POLL_INTERVAL_MS = 10_000;
+/** Po tym czasie formularz przestaje czekać na animację. */
+const ANIMATION_POLL_TIMEOUT_MS = 15 * 60_000;
 
 const exerciseSchema = z.object({
   name: z.string().min(1, 'Nazwa jest wymagana.'),
@@ -113,6 +120,8 @@ interface ExerciseFormDialogProps {
   isSubmitting: boolean;
   muscleGroupOptions: { label: string; value: string }[];
   showImageUpload?: boolean;
+  /** Generowanie animacji AI (płatne, tylko admin). */
+  showAiAnimation?: boolean;
 }
 
 export function ExerciseFormDialog({
@@ -123,6 +132,7 @@ export function ExerciseFormDialog({
   isSubmitting,
   muscleGroupOptions,
   showImageUpload = true,
+  showAiAnimation = false,
 }: ExerciseFormDialogProps) {
   const { toast } = useToast();
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>(
@@ -135,6 +145,17 @@ export function ExerciseFormDialog({
   const [animationSourceTab, setAnimationSourceTab] = useState<string>('upload');
   const [imageToCrop, setImageToCrop] = useState<File | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [frameVideoUrl, setFrameVideoUrl] = useState<string | null>(null);
+  /** Id ćwiczenia (lub 'new'), dla którego trwa generowanie animacji. */
+  const [generatingAnimationFor, setGeneratingAnimationFor] = useState<string | null>(null);
+  const animationPollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Klucz ćwiczenia aktualnie otwartego w formularzu — wynik trafia tylko do niego. */
+  const openExerciseKeyRef = useRef<string | null>(null);
+  openExerciseKeyRef.current = isOpen ? exercise?.id ?? 'new' : null;
+
+  useEffect(() => () => {
+    if (animationPollRef.current) clearTimeout(animationPollRef.current);
+  }, []);
 
   const form = useForm<ExerciseFormData>({
     resolver: zodResolver(exerciseSchema),
@@ -229,6 +250,77 @@ export function ExerciseFormDialog({
   const clearAnimation = () => {
     form.setValue('animationUrl', '', { shouldDirty: true });
   };
+
+  const handleGenerateAnimation = async () => {
+    const { name, instructions, mainMuscleGroups } = form.getValues();
+    if (!name?.trim()) {
+      toast({
+        title: "Błąd",
+        description: "Wprowadź najpierw nazwę ćwiczenia.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const exerciseKey = exercise?.id ?? 'new';
+    const fail = (message: string) => {
+      setGeneratingAnimationFor(null);
+      toast({ title: "Błąd", description: message, variant: "destructive" });
+    };
+
+    setGeneratingAnimationFor(exerciseKey);
+    try {
+      const res = await fetch('/api/admin/exercises/generate-animation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, instructions, muscleGroups: mainMuscleGroups }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.taskId) {
+        throw new Error(data?.error || 'Nie udało się zlecić generowania animacji.');
+      }
+
+      const params = new URLSearchParams({ taskId: data.taskId });
+      if (exercise?.id) params.set('exerciseId', exercise.id);
+      const startedAt = Date.now();
+
+      const poll = async () => {
+        try {
+          const pollRes = await fetch(`/api/admin/exercises/generate-animation?${params}`);
+          const result = await pollRes.json().catch(() => null);
+          if (!pollRes.ok) throw new Error(result?.error || 'Nie udało się sprawdzić statusu animacji.');
+
+          if (result.status === 'completed') {
+            setGeneratingAnimationFor(null);
+            if (openExerciseKeyRef.current === exerciseKey) {
+              form.setValue('animationUrl', result.url, { shouldDirty: true });
+            }
+            toast({
+              title: "Sukces!",
+              description: exercise?.id
+                ? `Animacja „${name}” została wygenerowana i zapisana.`
+                : "Animacja została wygenerowana.",
+            });
+            return;
+          }
+          if (result.status === 'failed') {
+            throw new Error(result.error || 'Generowanie animacji nie powiodło się.');
+          }
+          if (Date.now() - startedAt > ANIMATION_POLL_TIMEOUT_MS) {
+            throw new Error('Generowanie animacji trwa zbyt długo. Spróbuj ponownie później.');
+          }
+          animationPollRef.current = setTimeout(poll, ANIMATION_POLL_INTERVAL_MS);
+        } catch (error) {
+          fail(error instanceof Error ? error.message : 'Nie udało się wygenerować animacji.');
+        }
+      };
+      animationPollRef.current = setTimeout(poll, ANIMATION_POLL_INTERVAL_MS);
+    } catch (error) {
+      fail(error instanceof Error ? error.message : 'Nie udało się wygenerować animacji.');
+    }
+  };
+
+  const isGeneratingAnimation = generatingAnimationFor !== null;
 
   const isEditMode = !!exercise;
 
@@ -513,12 +605,6 @@ export function ExerciseFormDialog({
                       <p className="mt-2 text-xs text-muted-foreground">
                         Obrazek zostanie przycięty do 1:1 i zapisany jako WebP 480×480 px.
                       </p>
-                      <ExerciseImageCropDialog
-                        file={imageToCrop}
-                        onCancel={() => setImageToCrop(null)}
-                        onConfirm={uploadCroppedImage}
-                        isSubmitting={isUploadingImage}
-                      />
                     </TabsContent>
 
                     <TabsContent value="ai" className="mt-3">
@@ -574,6 +660,14 @@ export function ExerciseFormDialog({
                       />
                     </TabsContent>
                   </Tabs>
+
+                  {/* Poza zakładkami: przycina też stop-klatkę z animacji. */}
+                  <ExerciseImageCropDialog
+                    file={imageToCrop}
+                    onCancel={() => setImageToCrop(null)}
+                    onConfirm={uploadCroppedImage}
+                    isSubmitting={isUploadingImage}
+                  />
                 </FormItem>
               )}
 
@@ -619,12 +713,39 @@ export function ExerciseFormDialog({
                     </div>
                   )}
 
+                  {isVideoFileUrl(animationUrl) && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mb-3 w-full"
+                      disabled={isSubmitting || isUploadingImage}
+                      onClick={() => setFrameVideoUrl(animationUrl || null)}
+                    >
+                      <Camera className="mr-2 h-4 w-4" />
+                      Ustaw stop-klatkę jako zdjęcie
+                    </Button>
+                  )}
+                  <ExerciseFrameCaptureDialog
+                    videoUrl={frameVideoUrl}
+                    onCancel={() => setFrameVideoUrl(null)}
+                    onCapture={(file) => {
+                      setFrameVideoUrl(null);
+                      setImageToCrop(file);
+                    }}
+                  />
+
                   <Tabs value={animationSourceTab} onValueChange={setAnimationSourceTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsList className={cn("grid w-full", showAiAnimation ? "grid-cols-3" : "grid-cols-2")}>
                       <TabsTrigger value="upload" className="text-xs">
                         <Upload className="h-3 w-3 mr-1" />
                         Prześlij
                       </TabsTrigger>
+                      {showAiAnimation && (
+                        <TabsTrigger value="ai" className="text-xs">
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          Generuj AI
+                        </TabsTrigger>
+                      )}
                       <TabsTrigger value="url" className="text-xs">
                         <Link className="h-3 w-3 mr-1" />
                         URL
@@ -655,6 +776,42 @@ export function ExerciseFormDialog({
                         MP4, WebM lub GIF, maks. 128 MB.
                       </p>
                     </TabsContent>
+
+                    {showAiAnimation && (
+                      <TabsContent value="ai" className="mt-3">
+                        <div className="space-y-2">
+                          <p className="text-xs text-muted-foreground">
+                            Generuje 5-sekundowy instruktaż wideo (480p, 4:3) z nazwy, instrukcji
+                            i głównych grup mięśniowych. Trwa to 1–5 minut i jest płatne
+                            (ok. 0,25 USD za animację).
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full"
+                            onClick={handleGenerateAnimation}
+                            disabled={isGeneratingAnimation || isSubmitting}
+                          >
+                            {isGeneratingAnimation ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Generowanie animacji...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="mr-2 h-4 w-4" />
+                                {animationUrl ? 'Wygeneruj nową animację' : 'Wygeneruj animację'}
+                              </>
+                            )}
+                          </Button>
+                          {isGeneratingAnimation && (
+                            <p className="text-xs text-muted-foreground">
+                              Możesz dalej edytować ćwiczenie — animacja pojawi się tutaj, gdy będzie gotowa.
+                            </p>
+                          )}
+                        </div>
+                      </TabsContent>
+                    )}
 
                     <TabsContent value="url" className="mt-3">
                       <FormField

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Exercise, MuscleGroupName, MuscleGroup } from '@/lib/types';
-import { useUser, useUpdateDoc, useDeleteDoc, useCreateDoc } from '@/lib/db-hooks';
+import { useUser, useUpdateDoc, useDeleteDoc, useCreateDoc, useDoc } from '@/lib/db-hooks';
 import { EMPTY_EXERCISE_FILTERS, ExerciseSort, useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,17 @@ import { SETUP_GROUPS, withSetupValues } from './setup';
 import { ProgressDialog } from './ProgressDialog';
 import { ExerciseDetailDialog } from './ExerciseDetailDialog';
 import { ExercisesListViewProps, ExerciseFormData, roleDefaults } from './types';
+
+/** Parametr adresu z id ćwiczenia otwartego w oknie edycji, np. `/admin/exercises?id=…`. */
+const EXERCISE_ID_PARAM = 'id';
+
+/** Zapisuje (lub usuwa) id ćwiczenia w adresie bez przeładowania strony. */
+function setExerciseIdInUrl(id: string | null) {
+  const url = new URL(window.location.href);
+  if (id) url.searchParams.set(EXERCISE_ID_PARAM, id);
+  else url.searchParams.delete(EXERCISE_ID_PARAM);
+  window.history.replaceState(window.history.state, '', url.toString());
+}
 
 export function ExercisesListView(props: ExercisesListViewProps) {
   const { role } = props;
@@ -65,6 +76,39 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const [isImporting, setIsImporting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  // Id z adresu URL (czytane po zamontowaniu, żeby nie psuć renderowania po stronie serwera).
+  const [urlExerciseId, setUrlExerciseId] = useState<string | null>(null);
+  const openedFromUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    setUrlExerciseId(new URLSearchParams(window.location.search).get(EXERCISE_ID_PARAM));
+  }, []);
+
+  const { data: urlExercise, error: urlExerciseError } = useDoc<Exercise>('exercises', urlExerciseId);
+
+  // Id z adresu otwiera od razu okno edycji tego ćwiczenia.
+  useEffect(() => {
+    if (!urlExerciseId || openedFromUrlRef.current === urlExerciseId) return;
+    if (urlExerciseError) {
+      openedFromUrlRef.current = urlExerciseId;
+      toast({ title: 'Błąd', description: 'Nie znaleziono ćwiczenia o podanym id.', variant: 'destructive' });
+      setExerciseIdInUrl(null);
+      return;
+    }
+    if (urlExercise) {
+      openedFromUrlRef.current = urlExerciseId;
+      setSelectedExercise(urlExercise);
+      setFormDialogOpen(true);
+    }
+  }, [urlExerciseId, urlExercise, urlExerciseError, toast]);
+
+  const closeFormDialog = () => {
+    setFormDialogOpen(false);
+    setSelectedExercise(null);
+    setExerciseIdInUrl(null);
+    openedFromUrlRef.current = null;
+    setUrlExerciseId(null);
+  };
 
   // Wyszukiwanie trafia do serwera dopiero po chwili bez pisania.
   useEffect(() => {
@@ -92,6 +136,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const handleEdit = (exercise: Exercise) => {
     setSelectedExercise(exercise);
     setFormDialogOpen(true);
+    setExerciseIdInUrl(exercise.id);
   };
 
   const handleDelete = (exercise: Exercise) => {
@@ -112,6 +157,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
   const handleCreate = () => {
     setSelectedExercise(null);
     setFormDialogOpen(true);
+    setExerciseIdInUrl(null);
   };
 
   const handleFormSubmit = async (data: ExerciseFormData) => {
@@ -167,8 +213,7 @@ export function ExercisesListView(props: ExercisesListViewProps) {
         await createDoc('exercises', newExerciseData);
         toast({ title: "Sukces!", description: "Nowe ćwiczenie zostało dodane." });
       }
-      setFormDialogOpen(false);
-      setSelectedExercise(null);
+      closeFormDialog();
       refetchExercises();
     } catch (error) {
       toast({
@@ -455,14 +500,12 @@ export function ExercisesListView(props: ExercisesListViewProps) {
       <ExerciseFormDialog
         exercise={selectedExercise}
         isOpen={isFormDialogOpen}
-        onClose={() => {
-          setFormDialogOpen(false);
-          setSelectedExercise(null);
-        }}
+        onClose={closeFormDialog}
         onSubmit={handleFormSubmit}
         isSubmitting={isSubmitting}
         muscleGroupOptions={muscleGroupOptions}
         showImageUpload={canCreate || role === 'admin'}
+        showAiAnimation={role === 'admin'}
       />
 
       {/* Progress Dialog */}
