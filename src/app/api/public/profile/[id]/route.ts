@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import { User } from '@/models/User';
 import { WorkoutLog } from '@/models/WorkoutLog';
-import { calculateLevelFromXP } from '@/lib/gamification/point-calculator';
+import { calculateLevelFromXP, calculateXPForLevel } from '@/lib/gamification/point-calculator';
 import { GamificationProfile } from '@/models/GamificationProfile';
 import { Gym } from '@/models/Gym';
 import { PersonalRecord } from '@/models/PersonalRecord';
@@ -103,8 +103,7 @@ function calculateDaysInApp(createdAt: Date): number {
 
 // Calculate XP needed for next level (exponential scaling)
 function calculateXPForNextLevel(currentLevel: number): number {
-    // Formula: each level needs more XP
-    return Math.floor(100 * Math.pow(1.5, currentLevel - 1));
+    return calculateXPForLevel(currentLevel);
 }
 
 export async function GET(

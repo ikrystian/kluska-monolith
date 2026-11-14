@@ -50,6 +50,9 @@ export interface UserProfile {
   favoriteGymIds?: string[];
   /** Exercises the athlete starred; listed first in the exercise library and picker. */
   favoriteExerciseIds?: string[];
+  /** Tour id → version already shown; see `lib/tours/storage.ts`. */
+  seenTours?: Record<string, number>;
+  toursDisabled?: boolean;
   /** Marketing profile shown to athletes on the trainer's detail page. */
   trainerCard?: TrainerCard;
   // Onboarding fields

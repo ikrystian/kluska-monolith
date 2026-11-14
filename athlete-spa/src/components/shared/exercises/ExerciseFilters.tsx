@@ -28,13 +28,12 @@ const TYPE_OPTIONS = [
 
 const toOptions = (values: string[]) => values.map((value) => ({ value, label: value }));
 
-type SheetFilterKey = 'muscleGroup' | 'type' | 'bodyPart' | 'equipment' | 'category';
+type SheetFilterKey = 'muscleGroup' | 'type' | 'equipment' | 'category';
 
 type SheetGroup = { key: SheetFilterKey; label: string; options: { value: string; label: string }[] };
 
 const STATIC_GROUPS: SheetGroup[] = [
   { key: 'type', label: 'Typ ćwiczenia', options: TYPE_OPTIONS },
-  { key: 'bodyPart', label: SETUP_GROUPS.bodyPart, options: toOptions(SETUP_SUGGESTIONS.bodyPart) },
   { key: 'category', label: SETUP_GROUPS.category, options: toOptions(SETUP_SUGGESTIONS.category) },
   { key: 'equipment', label: SETUP_GROUPS.equipment, options: toOptions(SETUP_SUGGESTIONS.equipment) },
 ];
@@ -197,7 +196,6 @@ export function ExerciseFilters({ filters, onChange, muscleGroupOptions, resultC
                 set({
                   muscleGroup: EMPTY_EXERCISE_FILTERS.muscleGroup,
                   type: EMPTY_EXERCISE_FILTERS.type,
-                  bodyPart: EMPTY_EXERCISE_FILTERS.bodyPart,
                   equipment: EMPTY_EXERCISE_FILTERS.equipment,
                   category: EMPTY_EXERCISE_FILTERS.category,
                 })

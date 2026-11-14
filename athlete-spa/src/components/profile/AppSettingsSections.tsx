@@ -32,8 +32,9 @@ import {
   unsubscribeFromPush,
 } from '@/lib/push';
 import { isNativeCueAudioAvailable, playVibrationCue } from '@/lib/cue-audio';
-import { useUser } from '@/lib/db-hooks';
-import { areToursEnabled, resetTours, setToursEnabled } from '@/lib/tours/storage';
+import { useDoc, useUser } from '@/lib/db-hooks';
+import type { UserProfile } from '@/models/types';
+import { areToursEnabled, saveTourPrefs } from '@/lib/tours/storage';
 import { SettingsGroup, SettingsRow, tint } from './profile-ui';
 
 const THEME_OPTIONS = [
@@ -143,7 +144,8 @@ export function AppSettingsSections() {
   const pushSupported = useMemo(() => isNativePushSupported() || isBrowserNotificationSupported(), []);
   const [hapticsOn, setHapticsOn] = useState(() => isHapticsEnabled());
   const uid = useUser().user?.uid;
-  const [toursOn, setToursOn] = useState(() => (uid ? areToursEnabled(uid) : true));
+  const { data: profile } = useDoc<UserProfile>('users', uid ?? null);
+  const toursOn = areToursEnabled(profile);
   const [restCue, setRestCueState] = useState<RestCue>(() => getRestCue());
   // Natively the rest-over vibration doesn't go through navigator.vibrate.
   const restVibrationSupported = useMemo(() => hapticsSupported || isNativeCueAudioAvailable(), [hapticsSupported]);
@@ -388,8 +390,7 @@ export function AppSettingsSections() {
                 id="screen-tours"
                 checked={toursOn}
                 onCheckedChange={(checked) => {
-                  setToursEnabled(uid, checked);
-                  setToursOn(checked);
+                  void saveTourPrefs(uid, current => ({ ...current, toursDisabled: !checked }));
                 }}
               />
             }
@@ -405,9 +406,7 @@ export function AppSettingsSections() {
                 size="sm"
                 className="shrink-0 rounded-full"
                 onClick={() => {
-                  resetTours(uid);
-                  setToursEnabled(uid, true);
-                  setToursOn(true);
+                  void saveTourPrefs(uid, current => ({ ...current, seenTours: {}, toursDisabled: false }));
                   haptic('tap');
                   toast({ title: 'Wskazówki włączone od nowa', description: 'Zobaczysz je przy kolejnym wejściu na każdy ekran.' });
                 }}

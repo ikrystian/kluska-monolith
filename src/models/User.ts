@@ -57,6 +57,9 @@ export interface IUser extends Document {
   favoriteGymIds?: string[];
   /** Exercises the athlete starred; listed first in the exercise library and picker. */
   favoriteExerciseIds?: string[];
+  /** Tour id → version already shown; see athlete-spa `lib/tours/storage.ts`. */
+  seenTours?: Record<string, number>;
+  toursDisabled?: boolean;
   trainerCard?: ITrainerCard;
   assignedDietPlanId?: string;
   // Onboarding fields
@@ -106,6 +109,8 @@ const UserSchema = new Schema<IUser>(
     trainerId: { type: String },
     favoriteGymIds: [{ type: String }],
     favoriteExerciseIds: [{ type: String }],
+    seenTours: { type: Schema.Types.Mixed },
+    toursDisabled: { type: Boolean },
     trainerCard: {
       type: new Schema(
         {

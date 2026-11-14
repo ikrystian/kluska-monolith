@@ -24,7 +24,6 @@ export interface ExerciseLibraryFilters {
   search: string;
   muscleGroup: string;
   type: string;
-  bodyPart: string;
   equipment: string;
   category: string;
 }
@@ -33,7 +32,6 @@ export const EMPTY_EXERCISE_FILTERS: ExerciseLibraryFilters = {
   search: '',
   muscleGroup: 'all',
   type: 'all',
-  bodyPart: 'all',
   equipment: 'all',
   category: 'all',
 };
@@ -75,7 +73,6 @@ export function buildExerciseFilter(filters: ExerciseLibraryFilters): Record<str
   }
 
   const setupFilters: [string, string][] = [
-    [SETUP_GROUPS.bodyPart, filters.bodyPart],
     [SETUP_GROUPS.equipment, filters.equipment],
     [SETUP_GROUPS.category, filters.category],
   ];

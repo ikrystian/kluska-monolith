@@ -12,6 +12,7 @@ import { getOrCreateGamificationProfile, grantPoints } from '@/lib/gamification/
 import { dayKey } from '@/lib/gamification/streaks';
 import {
   DEFAULT_BACKGROUND,
+  CHEST_MAX_ITEM_PRICE,
   getPetItem,
   PET_ITEMS,
   PET_SPECIES,
@@ -394,7 +395,7 @@ export type ChestLoot = { kind: 'coins'; amount: number } | { kind: 'item'; item
 /** Losuje zawartość: paczka monet albo przedmiot, którego użytkownik jeszcze nie ma. */
 export function rollChestLoot(ownedItems: string[], random: () => number = Math.random): ChestLoot {
   const owned = new Set(ownedItems);
-  const prizes = PET_ITEMS.filter(item => item.category !== 'food' && item.price > 0 && item.price <= 220 && !owned.has(item.key));
+  const prizes = PET_ITEMS.filter(item => item.category !== 'food' && item.price > 0 && item.price <= CHEST_MAX_ITEM_PRICE && !owned.has(item.key));
 
   if (prizes.length > 0 && random() < 0.5) {
     const item = prizes[Math.floor(random() * prizes.length)];

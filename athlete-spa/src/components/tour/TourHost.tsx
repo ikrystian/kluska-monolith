@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useUser } from '@/lib/db-hooks';
+import { useDoc, useUser } from '@/lib/db-hooks';
+import type { UserProfile } from '@/models/types';
 import { OPEN_OVERLAY_SELECTOR } from '@/hooks/useAndroidBackButton';
 import { countTourTargets, exitActiveTour, startTour } from '@/lib/tours/engine';
-import { areToursEnabled, hasSeenTour, markTourSeen } from '@/lib/tours/storage';
+import { areToursEnabled, hasSeenTour, saveTourPrefs, takeLegacyTourPrefs, withTourSeen } from '@/lib/tours/storage';
 import { findTourForRoute } from '@/lib/tours/tours';
 
 /** Lets the page transition finish before anything is measured. */
@@ -28,18 +29,32 @@ function isScreenBusy(): boolean {
  * Introduces each screen the first time an account opens it.
  *
  * Renders nothing: it watches the route, waits until the screen has loaded and
- * nothing is layered on top, then hands the matching tour to Intro.js. A tour
- * counts as seen once it closes, whether finished or skipped.
+ * nothing is layered on top, then hands the matching tour to Intro.js. The
+ * "seen" mark lives on the user's profile and is written once the tour closes,
+ * whether finished or skipped.
  */
 export function TourHost() {
   const { pathname, search } = useLocation();
   const { user } = useUser();
   const uid = user?.uid;
+  const { data: profile } = useDoc<UserProfile>('users', uid ?? null);
+
+  // Accounts that toured before the profile stored this keep their history.
+  const needsMigration = !!profile && profile.seenTours === undefined && profile.toursDisabled === undefined;
+  useEffect(() => {
+    if (!uid || !needsMigration) return;
+    const legacy = takeLegacyTourPrefs(uid);
+    void saveTourPrefs(uid, current => ({ seenTours: {}, ...current, ...(legacy ?? {}) }));
+  }, [uid, needsMigration]);
+
+  const tour = findTourForRoute(pathname, search);
+  const prefsReady = !!profile && !needsMigration;
+  const pendingId = uid && tour && prefsReady && areToursEnabled(profile) && !hasSeenTour(profile, tour) ? tour.id : null;
 
   useEffect(() => {
-    if (!uid) return;
+    if (!uid || !pendingId) return;
     const tour = findTourForRoute(pathname, search);
-    if (!tour || !areToursEnabled(uid) || hasSeenTour(uid, tour)) return;
+    if (!tour || tour.id !== pendingId) return;
 
     let cancelled = false;
     let timer = 0;
@@ -57,7 +72,7 @@ export function TourHost() {
       if (stablePolls >= STABLE_POLLS) {
         void startTour(tour, {
           isCancelled: () => cancelled,
-          onClose: () => markTourSeen(uid, tour),
+          onClose: () => void saveTourPrefs(uid, current => withTourSeen(current, tour)),
         });
         return;
       }
@@ -72,7 +87,7 @@ export function TourHost() {
       // Leaving the screen (deep link, notification) takes its tour along.
       exitActiveTour();
     };
-  }, [pathname, search, uid]);
+  }, [pathname, search, uid, pendingId]);
 
   return null;
 }

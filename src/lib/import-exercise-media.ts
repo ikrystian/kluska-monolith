@@ -151,10 +151,12 @@ export interface MediaDownloadItem {
  */
 export async function downloadAllExerciseMedia(
   items: MediaDownloadItem[],
-  concurrency = 10
+  concurrency = 10,
+  onProgress?: (completed: number, total: number) => void
 ): Promise<Map<string, Partial<DownloadedMedia>>> {
   const results = new Map<string, Partial<DownloadedMedia>>();
   let cursor = 0;
+  let completed = 0;
 
   async function worker() {
     while (cursor < items.length) {
@@ -163,6 +165,10 @@ export async function downloadAllExerciseMedia(
       if (!item) continue;
       const media = await downloadExerciseMedia(item.id, item.imageUrl, item.animationUrl);
       results.set(item.id, media);
+      completed++;
+      if (onProgress && (completed % 25 === 0 || completed === items.length)) {
+        onProgress(completed, items.length);
+      }
     }
   }
 
@@ -171,3 +177,66 @@ export async function downloadAllExerciseMedia(
 
   return results;
 }
+
+// CLI execution handler
+async function runCli() {
+  const fs = await import('fs/promises');
+  const candidates = [
+    process.env.OPENGYM_EXERCISES_JSON_PATH,
+    path.join(process.cwd(), 'scripts', 'data', 'opengym-exercises-pl.json'),
+    path.join(process.cwd(), 'athlete-spa', 'opengym-exercises-pl.json'),
+  ].filter(Boolean) as string[];
+
+  let jsonPath = '';
+  for (const c of candidates) {
+    try {
+      await fs.access(c);
+      jsonPath = c;
+      break;
+    } catch {}
+  }
+
+  if (!jsonPath) {
+    console.error('❌ Nie znaleziono opengym-exercises-pl.json w scripts/data/ ani athlete-spa/');
+    process.exit(1);
+  }
+
+  console.log(`📂 Wczytywanie ćwiczeń z: ${jsonPath}...`);
+  const raw = JSON.parse(await fs.readFile(jsonPath, 'utf8'));
+  const exercises = (raw.exercises || []) as { id: string; image_url: string; animation_url: string }[];
+
+  console.log(`🚀 Rozpoczynanie pobierania mediów dla ${exercises.length} ćwiczeń...`);
+  console.log(`📁 Katalog docelowy: ${UPLOAD_DIR}`);
+
+  const items: MediaDownloadItem[] = exercises.map((e) => ({
+    id: String(e.id),
+    imageUrl: e.image_url,
+    animationUrl: e.animation_url,
+  }));
+
+  const startTime = Date.now();
+  const concurrency = Number(process.env.DOWNLOAD_CONCURRENCY) || 20;
+
+  await downloadAllExerciseMedia(items, concurrency, (done, total) => {
+    const pct = ((done / total) * 100).toFixed(1);
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);
+    process.stdout.write(`  ⏳ Postęp: ${done}/${total} (${pct}%) [${elapsed}s]\r`);
+  });
+
+  const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+  console.log(`\n🎉 Zakończono pobieranie mediów w ${totalTime} s!`);
+}
+
+// Check if file is being executed directly
+const isDirectRun =
+  process.argv[1] &&
+  (process.argv[1].endsWith('import-exercise-media.ts') ||
+    process.argv[1].endsWith('import-exercise-media.js'));
+
+if (isDirectRun) {
+  runCli().catch((err) => {
+    console.error('❌ Błąd podczas pobierania mediów:', err);
+    process.exit(1);
+  });
+}
+

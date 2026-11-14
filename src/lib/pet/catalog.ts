@@ -42,6 +42,15 @@ export interface PetItem {
 /** Tło, które każdy ma od początku. */
 export const DEFAULT_BACKGROUND = 'bg_room';
 
+/** Najdroższy przedmiot, jaki może wypaść ze skrzyni — droższe trzeba kupić. */
+export const CHEST_MAX_ITEM_PRICE = 1500;
+
+/**
+ * Jedzenie zostaje tanie, bo to codzienny wydatek. Przedmioty trwałe (zabawki,
+ * ubranka, wystrój) drożeją wykładniczo — w każdej kategorii kolejny kosztuje
+ * ok. 2–3× więcej. Przy ~1000 FitCoins tygodniowo najtańsze są w zasięgu po
+ * kilku dniach, a komplet (~107 tys.) to cel na 2–3 lata.
+ */
 export const PET_ITEMS: PetItem[] = [
   // Jedzenie i suplementy
   { key: 'food_kibble', category: 'food', name: 'Karma', description: 'Podstawowa miska chrupek.', price: 15, hunger: 25 },
@@ -52,30 +61,30 @@ export const PET_ITEMS: PetItem[] = [
   { key: 'food_protein_shake', category: 'food', name: 'Odżywka białkowa', description: 'Futerko lśni przez całą dobę.', price: 120, hunger: 40, joy: 15, holdHours: 6, shineHours: 24 },
 
   // Zabawki
-  { key: 'toy_ball', category: 'toy', name: 'Piłka', description: 'Rzuć, a przyniesie. Może.', price: 60, joy: 20 },
-  { key: 'toy_rope', category: 'toy', name: 'Lina', description: 'Przeciąganie liny na całego.', price: 90, joy: 25 },
-  { key: 'toy_chew', category: 'toy', name: 'Gryzak', description: 'Do gryzienia zamiast kapci.', price: 70, joy: 20 },
-  { key: 'toy_frisbee', category: 'toy', name: 'Frisbee', description: 'Wysokie loty i efektowne chwyty.', price: 120, joy: 30 },
-  { key: 'toy_dumbbells', category: 'toy', name: 'Mini-hantle', description: 'Trening biceps dla pupila.', price: 180, joy: 35 },
-  { key: 'toy_treadmill', category: 'toy', name: 'Bieżnia', description: 'Szybkie nóżki, wielka frajda.', price: 260, joy: 40 },
+  { key: 'toy_ball', category: 'toy', name: 'Piłka', description: 'Rzuć, a przyniesie. Może.', price: 150, joy: 20 },
+  { key: 'toy_chew', category: 'toy', name: 'Gryzak', description: 'Do gryzienia zamiast kapci.', price: 300, joy: 20 },
+  { key: 'toy_rope', category: 'toy', name: 'Lina', description: 'Przeciąganie liny na całego.', price: 600, joy: 25 },
+  { key: 'toy_frisbee', category: 'toy', name: 'Frisbee', description: 'Wysokie loty i efektowne chwyty.', price: 1500, joy: 30 },
+  { key: 'toy_dumbbells', category: 'toy', name: 'Mini-hantle', description: 'Trening biceps dla pupila.', price: 4000, joy: 35 },
+  { key: 'toy_treadmill', category: 'toy', name: 'Bieżnia', description: 'Szybkie nóżki, wielka frajda.', price: 10000, joy: 40 },
 
   // Ubranka i akcesoria
-  { key: 'wear_wristbands', category: 'clothes', name: 'Frotki', description: 'Na łapki, w stylu retro.', price: 80, slot: 'wrists' },
-  { key: 'wear_cap', category: 'clothes', name: 'Czapka z daszkiem', description: 'Sportowa klasyka.', price: 120, slot: 'head' },
-  { key: 'wear_headband', category: 'clothes', name: 'Opaska', description: 'Pot nie zalewa oczu.', price: 90, slot: 'head' },
-  { key: 'wear_sunglasses', category: 'clothes', name: 'Okulary przeciwsłoneczne', description: 'Luz i blask.', price: 150, slot: 'eyes' },
-  { key: 'wear_sneakers', category: 'clothes', name: 'Sportowe buty', description: 'Amortyzacja na każdy dystans.', price: 200, slot: 'feet' },
-  { key: 'wear_cape', category: 'clothes', name: 'Peleryna superbohatera', description: 'Dla tych, co nie odpuszczają.', price: 350, slot: 'back' },
+  { key: 'wear_wristbands', category: 'clothes', name: 'Frotki', description: 'Na łapki, w stylu retro.', price: 200, slot: 'wrists' },
+  { key: 'wear_headband', category: 'clothes', name: 'Opaska', description: 'Pot nie zalewa oczu.', price: 500, slot: 'head' },
+  { key: 'wear_cap', category: 'clothes', name: 'Czapka z daszkiem', description: 'Sportowa klasyka.', price: 1200, slot: 'head' },
+  { key: 'wear_sunglasses', category: 'clothes', name: 'Okulary przeciwsłoneczne', description: 'Luz i blask.', price: 3000, slot: 'eyes' },
+  { key: 'wear_sneakers', category: 'clothes', name: 'Sportowe buty', description: 'Amortyzacja na każdy dystans.', price: 8000, slot: 'feet' },
+  { key: 'wear_cape', category: 'clothes', name: 'Peleryna superbohatera', description: 'Dla tych, co nie odpuszczają.', price: 20000, slot: 'back' },
 
   // Wystrój otoczenia
   { key: DEFAULT_BACKGROUND, category: 'decor', name: 'Przytulny pokój', description: 'Tu się wszystko zaczyna.', price: 0, decor: 'background' },
-  { key: 'bg_gym', category: 'decor', name: 'Siłownia', description: 'Lustra, guma na podłodze, stojak z hantlami.', price: 400, decor: 'background' },
-  { key: 'bg_forest', category: 'decor', name: 'Leśna polana', description: 'Miękka ścieżka do biegania.', price: 400, decor: 'background' },
-  { key: 'bg_beach', category: 'decor', name: 'Tropikalna plaża', description: 'Palmy, piasek i szum fal.', price: 600, decor: 'background' },
-  { key: 'decor_plant', category: 'decor', name: 'Roślina', description: 'Trochę zieleni w kącie.', price: 70, decor: 'furniture' },
-  { key: 'decor_bed', category: 'decor', name: 'Legowisko', description: 'Miękkie miejsce na regenerację.', price: 150, decor: 'furniture' },
-  { key: 'decor_trophy', category: 'decor', name: 'Półka z pucharami', description: 'Na przyszłe zwycięstwa.', price: 220, decor: 'furniture' },
-  { key: 'decor_poster', category: 'decor', name: 'Plakat motywacyjny', description: '„Jeszcze jedna seria.”', price: 90, decor: 'furniture' },
+  { key: 'bg_gym', category: 'decor', name: 'Siłownia', description: 'Lustra, guma na podłodze, stojak z hantlami.', price: 5000, decor: 'background' },
+  { key: 'bg_forest', category: 'decor', name: 'Leśna polana', description: 'Miękka ścieżka do biegania.', price: 12000, decor: 'background' },
+  { key: 'bg_beach', category: 'decor', name: 'Tropikalna plaża', description: 'Palmy, piasek i szum fal.', price: 30000, decor: 'background' },
+  { key: 'decor_plant', category: 'decor', name: 'Roślina', description: 'Trochę zieleni w kącie.', price: 250, decor: 'furniture' },
+  { key: 'decor_poster', category: 'decor', name: 'Plakat motywacyjny', description: '„Jeszcze jedna seria.”', price: 700, decor: 'furniture' },
+  { key: 'decor_bed', category: 'decor', name: 'Legowisko', description: 'Miękkie miejsce na regenerację.', price: 2500, decor: 'furniture' },
+  { key: 'decor_trophy', category: 'decor', name: 'Półka z pucharami', description: 'Na przyszłe zwycięstwa.', price: 7500, decor: 'furniture' },
 ];
 
 const ITEM_BY_KEY = new Map(PET_ITEMS.map(item => [item.key, item]));

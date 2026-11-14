@@ -1,4 +1,15 @@
 services:
+  mongo:
+    image: mongo:8.0
+    container_name: kluska-mongo
+    restart: unless-stopped
+    environment:
+      GLIBC_TUNABLES: "glibc.pthread.rseq=1"
+    ports:
+      - "0.0.0.0:27018:27017"
+    volumes:
+      - mongo-data:/data/db
+
   mailpit:
     image: axllent/mailpit:v1.27
     container_name: kluska-mailpit
@@ -15,4 +26,6 @@ services:
     command: ["--database", "/data/mailpit.db"]
 
 volumes:
+  mongo-data:
   mailpit-data:
+

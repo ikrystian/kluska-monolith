@@ -45,7 +45,7 @@ export const EMPTY_EXERCISE_FILTERS: ExerciseLibraryFilters = {
 
 /** Liczba aktywnych filtrów z arkusza (wszystko poza wyszukiwaniem). */
 export function countExtraFilters(filters: ExerciseLibraryFilters): number {
-  return (['muscleGroup', 'type', 'bodyPart', 'equipment', 'category'] as const)
+  return (['muscleGroup', 'type', 'equipment', 'category'] as const)
     .filter((key) => filters[key] !== EMPTY_EXERCISE_FILTERS[key]).length;
 }
 
