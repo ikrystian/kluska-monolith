@@ -41,10 +41,10 @@ export function SkipOnboardingDialog({ open, onOpenChange, onConfirmSkip, remain
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        <ul className="space-y-2.5">
+        <ul className="stagger-rise space-y-2.5">
           {losses.map(({ icon: Icon, text }) => (
             <li key={text} className="flex items-start gap-3 rounded-xl bg-secondary/60 p-3">
-              <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+              <Icon className="mt-0.5 h-4 w-4 shrink-0 text-food" aria-hidden />
               <span className="text-sm leading-snug">{text}</span>
             </li>
           ))}

@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { useUserProfile } from '@/contexts/UserProfileContext';
-import { Loader2 } from 'lucide-react';
+import { OnboardingLoader } from '@/components/onboarding/OnboardingBackdrop';
 
 export default function OnboardingPage() {
   const { userProfile, isLoading } = useUserProfile();
@@ -19,14 +19,7 @@ export default function OnboardingPage() {
 
   // Show loading while checking onboarding status
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          <p className="text-muted-foreground">Ładowanie...</p>
-        </div>
-      </div>
-    );
+    return <OnboardingLoader />;
   }
 
   // If onboarding is completed, don't render the wizard (redirect will happen)

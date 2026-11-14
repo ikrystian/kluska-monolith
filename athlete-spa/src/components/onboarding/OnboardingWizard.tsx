@@ -1,9 +1,15 @@
-import { useRef, useState, type ReactNode } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { ArrowRight, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useOnboarding, type OnboardingStep } from '@/hooks/useOnboarding';
+import { useIsTablet } from '@/hooks/useIsTablet';
+import { haptic } from '@/lib/haptics';
+import { OnboardingBackdrop } from './OnboardingBackdrop';
+import { OnboardingPoster } from './OnboardingPoster';
 import { OnboardingShell, StepHeading } from './OnboardingShell';
+import { EASE, StepDirection, stepVariants } from './motion';
+import './onboarding.css';
 import { SkipOnboardingDialog } from './SkipOnboardingDialog';
 import { WelcomeStep } from './steps/WelcomeStep';
 import { NameStep } from './steps/NameStep';
@@ -19,7 +25,7 @@ interface OnboardingWizardProps {
 }
 
 /** Copy per question: the title asks, `why` says what we do with the answer. */
-const STEP_COPY: Record<Exclude<OnboardingStep, 'welcome'>, { title: ReactNode; subtitle?: string; why?: string }> = {
+const STEP_COPY: Record<Exclude<OnboardingStep, 'welcome'>, { title: string; subtitle?: string; why?: string }> = {
   name: {
     title: 'Jak masz na imię?',
     subtitle: 'Tak będziemy się do Ciebie zwracać w aplikacji.',
@@ -74,7 +80,7 @@ export function OnboardingWizard({ initialName = '' }: OnboardingWizardProps) {
   } = useOnboarding(initialName);
 
   const [skipOpen, setSkipOpen] = useState(false);
-  const reduceMotion = useReducedMotion();
+  const isTablet = useIsTablet();
 
   // Slide forward or back depending on where we came from.
   const prevStepRef = useRef(currentStep);
@@ -83,31 +89,24 @@ export function OnboardingWizard({ initialName = '' }: OnboardingWizardProps) {
 
   const dataStepCount = totalSteps - 2;
   const openSkip = () => setSkipOpen(true);
-
-  const skipDialog = (
-    <SkipOnboardingDialog
-      open={skipOpen}
-      onOpenChange={setSkipOpen}
-      onConfirmSkip={skipOnboarding}
-      remainingSteps={remainingDataSteps}
-    />
-  );
-
-  if (currentStepName === 'welcome') {
-    return (
-      <>
-        <WelcomeStep name={data.name} onNext={nextStep} onSkip={openSkip} totalQuestions={dataStepCount} />
-        {skipDialog}
-      </>
-    );
-  }
-
+  const isWelcome = currentStepName === 'welcome';
   const isSummary = currentStepName === 'summary';
-  const copy = STEP_COPY[currentStepName];
-  const goNext = () => canProceed && nextStep();
+
+  // The finish line deserves to be felt, not only seen.
+  useEffect(() => {
+    if (isSummary) haptic('success');
+  }, [isSummary]);
+
+  const goNext = () => {
+    if (!canProceed) return;
+    haptic('tap');
+    nextStep();
+  };
 
   const body = (() => {
     switch (currentStepName) {
+      case 'welcome':
+        return null;
       case 'name':
         return <NameStep value={data.name} onChange={(v) => setStepData('name', v)} onSubmit={goNext} />;
       case 'gender':
@@ -126,7 +125,14 @@ export function OnboardingWizard({ initialName = '' }: OnboardingWizardProps) {
   })();
 
   const footer = isSummary ? (
-    <Button onClick={submitOnboarding} disabled={isSubmitting} size="lg" className="h-14 w-full rounded-2xl text-base">
+    <Button
+      onClick={submitOnboarding}
+      disabled={isSubmitting}
+      variant="volt"
+      size="lg"
+      data-tone="lime"
+      className="onb-cta h-14 w-full rounded-2xl text-base"
+    >
       {isSubmitting ? (
         <>
           <Loader2 className="animate-spin" />
@@ -135,62 +141,107 @@ export function OnboardingWizard({ initialName = '' }: OnboardingWizardProps) {
       ) : (
         <>
           Zaczynamy trenować
-          <ArrowRight />
+          <ArrowRight className="onb-cta__arrow" />
         </>
       )}
     </Button>
   ) : (
-    <Button onClick={goNext} disabled={!canProceed} size="lg" className="h-14 w-full rounded-2xl text-base">
-      {isEditingFromSummary ? (
-        <>
-          <Check />
-          Zapisz zmianę
-        </>
-      ) : (
-        <>
-          Dalej
-          <ArrowRight />
-        </>
-      )}
-    </Button>
+    // A short pop the moment the answer becomes valid: "you can go on now".
+    <motion.div
+      initial={false}
+      animate={canProceed ? { scale: [1, 1.035, 1] } : { scale: 1 }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+    >
+      <Button onClick={goNext} disabled={!canProceed} size="lg" className="onb-cta h-14 w-full rounded-2xl text-base">
+        {isEditingFromSummary ? (
+          <>
+            <Check />
+            Zapisz zmianę
+          </>
+        ) : (
+          <>
+            Dalej
+            <ArrowRight className="onb-cta__arrow" />
+          </>
+        )}
+      </Button>
+    </motion.div>
   );
 
-  const offset = reduceMotion ? 0 : 32;
+  const copy = isWelcome ? null : STEP_COPY[currentStepName];
 
   return (
-    <>
-      <OnboardingShell
-        step={isSummary ? dataStepCount + 1 : currentStep}
-        total={dataStepCount}
-        onBack={prevStep}
-        onSkip={isSummary || isEditingFromSummary ? undefined : openSkip}
-        why={copy.why}
-        footer={footer}
-      >
-        <AnimatePresence mode="wait" initial={false} custom={direction}>
-          <motion.div
-            key={currentStepName}
-            custom={direction}
-            variants={{
-              enter: (dir: number) => ({ opacity: 0, x: dir * offset }),
-              center: { opacity: 1, x: 0 },
-              exit: (dir: number) => ({ opacity: 0, x: dir * -offset }),
-            }}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <StepHeading
-              eyebrow={isSummary ? 'Ostatni krok' : `Pytanie ${currentStep} z ${dataStepCount}`}
-              title={isSummary && data.name ? <>Gotowe, {data.name.trim().split(/\s+/)[0]}!</> : copy.title}
-              subtitle={copy.subtitle}
-            />
-            {body}
-          </motion.div>
-        </AnimatePresence>
-      </OnboardingShell>
-      {skipDialog}
-    </>
+    <MotionConfig reducedMotion="user">
+      <div className="onb-root" data-split={isTablet || undefined}>
+        <OnboardingBackdrop step={currentStep} total={totalSteps} />
+        {isTablet && <OnboardingPoster data={data} step={currentStep} />}
+
+        <div className="relative h-full min-h-0 min-w-0">
+          <AnimatePresence mode="wait">
+            {isWelcome ? (
+              <motion.div
+                key="welcome"
+                className="absolute inset-0"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1, transition: { duration: 0.4 } }}
+                exit={{ opacity: 0, y: -28, scale: 0.97, transition: { duration: 0.24, ease: 'easeIn' } }}
+              >
+                <WelcomeStep
+                  name={data.name}
+                  onNext={nextStep}
+                  onSkip={openSkip}
+                  totalQuestions={dataStepCount}
+                  compact={isTablet}
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="steps"
+                className="absolute inset-0"
+                initial={{ opacity: 0, y: 36 }}
+                animate={{ opacity: 1, y: 0, transition: { duration: 0.45, ease: EASE } }}
+                exit={{ opacity: 0, y: 28, transition: { duration: 0.2, ease: 'easeIn' } }}
+              >
+                <OnboardingShell
+                  step={isSummary ? dataStepCount + 1 : currentStep}
+                  total={dataStepCount}
+                  stepKey={currentStepName}
+                  direction={direction}
+                  onBack={prevStep}
+                  onSkip={isSummary || isEditingFromSummary ? undefined : openSkip}
+                  why={copy?.why}
+                  footer={footer}
+                >
+                  <StepDirection value={direction}>
+                    <AnimatePresence mode="wait" custom={direction}>
+                      <motion.div
+                        key={currentStepName}
+                        custom={direction}
+                        variants={stepVariants}
+                        initial="enter"
+                        animate="center"
+                        exit="exit"
+                      >
+                        {!isSummary && copy && (
+                          <StepHeading step={currentStep} total={dataStepCount} title={copy.title} subtitle={copy.subtitle} />
+                        )}
+                        {body}
+                      </motion.div>
+                    </AnimatePresence>
+                  </StepDirection>
+                </OnboardingShell>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      <SkipOnboardingDialog
+        open={skipOpen}
+        onOpenChange={setSkipOpen}
+        onConfirmSkip={skipOnboarding}
+        remainingSteps={remainingDataSteps}
+      />
+    </MotionConfig>
   );
 }

@@ -1,5 +1,9 @@
+import { motion } from 'framer-motion';
+import { Check } from 'lucide-react';
 import type { TrainingLevelType } from '@/models/types/user';
+import { haptic } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
+import { Rise } from '../motion';
 
 interface TrainingLevelStepProps {
   value: TrainingLevelType | null;
@@ -13,19 +17,23 @@ const levels: { value: TrainingLevelType; label: string; description: string; ba
 ];
 
 /** Three rising bars — reads as "level" at a glance, like a signal meter. */
-function LevelBars({ count, active }: { count: number; active: boolean }) {
+export function LevelBars({ count, active, className }: { count: number; active: boolean; className?: string }) {
   return (
-    <span className="flex h-8 items-end gap-1" aria-hidden>
-      {[1, 2, 3].map((n) => (
-        <span
-          key={n}
-          className={cn(
-            'w-2 rounded-sm transition-colors',
-            n <= count ? (active ? 'bg-primary' : 'bg-foreground/70') : 'bg-secondary',
-          )}
-          style={{ height: `${n * 33}%` }}
-        />
-      ))}
+    <span className={cn('flex h-8 items-end gap-1', className)} aria-hidden>
+      {[1, 2, 3].map((n) => {
+        const on = n <= count;
+        return (
+          <span key={n} className="relative w-2 overflow-hidden rounded-sm bg-foreground/10" style={{ height: `${n * 33}%` }}>
+            <motion.span
+              className={cn('absolute inset-0 origin-bottom rounded-sm', active ? 'bg-primary' : 'bg-foreground/60')}
+              initial={false}
+              // Keyframes replay the climb each time the card becomes the chosen one.
+              animate={{ scaleY: on ? (active ? [0.25, 1] : 1) : 0 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: active && on ? n * 0.07 : 0 }}
+            />
+          </span>
+        );
+      })}
     </span>
   );
 }
@@ -36,39 +44,62 @@ export function TrainingLevelStep({ value, onChange }: TrainingLevelStepProps) {
       {levels.map((level) => {
         const selected = value === level.value;
         return (
-          <button
-            key={level.value}
-            type="button"
-            role="radio"
-            aria-checked={selected}
-            onClick={() => onChange(level.value)}
-            className={cn(
-              'flex w-full items-center gap-4 rounded-2xl bg-card p-4 text-left transition-[box-shadow,background-color,transform] duration-200 active:scale-[0.98]',
-              selected ? 'bg-primary/10 ring-2 ring-primary' : 'ring-1 ring-border',
-            )}
-          >
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-secondary/70">
-              <LevelBars count={level.bars} active={selected} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="text-[17px] font-semibold leading-tight">{level.label}</span>
-                {level.value === 'beginner' && (
-                  <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-semibold text-primary">Najczęstszy</span>
+          <Rise key={level.value}>
+            <motion.button
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => {
+                haptic('tap');
+                onChange(level.value);
+              }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+              className="onb-card relative flex w-full items-center gap-4 rounded-3xl p-4 text-left"
+            >
+              {selected && (
+                <motion.span
+                  layoutId="level-selected"
+                  className="onb-select-ring"
+                  transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                />
+              )}
+              <span
+                className={cn(
+                  'relative grid h-14 w-14 shrink-0 place-items-center rounded-2xl transition-colors duration-200',
+                  selected ? 'bg-primary/15' : 'bg-secondary/70',
+                )}
+              >
+                <LevelBars count={level.bars} active={selected} />
+              </span>
+              <span className="relative min-w-0 flex-1">
+                <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="font-display text-[1.375rem] font-bold uppercase leading-none">{level.label}</span>
+                  {level.value === 'beginner' && (
+                    <span className="rounded-full bg-lime px-2 py-0.5 text-[11px] font-semibold text-lime-foreground">Najczęstszy</span>
+                  )}
+                </span>
+                <span className="mt-1 block text-sm leading-snug text-muted-foreground">{level.description}</span>
+              </span>
+              <span
+                className={cn(
+                  'relative grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 transition-colors duration-200',
+                  selected ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+                )}
+                aria-hidden
+              >
+                {selected && (
+                  <motion.span
+                    initial={{ scale: 0, rotate: -45 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: 'spring', stiffness: 520, damping: 18 }}
+                  >
+                    <Check className="h-4 w-4" strokeWidth={3} />
+                  </motion.span>
                 )}
               </span>
-              <span className="mt-0.5 block text-sm leading-snug text-muted-foreground">{level.description}</span>
-            </span>
-            <span
-              className={cn(
-                'grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 transition-colors',
-                selected ? 'border-primary bg-primary' : 'border-input',
-              )}
-              aria-hidden
-            >
-              {selected && <span className="h-2 w-2 rounded-full bg-primary-foreground" />}
-            </span>
-          </button>
+            </motion.button>
+          </Rise>
         );
       })}
     </div>

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, Outlet } from 'react-router-dom';
 import { useUser, useDoc } from '@/lib/db-hooks';
-import { Loader2 } from 'lucide-react';
+import { OnboardingLoader } from '@/components/onboarding/OnboardingBackdrop';
 import { UserProfile } from '@/lib/types';
 import { ONBOARDING_PENDING_KEY } from '@/contexts/AuthContext';
 
@@ -37,14 +37,7 @@ export default function OnboardingLayout() {
   }, [user, userProfile, isLoading, onboardingPending, navigate]);
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-muted-foreground">Ładowanie...</p>
-        </div>
-      </div>
-    );
+    return <OnboardingLoader />;
   }
 
   // Don't render if not an athlete, if onboarding is completed, or if this
@@ -59,7 +52,7 @@ export default function OnboardingLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-[100dvh] bg-background">
       <Outlet />
     </div>
   );

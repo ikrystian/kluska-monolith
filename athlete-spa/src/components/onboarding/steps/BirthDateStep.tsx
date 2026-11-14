@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
+import { Cake, ChevronDown, HeartPulse } from 'lucide-react';
 import { pluralForm } from '@/lib/plural';
 import { cn } from '@/lib/utils';
+import { Rise, RollingNumber } from '../motion';
 
 interface BirthDateStepProps {
   value: string;
@@ -52,8 +53,8 @@ function DateSelect({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className={cn(
-            'h-14 w-full appearance-none rounded-2xl bg-card pl-4 pr-8 text-lg font-semibold ring-1 ring-border transition-shadow focus:ring-2 focus:ring-primary',
-            !value && 'text-muted-foreground',
+            'h-16 w-full appearance-none rounded-2xl bg-card/85 pl-3 pr-6 text-base font-semibold outline-none ring-1 transition-shadow focus:ring-2 focus:ring-primary',
+            value ? 'ring-primary/50' : 'text-muted-foreground ring-border',
           )}
         >
           <option value="">–</option>
@@ -63,7 +64,7 @@ function DateSelect({
             </option>
           ))}
         </select>
-        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       </span>
     </label>
   );
@@ -96,13 +97,13 @@ export function BirthDateStep({ value, onChange }: BirthDateStepProps) {
 
   return (
     <div>
-      <div className="flex gap-2.5">
+      <Rise className="flex gap-2">
         <DateSelect
           label="Dzień"
           value={day}
           onChange={(v) => update(v, month, year)}
           options={Array.from({ length: 31 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))}
-          className="w-[5.5rem] shrink-0"
+          className="w-16 shrink-0"
         />
         <DateSelect
           label="Miesiąc"
@@ -119,30 +120,61 @@ export function BirthDateStep({ value, onChange }: BirthDateStepProps) {
             const y = String(currentYear - 13 - i);
             return { value: y, label: y };
           })}
-          className="w-[6.5rem] shrink-0"
+          className="w-[5.25rem] shrink-0"
         />
-      </div>
+      </Rise>
 
-      <AnimatePresence mode="wait">
-        {age !== null && !outOfRange ? (
-          <motion.div
-            key="age"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="mt-6 flex items-end justify-center gap-2 rounded-2xl bg-card py-6"
-          >
-            <span className="num text-[4.5rem] text-primary">{age}</span>
-            <span className="pb-2.5 text-lg font-semibold text-muted-foreground">{pluralForm(age, 'rok', 'lata', 'lat')}</span>
-          </motion.div>
-        ) : (
-          (outOfRange || impossibleDate) && (
-            <motion.p key="err" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4 text-sm font-medium text-destructive">
+      <Rise className="mt-4">
+        <AnimatePresence mode="wait" initial={false}>
+          {age !== null && !outOfRange ? (
+            <motion.div
+              key="age"
+              initial={{ opacity: 0, y: 14, scale: 0.94 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.97 }}
+              transition={{ type: 'spring', stiffness: 340, damping: 24 }}
+              className="onb-card relative overflow-hidden rounded-3xl px-5 py-6"
+            >
+              <span aria-hidden className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-primary/15 blur-2xl" />
+              <div className="relative flex items-end gap-2">
+                <RollingNumber value={String(age)} className="num text-[5.5rem] leading-[0.82] text-primary" />
+                <span className="pb-1 text-xl font-semibold text-muted-foreground">{pluralForm(age, 'rok', 'lata', 'lat')}</span>
+              </div>
+              <div className="relative mt-5 flex items-center gap-3 border-t border-border pt-4">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-destructive/15 text-destructive">
+                  <HeartPulse className="h-5 w-5" />
+                </span>
+                <p className="text-sm leading-snug text-muted-foreground">
+                  Szacowane tętno maksymalne:{' '}
+                  <span className="font-semibold text-foreground">ok. {220 - age} ud./min</span>. Od niego liczymy strefy.
+                </p>
+              </div>
+            </motion.div>
+          ) : outOfRange || impossibleDate ? (
+            <motion.p
+              key="err"
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: [-8, 6, -4, 0] }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.35 }}
+              className="text-sm font-medium text-destructive"
+            >
               {impossibleDate ? 'Taka data nie istnieje — sprawdź dzień.' : 'Wiek musi być między 13 a 100 lat.'}
             </motion.p>
-          )
-        )}
-      </AnimatePresence>
+          ) : (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center gap-3 rounded-3xl border border-dashed border-border px-5 py-6 text-sm text-muted-foreground"
+            >
+              <Cake className="h-5 w-5 shrink-0 text-primary" aria-hidden />
+              Wybierz dzień, miesiąc i rok — wiek policzymy sami.
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </Rise>
     </div>
   );
 }
