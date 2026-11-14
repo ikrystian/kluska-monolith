@@ -1,5 +1,5 @@
-import { mutate as globalMutate } from 'swr';
 import { apiFetch } from '@/lib/api-client';
+import { updateCached } from '@/lib/cache-invalidation';
 import type { TourDef } from './types';
 
 /**
@@ -32,27 +32,39 @@ export function withTourSeen(prefs: TourPrefs, tour: TourDef): TourPrefs {
  * Applies a change to the profile: the cached profile updates at once (so the
  * settings switch and the tour host react immediately), then the change is
  * saved. A failed save leaves the cache as it is until the next visit.
+ *
+ * `body` overrides what is sent, for a change that touches less than the
+ * whole of both fields.
  */
-export async function saveTourPrefs(uid: string, change: (current: TourPrefs) => TourPrefs): Promise<void> {
+export async function saveTourPrefs(
+  uid: string,
+  change: (current: TourPrefs) => TourPrefs,
+  body?: Record<string, unknown>
+): Promise<void> {
   const key = `/api/db/users/${uid}`;
-  let next: TourPrefs = {};
-  await globalMutate(
-    key,
-    (current: TourPrefs | undefined) => {
-      next = change(current ?? {});
-      return current ? { ...current, ...next } : current;
-    },
-    { revalidate: false }
-  );
+  let next: TourPrefs | null = null;
+  await updateCached<TourPrefs>(key, current => {
+    next = change(current ?? {});
+    return current ? { ...current, ...next } : current;
+  });
+  const saved: TourPrefs = next ?? change({});
   try {
     await apiFetch(key, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seenTours: next.seenTours ?? {}, toursDisabled: next.toursDisabled === true }),
+      body: JSON.stringify(body ?? { seenTours: saved.seenTours ?? {}, toursDisabled: saved.toursDisabled === true }),
     });
   } catch {
     // Offline or refused: the tour may show once more, which beats crashing.
   }
+}
+
+/**
+ * Marks one tour as seen. Only that entry is written, so a stale or missing
+ * cached profile can never erase the tours recorded before it.
+ */
+export function markTourSeen(uid: string, tour: TourDef): Promise<void> {
+  return saveTourPrefs(uid, current => withTourSeen(current, tour), { [`seenTours.${tour.id}`]: tour.version });
 }
 
 /** Reads and removes the pre-profile localStorage entry; null when there is none. */

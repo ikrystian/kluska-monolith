@@ -91,7 +91,6 @@ export function TodayHero({ active, planned, doneToday, lastWorkout }: TodayHero
   const repeatHref = lastWorkout?.sourceWorkoutId ? `/athlete/log?workoutId=${lastWorkout.sourceWorkoutId}` : '/athlete/log';
   return (
     <section className="rounded-2xl bg-card p-4">
-      <h2 className="mt-1 font-display text-[2.75rem] font-bold uppercase leading-[0.95]">Wolny dzień?</h2>
       <p className="mt-1.5 text-sm text-muted-foreground">Odpocznij albo wejdź na salę. Wybór należy do Ciebie.</p>
       <div className="mt-4 flex gap-2">
         <Button asChild className="min-w-0 flex-1">

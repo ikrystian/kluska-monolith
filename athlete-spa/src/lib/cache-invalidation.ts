@@ -95,6 +95,16 @@ export function invalidateMatching(matcher: KeyMatcher): void {
   void mutate((key) => typeof key === 'string' && activeKeys.has(key) && matcher(key));
 }
 
+/**
+ * Rewrites one cached read in place, without refetching. Use this instead of
+ * the `mutate` exported by 'swr': that one talks to SWR's default cache, which
+ * this app does not use, so it sees nothing and changes nothing.
+ */
+export async function updateCached<T>(key: string, update: (current: T | undefined) => T | undefined): Promise<void> {
+  if (!binding) return;
+  await binding.mutate(key, update, { revalidate: false });
+}
+
 /** Empties the in-memory cache (logout) so the next account can't see this one's data. */
 export function clearMemoryCache(): void {
   if (!binding) return;

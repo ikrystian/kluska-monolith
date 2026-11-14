@@ -4,7 +4,7 @@ import { useDoc, useUser } from '@/lib/db-hooks';
 import type { UserProfile } from '@/models/types';
 import { OPEN_OVERLAY_SELECTOR } from '@/hooks/useAndroidBackButton';
 import { countTourTargets, exitActiveTour, startTour } from '@/lib/tours/engine';
-import { areToursEnabled, hasSeenTour, saveTourPrefs, takeLegacyTourPrefs, withTourSeen } from '@/lib/tours/storage';
+import { areToursEnabled, hasSeenTour, markTourSeen, saveTourPrefs, takeLegacyTourPrefs } from '@/lib/tours/storage';
 import { findTourForRoute } from '@/lib/tours/tours';
 
 /** Lets the page transition finish before anything is measured. */
@@ -72,7 +72,7 @@ export function TourHost() {
       if (stablePolls >= STABLE_POLLS) {
         void startTour(tour, {
           isCancelled: () => cancelled,
-          onClose: () => void saveTourPrefs(uid, current => withTourSeen(current, tour)),
+          onClose: () => void markTourSeen(uid, tour),
         });
         return;
       }
