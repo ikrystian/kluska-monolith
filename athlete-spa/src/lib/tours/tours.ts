@@ -121,23 +121,23 @@ export const TOURS: TourDef[] = [
   },
   {
     id: 'nutrition',
-    version: 1,
+    version: 2,
     match: at('/athlete/nutrition'),
     steps: [
       {
         target: 'nutrition-day',
-        title: 'Dzień po dniu',
-        body: 'Strzałki przewijają dni, a dotknięcie daty wraca do dzisiaj. Możesz uzupełnić także wczorajsze posiłki.',
+        title: 'Tydzień na jednym pasku',
+        body: 'Dotknij dnia, żeby go otworzyć — także wczorajszy albo jutrzejszy. Obręcz wokół daty pokazuje, ile celu wtedy zjedzono, a strzałki przewijają tygodnie.',
       },
       {
         target: 'nutrition-summary',
         title: 'Bilans dnia',
-        body: 'Ile kalorii zostało do celu oraz jak idzie białko, węglowodany i tłuszcz.',
+        body: 'Ile kalorii zostało do celu oraz jak idzie białko, węglowodany i tłuszcz. Dotknij celu, żeby go ustawić lub zmienić — możemy też policzyć go z Twoich danych.',
       },
       {
         target: 'nutrition-meal',
-        title: 'Dodawanie jedzenia',
-        body: 'Plus przy posiłku otwiera wyszukiwarkę produktów i dań. Jest tam też skaner kodów kreskowych i ręczne wpisywanie wartości.',
+        title: 'Posiłki',
+        body: 'Plus otwiera wyszukiwarkę, skaner kodów i szybki wpis samych kalorii — dodasz kilka rzeczy pod rząd. Dotknij wpisu, żeby zmienić ilość, przenieść go albo usunąć. Pusty posiłek skopiujesz z poprzedniego dnia.',
       },
     ],
   },

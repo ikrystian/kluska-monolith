@@ -3,7 +3,7 @@ import { ArrowLeft, Coffee, Cookie, Minus, Moon, Plus, Sun, type LucideIcon } fr
 
 import { Button } from '@/components/ui/button';
 
-import { MEAL_TYPES, MEAL_TYPE_LABELS, type DiaryGoal, type DiaryTotals, type MealType } from '@/lib/nutrition';
+import { MEAL_TYPES, MEAL_TYPE_LABELS, formatGrams, type DiaryGoal, type DiaryTotals, type MealType } from '@/lib/nutrition';
 import { cn } from '@/lib/utils';
 
 export const MEAL_TYPE_ICONS: Record<MealType, LucideIcon> = {
@@ -84,7 +84,7 @@ export function MacroSummary({ calories, protein, carbs, fat }: { calories: numb
             <div className="grid flex-1 grid-cols-3 gap-2">
                 {items.map((item) => (
                     <div key={item.label} className="flex flex-col justify-center">
-                        <span className="text-lg font-bold leading-none tabular-nums">{item.value.toFixed(1)}</span>
+                        <span className="text-lg font-bold leading-none tabular-nums">{formatGrams(item.value)}</span>
                         <span className="mt-1 text-[11px] text-muted-foreground">{item.label} (g)</span>
                     </div>
                 ))}
@@ -161,6 +161,55 @@ export function FoodIcon({ icon: Icon, className }: { icon: LucideIcon; classNam
         <span className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-background/60 text-muted-foreground', className)}>
             <Icon className="h-4 w-4" />
         </span>
+    );
+}
+
+const QUICK_AMOUNTS = [50, 100, 150, 200, 250];
+
+/** Big gram counter: type the weight, nudge it by 10 g or pick a common amount. */
+export function GramsStepper({ value, onChange }: { value: string; onChange: (amount: string) => void }) {
+    const grams = Number(value.replace(',', '.')) || 0;
+    const step = (delta: number) => onChange(String(Math.min(5000, Math.max(5, Math.round((grams + delta) / 5) * 5))));
+    return (
+        <div className="rounded-2xl bg-secondary/40 p-3">
+            <div className="flex items-center gap-3">
+                <Button type="button" variant="secondary" size="icon" className="rounded-full bg-background/70" onClick={() => step(-10)} aria-label="Mniej">
+                    <Minus className="h-4 w-4" />
+                </Button>
+                <label className="flex min-w-0 flex-1 items-baseline justify-center gap-1">
+                    <input
+                        type="text"
+                        inputMode="decimal"
+                        maxLength={6}
+                        value={value}
+                        onChange={(event) => onChange(event.target.value.replace(/[^\d.,]/g, ''))}
+                        onFocus={(event) => event.target.select()}
+                        aria-label="Ilość w gramach"
+                        style={{ width: `${Math.max(2, value.length) + 0.5}ch` }}
+                        className="bg-transparent text-center font-display text-4xl font-bold tabular-nums outline-none"
+                    />
+                    <span className="text-sm font-medium text-muted-foreground">g</span>
+                </label>
+                <Button type="button" variant="secondary" size="icon" className="rounded-full bg-background/70" onClick={() => step(10)} aria-label="Więcej">
+                    <Plus className="h-4 w-4" />
+                </Button>
+            </div>
+            <div className="mt-3 grid grid-cols-5 gap-1.5">
+                {QUICK_AMOUNTS.map((quick) => (
+                    <button
+                        key={quick}
+                        type="button"
+                        onClick={() => onChange(String(quick))}
+                        className={cn(
+                            'pressable-sm rounded-xl py-1.5 text-xs font-semibold transition-colors',
+                            grams === quick ? 'bg-foreground text-background' : 'bg-background/60 text-muted-foreground'
+                        )}
+                    >
+                        {quick} g
+                    </button>
+                ))}
+            </div>
+        </div>
     );
 }
 

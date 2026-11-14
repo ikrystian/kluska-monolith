@@ -6,6 +6,7 @@ import { apiFetch } from '@/lib/api-client';
 import {
     DISH_CATEGORIES,
     mealWeight,
+    type DiaryEntry,
     type DiaryGoal,
     type DiaryTotals,
     type DishCategory,
@@ -174,7 +175,7 @@ interface ReadyMealDetailProps {
     mealType: MealType;
     goal?: DiaryGoal | null;
     totals?: DiaryTotals;
-    onSaved: (meal: ReadyMeal) => void;
+    onSaved: (entry: DiaryEntry) => void;
     onError: (message: string) => void;
 }
 
@@ -200,7 +201,7 @@ export function ReadyMealDetail({ meal, date, mealType, goal, totals, onSaved, o
                 body: JSON.stringify({ date, mealType, mealId: meal.id, servings }),
             });
             if (!response.ok) throw new Error('Request failed');
-            onSaved(meal);
+            onSaved((await response.json()).entry);
         } catch {
             onError('Nie udało się zapisać wpisu. Spróbuj ponownie.');
         } finally {

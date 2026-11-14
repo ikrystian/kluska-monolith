@@ -1,27 +1,37 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import useSWR from 'swr';
-import { format, parseISO, addDays } from 'date-fns';
-import { pl } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
+import { CopyPlus, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { apiFetch } from '@/lib/api-client';
+import { haptic } from '@/lib/haptics';
 import { useFrozenDuringTransition } from '@/lib/page-transition';
 import {
     MEAL_TYPES,
     MEAL_TYPE_LABELS,
+    formatKcal,
     mealForNow,
+    restoreBody,
+    shiftISO,
+    sumTotals,
     todayISO,
+    weekOf,
+    type DiaryDaySummary,
     type DiaryEntry,
+    type DiaryGoal,
     type DiaryResponse,
     type MealType,
 } from '@/lib/nutrition';
-import { Button } from '@/components/ui/button';
-import { BigNumber, EmptyState } from '@/components/ui/section';
+import { pluralForm } from '@/lib/plural';
+import { EmptyState } from '@/components/ui/section';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Macro } from '@/components/dashboard/NutritionToday';
 import { AddFoodDialog } from '@/components/nutrition/AddFoodDialog';
+import { DayBalance } from '@/components/nutrition/DayBalance';
+import { EntrySheet } from '@/components/nutrition/EntrySheet';
+import { GoalSheet } from '@/components/nutrition/GoalSheet';
+import { MealSection } from '@/components/nutrition/MealSection';
+import { WeekStrip } from '@/components/nutrition/WeekStrip';
 import { cn } from '@/lib/utils';
 import { AdSlot } from '@/components/ads/AdSlot';
 
@@ -31,9 +41,13 @@ async function diaryFetcher(url: string): Promise<DiaryResponse> {
     return response.json();
 }
 
-function shiftDate(date: string, days: number): string {
-    return format(addDays(parseISO(date), days), 'yyyy-MM-dd');
+async function summaryFetcher(url: string): Promise<DiaryDaySummary[]> {
+    const response = await apiFetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch: ${response.statusText}`);
+    return (await response.json()).days ?? [];
 }
+
+const EMPTY_TOTALS = { calories: 0, protein: 0, carbs: 0, fat: 0 };
 
 export default function NutritionPage() {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -44,6 +58,10 @@ export default function NutritionPage() {
     });
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogMealType, setDialogMealType] = useState<MealType>('Breakfast');
+    const [editing, setEditing] = useState<DiaryEntry | null>(null);
+    const [goalOpen, setGoalOpen] = useState(false);
+    /** Meal being copied from the previous day; 'all' for the whole day. */
+    const [copying, setCopying] = useState<MealType | 'all' | null>(null);
 
     // "+" shortcuts land here with ?add=1 and go straight to adding food.
     useEffect(() => {
@@ -52,169 +70,178 @@ export default function NutritionPage() {
         setDialogOpen(true);
         setSearchParams({}, { replace: true });
     }, [searchParams, setSearchParams]);
-    const [deletingId, setDeletingId] = useState<string | null>(null);
 
-    const { data, error, isLoading, mutate } = useSWR<DiaryResponse>(
-        `/api/athlete/nutrition/diary?date=${date}`,
-        diaryFetcher
-    );
-    const frozen = useFrozenDuringTransition(
-        useMemo(() => ({ data: data ?? null, isLoading }), [data, isLoading])
-    );
+    // Every write through apiFetch revalidates these reads, so handlers only patch the cache for instant feedback.
+    const { data, error, isLoading, mutate } = useSWR<DiaryResponse>(`/api/athlete/nutrition/diary?date=${date}`, diaryFetcher, {
+        keepPreviousData: true,
+    });
+    const previousDate = shiftISO(date, -1);
+    const { data: previousDay } = useSWR<DiaryResponse>(`/api/athlete/nutrition/diary?date=${previousDate}`, diaryFetcher);
+    const week = useMemo(() => weekOf(date), [date]);
+    const { data: weekDays } = useSWR<DiaryDaySummary[]>(`/api/athlete/nutrition/diary/summary?from=${week[0]}&to=${week[6]}`, summaryFetcher, {
+        keepPreviousData: true,
+    });
 
+    const frozen = useFrozenDuringTransition(useMemo(() => ({ data: data ?? null, isLoading }), [data, isLoading]));
     const diary = frozen.data;
+    // The previous day's entries stay on screen (dimmed) until the newly chosen day arrives.
+    const showingOtherDay = frozen.isLoading && diary !== null;
     const isToday = date === todayISO();
 
-    const entriesByMeal = useMemo(() => {
-        const groups = new Map<MealType, DiaryEntry[]>(MEAL_TYPES.map((type) => [type, []]));
-        for (const entry of diary?.entries ?? []) {
-            groups.get(entry.mealType)?.push(entry);
-        }
-        return groups;
-    }, [diary]);
+    const entriesByMeal = useMemo(() => groupByMeal(diary?.entries), [diary]);
+    const previousByMeal = useMemo(() => groupByMeal(previousDay?.entries), [previousDay]);
+
+    const totals = diary?.totals ?? EMPTY_TOTALS;
+    const goal = diary?.goal ?? null;
+    const dayIsEmpty = (diary?.entries.length ?? 0) === 0;
+    const previousEntries = previousDay?.entries ?? [];
+    // "The day before" in the words the athlete would use for the open day.
+    const previousName = isToday ? 'wczoraj' : date === todayISO(1) ? 'dzisiaj' : 'dzień wcześniej';
+
+    // The open day's own totals are fresher than the weekly summary, which reloads after each write.
+    const stripDays = useMemo(() => {
+        const others = (weekDays ?? []).filter((day) => day.date !== date);
+        return diary && !showingOtherDay && diary.entries.length > 0 ? [...others, { date, ...diary.totals, entries: diary.entries.length }] : others;
+    }, [weekDays, diary, date, showingOtherDay]);
 
     const openAddDialog = (mealType: MealType) => {
         setDialogMealType(mealType);
         setDialogOpen(true);
     };
 
-    const handleDelete = async (entry: DiaryEntry) => {
-        setDeletingId(entry.id);
+    /** Swaps the cached entries (and their totals) without waiting for the server. */
+    const patchEntries = (update: (entries: DiaryEntry[]) => DiaryEntry[]) =>
+        mutate(
+            (current) => {
+                if (!current) return current;
+                const entries = update(current.entries);
+                return { ...current, entries, totals: sumTotals(entries) };
+            },
+            { revalidate: false }
+        );
+
+    const restoreEntry = async (entry: DiaryEntry) => {
         try {
-            const response = await apiFetch(`/api/athlete/nutrition/diary/${entry.id}`, { method: 'DELETE' });
+            const response = await apiFetch('/api/athlete/nutrition/diary', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(restoreBody(entry)),
+            });
             if (!response.ok) throw new Error('Request failed');
-            toast.success(`Usunięto „${entry.name}".`);
-            void mutate();
+            toast.success(`Przywrócono „${entry.name}".`);
         } catch {
-            toast.error('Nie udało się usunąć wpisu.');
-        } finally {
-            setDeletingId(null);
+            toast.error('Nie udało się przywrócić wpisu.');
         }
     };
 
-    const totals = diary?.totals ?? { calories: 0, protein: 0, carbs: 0, fat: 0 };
-    const goal = diary?.goal ?? null;
-    const remaining = goal ? goal.dailyCalories - totals.calories : null;
+    const handleDelete = async (entry: DiaryEntry) => {
+        haptic('impact');
+        void patchEntries((entries) => entries.filter((item) => item.id !== entry.id));
+        try {
+            const response = await apiFetch(`/api/athlete/nutrition/diary/${entry.id}`, { method: 'DELETE' });
+            if (!response.ok) throw new Error('Request failed');
+            toast(
+                (t) => (
+                    <span className="flex min-w-0 items-center gap-3">
+                        <span className="min-w-0 flex-1 truncate">Usunięto „{entry.name}"</span>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                toast.dismiss(t.id);
+                                void restoreEntry(entry);
+                            }}
+                            className="-my-1 shrink-0 rounded-lg px-2 py-1 font-semibold text-primary active:bg-secondary"
+                        >
+                            Cofnij
+                        </button>
+                    </span>
+                ),
+                { duration: 6000 }
+            );
+        } catch {
+            toast.error('Nie udało się usunąć wpisu.');
+            void mutate();
+        }
+    };
+
+    const handleCopy = async (mealType?: MealType) => {
+        if (copying) return;
+        setCopying(mealType ?? 'all');
+        try {
+            const response = await apiFetch('/api/athlete/nutrition/diary/copy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fromDate: previousDate, toDate: date, mealType }),
+            });
+            if (!response.ok) throw new Error('Request failed');
+            const result = await response.json();
+            const copied: DiaryEntry[] = result.entries ?? [];
+            void patchEntries((entries) => [...entries, ...copied.filter((entry) => !entries.some((item) => item.id === entry.id))]);
+            haptic('success');
+            toast.success(
+                mealType
+                    ? `Skopiowano: ${MEAL_TYPE_LABELS[mealType].toLowerCase()} (${formatKcal(sumTotals(copied).calories)} kcal).`
+                    : `Skopiowano ${copied.length} ${pluralForm(copied.length, 'wpis', 'wpisy', 'wpisów')}.`
+            );
+        } catch {
+            toast.error('Nie udało się skopiować. Spróbuj ponownie.');
+        } finally {
+            setCopying(null);
+        }
+    };
 
     return (
         <div className="page space-y-4">
-            {/* Day switcher */}
-            <div data-tour="nutrition-day" className="flex items-center justify-between gap-2">
-                <Button variant="secondary" size="icon" onClick={() => setDate(shiftDate(date, -1))} aria-label="Poprzedni dzień">
-                    <ChevronLeft className="h-5 w-5" />
-                </Button>
-                <button
-                    type="button"
-                    onClick={() => setDate(todayISO())}
-                    disabled={isToday}
-                    className="min-w-0 flex-1 text-center"
-                    aria-label={isToday ? undefined : 'Wróć do dzisiaj'}
-                >
-                    <span className="block text-[15px] font-semibold capitalize leading-tight">
-                        {isToday ? 'Dzisiaj' : format(parseISO(date), 'EEEE', { locale: pl })}
-                    </span>
-                    <span className="block text-xs text-muted-foreground">{format(parseISO(date), 'd MMMM yyyy', { locale: pl })}</span>
-                </button>
-                <Button variant="secondary" size="icon" onClick={() => setDate(shiftDate(date, 1))} aria-label="Następny dzień">
-                    <ChevronRight className="h-5 w-5" />
-                </Button>
-            </div>
+            <WeekStrip date={date} onChange={setDate} days={stripDays} goal={goal} />
 
             {frozen.isLoading && !diary ? (
                 <>
-                    <Skeleton className="h-40 w-full rounded-2xl" />
-                    <Skeleton className="h-32 w-full rounded-2xl" />
-                    <Skeleton className="h-32 w-full rounded-2xl" />
+                    <Skeleton className="h-44 w-full rounded-2xl" />
+                    <Skeleton className="h-[60px] w-full rounded-2xl" />
+                    <Skeleton className="h-[60px] w-full rounded-2xl" />
+                    <Skeleton className="h-[60px] w-full rounded-2xl" />
                 </>
             ) : error && !diary ? (
                 <EmptyState title="Nie udało się pobrać dzienniczka" description="Spróbuj ponownie później." />
             ) : (
-                <>
-                    {/* Day summary */}
-                    <section data-tour="nutrition-summary" className="rounded-2xl bg-card p-4">
-                        <p className="flex items-baseline justify-between gap-3">
-                            <span>
-                                <BigNumber
-                                    value={Math.abs(Math.round(remaining ?? totals.calories)).toLocaleString('pl-PL')}
-                                    className={cn('text-[3.25rem]', remaining !== null && remaining < 0 && 'text-destructive')}
-                                />
-                                <span className="ml-1.5 text-sm font-medium text-muted-foreground">
-                                    {remaining === null ? 'kcal dziś' : remaining >= 0 ? 'kcal zostało' : 'kcal ponad cel'}
+                <div className={cn('space-y-4 transition-opacity duration-150', showingOtherDay && 'pointer-events-none opacity-40')}>
+                    <DayBalance totals={totals} goal={goal} onEditGoal={() => setGoalOpen(true)} />
+
+                    {dayIsEmpty && previousEntries.length > 1 && !showingOtherDay && (
+                        <button
+                            type="button"
+                            onClick={() => handleCopy()}
+                            disabled={copying !== null}
+                            className="pressable-sm flex w-full items-center gap-3 rounded-2xl border border-dashed border-border px-4 py-3 text-left disabled:opacity-60"
+                        >
+                            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-secondary text-volt">
+                                {copying === 'all' ? <Loader2 className="h-[18px] w-[18px] animate-spin" /> : <CopyPlus className="h-[18px] w-[18px]" />}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                                <span className="block text-sm font-semibold">Jesz podobnie jak {previousName}?</span>
+                                <span className="block truncate text-xs tabular-nums text-muted-foreground">
+                                    Skopiuj cały dzień · {previousEntries.length} {pluralForm(previousEntries.length, 'wpis', 'wpisy', 'wpisów')} ·{' '}
+                                    {formatKcal(sumTotals(previousEntries).calories)} kcal
                                 </span>
                             </span>
-                            {goal && (
-                                <span className="shrink-0 text-[13px] tabular-nums text-muted-foreground">
-                                    {Math.round(totals.calories).toLocaleString('pl-PL')} / {goal.dailyCalories.toLocaleString('pl-PL')}
-                                </span>
-                            )}
-                        </p>
-                        {goal && (
-                            <div className="mt-3 h-2 overflow-hidden rounded-full bg-secondary">
-                                <div
-                                    className={cn('h-full rounded-full transition-[width] duration-500', remaining !== null && remaining < 0 ? 'bg-destructive' : 'bg-food')}
-                                    style={{ width: `${Math.min(100, (totals.calories / Math.max(1, goal.dailyCalories)) * 100)}%` }}
-                                />
-                            </div>
-                        )}
-                        <div className="mt-4 grid grid-cols-3 gap-3">
-                            <Macro label="Białko" value={totals.protein} target={goal?.dailyProtein} />
-                            <Macro label="Węgle" value={totals.carbs} target={goal?.dailyCarbs} />
-                            <Macro label="Tłuszcz" value={totals.fat} target={goal?.dailyFat} />
-                        </div>
-                        {!goal && (
-                            <p className="mt-3 text-[13px] text-muted-foreground">
-                                Brak celu żywieniowego. Poproś trenera o jego ustawienie, aby śledzić postęp.
-                            </p>
-                        )}
-                    </section>
+                        </button>
+                    )}
 
-                    {/* Meal sections */}
-                    {MEAL_TYPES.map((type) => {
-                        const entries = entriesByMeal.get(type) ?? [];
-                        const mealCalories = entries.reduce((acc, entry) => acc + entry.calories, 0);
-
-                        return (
-                            <section key={type} data-tour="nutrition-meal" className="overflow-hidden rounded-2xl bg-card">
-                                <div className="flex items-center justify-between gap-3 py-1.5 pl-4 pr-1.5">
-                                    <p className="min-w-0 truncate text-[15px] font-semibold">
-                                        {MEAL_TYPE_LABELS[type]}
-                                        {entries.length > 0 && (
-                                            <span className="ml-2 font-medium tabular-nums text-muted-foreground">{Math.round(mealCalories)} kcal</span>
-                                        )}
-                                    </p>
-                                    <Button variant="ghost" size="icon" onClick={() => openAddDialog(type)} aria-label={`Dodaj do: ${MEAL_TYPE_LABELS[type]}`}>
-                                        <Plus className="h-5 w-5" />
-                                    </Button>
-                                </div>
-                                {entries.length > 0 && (
-                                    <ul className="divide-y divide-border/50 border-t border-border/50">
-                                        {entries.map((entry) => (
-                                            <li key={entry.id} className="flex items-center gap-2 py-2 pl-4 pr-1.5">
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="truncate text-sm font-medium">{entry.name}</p>
-                                                    <p className="truncate text-xs tabular-nums text-muted-foreground">
-                                                        {entry.amount.toLocaleString('pl-PL')} {entry.unit} · B {entry.protein} · W {entry.carbs} · T {entry.fat}
-                                                    </p>
-                                                </div>
-                                                <span className="shrink-0 font-display text-xl font-bold tabular-nums">{Math.round(entry.calories)}</span>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-9 w-9 shrink-0 text-muted-foreground"
-                                                    disabled={deletingId === entry.id}
-                                                    onClick={() => handleDelete(entry)}
-                                                    aria-label="Usuń wpis"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </section>
-                        );
-                    })}
-                </>
+                    {MEAL_TYPES.map((type) => (
+                        <MealSection
+                            key={type}
+                            type={type}
+                            entries={entriesByMeal.get(type) ?? []}
+                            highlighted={isToday && type === mealForNow()}
+                            onAdd={() => openAddDialog(type)}
+                            onOpenEntry={setEditing}
+                            previous={showingOtherDay ? undefined : previousByMeal.get(type)}
+                            previousLabel={`Jak ${previousName}`}
+                            onCopyPrevious={() => handleCopy(type)}
+                            isCopying={copying === type}
+                        />
+                    ))}
+                </div>
             )}
 
             <AdSlot placement="nutrition" />
@@ -224,10 +251,32 @@ export default function NutritionPage() {
                 onOpenChange={setDialogOpen}
                 date={date}
                 defaultMealType={dialogMealType}
-                onAdded={() => void mutate()}
+                onAdded={(entry) => void patchEntries((entries) => (entries.some((item) => item.id === entry.id) ? entries : [...entries, entry]))}
                 goal={goal}
                 totals={totals}
             />
+
+            <EntrySheet
+                entry={editing}
+                onClose={() => setEditing(null)}
+                onSaved={(updated) => void patchEntries((entries) => entries.map((item) => (item.id === updated.id ? updated : item)))}
+                onDelete={handleDelete}
+                goal={goal}
+                totals={totals}
+            />
+
+            <GoalSheet
+                open={goalOpen}
+                onOpenChange={setGoalOpen}
+                goal={goal}
+                onSaved={(saved: DiaryGoal) => void mutate((current) => (current ? { ...current, goal: saved } : current), { revalidate: false })}
+            />
         </div>
     );
+}
+
+function groupByMeal(entries: DiaryEntry[] | undefined): Map<MealType, DiaryEntry[]> {
+    const groups = new Map<MealType, DiaryEntry[]>(MEAL_TYPES.map((type) => [type, []]));
+    for (const entry of entries ?? []) groups.get(entry.mealType)?.push(entry);
+    return groups;
 }
