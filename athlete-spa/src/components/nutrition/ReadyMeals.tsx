@@ -1,22 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import useSWR from 'swr';
-import { ChefHat, Loader2, Plus, Search, UserRound } from 'lucide-react';
+import { ChefHat, Loader2, Plus, UserRound } from 'lucide-react';
 
 import { apiFetch } from '@/lib/api-client';
 import {
     DISH_CATEGORIES,
     mealWeight,
     type DiaryEntry,
-    type DiaryGoal,
-    type DiaryTotals,
     type DishCategory,
     type MealType,
     type ReadyMeal,
 } from '@/lib/nutrition';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FoodIcon, FoodRow, GoalImpact, MacroSummary, SectionLabel, ServingsStepper } from '@/components/nutrition/FoodParts';
+import { FoodIcon, FoodList, FoodRow, MacroSummary, ServingsStepper } from '@/components/nutrition/FoodParts';
 import { cn } from '@/lib/utils';
 
 export const DISH_CATEGORY_LABEL = Object.fromEntries(DISH_CATEGORIES.map((c) => [c.value, c.label])) as Record<DishCategory, string>;
@@ -61,7 +58,8 @@ function mealDetail(meal: ReadyMeal) {
     );
 }
 
-export function ReadyMealRow({ meal, onSelect }: { meal: ReadyMeal; onSelect: (meal: ReadyMeal) => void }) {
+/** `trailing` replaces the chevron, e.g. with a one-tap "add one serving" button. */
+export function ReadyMealRow({ meal, onSelect, trailing }: { meal: ReadyMeal; onSelect: (meal: ReadyMeal) => void; trailing?: ReactNode }) {
     return (
         <FoodRow
             icon={<FoodIcon icon={ChefHat} className="bg-food/15 text-food" />}
@@ -70,6 +68,7 @@ export function ReadyMealRow({ meal, onSelect }: { meal: ReadyMeal; onSelect: (m
             calories={meal.calories}
             caloriesLabel="kcal / porcja"
             onClick={() => onSelect(meal)}
+            trailing={trailing}
         />
     );
 }
@@ -102,28 +101,27 @@ export function ReadyMealCarousel({ meals, onSelect }: { meals: ReadyMeal[]; onS
     );
 }
 
-/** Browsable, searchable list of ready-made dishes (public catalogue + the trainer's own). */
-export function ReadyMealList({ initialQuery = '', onSelect }: { initialQuery?: string; onSelect: (meal: ReadyMeal) => void }) {
-    const [query, setQuery] = useState(initialQuery);
+/**
+ * Browsable list of ready-made dishes (public catalogue + the trainer's own),
+ * narrowed by category chips and by the `query` typed in the dialog's search field.
+ */
+export function ReadyMealList({
+    query = '',
+    onSelect,
+    trailing,
+}: {
+    query?: string;
+    onSelect: (meal: ReadyMeal) => void;
+    trailing?: (meal: ReadyMeal) => ReactNode;
+}) {
     const [category, setCategory] = useState<DishCategory | null>(null);
     const debouncedQuery = useDebounced(query.trim(), 250);
-    const { data: meals, error, isLoading } = useReadyMeals(debouncedQuery, category);
+    const { data: meals, error, isLoading } = useReadyMeals(debouncedQuery.length >= 2 ? debouncedQuery : '', category);
 
     return (
         <div className="space-y-3">
-            <div className="relative">
-                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                    placeholder="Szukaj dania, np. pierogi"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    className="h-11 rounded-2xl pl-10"
-                    enterKeyHint="search"
-                />
-            </div>
-
             <div className="-mx-5">
-                <div className="no-scrollbar flex w-0 min-w-full gap-2 overflow-x-auto px-5 pb-0.5">
+                <div className="no-scrollbar flex w-0 min-w-full gap-1.5 overflow-x-auto px-5 pb-0.5">
                     {[{ value: null, label: 'Wszystkie' } as const, ...DISH_CATEGORIES.filter((c) => c.value !== 'other')].map((option) => (
                         <button
                             key={option.value ?? 'all'}
@@ -141,29 +139,20 @@ export function ReadyMealList({ initialQuery = '', onSelect }: { initialQuery?: 
             </div>
 
             {isLoading && !meals ? (
-                <div className="space-y-2">
-                    {Array.from({ length: 6 }, (_, i) => (
-                        <Skeleton key={i} className="h-[60px] w-full rounded-2xl" />
-                    ))}
-                </div>
+                <Skeleton className="h-[244px] w-full rounded-2xl" />
             ) : error && !meals ? (
                 <p className="rounded-2xl bg-secondary/40 py-8 text-center text-sm text-muted-foreground">Nie udało się pobrać dań. Spróbuj ponownie.</p>
             ) : meals && meals.length === 0 ? (
                 <div className="flex flex-col items-center gap-2 rounded-2xl bg-secondary/40 px-4 py-8 text-center text-sm text-muted-foreground">
                     <ChefHat className="h-6 w-6" />
-                    {debouncedQuery ? `Brak dań pasujących do „${debouncedQuery}".` : 'Brak dań w tej kategorii.'}
+                    {debouncedQuery.length >= 2 ? `Brak dań pasujących do „${debouncedQuery}".` : 'Brak dań w tej kategorii.'}
                 </div>
             ) : (
-                <>
-                    <SectionLabel>{meals?.length ?? 0} {meals?.length === 1 ? 'danie' : 'dań'}</SectionLabel>
-                    <ul className="space-y-2">
-                        {meals?.map((meal) => (
-                            <li key={meal.id}>
-                                <ReadyMealRow meal={meal} onSelect={onSelect} />
-                            </li>
-                        ))}
-                    </ul>
-                </>
+                <FoodList>
+                    {meals?.map((meal) => (
+                        <ReadyMealRow key={meal.id} meal={meal} onSelect={onSelect} trailing={trailing?.(meal)} />
+                    ))}
+                </FoodList>
             )}
         </div>
     );
@@ -173,14 +162,14 @@ interface ReadyMealDetailProps {
     meal: ReadyMeal;
     date: string;
     mealType: MealType;
-    goal?: DiaryGoal | null;
-    totals?: DiaryTotals;
+    /** Reports the calories of the chosen portion while it is being adjusted (0 when the view closes). */
+    onPreview?: (calories: number) => void;
     onSaved: (entry: DiaryEntry) => void;
     onError: (message: string) => void;
 }
 
 /** Portion picker + "add to diary" for one ready-made dish. */
-export function ReadyMealDetail({ meal, date, mealType, goal, totals, onSaved, onError }: ReadyMealDetailProps) {
+export function ReadyMealDetail({ meal, date, mealType, onPreview, onSaved, onError }: ReadyMealDetailProps) {
     const [servings, setServings] = useState(1);
     const [isSaving, setIsSaving] = useState(false);
     const weight = mealWeight(meal);
@@ -191,6 +180,11 @@ export function ReadyMealDetail({ meal, date, mealType, goal, totals, onSaved, o
         carbs: meal.carbs * servings,
         fat: meal.fat * servings,
     };
+
+    useEffect(() => {
+        onPreview?.(added.calories);
+        return () => onPreview?.(0);
+    }, [added.calories, onPreview]);
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -230,7 +224,6 @@ export function ReadyMealDetail({ meal, date, mealType, goal, totals, onSaved, o
             <ServingsStepper value={servings} onChange={setServings} detail={weight ? `${Math.round(weight * servings)} g` : undefined} />
 
             <MacroSummary {...added} />
-            <GoalImpact goal={goal} totals={totals} adding={added.calories} />
 
             {meal.ingredients.length > 0 && (
                 <details className="group rounded-2xl bg-secondary/40 px-3 py-2.5">
