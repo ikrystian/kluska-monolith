@@ -17,6 +17,7 @@ import {
   type UpNextWorkout,
   type WeeklyStats,
 } from '@/lib/live-widget';
+import { isLocalRemindersSupported, scheduleWorkoutReminders, syncWeeklySummaryReminder } from '@/lib/local-reminders';
 import type { PlannedWorkout, RunningSession, StravaActivity, WorkoutLog } from '@/lib/types';
 
 const WIDGET_URL_PREFIX = 'leniwakluska.com://app';
@@ -203,10 +204,13 @@ function useWeeklyStatsPublisher() {
   return dayKey;
 }
 
-/** Keeps the widget's "next workout" row current; the widget drops the ones whose time has passed. */
+/**
+ * Keeps the widget's "next workout" row current (the widget drops the ones whose
+ * time has passed) and schedules the local reminders for the same workouts.
+ */
 function useUpNextPublisher(dayKey: string) {
   const { user } = useUser();
-  const userId = isLiveWidgetSupported() ? user?.uid : undefined;
+  const userId = isLiveWidgetSupported() || isLocalRemindersSupported() ? user?.uid : undefined;
 
   const range = useMemo(() => {
     const today = startOfDay(new Date());
@@ -225,8 +229,15 @@ function useUpNextPublisher(dayKey: string) {
   );
 
   useEffect(() => {
-    if (upNextJson) void publishUpNext(JSON.parse(upNextJson) as UpNextWorkout[]);
+    if (!upNextJson) return;
+    const upNext = JSON.parse(upNextJson) as UpNextWorkout[];
+    void publishUpNext(upNext);
+    void scheduleWorkoutReminders(upNext);
   }, [upNextJson]);
+
+  useEffect(() => {
+    if (userId) void syncWeeklySummaryReminder();
+  }, [userId]);
 }
 
 /**

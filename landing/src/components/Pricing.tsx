@@ -2,11 +2,13 @@ import { ArrowRight, Check } from 'lucide-react';
 
 const included = [
   'Dziennik treningowy i gotowe plany',
-  'Bieganie z GPS i eksport do Stravy',
+  'Bieganie z GPS i synchronizacja ze Stravą',
   'Dieta, makro i skaner kodów',
   'Kalkulator talerzy i stoper przerw',
   'Współpraca z trenerem i check-iny',
   'Nawyki, odznaki i wykresy postępów',
+  'Zwierzak, ekipa i wyzwania biegowe',
+  'Tryb offline i widżety na Androida',
 ];
 
 const steps = [

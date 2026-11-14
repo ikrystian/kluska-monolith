@@ -14,6 +14,9 @@ import { clearMemoryCache } from '@/lib/cache-invalidation';
 import { clearOfflineQueue } from '@/lib/offline-queue';
 import { clearOfflineExerciseData } from '@/lib/offline-exercises';
 import { clearPetWidget } from '@/lib/pet-widget';
+import { unsubscribeFromNativePush } from '@/lib/push';
+import { cancelLocalReminders } from '@/lib/local-reminders';
+import { cancelPetNotifications } from '@/lib/pet-notifications';
 
 /**
  * Set while the app is used in guest mode, so an expired guest token can be
@@ -218,6 +221,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const wasGuest = !!localStorage.getItem(GUEST_MODE_KEY);
     // The home-screen widget must not keep showing this account's pet.
     void clearPetWidget();
+    // This device must stop receiving the account's pushes and reminders.
+    // First, while the auth token is still there for the backend call.
+    void unsubscribeFromNativePush();
+    void cancelLocalReminders();
+    void cancelPetNotifications().catch(() => undefined);
 
     if (wasGuest) {
       // Preserve the device-id so the hardware binding survives the wipe

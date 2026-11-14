@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { isPushNotificationsEnabled } from '@/lib/app-permissions';
+import { isPushNotificationsEnabled, PUSH_PREFERENCE_CHANGED_EVENT } from '@/lib/app-permissions';
 import { startNativePushSession } from '@/lib/push';
 
 /**
@@ -14,6 +14,15 @@ export function NativePushBridge() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const userId = user?.uid;
+  // Bumped when the profile toggle switches push on or off, so the session
+  // starts (or stops) right away instead of on the next app launch.
+  const [revision, setRevision] = useState(0);
+
+  useEffect(() => {
+    const bump = () => setRevision((value) => value + 1);
+    window.addEventListener(PUSH_PREFERENCE_CHANGED_EVENT, bump);
+    return () => window.removeEventListener(PUSH_PREFERENCE_CHANGED_EVENT, bump);
+  }, []);
 
   useEffect(() => {
     if (!userId || !isPushNotificationsEnabled()) return;
@@ -37,7 +46,7 @@ export function NativePushBridge() {
       cancelled = true;
       cleanup?.();
     };
-  }, [userId, navigate]);
+  }, [userId, navigate, revision]);
 
   return null;
 }

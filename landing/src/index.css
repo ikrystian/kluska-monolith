@@ -1,11 +1,11 @@
-/* Hallmark · genre: editorial · macrostructure: Manifesto · the page argues one thing: don't wait for January
- * theme: custom · vibe: "gym poster — ember, chalk and graphite colour fields, heavy condensed caps"
- * paper: oklch(16.7% 0.005 264) + full fields of accent oklch(68.3% 0.21 37) and chalk oklch(95% 0.014 90)
- * display: Barlow Condensed 800 · body: Figtree · axes: colour-blocked (dark / mid / light) / display-condensed / warm
- * hero: photographic fold + live countdown to 1 January · enrichment: Tier A year planner built from 365 cells
- * nav: N12 banner + retract · footer: Ft2 inline single line · CTA: ember field, duotone photo
- * motion: load orchestration in the hero, scroll-read manifesto, planner wave, app screens that fill in — no blanket fade-up
- * pre-emit critique: P5 H4 E4 S5 R4 V5
+/* Hallmark · genre: editorial · macrostructure: Workbench · the page is a guided tour of the app, screen by screen
+ * theme: custom (the athlete app's "Sztanga" system) · vibe: "graphite, chalk, ember for actions, lime for results"
+ * paper: oklch(16.7% 0.005 264) · accent oklch(68.3% 0.21 37) ember · result oklch(89.2% 0.203 123) lime
+ * display: Barlow Condensed 800 · body: Figtree · axes: dark / display-condensed / warm
+ * hero: Tier A live "Dziś" screen with floating app cards · enrichment: HTML-built app screens that play, the app's own pet and covers
+ * nav: N5 floating pill (top) + the app's tab bar on phones · footer: Ft3-free — Ft6 sitemap of the tour
+ * motion: screens that play while on screen, scroll-scrubbed ticker and parallax, tab indicator that slides — reduced-motion rests on the final frame
+ * pre-emit critique: P5 H4 E4 S5 R4 V4
  */
 @import "tailwindcss";
 
@@ -772,6 +772,304 @@
       min-height: 3.5rem;
       padding: 0 1.125rem;
       font-size: 1.1875rem;
+    }
+  }
+}
+
+/* ================= Workbench redesign: the tour of the app ================= */
+@layer components {
+  /* the app's screen title: #TRENING */
+  .hash::before {
+    content: '#';
+    color: var(--color-accent);
+  }
+
+  /* an app card inside a screen */
+  .card {
+    background: var(--color-screen-2);
+    border-radius: 16px;
+  }
+
+  .screen-phone {
+    width: 100%;
+    max-width: 22.5rem;
+    border-radius: 28px;
+  }
+
+  /* things that drift with the pointer (--mx/--my) and the scroll (--p) */
+  .drift {
+    transform: translate3d(
+      calc(var(--mx, 0) * var(--dx, 0px)),
+      calc(var(--my, 0) * var(--dy, 0px) + (0.5 - var(--p, 0.5)) * var(--sy, 0px)),
+      0
+    );
+    will-change: transform;
+  }
+
+  .bob {
+    animation: bob 5.5s var(--ease-in-out) infinite;
+    animation-delay: calc(var(--i, 0) * -1.3s);
+  }
+
+  @keyframes bob {
+    50% {
+      transform: translate3d(0, -7px, 0);
+    }
+  }
+
+  /* an element that lands: used for chips, checks, messages */
+  .land {
+    animation: land 460ms var(--ease-out) both;
+  }
+
+  @keyframes land {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 10px, 0) scale(0.92);
+    }
+  }
+
+  .land-x {
+    animation: land-x 520ms var(--ease-out) both;
+  }
+
+  @keyframes land-x {
+    from {
+      opacity: 0;
+      transform: translate3d(-14px, 0, 0);
+    }
+  }
+
+  /* bars and rings inside playing screens move by transform / dash only */
+  .bar-fill {
+    transform-origin: left;
+    transition: transform 700ms var(--ease-out);
+  }
+
+  .ring-live {
+    transition: stroke-dashoffset 900ms var(--ease-out);
+  }
+
+  .route-line {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    transition: stroke-dashoffset 900ms linear;
+  }
+
+  .live-dot {
+    animation: live-dot 1.6s var(--ease-in-out) infinite;
+  }
+
+  @keyframes live-dot {
+    50% {
+      opacity: 0.35;
+      transform: scale(0.8);
+    }
+  }
+
+  .typing i {
+    display: block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--color-ink-2);
+    animation: typing 1s var(--ease-in-out) infinite;
+    animation-delay: calc(var(--i) * 140ms);
+  }
+
+  @keyframes typing {
+    40% {
+      transform: translate3d(0, -4px, 0);
+      opacity: 0.5;
+    }
+  }
+
+  /* scanner line across the barcode */
+  .scanline {
+    animation: scanline 1.3s var(--ease-in-out) infinite alternate;
+  }
+
+  @keyframes scanline {
+    from {
+      transform: translate3d(0, -14px, 0);
+    }
+    to {
+      transform: translate3d(0, 14px, 0);
+    }
+  }
+
+  /* ticker rows slide against each other as the page scrolls */
+  .scrub-row {
+    transform: translate3d(calc((var(--p, 0.5) - 0.5) * var(--shift, -24%)), 0, 0);
+    will-change: transform;
+  }
+
+  /* the app's tab bar, floating over the page on phones */
+  .tabbar {
+    background: color-mix(in oklab, var(--color-paper) 88%, transparent);
+    backdrop-filter: blur(18px);
+    border: 1px solid var(--color-rule);
+    border-radius: 22px;
+    box-shadow: var(--shadow-pop);
+    transition: transform 420ms var(--ease-out);
+  }
+
+  .tab-indicator {
+    transition: transform 420ms var(--ease-out);
+  }
+
+  .nav-pill {
+    background: color-mix(in oklab, var(--color-paper-2) 86%, transparent);
+    backdrop-filter: blur(18px);
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-pill);
+    transition:
+      box-shadow 300ms var(--ease-out),
+      background-color 300ms var(--ease-out);
+  }
+
+  /* chapter feature rows light up one after another */
+  .reveal-on [data-reveal='row'] {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+    transition:
+      opacity 500ms var(--ease-out),
+      transform 700ms var(--ease-out);
+    transition-delay: calc(var(--i, 0) * 55ms);
+  }
+
+  .reveal-on [data-reveal='row'].is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* a screen tilts up into place the first time it is seen */
+  .reveal-on [data-reveal='screen'] {
+    opacity: 0;
+    transform: perspective(1200px) rotateX(10deg) translate3d(0, 40px, 0) scale(0.96);
+    transform-origin: 50% 100%;
+    transition:
+      opacity 600ms var(--ease-out),
+      transform 1000ms var(--ease-out);
+    transition-delay: calc(var(--i, 0) * 110ms);
+  }
+
+  .reveal-on [data-reveal='screen'].is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* catalogue tiles */
+  .tile {
+    animation: land 380ms var(--ease-out) both;
+    animation-delay: calc(min(var(--i, 0), 24) * 18ms);
+    transition:
+      background-color 160ms var(--ease-out),
+      border-color 160ms var(--ease-out);
+  }
+
+  .tile:hover {
+    background: var(--color-paper-3);
+    border-color: var(--color-rule-strong);
+  }
+
+  .filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    border-radius: var(--radius-pill);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    white-space: nowrap;
+    color: var(--color-ink-2);
+    box-shadow: inset 0 0 0 1px var(--color-rule);
+    transition:
+      background-color 160ms var(--ease-out),
+      color 160ms var(--ease-out),
+      box-shadow 160ms var(--ease-out),
+      transform 120ms var(--ease-out);
+  }
+
+  .filter:hover {
+    color: var(--color-ink);
+    box-shadow: inset 0 0 0 1px var(--color-rule-strong);
+  }
+
+  .filter:active {
+    transform: scale(0.97);
+  }
+
+  .filter[aria-pressed='true'] {
+    background: var(--color-volt);
+    color: var(--color-on-volt);
+    box-shadow: none;
+  }
+
+  /* lime and domain fields */
+  .on-volt {
+    background: var(--color-volt);
+    color: var(--color-on-volt);
+  }
+
+  .on-volt :focus-visible {
+    outline-color: var(--color-on-volt);
+  }
+
+  .pet-stage {
+    background:
+      radial-gradient(60% 55% at 50% 100%, color-mix(in oklab, var(--color-volt) 26%, transparent), transparent),
+      var(--color-paper-2);
+  }
+
+  .hero-floor {
+    background:
+      radial-gradient(48% 42% at 72% 46%, color-mix(in oklab, var(--color-accent) 20%, transparent), transparent),
+      radial-gradient(40% 40% at 88% 90%, color-mix(in oklab, var(--color-volt) 10%, transparent), transparent);
+  }
+
+  @media (max-width: 1023px) {
+    .hero-floor {
+      background: radial-gradient(90% 40% at 50% 78%, color-mix(in oklab, var(--color-accent) 18%, transparent), transparent);
+    }
+  }
+}
+
+@layer components {
+  .rest-run {
+    transform-origin: left;
+    animation: rest-run 1500ms linear both;
+  }
+
+  @keyframes rest-run {
+    to {
+      transform: scaleX(0);
+    }
+  }
+
+  .chart-draw {
+    stroke-dasharray: 1;
+    animation: chart-draw 1400ms var(--ease-out) both;
+  }
+
+  @keyframes chart-draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+  }
+
+  /* the vendored pet keeps its own looping animations even though the page-wide
+     reduced-motion rule stops everything else */
+  .chapter-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @media (min-width: 640px) {
+    .chapter-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 2rem;
     }
   }
 }

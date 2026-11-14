@@ -23,9 +23,9 @@ import {
   setWeeklySummaryEnabled,
   setWorkoutRemindersEnabled,
 } from '@/lib/app-permissions';
+import { resyncLocalReminders } from '@/lib/local-reminders';
 import {
   isNativePushSupported,
-  isPushSupported,
   subscribeToNativePush,
   subscribeToPush,
   unsubscribeFromNativePush,
@@ -455,6 +455,7 @@ export function AppSettingsSections() {
               onCheckedChange={(checked) => {
                 setWorkoutRemindersOn(checked);
                 setWorkoutRemindersEnabled(checked);
+                resyncLocalReminders();
               }}
             />
           }
@@ -474,6 +475,7 @@ export function AppSettingsSections() {
               onCheckedChange={(checked) => {
                 setWeeklySummaryOn(checked);
                 setWeeklySummaryEnabled(checked);
+                resyncLocalReminders();
               }}
             />
           }

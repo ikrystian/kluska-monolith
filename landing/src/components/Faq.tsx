@@ -15,7 +15,7 @@ const faqs = [
   },
   {
     q: 'Jak działa synchronizacja ze Stravą?',
-    a: 'Łączysz konto Strava w ustawieniach profilu jednym kliknięciem. Po „Zakończ bieg” aktywność z mapą, tempem, kadencją i przewyższeniami trafia na Twój profil automatycznie.',
+    a: 'Łączysz konto Strava w ustawieniach profilu jednym kliknięciem. Od tej chwili Twoje aktywności ze Stravy trafiają do aplikacji — z dystansem, tempem i trasą — i liczą się do celów oraz wyzwań biegowych.',
   },
   {
     q: 'Mogę korzystać sam, bez trenera?',

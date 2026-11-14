@@ -1,38 +1,43 @@
-import { Navbar } from './components/Navbar';
-import { Hero } from './components/Hero';
-import { Manifesto } from './components/Manifesto';
-import { YearPlan } from './components/YearPlan';
-import { TrainingStage, RunningStage, NutritionStage, HabitsStage, CoachStage } from './components/Stages';
+import { Nav } from './sections/Nav';
+import { Hero, Ticker } from './sections/Hero';
+import { CoachChapter, CrewChapter, DailyChapter, FoodChapter, ProgressChapter, RunningChapter, TrainingChapter } from './sections/Tour';
+import { Catalogue, CoverRail, EverywhereSection, MoreSection, PetSection, SiteFooter } from './sections/Rest';
 import { PlateCalcInteractive } from './components/PlateCalcInteractive';
-import { KeyFeatures } from './components/KeyFeatures';
+import { YearPlan } from './components/YearPlan';
 import { Pricing } from './components/Pricing';
 import { Faq } from './components/Faq';
 import { CtaSection } from './components/CtaSection';
-import { Footer } from './components/Footer';
 import { useScrollReveal } from './lib/reveal';
 
+/* A tour of the app: every chapter is one area of it, shown as the screen itself playing a scene. */
 export default function App() {
   useScrollReveal();
 
   return (
     <>
-      <Navbar />
+      <Nav />
       <main>
         <Hero />
-        <Manifesto />
-        <YearPlan />
-        <TrainingStage />
+        <Ticker />
+        <TrainingChapter />
+        <CoverRail />
         <PlateCalcInteractive />
-        <RunningStage />
-        <NutritionStage />
-        <HabitsStage />
-        <CoachStage />
-        <KeyFeatures />
+        <RunningChapter />
+        <FoodChapter />
+        <DailyChapter />
+        <ProgressChapter />
+        <PetSection />
+        <CrewChapter />
+        <CoachChapter />
+        <MoreSection />
+        <EverywhereSection />
+        <Catalogue />
+        <YearPlan />
         <Pricing />
         <Faq />
         <CtaSection />
       </main>
-      <Footer />
+      <SiteFooter />
     </>
   );
 }

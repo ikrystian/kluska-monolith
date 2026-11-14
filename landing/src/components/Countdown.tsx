@@ -32,7 +32,7 @@ export function Countdown({ season, className = '' }: { season: Season; classNam
       <p
         role="timer"
         aria-label={`${season.days} ${units[0].label} do 1 stycznia ${season.planYear}`}
-        className="mt-1.5 flex items-baseline gap-x-4 sm:gap-x-6"
+        className="mt-1.5 flex items-baseline gap-x-2.5 min-[380px]:gap-x-4 sm:gap-x-6"
       >
         {units.map((u) => (
           <span key={u.label} className="flex items-baseline gap-1.5" aria-hidden>

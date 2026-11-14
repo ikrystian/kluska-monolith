@@ -7,6 +7,17 @@ const NATIVE_TOKEN_KEY = 'athlete-spa:native-push-token';
 /** Must match `android.notification.channelId` in the backend's FCM payload. */
 export const NATIVE_PUSH_CHANNEL_ID = 'default';
 
+/** The high-importance Android channel FCM messages target (heads-up banners). Idempotent. */
+async function ensureNativePushChannel(): Promise<void> {
+  if (Capacitor.getPlatform() !== 'android') return;
+  await PushNotifications.createChannel({
+    id: NATIVE_PUSH_CHANNEL_ID,
+    name: 'Powiadomienia',
+    importance: 4,
+    visibility: 1,
+  });
+}
+
 async function sendNativeTokenToBackend(token: string): Promise<boolean> {
   window.localStorage.setItem(NATIVE_TOKEN_KEY, token);
   const response = await apiFetch('/api/push/subscribe', {
@@ -177,6 +188,8 @@ export async function subscribeToNativePush(): Promise<boolean> {
     }
     if (permission.receive !== 'granted') return false;
 
+    await ensureNativePushChannel();
+
     return await new Promise<boolean>((resolve) => {
       let settled = false;
 
@@ -209,15 +222,24 @@ export async function subscribeToNativePush(): Promise<boolean> {
   }
 }
 
+/**
+ * Takes this device off the account: drops the token on the backend and
+ * unregisters from FCM/APNs so nothing more is delivered. Also the logout
+ * path — it reads the auth token synchronously, so call it before the
+ * session is cleared. Does nothing if this device never registered.
+ */
 export async function unsubscribeFromNativePush(): Promise<void> {
   try {
     const token = window.localStorage.getItem(NATIVE_TOKEN_KEY);
+    if (!token) return;
     window.localStorage.removeItem(NATIVE_TOKEN_KEY);
-    await apiFetch('/api/push/unsubscribe', {
+    const request = apiFetch('/api/push/unsubscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token }),
     });
+    if (isNativePushSupported()) await PushNotifications.unregister();
+    await request;
   } catch (error) {
     console.error('Native push unsubscribe failed:', error);
   }
@@ -245,14 +267,7 @@ export async function startNativePushSession(handlers: NativePushHandlers): Prom
     const permission = await PushNotifications.checkPermissions();
     if (permission.receive !== 'granted') return () => {};
 
-    if (Capacitor.getPlatform() === 'android') {
-      await PushNotifications.createChannel({
-        id: NATIVE_PUSH_CHANNEL_ID,
-        name: 'Powiadomienia',
-        importance: 4,
-        visibility: 1,
-      });
-    }
+    await ensureNativePushChannel();
 
     const handles = await Promise.all([
       PushNotifications.addListener('registration', (token) => {

@@ -35,8 +35,13 @@ export function setLocationSharingEnabled(next: boolean): void {
 export function isPushNotificationsEnabled(): boolean {
   return readBool(PUSH_KEY, false);
 }
+/** Fired when the push preference flips, so the native push session can start or stop without an app restart. */
+export const PUSH_PREFERENCE_CHANGED_EVENT = 'athlete-spa:push-preference-changed';
+
 export function setPushNotificationsEnabled(next: boolean): void {
+  const changed = isPushNotificationsEnabled() !== next;
   writeBool(PUSH_KEY, next);
+  if (changed) window.dispatchEvent(new Event(PUSH_PREFERENCE_CHANGED_EVENT));
 }
 
 export function isWorkoutRemindersEnabled(): boolean {

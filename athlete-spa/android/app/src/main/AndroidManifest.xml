@@ -70,6 +70,17 @@
                 android:resource="@xml/pet_widget_info" />
         </receiver>
 
+        <!-- Firebase Cloud Messaging: how a push looks when the system draws it (app in the background). The channel is created by the app (NATIVE_PUSH_CHANNEL_ID in src/lib/push.ts). -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_notification" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/widget_accent" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="default" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
