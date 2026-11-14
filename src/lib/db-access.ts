@@ -199,9 +199,9 @@ const policies: Record<string, CollectionPolicy> = {
   socialPosts: { public: true, ...owned('authorId', { readAll: true }) },
   socialProfiles: owned('userId', { readAll: true }),
 
-  // Shared templates — anyone may browse, owners edit
+  // Shared templates — anyone may browse, owners edit. Exercises are readable without logging in.
   // Popularność ustala skrypt/admin — inaczej każdy mógłby wypchnąć swoje ćwiczenie na górę listy.
-  exercises: { ...owned('ownerId', { readAll: true }), protectedFields: ['popularity'] },
+  exercises: { public: true, ...owned('ownerId', { readAll: true }), protectedFields: ['popularity'] },
   workouts: owned('ownerId', { readAll: true }),
 
   // Personal data

@@ -50,7 +50,7 @@ export function ExerciseCardHorizontal({
 
       {/* Treść */}
       <div className="min-w-0 flex-1 py-1">
-        <h3 className="line-clamp-1 text-sm font-semibold">{exercise.name}</h3>
+        <h3 className=" text-sm font-semibold">{exercise.name}</h3>
         <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
           {muscles.length ? muscles.join(' · ') : 'Brak partii'}
         </p>
@@ -81,7 +81,6 @@ export function ExerciseCardHorizontal({
           onDelete={onDelete}
           onShowProgress={onShowProgress}
         />
-        <ChevronRight className="mr-1 h-4 w-4 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
       </div>
     </motion.div>
   );
