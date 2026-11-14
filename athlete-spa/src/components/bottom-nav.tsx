@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Dumbbell, House, LayoutGrid, Plus, Users, UtensilsCrossed, type LucideIcon } from 'lucide-react';
+import { CalendarDays, Dumbbell, House, LayoutGrid, Plus, Users, UtensilsCrossed, type LucideIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { QuickAddSheet } from '@/components/quick-add-sheet';
@@ -8,6 +8,7 @@ import { useUserProfile } from '@/contexts/UserProfileContext';
 import { keepsChromeVisible } from '@/lib/athlete-nav';
 import { resolveMediaUrl } from '@/lib/api-client';
 import { haptic } from '@/lib/haptics';
+import { useIsTablet } from '@/hooks/useIsTablet';
 import { cn } from '@/lib/utils';
 
 function TabLink({ href, label, icon: Icon, isActive, children }: { href: string; label: string; icon?: LucideIcon; isActive: boolean; children?: React.ReactNode }) {
@@ -39,6 +40,7 @@ export function BottomNav() {
   const { pathname, search } = useLocation();
   const { userProfile } = useUserProfile();
   const [addOpen, setAddOpen] = useState(false);
+  const isTablet = useIsTablet();
 
   // During an active workout session (/athlete/log?logId=...) the nav is
   // hidden so it doesn't cover the workout controls.
@@ -89,7 +91,12 @@ export function BottomNav() {
           </div>
 
           <TabLink href="/athlete/social" label="Ekipa" icon={Users} isActive={pathname.startsWith('/athlete/social')} />
-          <TabLink href="/athlete/menu" label="Menu" icon={LayoutGrid} isActive={menuActive} />
+          {/* On a tablet the menu is the left pane, so its slot goes to the calendar. */}
+          {isTablet ? (
+            <TabLink href="/athlete/calendar" label="Grafik" icon={CalendarDays} isActive={pathname.startsWith('/athlete/calendar')} />
+          ) : (
+            <TabLink href="/athlete/menu" label="Menu" icon={LayoutGrid} isActive={menuActive} />
+          )}
           <TabLink href="/athlete/you" label={youLabel} isActive={youActive}>
             <Avatar className={cn('h-[22px] w-[22px]', youActive && 'ring-2 ring-foreground ring-offset-1 ring-offset-background')}>
               {userProfile?.avatarUrl && <AvatarImage src={resolveMediaUrl(userProfile.avatarUrl)} alt="" />}

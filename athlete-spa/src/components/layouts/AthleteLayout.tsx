@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useSWRConfig } from 'swr';
 import { Loader2 } from 'lucide-react';
 import { AppHeader } from '@/components/header';
@@ -17,6 +17,8 @@ import { AnimatedOutlet } from '@/components/motion';
 import { useAndroidBackButton } from '@/hooks/useAndroidBackButton';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useHideOnScroll } from '@/hooks/useHideOnScroll';
+import { useIsTablet } from '@/hooks/useIsTablet';
+import { MENU_PATH, SidePane, getSidePanePath } from '@/components/layouts/SidePane';
 import { PullToRefreshIndicator } from '@/components/pull-to-refresh-indicator';
 import { OfflineBanner } from '@/components/offline-banner';
 import { TourHost } from '@/components/tour/TourHost';
@@ -59,6 +61,9 @@ function AthleteLayoutContent() {
   // drops the clearance padding it otherwise needs to sit between them.
   const isActiveWorkoutSession = location.pathname === '/athlete/log' && new URLSearchParams(location.search).has('logId');
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Tablets and unfolded foldables split the screen: menu or parent list on
+  // the left, the current screen on the right.
+  const isTablet = useIsTablet();
 
   useAndroidBackButton();
 
@@ -132,6 +137,12 @@ function AthleteLayoutContent() {
     return <Outlet />;
   }
 
+  // The menu is the left pane on a tablet, so its own route has nothing left
+  // to show on the right.
+  if (isTablet && location.pathname === MENU_PATH) {
+    return <Navigate to="/athlete/dashboard" replace />;
+  }
+
   // At this point, user is loaded, logged in, and is confirmed to be an athlete
   // or a trainer. It is now safe to render the athlete layout and its children.
   return (
@@ -140,6 +151,8 @@ function AthleteLayoutContent() {
         <NativeWidgetBridge />
         <PetNotificationsBridge />
         <TourHost />
+        <div className="app-shell" data-split={isTablet ? '' : undefined}>
+        {isTablet && <SidePane path={getSidePanePath(location.pathname)} />}
         <main
           ref={setChromeRoot}
           data-chrome={chromeHidden ? 'hidden' : 'visible'}
@@ -175,6 +188,7 @@ function AthleteLayoutContent() {
           <BottomNav />
           <ActiveWorkoutWidget />
         </main>
+        </div>
       </HeaderTitleProvider>
     </ActiveWorkoutProvider>
   );

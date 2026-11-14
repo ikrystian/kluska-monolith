@@ -49,3 +49,4 @@ athlete-spa/bun.lock
 # Python virtual environment
 .venv/
 venv/
+bun.lock

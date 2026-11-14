@@ -79,6 +79,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { FeaturedTemplate, NewTemplateTile, TemplateTile, WorkoutExercisesPreview } from '@/components/workout/TemplateCards';
 import { FOCUS_META, FOCUS_ORDER, lastSessionOf, recommendTemplate, templateFocus, type TemplateFocus } from '@/components/workout/template-meta';
 import gymPhoto from '@/assets/auth-gym.jpg';
+import { ImageCropDialog, STORY_ASPECT } from '@/components/shared/ImageCropDialog';
 import runCover from '@/assets/workout-covers/run.svg';
 import { TourAnchor } from '@/components/tour/TourAnchor';
 
@@ -408,6 +409,8 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   const [isSaving, setIsSaving] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  // Picked file waiting for the 9:16 crop; nothing is saved until the crop is confirmed.
+  const [photoToCrop, setPhotoToCrop] = useState<File | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -745,15 +748,20 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setPhotoFile(file);
-      setPhotoPreview((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return URL.createObjectURL(file);
-      });
+      // Open the 9:16 crop first; the photo is only set once the crop is confirmed.
+      setPhotoToCrop(e.target.files[0]);
     }
     // Reset so picking / shooting the same file again still fires onChange.
     e.target.value = '';
+  };
+
+  const handleCroppedPhoto = (cropped: File) => {
+    setPhotoFile(cropped);
+    setPhotoPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(cropped);
+    });
+    setPhotoToCrop(null);
   };
 
   const handleAddExercise = (exerciseId: string) => {
@@ -969,7 +977,8 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
           <DetectedGym status={workoutGym.status} match={workoutGym.match} onDismiss={workoutGym.dismiss} />
 
           {photoPreview && (
-            <div className="relative aspect-video w-full overflow-hidden rounded-2xl">
+            // 9:16 frame, sized by height so it stays fully visible on phones.
+            <div className="relative mx-auto h-[min(60svh,28rem)] aspect-[9/16] overflow-hidden rounded-2xl bg-muted">
               <img src={photoPreview} alt="Podgląd zdjęcia" className="absolute inset-0 h-full w-full object-cover" />
             </div>
           )}
@@ -985,6 +994,14 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
               the athlete pick an existing shot from the gallery. */}
           <input type="file" ref={cameraInputRef} accept="image/*" capture="environment" onChange={handlePhotoChange} className="hidden" />
           <input type="file" ref={photoInputRef} accept="image/*" onChange={handlePhotoChange} className="hidden" />
+          <ImageCropDialog
+            file={photoToCrop}
+            aspect={STORY_ASPECT}
+            title="Przytnij zdjęcie"
+            description="Ustaw ramkę w proporcjach 9:16, aby kadr pasował do relacji na telefonie."
+            onCancel={() => setPhotoToCrop(null)}
+            onConfirm={handleCroppedPhoto}
+          />
         </div>
 
         <div className="space-y-1 pb-2 pt-4">
@@ -1460,7 +1477,7 @@ function ExerciseCard({ index, exerciseDetails, onRemoveExercise, isLoadingExerc
     <div>
       <div className="flex items-start gap-1 pb-3 pt-1">
         <div className="min-w-0 flex-1">
-          <h2 className="line-clamp-2 font-display text-[2rem] font-bold uppercase leading-[1]">
+          <h2 className="line-clamp-2 font-display text-xl font-bold uppercase leading-[1]">
             {exerciseDetails?.name || (isLoadingExercises ? 'Ładowanie...' : 'Wybierz ćwiczenie')}
           </h2>
           {(tempo || exerciseHistory) && (
@@ -1803,32 +1820,38 @@ function SectionHeader({ title, count, action }: { title: string; count?: number
 }
 
 /** Small start tile: picture or plain card behind, icon chip on top, label at the bottom. */
-function QuickTile({ image, icon: Icon, iconClassName, title, subtitle, onClick, to }: { image?: string; icon: typeof Plus; iconClassName: string; title: string; subtitle: string; onClick?: () => void; to?: string }) {
-  const className = cn(
-    'relative flex h-[6.5rem] min-w-0 justify-between overflow-hidden rounded-2xl p-3 text-left transition-transform duration-150 active:scale-[0.97]',
-    image ? 'bg-[#111316] text-white' : 'bg-card text-foreground'
+/**
+ * A quick-start door: cover image, what it starts, and an arrow chip that
+ * marks it as tappable. `primary` is the main way in and wears the brand color.
+ */
+function QuickTile({ image, icon: Icon, iconClassName, eyebrow, title, subtitle, primary = false, className, onClick, to }: { image: string; icon: typeof Plus; iconClassName: string; eyebrow: string; title: string; subtitle: string; primary?: boolean; className?: string; onClick?: () => void; to?: string }) {
+  const tileClassName = cn(
+    'relative flex h-40 min-w-0 flex-col justify-between overflow-hidden rounded-2xl bg-[#111316] p-3.5 text-left text-white transition-transform duration-150 active:scale-[0.97]',
+    className
   );
   const body = (
     <>
-      {image && (
-        <>
-          <img src={image} alt="" loading="lazy" decoding="async" draggable={false} className="absolute inset-0 h-full w-full select-none object-cover" />
-          <span className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/5" />
-        </>
-      )}
-      <span className={cn('relative grid h-8 w-8 place-items-center rounded-full', iconClassName)}>
-        <Icon className="h-4 w-4" strokeWidth={2.5} />
+      <img src={image} alt="" loading="lazy" decoding="async" draggable={false} className="absolute inset-0 h-full w-full select-none object-cover" />
+      <span className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/15" />
+      <span className="relative flex items-center gap-2">
+        <span className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-full', iconClassName)}>
+          <Icon className="h-4 w-4" strokeWidth={2.5} />
+        </span>
+        <span className="min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-wider text-white/80">{eyebrow}</span>
+        <span className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-full', primary ? 'bg-primary text-primary-foreground' : 'bg-white/15 text-white backdrop-blur-sm')}>
+          <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+        </span>
       </span>
       <span className="relative block min-w-0">
-        <span className="block font-display text-[2.375rem] font-bold uppercase leading-none">{title}</span>
-        <span className={cn('mt-0.5 block text-right truncate text-[11px] font-medium', image ? 'text-white/75' : 'text-muted-foreground')}>{subtitle}</span>
+        <span className="block font-display text-[2rem] font-bold uppercase leading-[0.95]">{title}</span>
+        <span className="mt-1 block truncate text-xs font-medium text-white/75">{subtitle}</span>
       </span>
     </>
   );
   return to ? (
-    <Link to={to} className={className}>{body}</Link>
+    <Link to={to} className={tileClassName}>{body}</Link>
   ) : (
-    <button type="button" onClick={onClick} className={className}>{body}</button>
+    <button type="button" onClick={onClick} className={tileClassName}>{body}</button>
   );
 }
 
@@ -1977,10 +2000,30 @@ function WorkoutSelectionView({ onStartBuilder, allExercises }: { onStartBuilder
   return (
     <div className="stagger-rise space-y-6">
 
-      <div data-tour="log-quick-start" className={cn('grid gap-2 grid-cols-1')}>
-        <QuickTile image={gymPhoto} icon={Plus} iconClassName="bg-primary text-primary-foreground" title="Od zera" subtitle="Pusty trening" onClick={handleStartEmpty} />
+      {/* Strength is the main way in, so it takes the wider tile; the run tile only exists with GPS. */}
+      <div data-tour="log-quick-start" className="grid grid-cols-5 gap-2">
+        <QuickTile
+          primary
+          className={supportsGeolocation ? 'col-span-3' : 'col-span-5'}
+          image={gymPhoto}
+          icon={Dumbbell}
+          iconClassName="bg-primary text-primary-foreground"
+          eyebrow="Siłownia"
+          title="Od zera"
+          subtitle="Pusty trening, Twoje ćwiczenia"
+          onClick={handleStartEmpty}
+        />
         {supportsGeolocation && (
-          <QuickTile image={runCover} icon={Footprints} iconClassName="bg-run text-white" title="Bieg" subtitle="Trasa z GPS" onClick={() => setStartRunDialogOpen(true)} />
+          <QuickTile
+            className="col-span-2"
+            image={runCover}
+            icon={Footprints}
+            iconClassName="bg-run text-white"
+            eyebrow="GPS"
+            title="Bieg"
+            subtitle="Zapis trasy"
+            onClick={() => setStartRunDialogOpen(true)}
+          />
         )}
       </div>
       <StartRunDialog open={startRunDialogOpen} onOpenChange={setStartRunDialogOpen} programs={runningPrograms} />
