@@ -890,7 +890,13 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   };
 
   const handleDiscardWorkout = async () => {
-    if (!workoutLogId) return;
+    // Nothing was persisted yet (no log was created), so there is nothing to delete.
+    if (!workoutLogId) {
+      clearWorkoutLogsCache(swrMutate);
+      refetchActiveWorkout();
+      navigate('/athlete/dashboard');
+      return;
+    }
 
     setIsSaving(true);
     try {
@@ -1038,7 +1044,14 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
   return (
     <div className="relative flex h-full min-h-0 flex-col">
       <FormProvider {...form}>
-        <form onSubmit={form.handleSubmit(() => setIsFinished(true), (errors) => {
+        <form onSubmit={form.handleSubmit(() => {
+          // No sets were ever added: there is nothing to save, so end the session without the summary.
+          if (totalSets === 0) {
+            handleDiscardWorkout();
+            return;
+          }
+          setIsFinished(true);
+        }, (errors) => {
           console.error("Validation errors:", errors);
           toast({
             title: "Błąd walidacji",
@@ -1097,7 +1110,7 @@ function ActiveWorkoutView({ initialWorkout, allExercises, onFinishWorkout, isLo
               </div>
 
               <ElapsedClock startTime={startTime} />
-              <Button type="submit" size="sm" variant="volt" disabled={fields.length === 0}>
+              <Button type="submit" size="sm" variant="volt">
                 Zakończ
               </Button>
             </div>
