@@ -171,15 +171,14 @@
 }
 
 /*
- * Tablet i rozłożony Fold (useIsTablet): dwa panele obok siebie. Na Foldzie
- * dzielą ekran po połowie, więc granica wypada na zgięciu; na szerszym
- * tablecie lewy panel zostaje wąski, a resztę bierze bieżący ekran.
+ * Tablet i rozłożony Fold (useIsTablet): dwa panele obok siebie w proporcji
+ * 1:3 — lewy panel (menu albo lista) jest wąski, resztę bierze bieżący ekran.
  * `contain: layout` sprawia, że elementy `fixed` (nagłówek, pasek, przyciski
  * przyklejone do dołu ekranu) trzymają się swojego panelu, a nie okna.
  */
 .app-shell[data-split] {
   display: grid;
-  grid-template-columns: minmax(0, min(50%, 26rem)) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
   width: 100%;
   max-width: 76rem;
   height: 100dvh;

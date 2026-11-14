@@ -13,6 +13,7 @@ import { clearPersistedCache } from '@/lib/swr-cache';
 import { clearMemoryCache } from '@/lib/cache-invalidation';
 import { clearOfflineQueue } from '@/lib/offline-queue';
 import { clearOfflineExerciseData } from '@/lib/offline-exercises';
+import { clearPetWidget } from '@/lib/pet-widget';
 
 /**
  * Set while the app is used in guest mode, so an expired guest token can be
@@ -215,6 +216,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     const wasGuest = !!localStorage.getItem(GUEST_MODE_KEY);
+    // The home-screen widget must not keep showing this account's pet.
+    void clearPetWidget();
 
     if (wasGuest) {
       // Preserve the device-id so the hardware binding survives the wipe

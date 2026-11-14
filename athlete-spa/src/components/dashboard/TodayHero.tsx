@@ -3,7 +3,9 @@ import { format } from 'date-fns';
 import { Check, ChevronRight, Footprints, Play, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { exercisesLabel, setsLabel } from '@/lib/plural';
-import type { PlannedWorkout, WorkoutLog } from '@/lib/types';
+import { cn } from '@/lib/utils';
+import { useDoc } from '@/lib/db-hooks';
+import type { PlannedWorkout, Workout, WorkoutLog } from '@/lib/types';
 
 const volumeOf = (log: WorkoutLog) =>
   log.exercises.reduce(
@@ -24,6 +26,10 @@ interface TodayHeroProps {
 
 /** The one thing to do today. Everything else on the screen is secondary to this. */
 export function TodayHero({ active, planned, doneToday, lastWorkout }: TodayHeroProps) {
+  // A workout started from a template wears that template's picture.
+  const { data: template } = useDoc<Workout>('workouts', doneToday?.sourceWorkoutId ?? null);
+  const doneImage = doneToday?.sourceWorkoutId ? template?.imageUrl : undefined;
+
   if (active) {
     const total = active.exercises.reduce((sum, ex) => sum + ex.sets.length, 0);
     const done = setCountOf(active);
@@ -45,8 +51,19 @@ export function TodayHero({ active, planned, doneToday, lastWorkout }: TodayHero
       <Link
         to={`/athlete/history/${doneToday.id}`}
         state={{ title: doneToday.workoutName }}
-        className="block rounded-2xl bg-lime p-4 text-lime-foreground transition-transform active:scale-[0.99]"
+        className={cn(
+          'relative block overflow-hidden rounded-2xl p-4 transition-transform active:scale-[0.99]',
+          doneImage ? 'text-white' : 'bg-lime text-lime-foreground'
+        )}
       >
+        {doneImage && (
+          <>
+            <img src={doneImage} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover" />
+            {/* Scrim keeps the title and stats readable on any picture. */}
+            <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30" />
+          </>
+        )}
+        <div className="relative">
         <p className="flex items-center gap-1.5 text-[13px] font-semibold opacity-80">
           <Check className="h-4 w-4" strokeWidth={3} /> Dzisiejszy trening zrobiony
         </p>
@@ -58,6 +75,7 @@ export function TodayHero({ active, planned, doneToday, lastWorkout }: TodayHero
           {doneToday.duration ? `${doneToday.duration} min · ` : ''}
           {setsLabel(setCountOf(doneToday))} · {Math.round(volumeOf(doneToday)).toLocaleString('pl-PL')} kg
         </p>
+        </div>
       </Link>
     );
   }

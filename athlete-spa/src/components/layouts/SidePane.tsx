@@ -39,7 +39,7 @@ export function getSidePanePath(pathname: string): string {
 }
 
 /**
- * Left half of the tablet layout. It renders a regular screen under a location
+ * Left pane (a quarter of the width) of the tablet layout. It renders a regular screen under a location
  * of its own, so that screen reads its own path while links inside it still
  * navigate the app — the result opens in the right pane.
  */
@@ -48,7 +48,7 @@ export function SidePane({ path }: { path: string }) {
 
   return (
     <aside className="flex h-dvh min-w-0 flex-col overflow-hidden border-r border-border/70 bg-background">
-      <header className="h-[var(--app-top)] shrink-0 pt-[env(safe-area-inset-top)]">
+      <header className="h-[var(--app-top)] shrink-0 pt-[env(safe-area-inset-top)] sm:hidden">
         <div className="flex h-[var(--header-h)] items-center px-4">
           <h2 className="truncate font-display text-[1.75rem] font-bold uppercase leading-none">
             <span className="text-volt">#</span>

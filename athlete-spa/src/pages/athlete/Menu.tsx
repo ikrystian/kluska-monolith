@@ -89,7 +89,7 @@ function SectionTitle({ id, children }: { id?: string; children: ReactNode }) {
 function DirectoryCell({ leaf, wide }: { leaf: NavLeaf; wide?: boolean }) {
   const Icon = leaf.icon;
   return (
-    <li className={cn('min-w-0', wide && 'col-span-2')}>
+    <li className={cn('min-w-0', wide && 'xl:col-span-2')}>
       <Link to={leaf.href} onClick={() => haptic('tap')} className={cn(CELL, 'flex h-14 items-center gap-3 px-3.5')}>
         <Icon className={ICON} />
         <span className="line-clamp-2 min-w-0 text-[15px] font-semibold leading-[1.2]">{tidyLabel(leaf.label)}</span>
@@ -104,7 +104,7 @@ function DirectorySection({ title, leaves }: { title: string; leaves: NavLeaf[] 
   return (
     <section data-tour="menu-directory" aria-labelledby={id}>
       <SectionTitle id={id}>{title}</SectionTitle>
-      <ul className={cn(CARD, 'grid grid-cols-2 gap-px')}>
+      <ul className={cn(CARD, 'grid sm:grid-cols-1  lg:grid-cols-2 gap-px')}>
         {leaves.map((leaf, index) => (
           <DirectoryCell key={leaf.href} leaf={leaf} wide={leaves.length % 2 === 1 && index === leaves.length - 1} />
         ))}
@@ -121,7 +121,7 @@ function Shortcuts({ leaves }: { leaves: NavLeaf[] }) {
   return (
     <section data-tour="menu-shortcuts" aria-labelledby="menu-shortcuts">
       <SectionTitle id="menu-shortcuts">Szybki dostęp</SectionTitle>
-      <ul className={cn(CARD, 'grid grid-cols-4 gap-px')}>
+      <ul className={cn(CARD, 'grid sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4 gap-px')}>
         {leaves.map(leaf => {
           const Icon = leaf.icon;
           return (
@@ -189,7 +189,7 @@ function ProfileRow() {
         )}
         <AvatarFallback className="bg-secondary text-sm font-semibold">{name.slice(0, 2).toUpperCase()}</AvatarFallback>
       </Avatar>
-      <span className="min-w-0 flex-1">
+      <span className="flex-1">
         <span className="block truncate text-[15px] font-semibold leading-snug">{name}</span>
         <span className="mt-0.5 block truncate text-[13px] text-muted-foreground">
           {facts.length > 0 ? facts.join(' · ') : 'Profil, statystyki i dane konta'}

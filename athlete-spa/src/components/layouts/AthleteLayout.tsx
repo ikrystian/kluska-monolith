@@ -10,6 +10,7 @@ import { HeaderTitleProvider } from '@/contexts/HeaderTitleContext';
 import { ActiveWorkoutWidget } from '@/components/workout/ActiveWorkoutWidget';
 import { NativeWidgetBridge } from '@/components/native-widget-bridge';
 import { PetNotificationsBridge } from '@/components/pet/PetNotificationsBridge';
+import { PetWidgetBridge } from '@/components/pet/PetWidgetBridge';
 import { UserProfileProvider, useUserProfile } from '@/contexts/UserProfileContext';
 import { useAuth, ONBOARDING_PENDING_KEY, ONBOARDING_SKIPPED_KEY } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -150,6 +151,7 @@ function AthleteLayoutContent() {
       <HeaderTitleProvider>
         <NativeWidgetBridge />
         <PetNotificationsBridge />
+        <PetWidgetBridge />
         <TourHost />
         <div className="app-shell" data-split={isTablet ? '' : undefined}>
         {isTablet && <SidePane path={getSidePanePath(location.pathname)} />}

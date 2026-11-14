@@ -393,7 +393,7 @@ public class SessionWidgetProvider extends AppWidgetProvider {
         return fits ? budgetDp - rowDp : 0;
     }
 
-    private static PendingIntent openApp(Context context, String path, int requestCode) {
+    static PendingIntent openApp(Context context, String path, int requestCode) {
         // Explicit, so it reaches the app even if another one claims the scheme; the
         // Capacitor App plugin reports the URL to JS as appUrlOpen / getLaunchUrl.
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(URL_PREFIX + path))

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The app's dark-theme "food" and "volt" colours (src/globals.css); the rest comes from widget_colors.xml. -->
+<resources>
+    <color name="pet_widget_food">#FFF6C446</color>
+    <color name="pet_widget_volt">#FFC3F037</color>
+</resources>
