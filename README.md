@@ -132,6 +132,7 @@ npm run db:seed:running -- --dry-run   # podgląd zmian bez zapisu
 | `FATSECRET_CLIENT_ID`, `FATSECRET_CLIENT_SECRET` | nie | Wyszukiwarka produktów FatSecret |
 | `OPEN_ROUTER_API_KEY` | nie | AI przez OpenRouter (podsumowania biegów, posiłki) |
 | `GEMINI_API_KEY` | nie | Genkit / Gemini |
+| `WELCOME_MESSAGE_ADMIN_EMAIL`, `WELCOME_MESSAGE_SCHEDULER` | nie | Wiadomość powitalna na czacie godzinę po rejestracji: e-mail admina-nadawcy (domyślnie najstarsze konto admina) oraz włącznik zadania (`1`/`0`; domyślnie działa tylko w produkcji) |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | nie | Web Push dla PWA (publiczny klucz trafia też do `athlete-spa` jako `VITE_VAPID_PUBLIC_KEY`) |
 | `FIREBASE_SERVICE_ACCOUNT_KEY` / `GOOGLE_APPLICATION_CREDENTIALS` | nie | Firebase Admin (powiadomienia push FCM na Androida) |
 | `NEXT_PUBLIC_PLAY_STORE_URL`, `NEXT_PUBLIC_APP_STORE_URL` | nie | Linki do sklepów w interfejsie |

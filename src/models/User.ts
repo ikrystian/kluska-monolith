@@ -46,6 +46,10 @@ export interface IUser extends Document {
   passwordResetSentAt?: Date;
   termsAcceptedAt?: Date;
   termsVersion?: string;
+  // Welcome chat message from the admin (lib/welcome-message): due an hour
+  // after registration, then replaced by the time it was actually sent.
+  welcomeMessageDueAt?: Date;
+  welcomeMessageSentAt?: Date;
   avatarUrl?: string;
   location?: string;
   socialLinks?: {
@@ -99,6 +103,8 @@ const UserSchema = new Schema<IUser>(
     passwordResetSentAt: { type: Date },
     termsAcceptedAt: { type: Date },
     termsVersion: { type: String },
+    welcomeMessageDueAt: { type: Date },
+    welcomeMessageSentAt: { type: Date },
     avatarUrl: { type: String },
     location: { type: String },
     socialLinks: {
@@ -173,6 +179,8 @@ const UserSchema = new Schema<IUser>(
         delete ret.emailVerificationExpires;
         delete ret.passwordResetTokenHash;
         delete ret.passwordResetExpires;
+        delete ret.welcomeMessageDueAt;
+        delete ret.welcomeMessageSentAt;
         return ret;
       },
     },
@@ -184,6 +192,9 @@ UserSchema.index({ role: 1 });
 UserSchema.index({ trainerId: 1 });
 // "Who trains at this gym" — otherwise a scan of every account.
 UserSchema.index({ favoriteGymIds: 1 });
+// The welcome-message job looks for due accounts every minute; only the few
+// accounts still waiting carry the field.
+UserSchema.index({ welcomeMessageDueAt: 1 }, { sparse: true });
 
 // Pre-save middleware to hash password
 UserSchema.pre('save', async function () {

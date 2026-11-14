@@ -146,6 +146,7 @@ const trainerNavItems = [
 // screen open in the generic data view (/admin/data/<resource>).
 const adminNavItems = [
   { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { href: '/admin/chat', icon: MessageSquare, label: 'Czat' },
   {
     label: 'Użytkownicy',
     icon: Users,

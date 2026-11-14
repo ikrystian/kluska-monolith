@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { User } from '@/models/User';
+import { WELCOME_MESSAGE_DELAY_MS } from '@/lib/welcome-message';
 import { EMAIL_RE, MIN_PASSWORD_LENGTH, TERMS_VERSION, issueEmailVerification } from '@/lib/account';
 
 export async function POST(request: NextRequest) {
@@ -68,6 +69,11 @@ export async function POST(request: NextRequest) {
     user.password = password; // Will be hashed by pre-save middleware
     user.termsAcceptedAt = new Date();
     user.termsVersion = TERMS_VERSION;
+    // The admin's welcome chat message goes out an hour from now. A guest
+    // re-submitting the form keeps the time of the first attempt.
+    if (!user.welcomeMessageSentAt && !user.welcomeMessageDueAt) {
+      user.welcomeMessageDueAt = new Date(Date.now() + WELCOME_MESSAGE_DELAY_MS);
+    }
 
     const emailSent = await issueEmailVerification(user);
 

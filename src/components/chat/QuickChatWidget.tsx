@@ -32,12 +32,12 @@ export function QuickChatWidget() {
     const sortedConversations = useMemo(() => (conversations ?? []).slice(0, 5), [conversations]);
 
     const handleSelectConversation = (conversationId: string) => {
-        const role = currentUser?.role === 'trainer' ? 'trainer' : 'athlete';
+        const role = currentUser?.role === 'trainer' || currentUser?.role === 'admin' ? currentUser.role : 'athlete';
         router.push(`/${role}/chat?conversationId=${conversationId}`);
     };
 
     const handleViewAll = () => {
-        const role = currentUser?.role === 'trainer' ? 'trainer' : 'athlete';
+        const role = currentUser?.role === 'trainer' || currentUser?.role === 'admin' ? currentUser.role : 'athlete';
         router.push(`/${role}/chat`);
     };
 

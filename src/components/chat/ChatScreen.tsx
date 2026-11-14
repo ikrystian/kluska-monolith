@@ -14,7 +14,7 @@ import { NewConversationDialog } from './NewConversationDialog';
 import { useChat } from './hooks/useChat';
 
 interface ChatScreenProps {
-    basePath: '/trainer/chat' | '/athlete/chat';
+    basePath: '/trainer/chat' | '/athlete/chat' | '/admin/chat';
     /** People the user may start a chat with; the user and existing contacts are filtered out here. */
     contacts: UserProfile[];
     contactsLoading: boolean;
@@ -31,7 +31,7 @@ function Centered({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Chat page for the web app (trainer and athlete).
+ * Chat page for the web app (trainer, athlete and admin).
  *
  *   ?conversationId=<id>  → open conversation (document id or legacy `a_b` key)
  *   ?userId=<id>          → the conversation with that user, or a draft of it —
