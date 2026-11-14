@@ -21,14 +21,58 @@ async function sendNativeTokenToBackend(token: string): Promise<boolean> {
   return response.ok;
 }
 
-/** Web Push (service worker + Push API) — the path for a regular browser tab. */
+/**
+ * Web Push (service worker + Push API) — the path for a regular browser tab.
+ * Only about what the browser can do; whether the server has a VAPID key is a
+ * separate question answered by `getVapidPublicKey`.
+ */
 export function isPushSupported(): boolean {
   return (
     typeof window !== 'undefined' &&
+    window.isSecureContext &&
     'serviceWorker' in navigator &&
     'PushManager' in window &&
-    !!VAPID_PUBLIC_KEY
+    'Notification' in window
   );
+}
+
+/**
+ * Why a Web Push subscription attempt ended the way it did:
+ * - `unsupported`: this browser lacks the Push API (or the page isn't HTTPS)
+ * - `not-configured`: the server has no VAPID key — nothing the user can fix
+ * - `failed`: transient (network, push service) — worth retrying later
+ */
+export type PushSubscribeResult = 'ok' | 'unsupported' | 'not-configured' | 'failed';
+
+let vapidKeyPromise: Promise<string | null> | null = null;
+
+/**
+ * The server's VAPID public key: the build-time env value when present,
+ * otherwise asked from the backend (the single source of truth). Resolves
+ * null when the server has none; throws when the backend can't be reached.
+ */
+function getVapidPublicKey(): Promise<string | null> {
+  if (VAPID_PUBLIC_KEY) return Promise.resolve(VAPID_PUBLIC_KEY);
+  if (!vapidKeyPromise) {
+    vapidKeyPromise = (async () => {
+      const response = await apiFetch('/api/push/vapid-public-key');
+      if (response.status === 503 || response.status === 404) return null;
+      if (!response.ok) throw new Error(`VAPID key request failed: ${response.status}`);
+      const { publicKey } = (await response.json()) as { publicKey?: string };
+      return publicKey || null;
+    })();
+    // Don't cache a failure — the next attempt should ask again.
+    vapidKeyPromise.catch(() => {
+      vapidKeyPromise = null;
+    });
+  }
+  return vapidKeyPromise;
+}
+
+function sameKey(a: ArrayBuffer | null | undefined, b: Uint8Array): boolean {
+  if (!a) return false;
+  const bytes = new Uint8Array(a);
+  return bytes.length === b.length && bytes.every((byte, i) => byte === b[i]);
 }
 
 /**
@@ -53,21 +97,31 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 /**
  * Registers the service worker (idempotent) and subscribes it to Web Push,
  * then hands the subscription to the backend so an admin can target this
- * device. Returns false if the platform doesn't support it or the browser
- * declines the subscription.
+ * device. The result says why it didn't work, so the UI can tell a browser
+ * limitation from a server misconfiguration from a passing network error.
  */
-export async function subscribeToPush(): Promise<boolean> {
-  if (!isPushSupported()) return false;
+export async function subscribeToPush(): Promise<PushSubscribeResult> {
+  if (!isPushSupported()) return 'unsupported';
 
   try {
+    const vapidKey = await getVapidPublicKey();
+    if (!vapidKey) return 'not-configured';
+    const applicationServerKey = urlBase64ToUint8Array(vapidKey);
+
     const registration = await navigator.serviceWorker.register('/sw.js');
     await navigator.serviceWorker.ready;
 
     let subscription = await registration.pushManager.getSubscription();
+    // A subscription made under a different VAPID key (rotated since) can
+    // never be delivered to, and subscribing over it throws — drop it first.
+    if (subscription && !sameKey(subscription.options.applicationServerKey, applicationServerKey)) {
+      await subscription.unsubscribe();
+      subscription = null;
+    }
     if (!subscription) {
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY!) as BufferSource,
+        applicationServerKey: applicationServerKey as BufferSource,
       });
     }
 
@@ -82,10 +136,10 @@ export async function subscribeToPush(): Promise<boolean> {
       }),
     });
 
-    return response.ok;
+    return response.ok ? 'ok' : 'failed';
   } catch (error) {
     console.error('Push subscribe failed:', error);
-    return false;
+    return 'failed';
   }
 }
 

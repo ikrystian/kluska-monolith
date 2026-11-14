@@ -164,7 +164,11 @@ export function AppSettingsSections() {
   // shows the user anything).
   useEffect(() => {
     if (!pushOn) return;
-    const resubscribe = isNativePushSupported() ? subscribeToNativePush() : isPushSupported() ? subscribeToPush() : Promise.resolve(false);
+    // A transient web failure (offline at launch) keeps the preference — the
+    // next launch retries — instead of silently switching notifications off.
+    const resubscribe = isNativePushSupported()
+      ? subscribeToNativePush()
+      : subscribeToPush().then((result) => result === 'ok' || result === 'failed');
     resubscribe.then((subscribed) => {
       if (!subscribed) {
         setPushOn(false);
@@ -320,13 +324,19 @@ export function AppSettingsSections() {
         return;
       }
 
-      const subscribed = isPushSupported() ? await subscribeToPush() : false;
+      const result = await subscribeToPush();
+      const subscribed = result === 'ok';
       setPushOn(subscribed);
       setPushNotificationsEnabled(subscribed);
       if (!subscribed) {
         toast({
           title: 'Nie udało się aktywować powiadomień',
-          description: 'Ta przeglądarka nie obsługuje subskrypcji push.',
+          description:
+            result === 'unsupported'
+              ? 'Ta przeglądarka nie obsługuje subskrypcji push.'
+              : result === 'not-configured'
+                ? 'Powiadomienia push nie są jeszcze skonfigurowane na serwerze.'
+                : 'Nie udało się połączyć z usługą powiadomień. Spróbuj ponownie za chwilę.',
           variant: 'destructive',
         });
       }
