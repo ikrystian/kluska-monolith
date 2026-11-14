@@ -33,6 +33,7 @@ import {
   PlayIcon,
   RotateCcwIcon,
   RulerIcon,
+  ShoppingBagIcon,
   SlidersHorizontalIcon,
   SquareCheckIcon,
   SquarePenIcon,
@@ -166,6 +167,7 @@ export const PawPrint = animated(PawPrintIcon, 'PawPrint');
 export const Play = animated(PlayIcon, 'Play');
 export const RotateCcw = animated(RotateCcwIcon, 'RotateCcw');
 export const Ruler = animated(RulerIcon, 'Ruler');
+export const ShoppingBag = animated(ShoppingBagIcon, 'ShoppingBag');
 export const SlidersHorizontal = animated(SlidersHorizontalIcon, 'SlidersHorizontal');
 export const SquarePen = animated(SquarePenIcon, 'SquarePen');
 export const SquarePlus = animated(SquarePlusIcon, 'SquarePlus');

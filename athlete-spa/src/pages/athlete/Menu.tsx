@@ -104,7 +104,7 @@ function DirectorySection({ title, leaves }: { title: string; leaves: NavLeaf[] 
   return (
     <section data-tour="menu-directory" aria-labelledby={id}>
       <SectionTitle id={id}>{title}</SectionTitle>
-      <ul className={cn(CARD, 'grid sm:grid-cols-1  lg:grid-cols-2 gap-px')}>
+      <ul className={cn(CARD, 'grid grid-cols-2 sm:grid-cols-1  lg:grid-cols-2 gap-px')}>
         {leaves.map((leaf, index) => (
           <DirectoryCell key={leaf.href} leaf={leaf} wide={leaves.length % 2 === 1 && index === leaves.length - 1} />
         ))}
@@ -121,7 +121,7 @@ function Shortcuts({ leaves }: { leaves: NavLeaf[] }) {
   return (
     <section data-tour="menu-shortcuts" aria-labelledby="menu-shortcuts">
       <SectionTitle id="menu-shortcuts">Szybki dostęp</SectionTitle>
-      <ul className={cn(CARD, 'grid sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4 gap-px')}>
+      <ul className={cn(CARD, 'grid grid-cols-4 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4 gap-px')}>
         {leaves.map(leaf => {
           const Icon = leaf.icon;
           return (

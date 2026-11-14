@@ -22,6 +22,7 @@ import {
   NotebookPen,
   Play,
   Ruler,
+  ShoppingBag,
   SlidersHorizontal,
   SquarePen,
   SquarePlus,
@@ -155,6 +156,7 @@ export const athleteNavItems: NavEntry[] = [
     items: [
       { href: '/athlete/knowledge-zone', label: 'Strefa wiedzy', icon: BookOpen, color: 'hsl(var(--run))', description: 'Artykuły i porady', keywords: ['artykuły', 'porady', 'blog', 'wiedza'] },
       { href: '/athlete/map', label: 'Mapa siłowni', icon: Map, color: 'hsl(var(--primary))', description: 'Siłownie w okolicy', keywords: ['siłownie', 'gym', 'mapa'] },
+      { href: '/athlete/shop', label: 'Sklep', icon: ShoppingBag, color: 'hsl(var(--volt))', description: 'Bluzy i koszulki leniwakluska', keywords: ['sklep', 'merch', 'bluzy', 'bluza', 'koszulki', 'koszulka', 'ubrania', 'odzież', 't-shirt', 'hoodie', 'zakupy'] },
     ],
   },
   {

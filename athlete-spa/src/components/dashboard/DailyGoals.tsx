@@ -4,11 +4,11 @@ import type { ReactNode } from 'react';
 import { Beef, Check, ChevronRight, Dumbbell, Flame, ListChecks, Target, Utensils, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { pluralForm } from '@/lib/plural';
-import trainingBg from '@/assets/goals/training.svg';
-import caloriesBg from '@/assets/goals/calories.svg';
-import mealsBg from '@/assets/goals/meals.svg';
-import proteinBg from '@/assets/goals/protein.svg';
-import habitsBg from '@/assets/goals/habits.svg';
+import trainingBg from '@/assets/goals/training.png';
+import caloriesBg from '@/assets/goals/calories.png';
+import mealsBg from '@/assets/goals/meals.png';
+import proteinBg from '@/assets/goals/protein.png';
+import habitsBg from '@/assets/goals/habits.png';
 
 export type DailyGoalTone = 'primary' | 'run' | 'food' | 'volt';
 
@@ -99,7 +99,10 @@ const ICON_TONE: Record<DailyGoalTone, string> = {
   volt: 'text-volt',
 };
 
-/** Each goal's generated background (src/assets/goals). A card-colored scrim sits on top so the label and hint stay readable. */
+/**
+ * Each goal's generated background (src/assets/goals), with its motif on the right. A card-colored scrim
+ * sits on top, fading out toward the motif, so the label and hint stay readable in both themes.
+ */
 const BACKGROUNDS: Record<string, string> = {
   training: trainingBg,
   calories: caloriesBg,
@@ -178,12 +181,12 @@ export function DailyGoals({ goals }: { goals: DailyGoal[] }) {
                 to={goal.href}
                 state={goal.state}
                 className={cn(
-                  'flex h-full min-h-[4.5rem] gap-3 overflow-hidden rounded-xl bg-cover bg-center p-3 transition-transform active:scale-[0.98]',
+                  'flex h-full min-h-[4.5rem] gap-3 overflow-hidden rounded-xl bg-cover bg-right p-3 transition-transform active:scale-[0.98]',
                   wide ? 'items-center' : 'flex-col',
                   !background && (done ? 'bg-lime/10' : 'bg-secondary/60')
                 )}
                 style={background ? {
-                  backgroundImage: `linear-gradient(hsl(var(--card) / 0.85), hsl(var(--card) / 0.85)), url(${background})`,
+                  backgroundImage: `linear-gradient(to right, hsl(var(--card) / 0.94), hsl(var(--card) / 0.35)), url(${background})`,
                 } : undefined}
                 aria-label={`${goal.label}: ${goal.hint}${done ? ', zaliczone' : ''}`}
               >
