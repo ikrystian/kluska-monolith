@@ -7,7 +7,7 @@
 import assert from 'node:assert/strict';
 import { computeStreaks, computeWeeklyStreak, dayKey, effectiveStreak, weekStartKey } from '../src/lib/gamification/streaks';
 import { summarizeActivity, workoutVolumeKg, LogLike } from '../src/lib/gamification/stats';
-import { buildTracks, CATALOG, evaluateCatalog } from '../src/lib/gamification/catalog';
+import { buildTracks, CATALOG, evaluateCatalog, TRACKS } from '../src/lib/gamification/catalog';
 import { bestsFromLog, findNewRecords } from '../src/lib/gamification/records';
 import { goalFraction, goalPace, isGoalReached } from '../src/lib/gamification/goal-progress';
 import { buildQuestViews, pickWeeklyQuests } from '../src/lib/gamification/quests';
@@ -113,6 +113,11 @@ const emptyStats = summarizeActivity(
 check('klucze katalogu są unikalne', () => {
   assert.equal(new Set(CATALOG.map(a => a.key)).size, CATALOG.length);
 });
+check('progi w każdej ścieżce rosną', () => {
+  for (const track of TRACKS) {
+    for (let i = 1; i < track.tiers.length; i++) assert.ok(track.tiers[i].threshold > track.tiers[i - 1].threshold, track.id);
+  }
+});
 check('pusty dorobek nie odblokowuje niczego', () => {
   assert.equal(evaluateCatalog(emptyStats, 1, []).length, 0);
 });
@@ -202,7 +207,7 @@ check('punkty za bieg i poziom z XP', () => {
   assert.equal(calculateRunPoints(10), 120); // + bonus wytrzymałości
   assert.equal(calculateRunPoints(21.1), 261);
   assert.equal(calculateRunPoints(42), 300); // limit
-  assert.deepEqual(calculateLevelFromXP(250), { level: 3, currentXP: 0, xpForNextLevel: 225 });
+  assert.deepEqual(calculateLevelFromXP(250), { level: 3, currentXP: 40, xpForNextLevel: 121 });
 });
 
 check('punkty za trening rosną z tonażem, z limitem', () => {

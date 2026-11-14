@@ -91,12 +91,25 @@ export function calculatePoints(input: PointCalculationInput): PointCalculationR
   };
 }
 
+/** XP na przejście z poziomu 1 na 2. */
+export const LEVEL_BASE_XP = 100;
+/** Każdy kolejny poziom kosztuje o 10% więcej niż poprzedni. */
+export const LEVEL_GROWTH = 1.1;
+
 /**
- * Calculate experience points needed for next level
+ * XP potrzebne, żeby z poziomu `level` wejść na następny. Wzrost wykładniczy
+ * dobrany do ~1000 XP tygodniowo przy regularnych treningach: poziom 20 po
+ * ok. miesiącu, 40 po ok. 9 miesiącach, 50 po ok. 2 latach, 60 po ok. 5 latach.
  */
 export function calculateXPForLevel(level: number): number {
-  // Exponential growth: each level requires more XP
-  return Math.floor(100 * Math.pow(1.5, level - 1));
+  return Math.floor(LEVEL_BASE_XP * Math.pow(LEVEL_GROWTH, level - 1));
+}
+
+/** Łączne XP potrzebne do osiągnięcia poziomu `level` (poziom 1 = 0). */
+export function totalXPForLevel(level: number): number {
+  let total = 0;
+  for (let l = 1; l < level; l++) total += calculateXPForLevel(l);
+  return total;
 }
 
 /**
