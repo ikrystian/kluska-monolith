@@ -22,7 +22,7 @@ export const runtime = 'nodejs';
  */
 
 const TREG_BASE = 'https://treg.to/call';
-const GENERATE_ENDPOINT = 'https://treg.to/call/openrouter.video-gen.wan-3-0.from_text';
+const GENERATE_ENDPOINT = 'https://treg.to/call/openrouter.video-gen.wan-2-6.from_text';
 const STATUS_ENDPOINT = 'openrouter.video-gen.task.status';
 const RESULT_ENDPOINT = 'openrouter.video-gen.result.retrieve';
 
