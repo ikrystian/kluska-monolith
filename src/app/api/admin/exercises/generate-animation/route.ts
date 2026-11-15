@@ -22,11 +22,11 @@ export const runtime = 'nodejs';
  */
 
 const TREG_BASE = 'https://treg.to/call';
-const GENERATE_ENDPOINT = 'https://treg.to/call/openrouter.video-gen.wan-2-6.from_text';
+const GENERATE_ENDPOINT = 'openrouter.video-gen.wan-3-0.from_text';
 const STATUS_ENDPOINT = 'openrouter.video-gen.task.status';
 const RESULT_ENDPOINT = 'openrouter.video-gen.result.retrieve';
 
-const VIDEO_MODEL = 'alibaba/wan-2.6';
+const VIDEO_MODEL = 'alibaba/wan-3.0';
 const UPLOAD_DIR = path.join(/* turbopackIgnore: true */ process.cwd(), 'upload-data');
 const ANIMATION_SETUP_GROUP = 'Animacja';
 const MAX_INSTRUCTIONS_LENGTH = 2000;
@@ -53,7 +53,7 @@ function buildPrompt(name: string, instructions: string, muscleGroups: string[])
   if (instructions) parts.push(instructions);
   let prompt = parts.join(' ');
   if (muscleGroups.length > 0) {
-    prompt += `, zaznacz mięśnie które pracują przy tym ćwiczeniu ${muscleGroups.join(', ')} - nie dodawaj zadnych napisów do animacji`;
+    prompt += `, zaznacz mięśnie które pracują przy tym ćwiczeniu ${muscleGroups.join(', ')} - nie dodawaj napisów do video`;
   }
   return prompt;
 }
