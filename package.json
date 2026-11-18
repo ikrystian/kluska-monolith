@@ -13,6 +13,8 @@
     "db:down": "docker compose stop mongo",
     "db:migrate:from-atlas": "npx tsx scripts/migrate-atlas-to-local-mongo.ts",
     "db:seed": "npx tsx scripts/seed.ts",
+    "db:export": "npx tsx scripts/db-export.ts",
+    "db:import": "npx tsx scripts/db-import.ts",
     "media:download": "npx tsx src/lib/import-exercise-media.ts",
     "db:seed:workouts": "npx tsx scripts/seed-popular-workouts.ts",
     "db:seed:running": "npx tsx scripts/seed-running.ts",

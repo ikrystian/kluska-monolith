@@ -50,3 +50,6 @@ athlete-spa/bun.lock
 .venv/
 venv/
 bun.lock
+
+# Kopie zapasowe bazy (dane osobowe)
+backups/

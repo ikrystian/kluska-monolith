@@ -97,6 +97,58 @@
         "--strictPort"
       ],
       "port": 5187
+    },
+    {
+      "name": "kreda-mock-api",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "/tmp/claude-1000/-home-krystian-Projects-kluska-monolith-athlete-spa/f2f89143-0a3f-4420-b746-5fb6efc5f3cc/scratchpad/mock-api.mjs"
+      ],
+      "port": 4090
+    },
+    {
+      "name": "kreda-vite",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "--prefix",
+        "/home/krystian/Projects/kluska-kreda/athlete-spa",
+        "vite",
+        "/home/krystian/Projects/kluska-kreda/athlete-spa",
+        "--config",
+        "/home/krystian/Projects/kluska-kreda/athlete-spa/vite.preview-tmp.config.ts",
+        "--mode",
+        "kreda",
+        "--port",
+        "5199",
+        "--strictPort"
+      ],
+      "port": 5199
+    },
+    {
+      "name": "mosiadz-mock-api",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "/tmp/claude-1000/-home-krystian--claude-spares-spare-i3xYAO/8da6aab0-0f66-408f-b3ad-4ebd47603c67/scratchpad/mock-api.mjs"
+      ],
+      "port": 4095
+    },
+    {
+      "name": "mosiadz-vite",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "--prefix",
+        "/home/krystian/Projects/kluska-mosiadz/athlete-spa",
+        "vite",
+        "/home/krystian/Projects/kluska-mosiadz/athlete-spa",
+        "--config",
+        "/home/krystian/Projects/kluska-mosiadz/athlete-spa/vite.preview-tmp.config.ts",
+        "--mode",
+        "mosiadz",
+        "--port",
+        "5196",
+        "--strictPort"
+      ],
+      "port": 5196
     }
   ]
 }
