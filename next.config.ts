@@ -16,6 +16,7 @@ const getDevOrigins = (): string[] => {
     'https://kluska.studio-ai.com.pl',
     'https://kluska-beta.studio-ai.com.pl',
     'https://kluska.sandbox-ai.pl',
+    'https://backend.leniwakluska.pl',
     'https://app.leniwakluska.pl'
   ];
 
