@@ -71,7 +71,7 @@ export function StartRunDialog({ open, onOpenChange, programs }: StartRunDialogP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent id="choose-your-run">
         {step === 'choose' ? (
           <>
             <DialogHeader>
