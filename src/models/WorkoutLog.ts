@@ -41,6 +41,8 @@ export interface IWorkoutLog extends Document {
   rewards?: Record<string, any>;
   /** Rekordy życiowe pobite w tym treningu. */
   newRecords?: Record<string, any>[];
+  /** Dzień planu, z którego zaczęto trening (do oznaczania dni challenge jako wykonanych). */
+  planDay?: { planId: string; stage: number; week: number; day: number };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -101,6 +103,17 @@ const WorkoutLogSchema = new Schema<IWorkoutLog>(
     rewardedAt: { type: Date },
     rewards: { type: Schema.Types.Mixed },
     newRecords: { type: [Schema.Types.Mixed], default: undefined },
+    planDay: {
+      type: new Schema(
+        {
+          planId: { type: String, required: true },
+          stage: { type: Number, required: true },
+          week: { type: Number, required: true },
+          day: { type: Number, required: true },
+        },
+        { _id: false }
+      ),
+    },
   },
   {
     timestamps: true,
@@ -118,6 +131,8 @@ const WorkoutLogSchema = new Schema<IWorkoutLog>(
 WorkoutLogSchema.index({ athleteId: 1, endTime: -1 });
 // "My in-progress workout" (checked on every screen) and "my completed workouts, newest first".
 WorkoutLogSchema.index({ athleteId: 1, status: 1, endTime: -1 });
+// "Which days of this plan did I finish".
+WorkoutLogSchema.index({ athleteId: 1, 'planDay.planId': 1, status: 1 }, { sparse: true });
 WorkoutLogSchema.index({ status: 1 });
 WorkoutLogSchema.index({ startTime: -1 });
 WorkoutLogSchema.index({ gymId: 1, status: 1, endTime: -1 });

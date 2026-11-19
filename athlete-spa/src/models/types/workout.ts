@@ -12,11 +12,21 @@ export interface Workout {
   ownerId?: string;
   description?: string;
   sourceWorkoutId?: string; // Track the original workout when copied
+  /** Dzień planu oznaczony przez trenera jako challenge (tylko w kopii dnia planu). */
+  isChallenge?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
 
 export type DayPlan = Workout | 'Rest Day';
+
+/** Położenie dnia w planie: etap, tydzień i dzień tygodnia (indeksy od 0). */
+export interface PlanDayRef {
+  planId: string;
+  stage: number;
+  week: number;
+  day: number;
+}
 
 export interface TrainingWeek {
   days: [DayPlan, DayPlan, DayPlan, DayPlan, DayPlan, DayPlan, DayPlan];
@@ -72,6 +82,8 @@ export interface WorkoutLog {
   /** Nagrody przyznane przez serwer przy zakończeniu treningu. */
   rewards?: import('@/hooks/useRewards').RewardSummary;
   sourceWorkoutId?: string; // Track the original workout template used
+  /** Dzień planu, z którego zaczęto trening. */
+  planDay?: PlanDayRef;
 }
 
 export interface WorkoutDayExercise {

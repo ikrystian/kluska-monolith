@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { PlusCircle, Trash2, Save, Loader2, Dumbbell, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, ChevronDown, LayoutList, GalleryHorizontal, RotateCcw, Check, Timer, AlertCircle, Minus, Plus, X, Camera, Image as ImageIcon, Footprints, BookOpen, House } from 'lucide-react';
+import { PlusCircle, Trash2, Save, Loader2, Dumbbell, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, ChevronDown, LayoutList, GalleryHorizontal, RotateCcw, Check, CheckCircle2, Timer, AlertCircle, Minus, Plus, X, Camera, Image as ImageIcon, Footprints, BookOpen, House } from 'lucide-react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ import {
   type ExerciseSeries,
   type WorkoutSet,
   type DayPlan,
+  type PlanDayRef,
   type RunningProgram
 } from '@/lib/types';
 import { StartRunDialog } from '@/components/running/StartRunDialog';
@@ -432,7 +433,7 @@ function ExerciseRail({ statuses, activeIndex, onSelect }: {
 // --- ACTIVE WORKOUT VIEW ---
 type ViewMode = 'list' | 'carousel';
 
-function ActiveWorkoutView({ initialWorkout, onFinishWorkout, initialLogId, sourceWorkoutId, pendingExerciseId }: { initialWorkout: LogFormValues; onFinishWorkout: () => void; initialLogId?: string | null; sourceWorkoutId?: string | null; pendingExerciseId?: string | null }) {
+function ActiveWorkoutView({ initialWorkout, onFinishWorkout, initialLogId, sourceWorkoutId, pendingExerciseId, planDay }: { initialWorkout: LogFormValues; onFinishWorkout: () => void; initialLogId?: string | null; sourceWorkoutId?: string | null; pendingExerciseId?: string | null; planDay?: PlanDayRef | null }) {
   const [startTime] = useState(initialWorkout.startTime ? new Date(initialWorkout.startTime) : new Date());
   const [workoutLogId, setWorkoutLogId] = useState<string | null>(initialLogId || null);
   const isCreatingWorkoutRef = useRef(false);
@@ -682,6 +683,7 @@ function ActiveWorkoutView({ initialWorkout, onFinishWorkout, initialLogId, sour
         startTime: startTime,
         athleteId: user.uid,
         ...(sourceWorkoutId && { sourceWorkoutId }), // Track the original workout template
+        ...(planDay && { planDay }), // Dzień planu, żeby po zakończeniu oznaczyć go jako wykonany
       };
 
       try {
@@ -709,7 +711,7 @@ function ActiveWorkoutView({ initialWorkout, onFinishWorkout, initialLogId, sour
     };
 
     createInitialWorkoutLog();
-  }, [user, initialWorkout, onFinishWorkout, workoutLogId, startTime, toast, allExercises]);
+  }, [user, initialWorkout, onFinishWorkout, workoutLogId, startTime, toast, allExercises, planDay]);
 
   // Effect to update URL with logId
   useEffect(() => {
@@ -1875,10 +1877,32 @@ function WorkoutPreviewSheet({ trigger, title, description, exerciseSeries, acti
   );
 }
 
-/** Etapy → tygodnie → dni planu; dzień można od razu rozpocząć. */
-function PlanStagesAccordion({ plan, onStartWorkout, defaultStage }: { plan: TrainingPlan; onStartWorkout: (workout: Workout) => void; defaultStage?: string }) {
+/** Klucz dnia planu w obrębie jednego planu (etap-tydzień-dzień). */
+const planDayKey = (stage: number, week: number, day: number) => `${stage}-${week}-${day}`;
+
+/** Ile dni challenge w planie sportowiec już wykonał. */
+function challengeProgress(plan: TrainingPlan, completedDays?: Set<string>) {
+  let total = 0;
+  let done = 0;
+  plan.stages?.forEach((stage, s) => stage.weeks?.forEach((week, w) => week.days?.forEach((day, d) => {
+    if (typeof day === 'object' && day?.isChallenge) {
+      total += 1;
+      if (completedDays?.has(planDayKey(s, w, d))) done += 1;
+    }
+  })));
+  return { total, done };
+}
+
+/** Etapy → tygodnie → dni planu; dzień można od razu rozpocząć. Challenge jest wyróżniony, a wykonany oznaczony. */
+function PlanStagesAccordion({ plan, onStartWorkout, defaultStage, completedDays }: {
+  plan: TrainingPlan;
+  onStartWorkout: (workout: Workout, planDay: PlanDayRef) => void;
+  defaultStage?: string;
+  /** Dni planu już wykonane przez sportowca (`planDayKey`). */
+  completedDays?: Set<string>;
+}) {
   return (
-  <Accordion type="single" collapsible defaultValue={defaultStage} className="w-full">
+    <Accordion type="single" collapsible defaultValue={defaultStage} className="w-full">
       {plan.stages?.map((stage, stageIndex) => (
         <AccordionItem value={`stage-${stageIndex}`} key={stageIndex}>
           <AccordionTrigger>{stage.name}</AccordionTrigger>
@@ -1898,21 +1922,42 @@ function PlanStagesAccordion({ plan, onStartWorkout, defaultStage }: { plan: Tra
                         );
                       }
                       // It's a Workout object
+                      const planDay: PlanDayRef = { planId: plan.id, stage: stageIndex, week: weekIndex, day: dayIndex };
+                      const challenge = !!day.isChallenge;
+                      const done = challenge && !!completedDays?.has(planDayKey(stageIndex, weekIndex, dayIndex));
                       return (
                         <WorkoutPreviewSheet
                           key={dayIndex}
                           title={day.name}
-                          description={`Dzień ${dayIndex + 1} · ${exercisesLabel(day.exerciseSeries?.length || 0)}`}
+                          description={`Dzień ${dayIndex + 1} · ${exercisesLabel(day.exerciseSeries?.length || 0)}${challenge ? ' · Challenge' : ''}`}
                           exerciseSeries={day.exerciseSeries}
                           actionLabel="Rozpocznij"
-                          onAction={() => onStartWorkout(day)}
+                          onAction={() => onStartWorkout(day, planDay)}
                           trigger={
-                            <button type="button" className="row-tap flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left">
+                            <button
+                              type="button"
+                              className={cn(
+                                'row-tap flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left',
+                                challenge && 'bg-primary/10',
+                                done && 'bg-primary/20'
+                              )}
+                            >
                               <span className="min-w-0">
-                                <span className="block truncate text-sm font-semibold">Dzień {dayIndex + 1}: {day.name}</span>
-                                <span className="block text-xs text-muted-foreground">{exercisesLabel(day.exerciseSeries?.length || 0)}</span>
+                                <span className="flex items-center gap-2">
+                                  <span className="block truncate text-sm font-semibold">Dzień {dayIndex + 1}: {day.name}</span>
+                                  {challenge && (
+                                    <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
+                                      Challenge
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="block text-xs text-muted-foreground">
+                                  {done ? 'Wykonany' : exercisesLabel(day.exerciseSeries?.length || 0)}
+                                </span>
                               </span>
-                              <Play className="h-4 w-4 shrink-0 text-primary" />
+                              {done
+                                ? <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
+                                : <Play className="h-4 w-4 shrink-0 text-primary" />}
                             </button>
                           }
                         />
@@ -1985,7 +2030,7 @@ const TEMPLATE_PAGE_SIZE = 6;
 const isOwnTemplate = (template: Workout) => Boolean(template.ownerId && template.ownerId !== 'public');
 
 // --- SELECTION VIEW COMPONENT ---
-function WorkoutSelectionView({ onStartBuilder }: { onStartBuilder: (data: LogFormValues) => void }) {
+function WorkoutSelectionView({ onStartBuilder }: { onStartBuilder: (data: LogFormValues, planDay?: PlanDayRef) => void }) {
   const { user } = useUser();
   const supportsGeolocation = typeof navigator !== 'undefined' && 'geolocation' in navigator;
   const [startRunDialogOpen, setStartRunDialogOpen] = useState(false);
@@ -2062,9 +2107,9 @@ function WorkoutSelectionView({ onStartBuilder }: { onStartBuilder: (data: LogFo
 
   const recommendation = useMemo(() => recommendTemplate(templates, historyLogs), [templates, historyLogs]);
 
-  const handleStartWorkout = (workout: Workout) => {
+  const handleStartWorkout = (workout: Workout, planDay?: PlanDayRef) => {
     noteExercises(workout.exerciseSeries.map(series => series.exercise));
-    onStartBuilder(workoutToLogValues(workout));
+    onStartBuilder(workoutToLogValues(workout), planDay);
   };
 
   const handleRepeatWorkout = (log: WorkoutLog) => {
@@ -2102,6 +2147,22 @@ function WorkoutSelectionView({ onStartBuilder }: { onStartBuilder: (data: LogFo
   // Plany przypisane przez trenera są na górze; w sekcji „Plany” zostają pozostałe.
   const assignedPlanIds = useMemo(() => new Set((assignedPlans ?? []).map(plan => plan.id)), [assignedPlans]);
   const otherPlans = workoutPlans.filter(plan => !assignedPlanIds.has(plan.id));
+
+  // Dni planów, które sportowiec już wykonał (z zakończonych treningów zaczętych z planu).
+  const { data: planLogs } = useCollection<WorkoutLog>(
+    user?.uid ? 'workoutLogs' : null,
+    user?.uid ? { athleteId: user.uid, status: 'completed', 'planDay.planId': { $exists: true } } : undefined
+  );
+  const completedByPlan = useMemo(() => {
+    const byPlan = new Map<string, Set<string>>();
+    planLogs?.forEach(log => {
+      if (!log.planDay) return;
+      const days = byPlan.get(log.planDay.planId) ?? new Set<string>();
+      days.add(planDayKey(log.planDay.stage, log.planDay.week, log.planDay.day));
+      byPlan.set(log.planDay.planId, days);
+    });
+    return byPlan;
+  }, [planLogs]);
   const templatesPending = templatesLoading && !workoutTemplates;
   const lastLog = historyLogs?.[0];
   const logDate = (log: WorkoutLog) => new Date(log.endTime as unknown as string | number | Date);
@@ -2116,9 +2177,20 @@ function WorkoutSelectionView({ onStartBuilder }: { onStartBuilder: (data: LogFo
               <div className="bg-primary p-4 text-primary-foreground">
                 <p className="text-xs font-semibold opacity-80">Twój plan od trenera</p>
                 <h2 className="mt-1 font-display text-3xl font-bold uppercase leading-none">{plan.name}</h2>
+                {(() => {
+                  const progress = challengeProgress(plan, completedByPlan.get(plan.id));
+                  return progress.total > 0 ? (
+                    <p className="mt-2 text-sm font-semibold">Challenge: {progress.done}/{progress.total} wykonane</p>
+                  ) : null;
+                })()}
               </div>
               <div className="p-2">
-                <PlanStagesAccordion plan={plan} onStartWorkout={handleStartWorkout} defaultStage="stage-0" />
+                <PlanStagesAccordion
+                  plan={plan}
+                  onStartWorkout={handleStartWorkout}
+                  defaultStage="stage-0"
+                  completedDays={completedByPlan.get(plan.id)}
+                />
               </div>
             </div>
           ))}
@@ -2280,7 +2352,7 @@ function WorkoutSelectionView({ onStartBuilder }: { onStartBuilder: (data: LogFo
                       <SheetTitle>{plan.name}</SheetTitle>
                       <SheetDescription>Wybierz trening z planu.</SheetDescription>
                     </SheetHeader>
-                    <PlanStagesAccordion plan={plan} onStartWorkout={handleStartWorkout} />
+                    <PlanStagesAccordion plan={plan} onStartWorkout={handleStartWorkout} completedDays={completedByPlan.get(plan.id)} />
                   </SheetContent>
                 </Sheet>
               ))}
@@ -2313,8 +2385,12 @@ export default function LogWorkoutPage() {
   const pendingExerciseId = searchParams.get('addExercise');
   const location = useLocation();
   const navigate = useNavigate();
-  // Trening z planu przekazany z widoku szczegółów (bez wpisu w bibliotece).
-  const planWorkout = (location.state as { planWorkout?: Workout } | null)?.planWorkout;
+  // Trening z planu przekazany z widoku szczegółów (bez wpisu w bibliotece) i jego miejsce w planie.
+  const handOver = location.state as { planWorkout?: Workout; planDay?: PlanDayRef } | null;
+  const planWorkout = handOver?.planWorkout;
+  const handOverPlanDay = handOver?.planDay;
+  // Dzień planu, z którego rozpoczęto bieżący trening.
+  const [planDay, setPlanDay] = useState<PlanDayRef | null>(null);
   const { data: preselectedWorkout, isLoading: isLoadingPreselected } = useDoc<Workout>('workouts', workoutId);
   const { data: specificWorkoutLog } = useDoc<WorkoutLog>('workoutLogs', logId);
 
@@ -2466,11 +2542,12 @@ export default function LogWorkoutPage() {
     navigate({ pathname: location.pathname, search: location.search }, { replace: true, state: null });
     if (activeWorkouts && activeWorkouts.length > 0) return; // jedna sesja naraz
     noteExercises(planWorkout.exerciseSeries.map(series => series.exercise));
-    handleStartBuilder(workoutToLogValues(planWorkout));
-  }, [planWorkout, isLoadingActive, activeWorkouts]);
+    handleStartBuilder(workoutToLogValues(planWorkout), handOverPlanDay);
+  }, [planWorkout, handOverPlanDay, isLoadingActive, activeWorkouts]);
 
-  const handleStartBuilder = (data: LogFormValues) => {
+  const handleStartBuilder = (data: LogFormValues, startedFromPlanDay?: PlanDayRef) => {
     setBuilderData(data);
+    setPlanDay(startedFromPlanDay ?? null);
     setView('builder');
   };
 
@@ -2481,11 +2558,13 @@ export default function LogWorkoutPage() {
 
   const handleCancelBuilder = () => {
     setBuilderData(null);
+    setPlanDay(null);
     setView('selection');
   }
 
   const handleFinishWorkout = () => {
     setBuilderData(null);
+    setPlanDay(null);
     setView('selection');
   }
 
@@ -2498,6 +2577,7 @@ export default function LogWorkoutPage() {
           initialLogId={activeLogId}
           sourceWorkoutId={workoutId} // Pass the workout template ID
           pendingExerciseId={pendingExerciseId}
+          planDay={planDay}
         />
       </div>
     )

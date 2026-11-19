@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Calendar, ChevronDown, Clock, Dumbbell, Layers, MessageSquare, Play, Users } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useCollection, useDoc, useUser } from '@/lib/db-hooks';
-import type { TrainingPlan, UserProfile, Workout } from '@/lib/types';
+import type { PlanDayRef, TrainingPlan, UserProfile, Workout } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -59,12 +59,13 @@ function TrainerStrip({ trainer }: { trainer: UserProfile }) {
   );
 }
 
-function PlanDayDialog({ workout, onClose }: { workout: Workout | null; onClose: () => void }) {
+function PlanDayDialog({ selected, onClose }: { selected: { workout: Workout; planDay: PlanDayRef } | null; onClose: () => void }) {
+  const workout = selected?.workout ?? null;
   const navigate = useNavigate();
   const startWorkout = () => {
     if (!workout) return;
     // Trening z planu nie ma wpisu w bibliotece, więc przekazujemy go do dziennika w stanie nawigacji.
-    navigate('/athlete/log', { state: { planWorkout: workout } });
+    navigate('/athlete/log', { state: { planWorkout: workout, planDay: selected?.planDay } });
   };
   return (
     <Dialog open={!!workout} onOpenChange={open => !open && onClose()}>
@@ -104,7 +105,7 @@ function PlanDayDialog({ workout, onClose }: { workout: Workout | null; onClose:
   );
 }
 
-function StageBlock({ stage, index, color, defaultOpen, onOpenWorkout }: { stage: TrainingPlan['stages'][number]; index: number; color: string; defaultOpen: boolean; onOpenWorkout: (workout: Workout) => void }) {
+function StageBlock({ stage, index, color, defaultOpen, onOpenWorkout }: { stage: TrainingPlan['stages'][number]; index: number; color: string; defaultOpen: boolean; onOpenWorkout: (workout: Workout, position: { stage: number; week: number; day: number }) => void }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="overflow-hidden rounded-2xl border border-border/60 bg-background/60">
@@ -153,7 +154,7 @@ function StageBlock({ stage, index, color, defaultOpen, onOpenWorkout }: { stage
                       <button
                         key={di}
                         type="button"
-                        onClick={() => onOpenWorkout(workout)}
+                        onClick={() => onOpenWorkout(workout, { stage: index, week: wi, day: di })}
                         aria-label={`Otwórz trening: ${workout.name}`}
                         className="transition-transform active:scale-90"
                       >
@@ -190,7 +191,7 @@ function StageBlock({ stage, index, color, defaultOpen, onOpenWorkout }: { stage
 function PlanCard({ plan }: { plan: TrainingPlan }) {
   const { stages, weeks, workouts } = planStats(plan);
   const color = levelColor(plan.level);
-  const [openWorkout, setOpenWorkout] = useState<Workout | null>(null);
+  const [openWorkout, setOpenWorkout] = useState<{ workout: Workout; planDay: PlanDayRef } | null>(null);
 
   return (
     <article className="overflow-hidden rounded-2xl bg-card">
@@ -224,11 +225,11 @@ function PlanCard({ plan }: { plan: TrainingPlan }) {
             index={i}
             color={color}
             defaultOpen={plan.stages.length === 1 && i === 0}
-            onOpenWorkout={setOpenWorkout}
+            onOpenWorkout={(workout, position) => setOpenWorkout({ workout, planDay: { planId: plan.id, ...position } })}
           />
         ))}
       </div>
-      <PlanDayDialog workout={openWorkout} onClose={() => setOpenWorkout(null)} />
+      <PlanDayDialog selected={openWorkout} onClose={() => setOpenWorkout(null)} />
     </article>
   );
 }
