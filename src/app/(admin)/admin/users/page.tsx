@@ -24,7 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 import { Button } from '@/components/ui/button';
-import { Edit, Loader2, Trash2 } from 'lucide-react';
+import { Edit, Loader2, Trash2, UserCheck } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -68,6 +68,8 @@ interface UserProfile {
   };
   trainerId?: string;
   favoriteGymIds?: string[];
+  /** `false` only for accounts that registered and never clicked the activation link. */
+  emailVerified?: boolean;
 }
 
 
@@ -87,6 +89,7 @@ export default function AdminUsersPage() {
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [activatingUserId, setActivatingUserId] = useState<string | null>(null);
 
   // Fetch current user profile
   const { data: currentUserProfile, isLoading: isCurrentUserProfileLoading } = useDoc<UserProfile>(
@@ -136,6 +139,30 @@ export default function AdminUsersPage() {
         description: 'Nie udało się zaktualizować użytkownika.',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleActivateUser = async (user: UserProfile) => {
+    setActivatingUserId(user.id);
+    try {
+      const response = await fetch(`/api/admin/users/${user.id}/activate`, { method: 'POST' });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Nie udało się aktywować konta.');
+      toast({
+        title: 'Konto aktywowane',
+        description: data.welcomeEmailSent
+          ? `Konto ${user.name} zostało aktywowane. Wysłano e-mail powitalny.`
+          : `Konto ${user.name} zostało aktywowane, ale e-maila powitalnego nie udało się wysłać.`,
+      });
+      refetch();
+    } catch (error) {
+      toast({
+        title: 'Błąd',
+        description: error instanceof Error ? error.message : 'Nie udało się aktywować konta.',
+        variant: 'destructive',
+      });
+    } finally {
+      setActivatingUserId(null);
     }
   };
 
@@ -245,7 +272,14 @@ export default function AdminUsersPage() {
                       </div>
                     </TableCell>
                     <TableCell className="font-mono text-xs text-muted-foreground">{user.id}</TableCell>
-                    <TableCell>{user.email}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col items-start gap-1">
+                        <span>{user.email}</span>
+                        {user.emailVerified === false && (
+                          <Badge variant="outline" className="text-amber-600 border-amber-600">Nieaktywne</Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <Badge variant={getRoleVariant(user.role)}>
                         {getRoleLabel(user.role)}
@@ -253,6 +287,19 @@ export default function AdminUsersPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        {user.emailVerified === false && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleActivateUser(user)}
+                            disabled={activatingUserId === user.id}
+                          >
+                            {activatingUserId === user.id
+                              ? <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                              : <UserCheck className="mr-2 h-3 w-3" />}
+                            Aktywuj konto
+                          </Button>
+                        )}
                         <Button variant="outline" size="sm" onClick={() => handleEditClick(user)}>
                           <Edit className="mr-2 h-3 w-3" />
                           Edytuj

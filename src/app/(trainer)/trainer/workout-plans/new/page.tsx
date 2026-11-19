@@ -53,7 +53,7 @@ export default function NewTrainerPlanPage() {
                 <h1 className="font-headline text-3xl font-bold">Nowy Plan Treningowy</h1>
             </div>
 
-            <PlanForm onSubmit={handleSubmit} isLoading={isLoading} />
+            <PlanForm onSubmit={handleSubmit} isLoading={isLoading} allowCustomDays />
         </div>
     );
 }

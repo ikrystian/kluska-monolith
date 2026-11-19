@@ -1,10 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { TrainingPlan, TrainingLevel, Workout, DayPlan } from '@/lib/types';
+import { TrainingPlan, TrainingLevel, Workout, DayPlan, SetType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -24,10 +24,17 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { Plus, Trash2, Loader2, Calendar } from 'lucide-react';
 import { useCollection } from '@/lib/db-hooks';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+    CUSTOM_DAY_ID_PREFIX,
+    CUSTOM_DAY_VALUE,
+    CustomDayEditor,
+    customDaySchema,
+    createCustomDay,
+    type CustomDayValues,
+} from './plan-custom-day-editor';
 
 const planSchema = z.object({
     name: z.string().min(1, 'Nazwa jest wymagana.'),
@@ -36,7 +43,8 @@ const planSchema = z.object({
     stages: z.array(z.object({
         name: z.string().min(1, 'Nazwa etapu jest wymagana.'),
         weeks: z.array(z.object({
-            days: z.array(z.string()).length(7), // storing workout IDs or 'Rest Day'
+            days: z.array(z.string()).length(7), // storing workout IDs, 'Rest Day' or CUSTOM_DAY_VALUE
+            custom: z.array(customDaySchema).length(7), // treningi ułożone w planie, indeksowane jak `days`
         })).min(1, 'Przynajmniej jeden tydzień jest wymagany.'),
     })).min(1, 'Przynajmniej jeden etap jest wymagany.'),
 });
@@ -47,13 +55,58 @@ interface PlanFormProps {
     initialData?: TrainingPlan;
     onSubmit: (data: TrainingPlan) => Promise<void>;
     isLoading?: boolean;
+    /** Pozwala układać ćwiczenia, serie i powtórzenia bezpośrednio w dniu planu. */
+    allowCustomDays?: boolean;
 }
 
-/** Dzień planu jako wartość pola: 'Rest Day' albo id treningu (starsze wpisy mają tylko `_id`). */
-const dayToFormValue = (day: DayPlan): string =>
+/** Id dnia jako wartość pola (starsze wpisy mają tylko `_id`). */
+const rawDayId = (day: DayPlan): string =>
     typeof day === 'string' ? day : day.id ?? (day as Workout & { _id?: string })._id ?? 'Rest Day';
 
-export function PlanForm({ initialData, onSubmit, isLoading }: PlanFormProps) {
+const isCustomDay = (day: DayPlan, allowCustomDays: boolean): day is Workout =>
+    allowCustomDays && typeof day !== 'string' && !!day.id?.startsWith(CUSTOM_DAY_ID_PREFIX);
+
+const dayToFormValue = (day: DayPlan, allowCustomDays: boolean): string =>
+    isCustomDay(day, allowCustomDays) ? CUSTOM_DAY_VALUE : rawDayId(day);
+
+/** Trening zapisany w planie zamieniony na wartości formularza. */
+const workoutToCustomValue = (workout: Workout): NonNullable<CustomDayValues> => ({
+    id: workout.id,
+    name: workout.name,
+    durationMinutes: workout.durationMinutes ?? 60,
+    exerciseSeries: workout.exerciseSeries.map(series => ({
+        exercise: series.exercise,
+        tempo: series.tempo,
+        tip: series.tip ?? '',
+        sets: series.sets.map(set => ({
+            reps: set.reps ?? 0,
+            weight: set.weight ?? 0,
+            restTimeSeconds: set.restTimeSeconds ?? 0,
+        })),
+    })),
+});
+
+/** Wartości formularza zamienione na trening zapisywany w planie (ten sam kształt co w bibliotece). */
+const customValueToWorkout = (custom: NonNullable<CustomDayValues>, level: TrainingLevel): Workout => ({
+    id: custom.id,
+    name: custom.name,
+    level,
+    durationMinutes: custom.durationMinutes,
+    exerciseSeries: custom.exerciseSeries.map(series => ({
+        exercise: series.exercise,
+        tempo: series.tempo,
+        tip: series.tip,
+        sets: series.sets.map((set, idx) => ({
+            number: idx + 1,
+            type: SetType.WorkingSet,
+            reps: set.reps,
+            weight: set.weight,
+            restTimeSeconds: set.restTimeSeconds,
+        })),
+    })),
+});
+
+export function PlanForm({ initialData, onSubmit, isLoading, allowCustomDays = false }: PlanFormProps) {
     const { data: workouts, isLoading: workoutsLoading } = useCollection<Workout>('workouts');
 
     // Plan przechowuje pełne kopie treningów. Trening mógł już zniknąć z biblioteki —
@@ -61,11 +114,11 @@ export function PlanForm({ initialData, onSubmit, isLoading }: PlanFormProps) {
     const savedWorkouts = useMemo(() => {
         const saved = new Map<string, Workout>();
         initialData?.stages?.forEach(stage => stage.weeks.forEach(week => week.days.forEach(day => {
-            const id = dayToFormValue(day);
-            if (typeof day !== 'string' && id !== 'Rest Day') saved.set(id, day);
+            const id = rawDayId(day);
+            if (typeof day !== 'string' && id !== 'Rest Day' && !isCustomDay(day, allowCustomDays)) saved.set(id, day);
         })));
         return saved;
-    }, [initialData]);
+    }, [initialData, allowCustomDays]);
 
     const workoutOptions = useMemo(() => {
         const library = workouts ?? [];
@@ -83,9 +136,10 @@ export function PlanForm({ initialData, onSubmit, isLoading }: PlanFormProps) {
             stages: initialData?.stages?.map(stage => ({
                 name: stage.name,
                 weeks: stage.weeks.map(week => ({
-                    days: week.days.map(dayToFormValue),
+                    days: week.days.map(day => dayToFormValue(day, allowCustomDays)),
+                    custom: week.days.map(day => (isCustomDay(day, allowCustomDays) ? workoutToCustomValue(day) : null)),
                 })),
-            })) || [{ name: 'Etap 1', weeks: [{ days: Array(7).fill('Rest Day') }] }],
+            })) || [{ name: 'Etap 1', weeks: [{ days: Array(7).fill('Rest Day'), custom: Array(7).fill(null) }] }],
         },
     });
 
@@ -101,8 +155,12 @@ export function PlanForm({ initialData, onSubmit, isLoading }: PlanFormProps) {
         const mappedStages = data.stages.map(stage => ({
             name: stage.name,
             weeks: stage.weeks.map(week => ({
-                days: week.days.map(dayId => {
+                days: week.days.map((dayId, dayIndex) => {
                     if (dayId === 'Rest Day') return 'Rest Day';
+                    if (allowCustomDays && dayId === CUSTOM_DAY_VALUE) {
+                        const custom = week.custom[dayIndex];
+                        return custom ? customValueToWorkout(custom, data.level) : 'Rest Day';
+                    }
                     // Aktualna wersja z biblioteki, a gdy trening usunięto — kopia zapisana w planie.
                     return workouts.find(w => w.id === dayId) ?? savedWorkouts.get(dayId) ?? 'Rest Day';
                 }) as [DayPlan, DayPlan, DayPlan, DayPlan, DayPlan, DayPlan, DayPlan]
@@ -180,7 +238,7 @@ export function PlanForm({ initialData, onSubmit, isLoading }: PlanFormProps) {
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-semibold">Etapy Treningowe</h2>
-                        <Button type="button" onClick={() => appendStage({ name: `Etap ${stageFields.length + 1}`, weeks: [{ days: Array(7).fill('Rest Day') }] })} variant="outline">
+                        <Button type="button" onClick={() => appendStage({ name: `Etap ${stageFields.length + 1}`, weeks: [{ days: Array(7).fill('Rest Day'), custom: Array(7).fill(null) }] })} variant="outline">
                             <Plus className="mr-2 h-4 w-4" /> Dodaj Etap
                         </Button>
                     </div>
@@ -211,6 +269,7 @@ export function PlanForm({ initialData, onSubmit, isLoading }: PlanFormProps) {
                                     workouts={workoutOptions}
                                     daysOfWeek={daysOfWeek}
                                     isLoading={isLoading}
+                                    allowCustomDays={allowCustomDays}
                                 />
                             </CardContent>
                         </Card>
@@ -229,7 +288,16 @@ export function PlanForm({ initialData, onSubmit, isLoading }: PlanFormProps) {
     );
 }
 
-function StageWeeks({ stageIndex, form, workouts, daysOfWeek, isLoading }: any) {
+interface StageWeeksProps {
+    stageIndex: number;
+    form: ReturnType<typeof useForm<PlanFormValues>>;
+    workouts: Workout[];
+    daysOfWeek: string[];
+    isLoading?: boolean;
+    allowCustomDays: boolean;
+}
+
+function StageWeeks({ stageIndex, form, workouts, daysOfWeek, isLoading, allowCustomDays }: StageWeeksProps) {
     const { fields: weekFields, append: appendWeek, remove: removeWeek } = useFieldArray({
         control: form.control,
         name: `stages.${stageIndex}.weeks`,
@@ -241,7 +309,7 @@ function StageWeeks({ stageIndex, form, workouts, daysOfWeek, isLoading }: any) 
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <h4 className="text-sm font-medium text-muted-foreground">Tygodnie w tym etapie</h4>
-                <Button type="button" variant="secondary" size="sm" onClick={() => { appendWeek({ days: Array(7).fill('Rest Day') }); setActiveWeek(`week-${weekFields.length}`); }} disabled={isLoading}>
+                <Button type="button" variant="secondary" size="sm" onClick={() => { appendWeek({ days: Array(7).fill('Rest Day'), custom: Array(7).fill(null) }); setActiveWeek(`week-${weekFields.length}`); }} disabled={isLoading}>
                     <Plus className="mr-2 h-3 w-3" /> Dodaj Tydzień
                 </Button>
             </div>
@@ -273,7 +341,21 @@ function StageWeeks({ stageIndex, form, workouts, daysOfWeek, isLoading }: any) 
                                             name={`stages.${stageIndex}.weeks.${weekIndex}.days.${dayIndex}`}
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                                                    <Select
+                                                        onValueChange={(value) => {
+                                                            if (allowCustomDays) {
+                                                                const customPath = `stages.${stageIndex}.weeks.${weekIndex}.custom.${dayIndex}` as const;
+                                                                if (value === CUSTOM_DAY_VALUE && !form.getValues(customPath)) {
+                                                                    form.setValue(customPath, createCustomDay(dayName), { shouldDirty: true });
+                                                                } else if (value !== CUSTOM_DAY_VALUE && field.value === CUSTOM_DAY_VALUE) {
+                                                                    form.setValue(customPath, null, { shouldDirty: true });
+                                                                }
+                                                            }
+                                                            field.onChange(value);
+                                                        }}
+                                                        defaultValue={field.value}
+                                                        disabled={isLoading}
+                                                    >
                                                         <FormControl>
                                                             <SelectTrigger>
                                                                 <SelectValue placeholder="Wybierz trening" />
@@ -281,6 +363,9 @@ function StageWeeks({ stageIndex, form, workouts, daysOfWeek, isLoading }: any) 
                                                         </FormControl>
                                                         <SelectContent>
                                                             <SelectItem value="Rest Day">Rest Day</SelectItem>
+                                                            {allowCustomDays && (
+                                                                <SelectItem value={CUSTOM_DAY_VALUE}>Własne ćwiczenia</SelectItem>
+                                                            )}
                                                             {workouts.map((workout: Workout) => (
                                                                 <SelectItem key={workout.id} value={workout.id}>{workout.name}</SelectItem>
                                                             ))}
@@ -293,9 +378,43 @@ function StageWeeks({ stageIndex, form, workouts, daysOfWeek, isLoading }: any) 
                                 </Card>
                             ))}
                         </div>
+                        {allowCustomDays && (
+                            <WeekCustomEditors
+                                form={form}
+                                stageIndex={stageIndex}
+                                weekIndex={weekIndex}
+                                daysOfWeek={daysOfWeek}
+                                isLoading={isLoading}
+                            />
+                        )}
                     </TabsContent>
                 ))}
             </Tabs>
         </div>
     )
+}
+
+/** Edytory własnych treningów dla dni tygodnia ustawionych na „Własne ćwiczenia”. */
+function WeekCustomEditors({ form, stageIndex, weekIndex, daysOfWeek, isLoading }: {
+    form: StageWeeksProps['form'];
+    stageIndex: number;
+    weekIndex: number;
+    daysOfWeek: string[];
+    isLoading?: boolean;
+}) {
+    const days = useWatch({ control: form.control, name: `stages.${stageIndex}.weeks.${weekIndex}.days` });
+
+    return (
+        <div className="space-y-4">
+            {days?.map((value, dayIndex) => value === CUSTOM_DAY_VALUE && (
+                <CustomDayEditor
+                    key={dayIndex}
+                    form={form}
+                    basePath={`stages.${stageIndex}.weeks.${weekIndex}.custom.${dayIndex}`}
+                    title={`${daysOfWeek[dayIndex]} — własne ćwiczenia`}
+                    isLoading={isLoading}
+                />
+            ))}
+        </div>
+    );
 }
