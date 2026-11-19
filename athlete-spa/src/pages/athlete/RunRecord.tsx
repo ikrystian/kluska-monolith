@@ -39,6 +39,7 @@ import { useToast } from '@/hooks/use-toast';
 import { purgePersistedEntries } from '@/lib/swr-cache';
 import { LiveRouteMap } from '@/components/running/LiveRouteMap';
 import { CoachBanner } from '@/components/running/CoachBanner';
+import { CoachTestButton } from '@/components/running/CoachTestButton';
 import {
   ADVANCED_GOAL_PARAM,
   clearActiveGoal,
@@ -137,6 +138,19 @@ export default function RunRecordPage() {
   );
 
   const coach = useRunCoach(advancedGoal, tracker.status, tracker.distance, tracker.duration, tracker.points);
+
+  const handleCoachTest = async () => {
+    haptic('tap');
+    const result = await coach.runTest();
+    if (!result.ok) {
+      toast({ title: 'Test trenera nie powiódł się', description: result.message, variant: 'destructive' });
+    } else if (!result.played) {
+      toast({
+        title: `Test trenera: km ${result.km} — bez audio`,
+        description: 'ElevenLabs nie zwrócił nagrania (sprawdź ELEVENLABS_API_KEY na serwerze). Tekst jest w bannerze.',
+      });
+    }
+  };
 
   const isActive = tracker.status === 'running' || tracker.status === 'paused';
   useWakeLock(isActive);
@@ -300,7 +314,15 @@ export default function RunRecordPage() {
           <Footprints className="h-3.5 w-3.5" />
           {selectedProgram ? selectedProgram.name : advancedGoal ? 'Zaawansowany cel' : 'Szybki bieg'}
         </div>
-        <div className="w-10" />
+        {advancedGoal?.voiceCoach ? (
+          <CoachTestButton
+            onTest={() => void handleCoachTest()}
+            testing={coach.testing}
+            cooldownUntil={coach.testCooldownUntil}
+          />
+        ) : (
+          <div className="w-10" />
+        )}
       </div>
 
       {/* Signal / error / cue banners, floating over the map */}
@@ -327,7 +349,7 @@ export default function RunRecordPage() {
             <p className="text-xs font-semibold">Znaleziono przerwany bieg — wznów go lub zapisz.</p>
           </div>
         )}
-        {advancedGoal?.voiceCoach && tracker.status !== 'idle' && (
+        {advancedGoal?.voiceCoach && (
           <CoachBanner goal={advancedGoal} latest={coach.latest} pendingKm={coach.pendingKm} />
         )}
         {activeCue && (

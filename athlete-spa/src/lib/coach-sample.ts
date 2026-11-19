@@ -23,8 +23,8 @@ export interface CoachRunPayload {
   previousSpeech?: string | null;
 }
 
-/** A fixed wobble around the plan, so splits land ahead, on and behind it. */
-const PACE_WOBBLE_S = [6, -3, 11, -7, 4, 14, -2, 8, -5, 3];
+/** A fixed wobble around the plan: behind it mid-run, a little ahead by the finish. */
+const PACE_WOBBLE_S = [6, -4, 9, -8, 3, 10, -6, 5, -9, -12];
 const CLIMB_M = [2, 5, 0, 8, 3, 1, 6, 0];
 
 function plannedPace(goal: AdvancedGoalTarget, km: number): number {

@@ -87,6 +87,25 @@ public class RunTrackingPlugin extends Plugin {
         call.resolve(snapshot);
     }
 
+    /** Coach test button: a made-up kilometre through RunCoach — see src/lib/run-tracking.ts. */
+    @PluginMethod
+    public void testCoach(PluginCall call) {
+        String url = call.getString("url");
+        String token = call.getString("token");
+        JSObject payload = call.getObject("payload");
+        if (url == null || token == null || payload == null) {
+            call.reject("Missing url, token or payload");
+            return;
+        }
+        RunCoach.get(getContext()).test(url, token, payload, (status, played) -> {
+            JSObject result = new JSObject();
+            result.put("ok", status == 200);
+            result.put("status", status);
+            result.put("played", played);
+            call.resolve(result);
+        });
+    }
+
     @PluginMethod
     public void getState(PluginCall call) {
         call.resolve(RunRecorder.get().snapshot(true));

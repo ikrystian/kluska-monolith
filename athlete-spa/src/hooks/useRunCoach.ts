@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PluginListenerHandle } from '@capacitor/core';
 import { apiFetchRemote, getApiBaseUrl, getStoredToken } from '@/lib/api-client';
 import { computeRunSplits, type GeoPoint } from '@/lib/geo';
 import type { AdvancedGoal } from '@/lib/advanced-goal';
+import { buildSampleCoachPayload, sampleKmCount } from '@/lib/coach-sample';
 import {
   RunTracking,
   isNativeRunTrackingAvailable,
@@ -15,6 +16,23 @@ export const COACH_PATH = '/api/athlete/running/coach';
 const INTERVAL_M = 1000;
 /** Gives up on the "analysing" indicator if no advice arrives (offline, request dropped). */
 const PENDING_TIMEOUT_MS = 40_000;
+/** Matches the backend's per-user throttle on the coach endpoint. */
+export const COACH_TEST_COOLDOWN_MS = 20_000;
+
+export interface CoachTestResult {
+  ok: boolean;
+  km: number;
+  /** Whether there was audio to play (false: no ElevenLabs key, or TTS failed). */
+  played: boolean;
+  message?: string;
+}
+
+function coachErrorMessage(status: number): string {
+  if (status === 429) return 'Odczekaj 20 s między zapytaniami do trenera.';
+  if (status === 401) return 'Sesja wygasła — zaloguj się ponownie.';
+  if (status === 0) return 'Brak połączenia z serwerem.';
+  return `Serwer trenera zwrócił błąd ${status}.`;
+}
 
 export interface CoachUpdate {
   km: number;
@@ -89,6 +107,10 @@ export function useRunCoach(
   /** Bumped when a web request settles, so a kilometre crossed meanwhile gets its turn. */
   const [settledCount, setSettledCount] = useState(0);
 
+  const [testing, setTesting] = useState(false);
+  const [testCooldownUntil, setTestCooldownUntil] = useState(0);
+  const testKmRef = useRef(0);
+
   const lastRequestedKmRef = useRef(0);
   const latestKmRef = useRef(0);
   const inFlightRef = useRef(false);
@@ -101,9 +123,13 @@ export function useRunCoach(
     return { url: `${getApiBaseUrl()}${COACH_PATH}`, token, goal, intervalM: INTERVAL_M };
   }, [enabled, goal]);
 
-  const accept = (update: CoachUpdate) => {
-    if (update.km < latestKmRef.current) return;
-    latestKmRef.current = update.km;
+  /** `isTest`: shown regardless of order, and without moving the real run's kilometre count. */
+  const accept = (update: CoachUpdate, isTest = false) => {
+    if (update.speech) previousSpeechRef.current = update.speech;
+    if (!isTest) {
+      if (update.km < latestKmRef.current) return;
+      latestKmRef.current = update.km;
+    }
     setLatest(update);
     setPendingKm(current => (current != null && current <= update.km ? null : current));
   };
@@ -127,12 +153,15 @@ export function useRunCoach(
     let cancelled = false;
     let handle: PluginListenerHandle | undefined;
     void RunTracking.addListener('coach', event => {
-      acceptRef.current({
-        km: event.km,
-        coaching: event.coaching,
-        speech: event.speech,
-        receivedAt: event.firedAt,
-      });
+      acceptRef.current(
+        {
+          km: event.km,
+          coaching: event.coaching,
+          speech: event.speech,
+          receivedAt: event.firedAt,
+        },
+        event.test === true
+      );
     }).then(h => {
       if (cancelled) void h.remove();
       else handle = h;
@@ -186,7 +215,6 @@ export function useRunCoach(
       .then(response => (response.ok ? (response.json() as Promise<CoachResponse>) : null))
       .then(data => {
         if (!data) return;
-        previousSpeechRef.current = data.speech;
         acceptRef.current({ km: data.km, coaching: data.coaching, speech: data.speech, receivedAt: Date.now() });
         playCoachAudio(data.audio, data.mime, data.speech);
       })
@@ -206,5 +234,55 @@ export function useRunCoach(
     return () => clearTimeout(timeout);
   }, [pendingKm]);
 
-  return { coachConfig, latest, pendingKm: enabled ? pendingKm : null };
+  /**
+   * Test button: sends a made-up kilometre of a run toward this goal (the next
+   * one on every tap) down the same path a real kilometre takes — on Android
+   * through the native recorder's coach, so its playback is what gets tested.
+   */
+  const runTest = useCallback(async (): Promise<CoachTestResult> => {
+    const token = getStoredToken();
+    if (!goal) return { ok: false, km: 0, played: false, message: 'Brak celu biegu.' };
+    if (!token) return { ok: false, km: 0, played: false, message: coachErrorMessage(401) };
+
+    const km = (testKmRef.current % sampleKmCount(goal)) + 1;
+    testKmRef.current = km;
+    const payload = buildSampleCoachPayload(goal, km, previousSpeechRef.current);
+    setTesting(true);
+    setPendingKm(km);
+    try {
+      if (USE_NATIVE) {
+        // The advice itself arrives as a "coach" event flagged as a test.
+        const result = await RunTracking.testCoach({ url: `${getApiBaseUrl()}${COACH_PATH}`, token, payload });
+        return result.ok
+          ? { ok: true, km, played: result.played }
+          : { ok: false, km, played: false, message: coachErrorMessage(result.status) };
+      }
+      const response = await apiFetchRemote(COACH_PATH, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) return { ok: false, km, played: false, message: coachErrorMessage(response.status) };
+      const data = (await response.json()) as CoachResponse;
+      acceptRef.current({ km: data.km, coaching: data.coaching, speech: data.speech, receivedAt: Date.now() }, true);
+      playCoachAudio(data.audio, data.mime, data.speech);
+      return { ok: true, km, played: Boolean(data.audio) };
+    } catch (error) {
+      console.warn('Run coach test failed:', error);
+      return { ok: false, km, played: false, message: coachErrorMessage(0) };
+    } finally {
+      setTesting(false);
+      setPendingKm(current => (current === km ? null : current));
+      setTestCooldownUntil(Date.now() + COACH_TEST_COOLDOWN_MS);
+    }
+  }, [goal]);
+
+  return {
+    coachConfig,
+    latest,
+    pendingKm: enabled ? pendingKm : null,
+    runTest,
+    testing,
+    testCooldownUntil,
+  };
 }

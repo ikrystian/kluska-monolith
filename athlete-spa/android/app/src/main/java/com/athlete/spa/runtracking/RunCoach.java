@@ -37,6 +37,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * One request at a time: a kilometre finished while one is out waits, and only
  * the newest such kilometre is asked about.
+ *
+ * {@link #test} sends a made-up kilometre down the same path, for the coach
+ * test button on the run screen — with or without a run in progress.
  */
 public final class RunCoach {
 
@@ -46,6 +49,23 @@ public final class RunCoach {
     private static final int READ_TIMEOUT_MS = 25_000;
     private static final long WAKE_LOCK_MS = 60_000;
     private static final String CACHE_DIR = "run-coach";
+    /** Run id of test requests: never a real run, so no run state is checked or changed. */
+    private static final long TEST_RUN_ID = -1;
+
+    /** Result of a test request: the HTTP status (0 when it never got one) and whether audio played. */
+    public interface TestCallback {
+        void done(int status, boolean played);
+    }
+
+    private static final class Outcome {
+        final int status;
+        final boolean played;
+
+        Outcome(int status, boolean played) {
+            this.status = status;
+            this.played = played;
+        }
+    }
 
     private static RunCoach instance;
 
@@ -79,10 +99,11 @@ public final class RunCoach {
             executor.execute(this::clearCache);
         }
         inFlight.set(true);
-        acquireWakeLock();
         executor.execute(() -> {
+            // Taken inside the task: tasks run one by one, so locks never overlap.
+            acquireWakeLock();
             try {
-                perform(request);
+                perform(request, false);
             } catch (Exception e) {
                 Log.w(TAG, "Coach request failed for km " + request.km, e);
             } finally {
@@ -92,9 +113,28 @@ public final class RunCoach {
         });
     }
 
-    private void perform(RunRecorder.CoachRequest request) throws Exception {
+    /** `payload` is the coach endpoint's body as JS built it, previous spoken line included. */
+    public void test(String url, String token, JSONObject payload, TestCallback callback) {
+        RunRecorder.CoachRequest request =
+            new RunRecorder.CoachRequest(TEST_RUN_ID, payload.optInt("km", 1), url, token, payload);
+        executor.execute(() -> {
+            acquireWakeLock();
+            Outcome outcome;
+            try {
+                outcome = perform(request, true);
+            } catch (Exception e) {
+                Log.w(TAG, "Coach test request failed", e);
+                outcome = new Outcome(0, false);
+            } finally {
+                releaseWakeLock();
+            }
+            callback.done(outcome.status, outcome.played);
+        });
+    }
+
+    private Outcome perform(RunRecorder.CoachRequest request, boolean test) throws Exception {
         JSONObject payload = request.payload;
-        String previous = previousSpeech;
+        String previous = test ? null : previousSpeech;
         if (previous != null) payload.put("previousSpeech", previous);
 
         HttpURLConnection connection = (HttpURLConnection) new URL(request.url).openConnection();
@@ -115,7 +155,7 @@ public final class RunCoach {
             int code = connection.getResponseCode();
             if (code != HttpURLConnection.HTTP_OK) {
                 Log.w(TAG, "Coach answered " + code + " for km " + request.km);
-                return;
+                return new Outcome(code, false);
             }
             try (InputStream in = connection.getInputStream()) {
                 response = new JSONObject(readAll(in));
@@ -125,15 +165,15 @@ public final class RunCoach {
         }
 
         // The run was stopped, or a new one started, while we waited.
-        if (!RunRecorder.get().isCurrentRun(request.runId)) return;
+        if (!test && !RunRecorder.get().isCurrentRun(request.runId)) return new Outcome(HttpURLConnection.HTTP_OK, false);
 
         String speech = response.optString("speech", "");
-        previousSpeech = speech.isEmpty() ? previous : speech;
+        if (!test) previousSpeech = speech.isEmpty() ? previous : speech;
 
         File audio = null;
         if (!response.isNull("audio")) {
             byte[] bytes = Base64.decode(response.getString("audio"), Base64.DEFAULT);
-            audio = new File(cacheDir(), "km-" + request.km + ".mp3");
+            audio = new File(cacheDir(), (test ? "test-km-" : "km-") + request.km + ".mp3");
             try (OutputStream out = new FileOutputStream(audio)) {
                 out.write(bytes);
             }
@@ -146,14 +186,19 @@ public final class RunCoach {
         event.put("coaching", coaching != null ? coaching : JSONObject.NULL);
         event.put("speech", speech);
         event.put("played", audio != null);
+        event.put("test", test);
 
         String src = audio != null ? "file://" + audio.getAbsolutePath() : null;
-        String cueId = "coach-" + request.runId + "-" + request.km;
+        // Test ids must differ per tap: CuePlayer never replays an id it has played.
+        String cueId = test
+            ? "coach-test-" + System.currentTimeMillis()
+            : "coach-" + request.runId + "-" + request.km;
         // CuePlayer and the plugin bridge both expect the main thread.
         mainHandler.post(() -> {
             if (src != null) CuePlayer.get(context).play(cueId, src, false);
             RunRecorder.get().emitEvent("coach", event);
         });
+        return new Outcome(HttpURLConnection.HTTP_OK, audio != null);
     }
 
     private File cacheDir() {

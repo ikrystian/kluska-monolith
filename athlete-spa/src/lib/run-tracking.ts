@@ -85,6 +85,8 @@ export interface NativeCoachEvent {
   speech: string;
   /** Whether the recorder had audio to play for it. */
   played: boolean;
+  /** Sent by the coach test button, not by the run itself. */
+  test?: boolean;
 }
 
 export interface NativeCueEvent {
@@ -106,6 +108,16 @@ interface RunTrackingPlugin {
     coach?: NativeCoachConfig | null;
   }): Promise<NativeRunSnapshot>;
   stop(): Promise<NativeRunSnapshot>;
+  /**
+   * Posts a made-up kilometre (`payload`, the coach endpoint's body) through
+   * the native coach and plays the answer, as a real kilometre would be; the
+   * advice arrives as a "coach" event with `test: true`. Works with no run.
+   */
+  testCoach(options: { url: string; token: string; payload: unknown }): Promise<{
+    ok: boolean;
+    status: number;
+    played: boolean;
+  }>;
   getState(): Promise<NativeRunSnapshot>;
   requestNotificationPermission(): Promise<{ granted: boolean }>;
   isIgnoringBatteryOptimizations(): Promise<{ granted: boolean }>;

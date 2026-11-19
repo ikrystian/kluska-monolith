@@ -1,0 +1,7 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "coach-mock-api", "runtimeExecutable": "node", "runtimeArgs": ["/tmp/claude-1000/-home-krystian-Projects-kluska-monolith/c9673fd3-5e1b-45f3-af15-d1325a29b6f1/scratchpad/coach-mock-api.mjs"], "port": 4123 },
+    { "name": "athlete-spa-coachmock", "runtimeExecutable": "npx", "runtimeArgs": ["--prefix", "athlete-spa", "vite", "athlete-spa", "--config", "athlete-spa/vite.config.ts", "--mode", "coachmock", "--port", "5191", "--strictPort"], "port": 5191 }
+  ]
+}
