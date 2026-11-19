@@ -258,6 +258,11 @@ public final class CuePlayer {
     }
 
     private void setDataSource(MediaPlayer player, String src) throws IOException {
+        // A file this app wrote itself (the AI run coach's per-km audio); never cached.
+        if (src.startsWith("file://")) {
+            player.setDataSource(src.substring("file://".length()));
+            return;
+        }
         if (isRemote(src)) {
             File cached = cacheFile(src);
             if (cached.exists()) player.setDataSource(cached.getAbsolutePath());

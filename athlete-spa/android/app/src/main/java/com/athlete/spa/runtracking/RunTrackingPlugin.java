@@ -52,7 +52,7 @@ public class RunTrackingPlugin extends Plugin {
             return;
         }
         RunRecorder recorder = RunRecorder.get();
-        recorder.start(call.getArray("cues"));
+        recorder.start(call.getArray("cues"), call.getObject("coach"));
         RunTrackingService.sync(getContext());
         call.resolve(recorder.snapshot(false));
     }

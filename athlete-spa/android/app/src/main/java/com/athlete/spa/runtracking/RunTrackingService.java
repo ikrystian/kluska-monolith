@@ -42,6 +42,9 @@ import java.util.Locale;
  * It also plays the training's cues through CuePlayer: distance cues as the
  * fixes come in, time cues from a timer that follows the moving-time clock, so
  * a pause from the notification or the widget holds them back too.
+ *
+ * For an advanced-goal run it hands every finished kilometre to RunCoach,
+ * which fetches the AI coach's advice and plays it the same way.
  */
 public class RunTrackingService extends Service {
 
@@ -71,6 +74,7 @@ public class RunTrackingService extends Service {
             RunRecorder recorder = RunRecorder.get();
             for (Location location : result.getLocations()) recorder.onLocation(location);
             playDueCues();
+            RunCoach.get(RunTrackingService.this).onProgress();
             long now = SystemClock.elapsedRealtime();
             if (now - lastNotificationAt >= NOTIFICATION_MIN_INTERVAL_MS) updateNotification();
         }

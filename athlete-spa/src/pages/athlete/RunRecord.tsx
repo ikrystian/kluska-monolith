@@ -28,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useRunTracker, type TrackPoint } from '@/hooks/useRunTracker';
 import { useRunCues } from '@/hooks/useRunCues';
+import { useRunCoach } from '@/hooks/useRunCoach';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { useLiveWidget } from '@/hooks/useLiveWidget';
 import { RECORD_PATH } from '@/components/native-run-bridge';
@@ -37,6 +38,17 @@ import { useCollection, useCreateDoc, useUser } from '@/lib/db-hooks';
 import { useToast } from '@/hooks/use-toast';
 import { purgePersistedEntries } from '@/lib/swr-cache';
 import { LiveRouteMap } from '@/components/running/LiveRouteMap';
+import { CoachBanner } from '@/components/running/CoachBanner';
+import {
+  ADVANCED_GOAL_PARAM,
+  clearActiveGoal,
+  describeGoal,
+  goalProgressFraction,
+  goalRemainingLabel,
+  loadActiveGoal,
+  parseAdvancedGoal,
+  saveActiveGoal,
+} from '@/lib/advanced-goal';
 import type { RunningProgram } from '@/lib/types';
 
 const isRunningSessionsListKey = (key: unknown): key is string =>
@@ -91,6 +103,16 @@ export default function RunRecordPage() {
   });
   const selectedProgram = programs?.find(p => p.id === programId) ?? null;
 
+  // Advanced goal composed in StartRunDialog. Reopening the screen from the
+  // lock-screen notification or the widget drops the query string, so a bare
+  // URL falls back to the goal saved when this run started.
+  const advancedGoal = useMemo(() => {
+    const fromUrl = parseAdvancedGoal(searchParams.get(ADVANCED_GOAL_PARAM));
+    if (fromUrl) return fromUrl;
+    if (programId || searchParams.get('goalType')) return null;
+    return loadActiveGoal();
+  }, [searchParams, programId]);
+
   // Ad-hoc goal for a quick run (no program): either a target distance (km)
   // or a target duration (minutes), set before starting from StartRunDialog.
   const goal = useMemo(() => {
@@ -113,6 +135,8 @@ export default function RunRecordPage() {
     tracker.distance,
     tracker.status
   );
+
+  const coach = useRunCoach(advancedGoal, tracker.status, tracker.distance, tracker.duration, tracker.points);
 
   const isActive = tracker.status === 'running' || tracker.status === 'paused';
   useWakeLock(isActive);
@@ -158,6 +182,12 @@ export default function RunRecordPage() {
   );
 
   const goalProgress = useMemo(() => {
+    if (advancedGoal) {
+      return {
+        fraction: goalProgressFraction(advancedGoal, tracker.distance, tracker.duration),
+        remainingLabel: goalRemainingLabel(advancedGoal, tracker.distance, tracker.duration),
+      };
+    }
     if (!goal) return null;
     if (goal.type === 'distance') {
       const fraction = km / goal.value;
@@ -166,7 +196,7 @@ export default function RunRecordPage() {
     const targetSeconds = goal.value * 60;
     const fraction = tracker.duration / targetSeconds;
     return { fraction, remainingLabel: `${formatDuration(Math.max(targetSeconds - tracker.duration, 0))} do celu` };
-  }, [goal, km, tracker.duration]);
+  }, [advancedGoal, goal, km, tracker.distance, tracker.duration]);
 
   const goalReachedRef = useRef(false);
   useEffect(() => {
@@ -201,11 +231,13 @@ export default function RunRecordPage() {
       return;
     }
     tracker.reset();
+    clearActiveGoal();
     goBackToRunningList();
   };
 
   const handleDiscard = () => {
     tracker.reset();
+    clearActiveGoal();
     setNotes('');
     goBackToRunningList();
   };
@@ -226,6 +258,7 @@ export default function RunRecordPage() {
         programId: selectedProgram?.id,
         programName: selectedProgram?.name,
       });
+      clearActiveGoal();
       purgePersistedEntries(isRunningSessionsListKey);
       void swrMutate(isRunningSessionsListKey, undefined, { revalidate: true });
       toast({
@@ -265,7 +298,7 @@ export default function RunRecordPage() {
         </button>
         <div className="flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
           <Footprints className="h-3.5 w-3.5" />
-          {selectedProgram ? selectedProgram.name : 'Szybki bieg'}
+          {selectedProgram ? selectedProgram.name : advancedGoal ? 'Zaawansowany cel' : 'Szybki bieg'}
         </div>
         <div className="w-10" />
       </div>
@@ -294,6 +327,9 @@ export default function RunRecordPage() {
             <p className="text-xs font-semibold">Znaleziono przerwany bieg — wznów go lub zapisz.</p>
           </div>
         )}
+        {advancedGoal?.voiceCoach && tracker.status !== 'idle' && (
+          <CoachBanner goal={advancedGoal} latest={coach.latest} pendingKm={coach.pendingKm} />
+        )}
         {activeCue && (
           <div className="flex items-center gap-2 rounded-2xl bg-primary/80 px-3 py-2 text-white backdrop-blur-md">
             <Megaphone className="h-3.5 w-3.5 shrink-0" />
@@ -318,6 +354,16 @@ export default function RunRecordPage() {
                     {selectedProgram.cues.length > 0 && ` · ${selectedProgram.cues.length} sygnałów dźwiękowych`}
                   </p>
                 </>
+              ) : advancedGoal ? (
+                <>
+                  <p className="text-xs font-semibold text-white/60">Zaawansowany cel</p>
+                  <p className="mt-1 font-display text-3xl font-bold leading-tight text-white">
+                    {describeGoal(advancedGoal)}
+                  </p>
+                  <p className="mt-1 text-sm text-white/60">
+                    {advancedGoal.voiceCoach ? 'Trener głosowy AI co 1 km' : 'Bez trenera głosowego'}
+                  </p>
+                </>
               ) : (
                 <>
                   <p className="font-display text-4xl font-bold text-white">Szybki bieg</p>
@@ -336,7 +382,9 @@ export default function RunRecordPage() {
               disabled={Boolean(programId) && programsLoading}
               onClick={() => {
                 haptic('impact');
-                tracker.start(recorderCues);
+                if (advancedGoal) saveActiveGoal(advancedGoal);
+                else clearActiveGoal();
+                tracker.start(recorderCues, coach.coachConfig);
               }}
             >
               <Play className="mr-2 h-6 w-6 fill-current" /> Start
@@ -417,7 +465,7 @@ export default function RunRecordPage() {
                   aria-label="Wznów"
                   onClick={() => {
                     haptic('impact');
-                    tracker.resume(recorderCues);
+                    tracker.resume(recorderCues, coach.coachConfig);
                   }}
                   className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground active:scale-95"
                 >

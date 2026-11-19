@@ -6,6 +6,7 @@ import {
   RunTracking,
   isNativeRunTrackingAvailable,
   promptBatteryExemptionOnce,
+  type NativeCoachConfig,
   type NativeRunCue,
   type NativeRunSnapshot,
 } from '@/lib/run-tracking';
@@ -261,21 +262,21 @@ export function useRunTracker() {
 
   /**
    * Starts (or, for a run recovered from storage, continues) the native
-   * recorder. A run it still holds keeps its own cues; `cues` only seeds a new
-   * or restored one.
+   * recorder. A run it still holds keeps its own cues and coach; `cues` and
+   * `coach` only seed a new or restored one.
    */
   const startNative = useCallback(
-    async (mode: 'start' | 'resume', cues: NativeRunCue[]) => {
+    async (mode: 'start' | 'resume', cues: NativeRunCue[], coach: NativeCoachConfig | null) => {
       try {
         if (!(await ensureLocationPermission())) return;
         // Without it the lock-screen notification is hidden; recording works either way.
         await RunTracking.requestNotificationPermission().catch(() => undefined);
         if (mode === 'start') {
-          await RunTracking.start({ cues });
+          await RunTracking.start({ cues, coach });
           void promptBatteryExemptionOnce();
         } else {
           const { points, distance, duration } = stateRef.current;
-          await RunTracking.resume({ points, distance, durationMs: Math.round(duration * 1000), cues });
+          await RunTracking.resume({ points, distance, durationMs: Math.round(duration * 1000), cues, coach });
         }
       } catch (err) {
         handleError(err);
@@ -284,12 +285,15 @@ export function useRunTracker() {
     [ensureLocationPermission, handleError]
   );
 
-  /** `cues` are played by the native recorder; elsewhere useRunCues plays them. */
+  /**
+   * `cues` are played by the native recorder, and `coach` runs there too;
+   * elsewhere useRunCues and useRunCoach handle them from the WebView.
+   */
   const start = useCallback(
-    (cues: NativeRunCue[] = []) => {
+    (cues: NativeRunCue[] = [], coach: NativeCoachConfig | null = null) => {
       lastTickRef.current = Date.now();
       setState({ ...IDLE_STATE, status: 'running' });
-      if (USE_NATIVE) void startNative('start', cues);
+      if (USE_NATIVE) void startNative('start', cues, coach);
       else void startWatching();
     },
     [startNative, startWatching]
@@ -308,10 +312,10 @@ export function useRunTracker() {
   }, [applyNativeSnapshot, handleError, stopWatching]);
 
   const resume = useCallback(
-    (cues: NativeRunCue[] = []) => {
+    (cues: NativeRunCue[] = [], coach: NativeCoachConfig | null = null) => {
       lastTickRef.current = Date.now();
       setState(prev => (prev.status === 'paused' ? { ...prev, status: 'running', segmentStart: true } : prev));
-      if (USE_NATIVE) void startNative('resume', cues);
+      if (USE_NATIVE) void startNative('resume', cues, coach);
       else void startWatching();
     },
     [startNative, startWatching]

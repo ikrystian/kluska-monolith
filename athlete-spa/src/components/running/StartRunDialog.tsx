@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Footprints, Route, Timer, ChevronRight, Music } from 'lucide-react';
+import { Footprints, Route, Timer, ChevronRight, Music, Target } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -13,9 +13,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import type { RunningProgram } from '@/lib/types';
+import { ADVANCED_GOAL_PARAM, clearActiveGoal, encodeAdvancedGoal, type AdvancedGoal } from '@/lib/advanced-goal';
+import { AdvancedGoalBuilder } from './AdvancedGoalBuilder';
 
 type GoalType = 'distance' | 'time';
-type Step = 'choose' | 'goal';
+type Step = 'choose' | 'goal' | 'advanced';
 
 interface StartRunDialogProps {
   open: boolean;
@@ -27,12 +29,33 @@ interface StartRunDialogProps {
   programs?: RunningProgram[] | null;
 }
 
+/** Opens the advanced-goal builder; shown on both the picker and the simple goal step. */
+function AdvancedGoalEntry({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center gap-3.5 rounded-2xl bg-card p-3.5 text-left transition-all hover:border-primary/30 active:scale-[0.99]"
+    >
+      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
+        <Target className="h-5 w-5" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold">Zaawansowany cel</p>
+        <p className="text-sm text-muted-foreground">Np. 10 km w 50 min, z trenerem głosowym AI</p>
+      </div>
+      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+    </button>
+  );
+}
+
 /**
  * Shared "start a run" entry point for both /athlete/running and
  * /athlete/log: pick one of the trainer's programs (starts immediately, the
  * program already carries its own target distance), or start a quick run —
  * which first asks for an optional goal (distance or time) so the recorder
- * can show progress toward it.
+ * can show progress toward it — or compose an advanced goal, which also turns
+ * on the per-kilometre AI voice coach.
  */
 export function StartRunDialog({ open, onOpenChange, programs }: StartRunDialogProps) {
   const navigate = useNavigate();
@@ -51,6 +74,8 @@ export function StartRunDialog({ open, onOpenChange, programs }: StartRunDialogP
   }, [open]);
 
   const startRun = (query?: string) => {
+    // A goal kept from an earlier, unfinished run must not leak into this one.
+    clearActiveGoal();
     onOpenChange(false);
     navigate(query ? `/athlete/running/record?${query}` : '/athlete/running/record');
   };
@@ -61,6 +86,10 @@ export function StartRunDialog({ open, onOpenChange, programs }: StartRunDialogP
 
   const handleStartWithoutGoal = () => {
     startRun();
+  };
+
+  const handleStartAdvanced = (goal: AdvancedGoal) => {
+    startRun(`${ADVANCED_GOAL_PARAM}=${encodeAdvancedGoal(goal)}`);
   };
 
   const handleConfirmGoal = () => {
@@ -93,6 +122,7 @@ export function StartRunDialog({ open, onOpenChange, programs }: StartRunDialogP
                 </div>
                 <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
               </button>
+              <AdvancedGoalEntry onClick={() => setStep('advanced')} />
               {programs?.map((program) => (
                 <button
                   key={program.id}
@@ -114,6 +144,21 @@ export function StartRunDialog({ open, onOpenChange, programs }: StartRunDialogP
                 </button>
               ))}
             </div>
+          </>
+        ) : step === 'advanced' ? (
+          <>
+            <DialogHeader>
+              <DialogTitle className="font-headline">Zaawansowany cel</DialogTitle>
+              <DialogDescription>Złóż cel z gotowych opcji. Trener AI co kilometr powie, jak Ci idzie.</DialogDescription>
+            </DialogHeader>
+            <AdvancedGoalBuilder onStart={handleStartAdvanced} />
+            <Button
+              variant="ghost"
+              className="w-full rounded-xl"
+              onClick={() => setStep(hasPrograms ? 'choose' : 'goal')}
+            >
+              Wróć
+            </Button>
           </>
         ) : (
           <>
@@ -145,6 +190,7 @@ export function StartRunDialog({ open, onOpenChange, programs }: StartRunDialogP
                 <span className="font-semibold">Czas</span>
               </button>
             </div>
+            {!hasPrograms && <AdvancedGoalEntry onClick={() => setStep('advanced')} />}
             {goalType && (
               <div className="flex items-center gap-2">
                 <Input

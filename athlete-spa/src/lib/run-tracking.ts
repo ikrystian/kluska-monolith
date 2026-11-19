@@ -7,7 +7,8 @@ import type { RunningCueTrigger } from '@/models/types';
  * android project). A foreground service keeps GPS at full rate while the app
  * is backgrounded or the screen is locked, and shows distance / time / average
  * pace in an ongoing notification on the lock screen. It plays the training's
- * audio cues too, since a minimised WebView is frozen and can't.
+ * audio cues too, since a minimised WebView is frozen and can't — and, for an
+ * advanced-goal run, fetches and plays the AI coach every kilometre.
  */
 
 export type NativeRunStatus = 'idle' | 'running' | 'paused';
@@ -43,6 +44,49 @@ export interface NativeRunCue {
   src: string;
 }
 
+/**
+ * The per-kilometre AI coach of an advanced-goal run. The recorder itself
+ * posts each finished kilometre to `url` and plays the returned audio, since
+ * the WebView is frozen while the screen is locked.
+ */
+export interface NativeCoachConfig {
+  /** Absolute URL of POST /api/athlete/running/coach. */
+  url: string;
+  /** Bearer token for the backend. */
+  token: string;
+  /** The advanced goal, passed through to the backend as-is. */
+  goal: unknown;
+  /** Metres between coach calls (1000). */
+  intervalM: number;
+}
+
+/** What the backend's coach returned for one kilometre (lib/advanced-goal, hooks/useRunCoach). */
+export interface CoachAdvice {
+  status: 'ahead' | 'on_track' | 'behind' | 'at_risk' | 'achieved';
+  progressPercent: number;
+  currentPaceSPerKm: number;
+  avgPaceSPerKm: number;
+  targetPaceSPerKm: number | null;
+  nextKmTargetSplitS: number | null;
+  requiredPaceSPerKm: number | null;
+  projectedFinishS: number | null;
+  projectedDistanceKm: number | null;
+  deltaVsPlanS: number | null;
+  goalCompleted: boolean;
+  tip: string;
+  fromModel: boolean;
+}
+
+export interface NativeCoachEvent {
+  km: number;
+  /** Epoch ms the advice arrived — events wait in a queue while the WebView is frozen. */
+  firedAt: number;
+  coaching: CoachAdvice | null;
+  speech: string;
+  /** Whether the recorder had audio to play for it. */
+  played: boolean;
+}
+
 export interface NativeCueEvent {
   /** Position of the cue in the list the run was started with. */
   index: number;
@@ -51,7 +95,7 @@ export interface NativeCueEvent {
 }
 
 interface RunTrackingPlugin {
-  start(options: { cues: NativeRunCue[] }): Promise<NativeRunSnapshot>;
+  start(options: { cues: NativeRunCue[]; coach?: NativeCoachConfig | null }): Promise<NativeRunSnapshot>;
   pause(): Promise<NativeRunSnapshot>;
   /** Run data is only used to restore a session the native side lost while paused. */
   resume(run: {
@@ -59,6 +103,7 @@ interface RunTrackingPlugin {
     distance: number;
     durationMs: number;
     cues: NativeRunCue[];
+    coach?: NativeCoachConfig | null;
   }): Promise<NativeRunSnapshot>;
   stop(): Promise<NativeRunSnapshot>;
   getState(): Promise<NativeRunSnapshot>;
@@ -67,6 +112,7 @@ interface RunTrackingPlugin {
   requestIgnoreBatteryOptimizations(): Promise<{ granted: boolean }>;
   addListener(event: 'update', listener: (update: NativeRunUpdate) => void): Promise<PluginListenerHandle>;
   addListener(event: 'cue', listener: (cue: NativeCueEvent) => void): Promise<PluginListenerHandle>;
+  addListener(event: 'coach', listener: (coach: NativeCoachEvent) => void): Promise<PluginListenerHandle>;
 }
 
 export const RunTracking = registerPlugin<RunTrackingPlugin>('RunTracking');
