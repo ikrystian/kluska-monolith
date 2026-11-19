@@ -1,40 +1,11 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { connectToDatabase } from '@/lib/mongodb';
-import { SavedMeal } from '@/models/SavedMeal';
-import MealForm from '@/components/trainer/MealForm';
-import { redirect, notFound } from 'next/navigation';
+import { MealEditView } from '@/components/shared/meals/MealViews';
 
-export const dynamic = 'force-dynamic';
-
-async function getMeal(id: string, trainerId: string) {
-    await connectToDatabase();
-    try {
-        const meal = await SavedMeal.findOne({ _id: id, trainerId });
-        if (!meal) return null;
-        return JSON.parse(JSON.stringify(meal));
-    } catch (error) {
-        return null;
-    }
+interface TrainerEditMealPageProps {
+    params: Promise<{ id: string }>;
 }
 
-export default async function EditMealPage({ params }: { params: Promise<{ id: string }> }) {
-    const session = await getServerSession(authOptions);
-
-    if (!session || !session.user || session.user.role !== 'trainer') {
-        redirect('/auth/signin');
-    }
-
+export default async function TrainerEditMealPage({ params }: TrainerEditMealPageProps) {
     const { id } = await params;
-    const meal = await getMeal(id, session.user.id);
 
-    if (!meal) {
-        notFound();
-    }
-
-    return (
-        <div className="container mx-auto p-6">
-            <MealForm initialData={meal} />
-        </div>
-    );
+    return <MealEditView role="trainer" basePath="/trainer/diet/meals" mealId={id} />;
 }

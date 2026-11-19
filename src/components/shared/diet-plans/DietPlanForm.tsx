@@ -1,81 +1,94 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Trash2, Save, Clock, Check, ChevronsUpDown, ChevronDown, ChevronRight } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Plus, Trash2, Save, Clock, Check, ChevronsUpDown, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { fetchSavedMeals, panelConfig, type PanelRole, type SavedMeal } from '@/components/shared/panel-config';
 
-interface SavedMeal {
-    _id: string;
-    name: string;
-    totalCalories: number;
-    totalProtein: number;
-    totalCarbs: number;
-    totalFat: number;
-    category?: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
+type MealType = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
+
+const MEAL_TYPE_LABELS: Record<MealType, string> = {
+    Breakfast: 'Śniadanie',
+    Lunch: 'Obiad',
+    Dinner: 'Kolacja',
+    Snack: 'Przekąska',
+};
+
+/** Posiłek w dniu planu – plan przechowuje tylko id posiłku, a nazwę i makra bierzemy z listy posiłków. */
+interface DietMeal {
+    savedMealId: string;
+    type: MealType;
+    time?: string;
 }
 
 interface DietDay {
     dayNumber: number;
-    meals: {
-        savedMealId: string;
-        mealName: string; // For display
-        type: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
-        time?: string;
-        macros: {
-            calories: number;
-            protein: number;
-            carbs: number;
-            fat: number;
-        };
-    }[];
+    meals: DietMeal[];
 }
 
-interface DietPlanFormProps {
+export interface DietPlanFormProps {
+    /** Panel, z którego otwarto formularz: wybiera endpointy API i listę posiłków. */
+    role: PanelRole;
     initialData?: {
         _id?: string;
         name: string;
         description?: string;
         days: DietDay[];
     };
+    /** Lista planów danego panelu, na którą wracamy po zapisie. */
+    redirectTo: string;
 }
 
-export default function DietPlanForm({ initialData }: DietPlanFormProps) {
+export function DietPlanForm({ role, initialData, redirectTo }: DietPlanFormProps) {
     const router = useRouter();
+    const planId = initialData?._id;
+    const isEdit = !!planId;
+
     const [dietName, setDietName] = useState(initialData?.name || '');
     const [description, setDescription] = useState(initialData?.description || '');
-    const [days, setDays] = useState<DietDay[]>(initialData?.days || [{ dayNumber: 1, meals: [] }]);
+    const [days, setDays] = useState<DietDay[]>(() =>
+        initialData?.days?.length
+            ? initialData.days.map(day => ({
+                dayNumber: day.dayNumber,
+                meals: day.meals.map(meal => ({ savedMealId: meal.savedMealId, type: meal.type, time: meal.time })),
+            }))
+            : [{ dayNumber: 1, meals: [] }]
+    );
     const [savedMeals, setSavedMeals] = useState<SavedMeal[]>([]);
+    const [mealsLoading, setMealsLoading] = useState(true);
     const [isMealSelectorOpen, setIsMealSelectorOpen] = useState(false);
     const [currentDayIndex, setCurrentDayIndex] = useState<number | null>(null);
-    const isEdit = !!initialData?._id;
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
-        fetchMeals();
-    }, []);
+        let cancelled = false;
+        fetchSavedMeals(role)
+            .then(meals => {
+                if (!cancelled) setSavedMeals(meals);
+            })
+            .catch(() => {
+                if (!cancelled) toast({ title: 'Błąd', description: 'Nie udało się pobrać zapisanych posiłków', variant: 'destructive' });
+            })
+            .finally(() => {
+                if (!cancelled) setMealsLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [role]);
 
-    const fetchMeals = async () => {
-        try {
-            const res = await fetch('/api/trainer/meals?include=public');
-            const data = await res.json();
-            if (data.meals) {
-                setSavedMeals(data.meals);
-            }
-        } catch (error) {
-            console.error('Error fetching meals:', error);
-            toast({ title: 'Błąd', description: 'Nie udało się pobrać zapisanych posiłków', variant: 'destructive' });
-        }
-    };
+    const mealsById = new Map(savedMeals.map(meal => [meal._id, meal]));
 
     const addDay = () => {
         setDays([...days, { dayNumber: days.length + 1, meals: [] }]);
@@ -83,8 +96,7 @@ export default function DietPlanForm({ initialData }: DietPlanFormProps) {
 
     const removeDay = (index: number) => {
         if (days.length === 1) return;
-        const newDays = days.filter((_, i) => i !== index).map((day, i) => ({ ...day, dayNumber: i + 1 }));
-        setDays(newDays);
+        setDays(days.filter((_, i) => i !== index).map((day, i) => ({ ...day, dayNumber: i + 1 })));
     };
 
     const openMealSelector = (dayIndex: number) => {
@@ -92,86 +104,72 @@ export default function DietPlanForm({ initialData }: DietPlanFormProps) {
         setIsMealSelectorOpen(true);
     };
 
-    const addMealToDay = (meal: SavedMeal, type: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack', time: string) => {
+    const addMealToDay = (meal: SavedMeal, type: MealType, time: string) => {
         if (currentDayIndex === null) return;
-
-        const newDays = [...days];
-        newDays[currentDayIndex].meals.push({
-            savedMealId: meal._id,
-            mealName: meal.name,
-            type,
-            time,
-            macros: {
-                calories: meal.totalCalories,
-                protein: meal.totalProtein,
-                carbs: meal.totalCarbs,
-                fat: meal.totalFat,
-            },
-        });
-        setDays(newDays);
+        const dayNumber = days[currentDayIndex].dayNumber;
+        setDays(days.map((day, index) =>
+            index === currentDayIndex
+                ? { ...day, meals: [...day.meals, { savedMealId: meal._id, type, time }] }
+                : day
+        ));
         setIsMealSelectorOpen(false);
-        toast({ title: 'Dodano', description: `${meal.name} dodano do Dnia ${days[currentDayIndex].dayNumber}` });
+        toast({ title: 'Dodano', description: `${meal.name} dodano do Dnia ${dayNumber}` });
     };
 
     const removeMealFromDay = (dayIndex: number, mealIndex: number) => {
-        const newDays = [...days];
-        newDays[dayIndex].meals.splice(mealIndex, 1);
-        setDays(newDays);
+        setDays(days.map((day, index) =>
+            index === dayIndex
+                ? { ...day, meals: day.meals.filter((_, i) => i !== mealIndex) }
+                : day
+        ));
     };
 
-    const handleSaveDiet = async () => {
+    const handleSave = async (e: React.FormEvent) => {
+        e.preventDefault();
         if (!dietName) {
             toast({ title: 'Błąd', description: 'Proszę podać nazwę diety', variant: 'destructive' });
             return;
         }
 
-        const hasMeals = days.some(d => d.meals.length > 0);
-        if (!hasMeals) {
+        if (!days.some(d => d.meals.length > 0)) {
             toast({ title: 'Ostrzeżenie', description: 'Twoja dieta nie ma posiłków. Jesteś pewien?', variant: 'destructive' });
         }
 
+        const { dietPlansApi } = panelConfig[role];
+        const url = planId ? `${dietPlansApi}/${planId}` : dietPlansApi;
+
+        setIsSaving(true);
         try {
-            const url = isEdit
-                ? `/api/trainer/diets/${initialData._id}`
-                : '/api/trainer/diets';
-
-            const method = isEdit ? 'PUT' : 'POST';
-
             const res = await fetch(url, {
-                method: method,
+                method: isEdit ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     name: dietName,
                     description,
                     days: days.map(d => ({
                         dayNumber: d.dayNumber,
-                        meals: d.meals.map(m => ({
-                            savedMealId: m.savedMealId,
-                            type: m.type,
-                            time: m.time
-                        }))
+                        meals: d.meals.map(m => ({ savedMealId: m.savedMealId, type: m.type, time: m.time })),
                     })),
                 }),
             });
 
-            if (res.ok) {
-                toast({ title: 'Sukces', description: `Plan diety ${isEdit ? 'zaktualizowany' : 'zapisany'} pomyślnie` });
-                router.push('/trainer/diet/plans');
-                router.refresh();
-            } else {
-                toast({ title: 'Błąd', description: 'Nie udało się zapisać planu diety', variant: 'destructive' });
-            }
+            if (!res.ok) throw new Error('Request failed');
+
+            toast({ title: 'Sukces', description: `Plan diety ${isEdit ? 'zaktualizowany' : 'zapisany'} pomyślnie` });
+            router.push(redirectTo);
+            router.refresh();
         } catch (error) {
             console.error('Save error:', error);
             toast({ title: 'Błąd', description: 'Nie udało się zapisać planu diety', variant: 'destructive' });
+        } finally {
+            setIsSaving(false);
         }
     };
 
     return (
-        <div className="space-y-8">
-            <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold">{isEdit ? 'Edytuj Plan Dietetyczny' : 'Utwórz Plan Dietetyczny'}</h1>
-                <Button onClick={handleSaveDiet} className="gap-2">
+        <form onSubmit={handleSave} className="space-y-8">
+            <div className="flex justify-end">
+                <Button type="submit" className="gap-2" disabled={isSaving}>
                     <Save className="w-4 h-4" /> {isEdit ? 'Zaktualizuj Plan' : 'Zapisz Plan'}
                 </Button>
             </div>
@@ -182,12 +180,24 @@ export default function DietPlanForm({ initialData }: DietPlanFormProps) {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
-                        <Label>Nazwa Diety</Label>
-                        <Input value={dietName} onChange={(e) => setDietName(e.target.value)} placeholder="np. Plan Redukcyjny 4 Tygodnie" />
+                        <Label htmlFor="diet-name">Nazwa Diety</Label>
+                        <Input
+                            id="diet-name"
+                            value={dietName}
+                            onChange={(e) => setDietName(e.target.value)}
+                            placeholder="np. Plan Redukcyjny 4 Tygodnie"
+                            disabled={isSaving}
+                        />
                     </div>
                     <div className="space-y-2">
-                        <Label>Opis</Label>
-                        <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Krótki opis planu diety..." />
+                        <Label htmlFor="diet-description">Opis</Label>
+                        <Textarea
+                            id="diet-description"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Krótki opis planu diety..."
+                            disabled={isSaving}
+                        />
                     </div>
                 </CardContent>
             </Card>
@@ -195,7 +205,7 @@ export default function DietPlanForm({ initialData }: DietPlanFormProps) {
             <div className="space-y-6">
                 <div className="flex justify-between items-center">
                     <h2 className="text-2xl font-semibold">Dni</h2>
-                    <Button onClick={addDay} variant="outline" className="gap-2">
+                    <Button type="button" onClick={addDay} variant="outline" className="gap-2">
                         <Plus className="w-4 h-4" /> Dodaj Dzień
                     </Button>
                 </div>
@@ -205,40 +215,43 @@ export default function DietPlanForm({ initialData }: DietPlanFormProps) {
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
                             <CardTitle className="text-lg">Dzień {day.dayNumber}</CardTitle>
                             {days.length > 1 && (
-                                <Button size="icon" variant="ghost" className="text-destructive" onClick={() => removeDay(dayIndex)}>
+                                <Button type="button" size="icon" variant="ghost" className="text-destructive" onClick={() => removeDay(dayIndex)}>
                                     <Trash2 className="w-4 h-4" />
                                 </Button>
                             )}
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {day.meals.length === 0 ? (
+                            {mealsLoading ? (
+                                <Skeleton className="h-16 w-full" />
+                            ) : day.meals.length === 0 ? (
                                 <p className="text-sm text-muted-foreground italic">Brak dodanych posiłków.</p>
                             ) : (
                                 <div className="space-y-2">
-                                    {day.meals.map((meal, mealIndex) => (
-                                        <div key={mealIndex} className="flex justify-between items-center p-3 border rounded bg-card">
-                                            <div className="flex items-center gap-4">
-                                                <div className="bg-primary/10 p-2 rounded text-primary font-bold text-xs w-20 text-center">
-                                                    {meal.type === 'Breakfast' ? 'Śniadanie' :
-                                                        meal.type === 'Lunch' ? 'Obiad' :
-                                                            meal.type === 'Dinner' ? 'Kolacja' : 'Przekąska'}
-                                                    {meal.time && <div className="font-normal text-[10px] flex items-center justify-center gap-1 mt-1"><Clock className="w-3 h-3" /> {meal.time}</div>}
+                                    {day.meals.map((meal, mealIndex) => {
+                                        const info = mealsById.get(meal.savedMealId);
+                                        return (
+                                            <div key={`${meal.savedMealId}-${mealIndex}`} className="flex justify-between items-center p-3 border rounded bg-card">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="bg-primary/10 p-2 rounded text-primary font-bold text-xs w-20 text-center">
+                                                        {MEAL_TYPE_LABELS[meal.type]}
+                                                        {meal.time && <div className="font-normal text-[10px] flex items-center justify-center gap-1 mt-1"><Clock className="w-3 h-3" /> {meal.time}</div>}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-medium">{info?.name ?? 'Nieznany posiłek'}</p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {(info?.totalCalories ?? 0).toFixed(0)} kcal | B: {(info?.totalProtein ?? 0).toFixed(0)} | W: {(info?.totalCarbs ?? 0).toFixed(0)} | T: {(info?.totalFat ?? 0).toFixed(0)}
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <p className="font-medium">{meal.mealName}</p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {meal.macros.calories.toFixed(0)} kcal | B: {meal.macros.protein.toFixed(0)} | W: {meal.macros.carbs.toFixed(0)} | T: {meal.macros.fat.toFixed(0)}
-                                                    </p>
-                                                </div>
+                                                <Button type="button" size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => removeMealFromDay(dayIndex, mealIndex)}>
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
                                             </div>
-                                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => removeMealFromDay(dayIndex, mealIndex)}>
-                                                <Trash2 className="w-4 h-4" />
-                                            </Button>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
-                            <Button variant="secondary" size="sm" className="w-full" onClick={() => openMealSelector(dayIndex)}>
+                            <Button type="button" variant="secondary" size="sm" className="w-full" onClick={() => openMealSelector(dayIndex)} disabled={mealsLoading}>
                                 <Plus className="w-4 h-4 mr-2" /> Dodaj Posiłek
                             </Button>
                         </CardContent>
@@ -253,22 +266,22 @@ export default function DietPlanForm({ initialData }: DietPlanFormProps) {
                     </DialogHeader>
                     <MealSelector
                         meals={savedMeals}
-                        onSelect={(meal, type, time) => addMealToDay(meal, type, time)}
+                        onSelect={addMealToDay}
                     />
                 </DialogContent>
             </Dialog>
-        </div>
+        </form>
     );
 }
 
-function MealSelector({ meals, onSelect }: { meals: SavedMeal[], onSelect: (meal: SavedMeal, type: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack', time: string) => void }) {
+function MealSelector({ meals, onSelect }: { meals: SavedMeal[]; onSelect: (meal: SavedMeal, type: MealType, time: string) => void }) {
     const [selectedMealId, setSelectedMealId] = useState<string>('');
     const [time, setTime] = useState('08:00');
     const [open, setOpen] = useState(false);
     const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
     const [searchTerm, setSearchTerm] = useState('');
 
-    const categories = ['Breakfast', 'Lunch', 'Dinner', 'Snack'] as const;
+    const categories: MealType[] = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
     const handleAdd = () => {
         const meal = meals.find(m => m._id === selectedMealId);
@@ -294,6 +307,7 @@ function MealSelector({ meals, onSelect }: { meals: SavedMeal[], onSelect: (meal
                 <Popover open={open} onOpenChange={setOpen}>
                     <PopoverTrigger asChild>
                         <Button
+                            type="button"
                             variant="outline"
                             role="combobox"
                             aria-expanded={open}
@@ -314,7 +328,7 @@ function MealSelector({ meals, onSelect }: { meals: SavedMeal[], onSelect: (meal
                                     const categoryMeals = meals.filter(m => (m.category || 'Breakfast') === category);
                                     if (categoryMeals.length === 0) return null;
 
-                                    // Filter based on search term manually since we disabled default filtering to handle collapsed states
+                                    // Filtrujemy ręcznie, bo domyślne filtrowanie nie współpracuje ze zwijanymi grupami.
                                     const filteredMeals = categoryMeals.filter(meal =>
                                         meal.name.toLowerCase().includes(searchTerm.toLowerCase())
                                     );
@@ -322,9 +336,6 @@ function MealSelector({ meals, onSelect }: { meals: SavedMeal[], onSelect: (meal
                                     if (filteredMeals.length === 0 && searchTerm) return null;
 
                                     const isCollapsed = collapsedCategories[category] && !searchTerm;
-                                    const categoryLabel = category === 'Breakfast' ? 'Śniadanie' :
-                                        category === 'Lunch' ? 'Obiad' :
-                                            category === 'Dinner' ? 'Kolacja' : 'Przekąska';
 
                                     return (
                                         <CommandGroup key={category} heading={
@@ -333,13 +344,13 @@ function MealSelector({ meals, onSelect }: { meals: SavedMeal[], onSelect: (meal
                                                 onClick={(e) => toggleCategory(category, e)}
                                             >
                                                 {isCollapsed ? <ChevronRight className="mr-1 h-3 w-3" /> : <ChevronDown className="mr-1 h-3 w-3" />}
-                                                {categoryLabel}
+                                                {MEAL_TYPE_LABELS[category]}
                                             </div>
                                         }>
                                             {!isCollapsed && filteredMeals.map(meal => (
                                                 <CommandItem
                                                     key={meal._id}
-                                                    value={meal.name} // Use name for search if we were using default filter, but here it acts as ID for selection mostly
+                                                    value={meal.name}
                                                     onSelect={() => {
                                                         setSelectedMealId(meal._id);
                                                         setOpen(false);
@@ -368,7 +379,7 @@ function MealSelector({ meals, onSelect }: { meals: SavedMeal[], onSelect: (meal
                 <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
             </div>
 
-            <Button onClick={handleAdd} disabled={!selectedMealId} className="w-full">
+            <Button type="button" onClick={handleAdd} disabled={!selectedMealId} className="w-full">
                 Dodaj do Dnia
             </Button>
         </div>

@@ -70,6 +70,7 @@ const YouPage = lazy(() => import('@/pages/athlete/You'));
 const TemplatesPage = lazy(() => import('@/pages/athlete/Templates'));
 const TrainersPage = lazy(() => import('@/pages/athlete/Trainers'));
 const TrainerDetailPage = lazy(() => import('@/pages/athlete/TrainerDetail'));
+const SurveyPage = lazy(() => import('@/pages/athlete/Survey'));
 const TrainerPanelPage = lazy(() => import('@/pages/athlete/TrainerPanel'));
 const WorkoutPlansPage = lazy(() => import('@/pages/athlete/WorkoutPlans'));
 const WorkoutsPage = lazy(() => import('@/pages/athlete/Workouts'));
@@ -154,6 +155,7 @@ export default function App() {
                 <Route element={<RequireFullAccount />}>
                   <Route path="chat" element={<ChatPage />} />
                   <Route path="check-in" element={<CheckInPage />} />
+                  <Route path="surveys/:id" element={<SurveyPage />} />
                   <Route path="social" element={<SocialPage />} />
                   <Route path="social/profile/:userId" element={<PublicProfilePage />} />
                   <Route path="challenges" element={<ChallengesPage />} />

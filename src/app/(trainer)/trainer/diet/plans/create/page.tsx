@@ -1,11 +1,5 @@
-'use client';
+import { DietPlanCreateView } from '@/components/shared/diet-plans/DietPlanViews';
 
-import DietPlanForm from '@/components/trainer/DietPlanForm';
-
-export default function CreateDietPage() {
-    return (
-        <div className="container mx-auto p-6">
-            <DietPlanForm />
-        </div>
-    );
+export default function TrainerCreateDietPlanPage() {
+    return <DietPlanCreateView role="trainer" basePath="/trainer/diet/plans" />;
 }

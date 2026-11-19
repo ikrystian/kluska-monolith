@@ -4,15 +4,19 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/mongodb';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+// W Next 16 `params` handlera jest Promise i trzeba go rozpakować przez `await`.
+type RouteContext = { params: Promise<{ id: string }> };
+
+export async function GET(req: NextRequest, { params }: RouteContext) {
     try {
         const session = await getServerSession(authOptions);
         if (!session || !session.user || session.user.role !== 'trainer') {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        const { id } = await params;
         await connectToDatabase();
-        const plan = await DietPlan.findOne({ _id: params.id, trainerId: session.user.id });
+        const plan = await DietPlan.findOne({ _id: id, trainerId: session.user.id });
 
         if (!plan) {
             return NextResponse.json({ error: 'Diet plan not found' }, { status: 404 });
@@ -25,19 +29,20 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: RouteContext) {
     try {
         const session = await getServerSession(authOptions);
         if (!session || !session.user || session.user.role !== 'trainer') {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        const { id } = await params;
         const body = await req.json();
         const { name, description, days } = body;
 
         await connectToDatabase();
         const updatedPlan = await DietPlan.findOneAndUpdate(
-            { _id: params.id, trainerId: session.user.id },
+            { _id: id, trainerId: session.user.id },
             {
                 name,
                 description,
@@ -57,15 +62,16 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: RouteContext) {
     try {
         const session = await getServerSession(authOptions);
         if (!session || !session.user || session.user.role !== 'trainer') {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        const { id } = await params;
         await connectToDatabase();
-        const deletedPlan = await DietPlan.findOneAndDelete({ _id: params.id, trainerId: session.user.id });
+        const deletedPlan = await DietPlan.findOneAndDelete({ _id: id, trainerId: session.user.id });
 
         if (!deletedPlan) {
             return NextResponse.json({ error: 'Diet plan not found' }, { status: 404 });

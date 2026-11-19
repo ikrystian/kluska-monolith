@@ -35,7 +35,7 @@ import {
     customDaySchema,
     createCustomDay,
     type CustomDayValues,
-} from './plan-custom-day-editor';
+} from './PlanCustomDayEditor';
 
 const planSchema = z.object({
     name: z.string().min(1, 'Nazwa jest wymagana.'),

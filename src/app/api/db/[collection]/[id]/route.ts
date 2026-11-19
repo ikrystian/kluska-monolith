@@ -6,6 +6,7 @@ import { isValidObjectId } from 'mongoose';
 import { jsonWithEtag } from '@/lib/http-cache';
 import { cascadeDeleteUserData } from '@/lib/user-cascade-delete';
 import { linkWorkoutLogExercises } from '@/lib/workout-log-exercises';
+import { notifyAssignedAthletes } from '@/lib/surveys';
 import { onActivityLogged, onWorkoutCompleted } from '@/lib/gamification';
 import {
   AccessContext,
@@ -211,10 +212,20 @@ export async function PATCH(
         ? (await Model.findById(id).select('status').lean())?.status === 'completed'
         : true;
 
+    // Ankieta: sportowcy, którzy już ją dostali, nie dostają powiadomienia drugi raz.
+    const previousSurvey = collection === 'surveys'
+      ? (await Model.findById(id).select('status assignedAthleteIds').lean()) as { status?: string; assignedAthleteIds?: string[] } | null
+      : null;
+
     const doc = await Model.findOneAndUpdate(await scopeWrite(ctx, collection, { _id: id }), body, { new: true }).exec();
 
     if (!doc) {
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
+    }
+
+    if (collection === 'surveys') {
+      const alreadyNotified = previousSurvey?.status === 'active' ? previousSurvey.assignedAthleteIds ?? [] : [];
+      notifyAssignedAthletes(doc.toObject(), alreadyNotified);
     }
 
     if (!wasCompleted && doc.athleteId === user.id) {

@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { DISH_CATEGORIES, DISH_CATEGORY_LABELS, type DishCategory } from '@/lib/meal-catalog';
 import { Plus, Trash2, Search, Save } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { panelConfig, type PanelRole } from '@/components/shared/panel-config';
 
 interface Ingredient {
     name: string;
@@ -44,21 +45,15 @@ interface MealFormProps {
         dishCategory?: DishCategory;
         isPublic?: boolean;
     };
-    /** Collection endpoint; edits go to `${apiBase}/${id}`. */
-    apiBase?: string;
-    /** Where to go after saving. */
-    redirectTo?: string;
-    /** Admin-created meals are catalogue meals — public by default. */
-    defaultPublic?: boolean;
+    /** Panel, z którego otwarto formularz: wybiera endpoint zapisu i domyślną widoczność. */
+    role: PanelRole;
+    /** Lista posiłków panelu, na którą wracamy po zapisie. */
+    redirectTo: string;
 }
 
-export default function MealForm({
-    initialData,
-    apiBase = '/api/trainer/meals',
-    redirectTo = '/trainer/diet/meals',
-    defaultPublic = false,
-}: MealFormProps) {
+export function MealForm({ initialData, role, redirectTo }: MealFormProps) {
     const router = useRouter();
+    const { mealsApi: apiBase, newMealsArePublic: defaultPublic } = panelConfig[role];
     const [mealName, setMealName] = useState(initialData?.name || '');
     const [category, setCategory] = useState<'Breakfast' | 'Lunch' | 'Dinner' | 'Snack'>(initialData?.category || 'Breakfast');
     const [description, setDescription] = useState(initialData?.description || '');
@@ -266,8 +261,7 @@ export default function MealForm({
 
     return (
         <div className="space-y-8">
-            <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold">{isEdit ? 'Edytuj Posiłek' : 'Utwórz Nowy Posiłek'}</h1>
+            <div className="flex justify-end items-center">
                 <Button onClick={handleSaveMeal} className="gap-2">
                     <Save className="w-4 h-4" /> {isEdit ? 'Zaktualizuj Posiłek' : 'Zapisz Posiłek'}
                 </Button>

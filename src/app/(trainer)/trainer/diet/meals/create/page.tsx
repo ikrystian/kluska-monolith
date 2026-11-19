@@ -1,11 +1,5 @@
-'use client';
+import { MealCreateView } from '@/components/shared/meals/MealViews';
 
-import MealForm from '@/components/trainer/MealForm';
-
-export default function CreateMealPage() {
-    return (
-        <div className="container mx-auto p-6">
-            <MealForm />
-        </div>
-    );
+export default function TrainerCreateMealPage() {
+    return <MealCreateView role="trainer" basePath="/trainer/diet/meals" />;
 }

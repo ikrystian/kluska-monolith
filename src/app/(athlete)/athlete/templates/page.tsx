@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, Edit, Trash2, Loader2, Dumbbell, Calendar } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { WorkoutForm } from '@/components/admin/workout-form';
-import { PlanForm } from '@/components/admin/plan-form';
+import { PlanForm } from '@/components/shared/workout-plans/PlanForm';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import {

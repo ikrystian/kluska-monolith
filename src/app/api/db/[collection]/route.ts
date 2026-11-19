@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Model } from 'mongoose';
+import { Model, isValidObjectId } from 'mongoose';
 import { getRequestUser } from '@/lib/api-auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { byteSize, compact, sendSerialized, serializeJson, type SerializedJson } from '@/lib/http-cache';
 import { cached, cacheKeys } from '@/lib/server-cache';
 import { describeFinishedActivity, notifyFriendsOfActivity } from '@/lib/friends';
 import { refreshUserChallenges } from '@/lib/challenges';
+import { notifyAssignedAthletes, validateSurveyAnswers } from '@/lib/surveys';
 import { AccessContext, AccessError, isPublicCollection, sanitizeBody, scopeRead } from '@/lib/db-access';
 import { linkWorkoutLogExercises } from '@/lib/workout-log-exercises';
 import { onActivityLogged, onRunLogged, onWorkoutCompleted } from '@/lib/gamification';
@@ -257,8 +258,25 @@ export async function POST(
     if (collection === 'workoutLogs' && Array.isArray(body.exercises)) {
       body.exercises = await linkWorkoutLogExercises(body.exercises);
     }
+    if (collection === 'surveyResponses') {
+      // Odpowiedź tylko na aktywną ankietę przypisaną do tego sportowca, z wypełnionymi wymaganymi pytaniami.
+      const survey = isValidObjectId(String(body.surveyId))
+        ? await Survey.findById(body.surveyId).lean().exec()
+        : null;
+      if (!survey || survey.status !== 'active' || !survey.assignedAthleteIds.includes(user.id)) {
+        return NextResponse.json({ error: 'Ta ankieta nie jest dla Ciebie dostępna.' }, { status: 403 });
+      }
+      const problem = validateSurveyAnswers(survey, body.answers);
+      if (problem) return NextResponse.json({ error: problem }, { status: 400 });
+      body.athleteId = user.id;
+      body.athleteName = user.name;
+    }
     const doc = new Model(body);
     await doc.save();
+
+    if (collection === 'surveys') {
+      notifyAssignedAthletes(doc.toObject());
+    }
 
     // A workout saved as already completed, or a recorded run: tell friends.
     const activity = describeFinishedActivity(collection, doc.toObject());

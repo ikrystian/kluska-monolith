@@ -207,6 +207,19 @@ export default function AthleteDashboardPage() {
     { assignedAthleteIds: user?.uid }
   );
 
+  // Ankiety przypisane przez trenera, na które sportowiec jeszcze nie odpowiedział
+  const { data: assignedSurveys } = useCollection<{ id: string; title: string; trainerName: string }>(
+    user ? 'surveys' : null,
+    { assignedAthleteIds: user?.uid, status: 'active' }
+  );
+  const { data: myResponses } = useCollection<{ surveyId: string }>(
+    user ? 'surveyResponses' : null,
+    { athleteId: user?.uid }
+  );
+  const pendingSurveys = (assignedSurveys ?? []).filter(
+    survey => !myResponses?.some(response => response.surveyId === survey.id)
+  );
+
   // Upcoming trainer sessions
   const { data: trainerSessions } = useCollection<TrainingSessionData>(
     user ? 'trainingSessions' : null,
@@ -577,6 +590,19 @@ export default function AthleteDashboardPage() {
           lastWorkout={recentWorkouts?.[0]}
         />
       </div>
+
+      {pendingSurveys.map(survey => (
+        <Link key={survey.id} to={`/athlete/surveys/${survey.id}`} className="row-tap flex items-center gap-3 rounded-2xl bg-card px-3.5 py-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-secondary text-social">
+            <ClipboardCheck className="h-5 w-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[15px] font-semibold leading-tight">Ankieta od trenera</span>
+            <span className="block truncate text-xs text-muted-foreground">{survey.title} · {survey.trainerName}</span>
+          </span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+        </Link>
+      ))}
 
       {pendingCheckIn && (
         <Link to="/athlete/check-in" className="row-tap flex items-center gap-3 rounded-2xl bg-card px-3.5 py-3">

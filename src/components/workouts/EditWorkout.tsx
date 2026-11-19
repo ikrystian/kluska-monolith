@@ -100,6 +100,10 @@ interface EditWorkoutProps {
     redirectPath?: string;
 }
 
+/** Id ćwiczenia zapisanego w treningu (starsze kopie mają tylko `_id`). */
+const exerciseIdOf = (exercise: Exercise): string =>
+    exercise?.id ?? (exercise as Exercise & { _id?: string })?._id ?? '';
+
 export function EditWorkout({ workoutId, onSuccess, redirectPath }: EditWorkoutProps) {
     const { user } = useUser();
     const { toast } = useToast();
@@ -131,7 +135,7 @@ export function EditWorkout({ workoutId, onSuccess, redirectPath }: EditWorkoutP
                 level: workout.level,
                 durationMinutes: workout.durationMinutes,
                 exerciseSeries: workout.exerciseSeries.map(series => ({
-                    exerciseId: series.exercise.id,
+                    exerciseId: exerciseIdOf(series.exercise),
                     tempo: series.tempo || '',
                     tip: series.tip || '',
                     sets: series.sets.map(set => ({
@@ -214,7 +218,9 @@ export function EditWorkout({ workoutId, onSuccess, redirectPath }: EditWorkoutP
 
         try {
             const fullExerciseSeries = data.exerciseSeries.map(series => {
-                const exercise = exercises?.find(e => e.id === series.exerciseId);
+                // Ćwiczenie mogło zniknąć z biblioteki — wtedy zostaje kopia zapisana w treningu, zamiast blokować zapis.
+                const exercise = exercises?.find(e => e.id === series.exerciseId)
+                    ?? workout.exerciseSeries.find(s => exerciseIdOf(s.exercise) === series.exerciseId)?.exercise;
                 if (!exercise) throw new Error(`Exercise not found: ${series.exerciseId}`);
 
                 return {
