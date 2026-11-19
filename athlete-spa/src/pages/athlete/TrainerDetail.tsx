@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { TrainerAvatar } from '@/components/trainers/TrainerAvatar';
 import { TrainerGallery } from '@/components/trainers/TrainerGallery';
 import { TrainerInquirySheet } from '@/components/trainers/TrainerInquirySheet';
+import { TrainerReviews } from '@/components/trainers/TrainerReviews';
 import { ContactActions } from '@/components/trainers/TrainerContact';
 import {
   AboutSection,
@@ -219,6 +220,8 @@ export default function AthleteTrainerDetailPage() {
           )}
 
           {!!card?.testimonials?.length && <TestimonialsSection items={card.testimonials} />}
+
+          <TrainerReviews trainerId={trainer.id} canReview={isMine} />
 
           {!!card?.faq?.length && <FaqSection items={card.faq} />}
 
