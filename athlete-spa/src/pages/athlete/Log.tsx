@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { PlusCircle, Trash2, Save, Loader2, Dumbbell, ArrowLeft, ArrowRight, Play, Calendar, ChevronRight, ChevronDown, LayoutList, GalleryHorizontal, RotateCcw, Check, Timer, AlertCircle, Minus, Plus, X, Camera, Image as ImageIcon, Footprints, BookOpen, House } from 'lucide-react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
@@ -238,6 +238,28 @@ const logSchema = z.object({
 
 type LogFormValues = z.infer<typeof logSchema>;
 
+
+/** Trening (z biblioteki albo z planu) jako wartości formularza dziennika. */
+function workoutToLogValues(workout: Workout): LogFormValues {
+  return {
+    workoutName: workout.name,
+    exerciseSeries: workout.exerciseSeries.map(series => ({
+      exerciseId: getExerciseId(series.exercise),
+      sets: series.sets.map((s, i) => ({
+        number: i + 1,
+        type: s.type || SetType.WorkingSet,
+        reps: s.reps || 0,
+        weight: s.weight || 0,
+        restTimeSeconds: s.restTimeSeconds || 60,
+        duration: undefined, // WorkoutSet doesn't have duration in data.ts, but ExerciseSeries might? No.
+        completed: false
+      })),
+      tempo: series.tempo || "2-0-2-0",
+      tip: series.tip
+    })),
+    level: workout.level || TrainingLevel.Intermediate
+  };
+}
 
 // --- WORKOUT BUILDER VIEW ---
 // Allows the user to prepare the workout before starting the timer
@@ -1853,6 +1875,60 @@ function WorkoutPreviewSheet({ trigger, title, description, exerciseSeries, acti
   );
 }
 
+/** Etapy → tygodnie → dni planu; dzień można od razu rozpocząć. */
+function PlanStagesAccordion({ plan, onStartWorkout, defaultStage }: { plan: TrainingPlan; onStartWorkout: (workout: Workout) => void; defaultStage?: string }) {
+  return (
+  <Accordion type="single" collapsible defaultValue={defaultStage} className="w-full">
+      {plan.stages?.map((stage, stageIndex) => (
+        <AccordionItem value={`stage-${stageIndex}`} key={stageIndex}>
+          <AccordionTrigger>{stage.name}</AccordionTrigger>
+          <AccordionContent>
+            <div className="space-y-4">
+              {stage.weeks?.map((week, weekIndex) => (
+                <div key={weekIndex}>
+                  <h4 className="eyebrow mb-1.5">Tydzień {weekIndex + 1}</h4>
+                  <div className="divide-y divide-border/50 overflow-hidden rounded-xl bg-secondary/50">
+                    {week.days?.map((day, dayIndex) => {
+                      if (day === 'Rest Day') {
+                        return (
+                          <div key={dayIndex} className="flex justify-between px-3 py-2.5 text-sm text-muted-foreground">
+                            <span>Dzień {dayIndex + 1}</span>
+                            <span>Odpoczynek</span>
+                          </div>
+                        );
+                      }
+                      // It's a Workout object
+                      return (
+                        <WorkoutPreviewSheet
+                          key={dayIndex}
+                          title={day.name}
+                          description={`Dzień ${dayIndex + 1} · ${exercisesLabel(day.exerciseSeries?.length || 0)}`}
+                          exerciseSeries={day.exerciseSeries}
+                          actionLabel="Rozpocznij"
+                          onAction={() => onStartWorkout(day)}
+                          trigger={
+                            <button type="button" className="row-tap flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left">
+                              <span className="min-w-0">
+                                <span className="block truncate text-sm font-semibold">Dzień {dayIndex + 1}: {day.name}</span>
+                                <span className="block text-xs text-muted-foreground">{exercisesLabel(day.exerciseSeries?.length || 0)}</span>
+                              </span>
+                              <Play className="h-4 w-4 shrink-0 text-primary" />
+                            </button>
+                          }
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      ))}
+    </Accordion>
+  );
+}
+
 function SectionHeader({ title, count, action }: { title: string; count?: number; action?: React.ReactNode }) {
   return (
     <div className="mb-2.5 flex items-end justify-between gap-3">
@@ -1988,25 +2064,7 @@ function WorkoutSelectionView({ onStartBuilder }: { onStartBuilder: (data: LogFo
 
   const handleStartWorkout = (workout: Workout) => {
     noteExercises(workout.exerciseSeries.map(series => series.exercise));
-    const workoutData: LogFormValues = {
-      workoutName: workout.name,
-      exerciseSeries: workout.exerciseSeries.map(series => ({
-        exerciseId: getExerciseId(series.exercise),
-        sets: series.sets.map((s, i) => ({
-          number: i + 1,
-          type: s.type || SetType.WorkingSet,
-          reps: s.reps || 0,
-          weight: s.weight || 0,
-          restTimeSeconds: s.restTimeSeconds || 60,
-          duration: undefined, // WorkoutSet doesn't have duration in data.ts, but ExerciseSeries might? No.
-          completed: false
-        })),
-        tempo: series.tempo || "2-0-2-0",
-        tip: series.tip
-      })),
-      level: workout.level || TrainingLevel.Intermediate
-    };
-    onStartBuilder(workoutData);
+    onStartBuilder(workoutToLogValues(workout));
   };
 
   const handleRepeatWorkout = (log: WorkoutLog) => {
@@ -2041,12 +2099,31 @@ function WorkoutSelectionView({ onStartBuilder }: { onStartBuilder: (data: LogFo
   }
 
   const plansLoading = assignedPlansLoading || myPlansLoading;
+  // Plany przypisane przez trenera są na górze; w sekcji „Plany” zostają pozostałe.
+  const assignedPlanIds = useMemo(() => new Set((assignedPlans ?? []).map(plan => plan.id)), [assignedPlans]);
+  const otherPlans = workoutPlans.filter(plan => !assignedPlanIds.has(plan.id));
   const templatesPending = templatesLoading && !workoutTemplates;
   const lastLog = historyLogs?.[0];
   const logDate = (log: WorkoutLog) => new Date(log.endTime as unknown as string | number | Date);
 
   return (
     <div className="stagger-rise space-y-6">
+
+      {assignedPlans && assignedPlans.length > 0 && (
+        <section data-tour="log-assigned-plan" className="space-y-3">
+          {assignedPlans.map(plan => (
+            <div key={plan.id} className="overflow-hidden rounded-2xl bg-card">
+              <div className="bg-primary p-4 text-primary-foreground">
+                <p className="text-xs font-semibold opacity-80">Twój plan od trenera</p>
+                <h2 className="mt-1 font-display text-3xl font-bold uppercase leading-none">{plan.name}</h2>
+              </div>
+              <div className="p-2">
+                <PlanStagesAccordion plan={plan} onStartWorkout={handleStartWorkout} defaultStage="stage-0" />
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
 
       {/* Strength is the main way in, so it takes the wider tile; the run tile only exists with GPS. */}
       <div data-tour="log-quick-start" className="grid grid-cols-5 gap-2">
@@ -2175,16 +2252,16 @@ function WorkoutSelectionView({ onStartBuilder }: { onStartBuilder: (data: LogFo
         )}
       </section>
 
-      {(plansLoading || workoutPlans.length > 0) && (
+      {(plansLoading || otherPlans.length > 0) && (
         <section data-tour="log-plans">
-          <SectionHeader title="Plany" count={workoutPlans.length} />
-          {plansLoading && workoutPlans.length === 0 ? (
+          <SectionHeader title="Plany" count={otherPlans.length} />
+          {plansLoading && otherPlans.length === 0 ? (
             <div className="space-y-2.5">
               {[1, 2].map(i => <div key={i} className="h-16 animate-pulse rounded-2xl bg-card" />)}
             </div>
           ) : (
             <div className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card">
-              {workoutPlans.map(plan => (
+              {otherPlans.map(plan => (
                 <Sheet key={plan.id}>
                   <SheetTrigger asChild>
                     <button type="button" className="row-tap flex w-full items-center gap-3 px-3.5 py-3 text-left">
@@ -2203,54 +2280,7 @@ function WorkoutSelectionView({ onStartBuilder }: { onStartBuilder: (data: LogFo
                       <SheetTitle>{plan.name}</SheetTitle>
                       <SheetDescription>Wybierz trening z planu.</SheetDescription>
                     </SheetHeader>
-                    <Accordion type="single" collapsible className="mt-2 w-full">
-                      {plan.stages?.map((stage, stageIndex) => (
-                        <AccordionItem value={`stage-${stageIndex}`} key={stageIndex}>
-                          <AccordionTrigger>{stage.name}</AccordionTrigger>
-                          <AccordionContent>
-                            <div className="space-y-4">
-                              {stage.weeks?.map((week, weekIndex) => (
-                                <div key={weekIndex}>
-                                  <h4 className="eyebrow mb-1.5">Tydzień {weekIndex + 1}</h4>
-                                  <div className="divide-y divide-border/50 overflow-hidden rounded-xl bg-secondary/50">
-                                    {week.days?.map((day, dayIndex) => {
-                                      if (day === 'Rest Day') {
-                                        return (
-                                          <div key={dayIndex} className="flex justify-between px-3 py-2.5 text-sm text-muted-foreground">
-                                            <span>Dzień {dayIndex + 1}</span>
-                                            <span>Odpoczynek</span>
-                                          </div>
-                                        );
-                                      }
-                                      // It's a Workout object
-                                      return (
-                                        <WorkoutPreviewSheet
-                                          key={dayIndex}
-                                          title={day.name}
-                                          description={`Dzień ${dayIndex + 1} · ${exercisesLabel(day.exerciseSeries?.length || 0)}`}
-                                          exerciseSeries={day.exerciseSeries}
-                                          actionLabel="Rozpocznij"
-                                          onAction={() => handleStartWorkout(day)}
-                                          trigger={
-                                            <button type="button" className="row-tap flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left">
-                                              <span className="min-w-0">
-                                                <span className="block truncate text-sm font-semibold">Dzień {dayIndex + 1}: {day.name}</span>
-                                                <span className="block text-xs text-muted-foreground">{exercisesLabel(day.exerciseSeries?.length || 0)}</span>
-                                              </span>
-                                              <Play className="h-4 w-4 shrink-0 text-primary" />
-                                            </button>
-                                          }
-                                        />
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      ))}
-                    </Accordion>
+                    <PlanStagesAccordion plan={plan} onStartWorkout={handleStartWorkout} />
                   </SheetContent>
                 </Sheet>
               ))}
@@ -2281,6 +2311,10 @@ export default function LogWorkoutPage() {
   const logId = searchParams.get('logId');
   // Ćwiczenie przyjęte z kodu QR na maszynie (/athlete/exercise/:id → /athlete/log?addExercise=)
   const pendingExerciseId = searchParams.get('addExercise');
+  const location = useLocation();
+  const navigate = useNavigate();
+  // Trening z planu przekazany z widoku szczegółów (bez wpisu w bibliotece).
+  const planWorkout = (location.state as { planWorkout?: Workout } | null)?.planWorkout;
   const { data: preselectedWorkout, isLoading: isLoadingPreselected } = useDoc<Workout>('workouts', workoutId);
   const { data: specificWorkoutLog } = useDoc<WorkoutLog>('workoutLogs', logId);
 
@@ -2425,6 +2459,15 @@ export default function LogWorkoutPage() {
       return next;
     }, { replace: true });
   }, [pendingExerciseId, isLoadingActive, activeWorkouts, workoutId, builderData, view, setSearchParams]);
+
+  useEffect(() => {
+    if (!planWorkout || isLoadingActive) return;
+    // Konsumujemy przekazanie raz: odświeżenie strony nie może uruchomić treningu ponownie.
+    navigate({ pathname: location.pathname, search: location.search }, { replace: true, state: null });
+    if (activeWorkouts && activeWorkouts.length > 0) return; // jedna sesja naraz
+    noteExercises(planWorkout.exerciseSeries.map(series => series.exercise));
+    handleStartBuilder(workoutToLogValues(planWorkout));
+  }, [planWorkout, isLoadingActive, activeWorkouts]);
 
   const handleStartBuilder = (data: LogFormValues) => {
     setBuilderData(data);

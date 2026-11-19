@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Calendar, ChevronDown, Clock, Dumbbell, Layers, MessageSquare, Users } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Calendar, ChevronDown, Clock, Dumbbell, Layers, MessageSquare, Play, Users } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useCollection, useDoc, useUser } from '@/lib/db-hooks';
 import type { TrainingPlan, UserProfile, Workout } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -10,11 +11,18 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { tint } from '@/components/profile/profile-ui';
 import { TrainerAvatar } from '@/components/trainers/TrainerAvatar';
-import { levelColor, levelLabel } from '@/components/workouts/workout-format';
+import { exerciseCount, levelColor, levelLabel, seriesTarget, topWeight } from '@/components/workouts/workout-format';
 
 const DAY_LABELS = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd'];
 
 const isWorkout = (day: unknown): day is Workout => typeof day === 'object' && day !== null;
+
+/** Prefix of workouts the trainer built directly inside a plan (mirrors the trainer app). */
+const PLAN_DAY_ID_PREFIX = 'plan-day-';
+
+/** Such a workout has no library page, so it is opened from the plan itself. */
+const isPlanOwnWorkout = (workout: Workout) =>
+  !!workout.id?.startsWith(PLAN_DAY_ID_PREFIX) || (!workout.id && (workout.exerciseSeries?.length ?? 0) > 0);
 
 function planStats(plan: TrainingPlan) {
   const weeks = plan.stages.reduce((n, s) => n + s.weeks.length, 0);
@@ -51,7 +59,52 @@ function TrainerStrip({ trainer }: { trainer: UserProfile }) {
   );
 }
 
-function StageBlock({ stage, index, color, defaultOpen }: { stage: TrainingPlan['stages'][number]; index: number; color: string; defaultOpen: boolean }) {
+function PlanDayDialog({ workout, onClose }: { workout: Workout | null; onClose: () => void }) {
+  const navigate = useNavigate();
+  const startWorkout = () => {
+    if (!workout) return;
+    // Trening z planu nie ma wpisu w bibliotece, więc przekazujemy go do dziennika w stanie nawigacji.
+    navigate('/athlete/log', { state: { planWorkout: workout } });
+  };
+  return (
+    <Dialog open={!!workout} onOpenChange={open => !open && onClose()}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
+        {workout && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="font-headline">{workout.name}</DialogTitle>
+              <DialogDescription>
+                {levelLabel(workout.level)} · {workout.durationMinutes} min · {exerciseCount(workout.exerciseSeries?.length ?? 0)}
+              </DialogDescription>
+            </DialogHeader>
+            <ul className="space-y-2">
+              {(workout.exerciseSeries ?? []).map((series, i) => {
+                const target = seriesTarget(series);
+                const weight = topWeight(series);
+                return (
+                  <li key={i} className="rounded-xl bg-secondary/40 p-3">
+                    <p className="text-sm font-semibold">{series.exercise.name}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {target.sets} × {target.value} {target.unit}
+                      {weight !== null && ` · do ${weight} kg`}
+                      {series.tempo && ` · tempo ${series.tempo}`}
+                    </p>
+                    {series.tip && <p className="mt-1 text-xs italic text-muted-foreground">{series.tip}</p>}
+                  </li>
+                );
+              })}
+            </ul>
+            <Button className="mt-2 h-11 w-full" onClick={startWorkout}>
+              <Play className="mr-2 h-4 w-4 fill-current" /> Rozpocznij trening
+            </Button>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function StageBlock({ stage, index, color, defaultOpen, onOpenWorkout }: { stage: TrainingPlan['stages'][number]; index: number; color: string; defaultOpen: boolean; onOpenWorkout: (workout: Workout) => void }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="overflow-hidden rounded-2xl border border-border/60 bg-background/60">
@@ -95,6 +148,19 @@ function StageBlock({ stage, index, color, defaultOpen }: { stage: TrainingPlan[
                       {workout ? <Dumbbell className="mt-0.5 h-3.5 w-3.5" /> : <span className="mt-0.5">–</span>}
                     </span>
                   );
+                  if (workout && isPlanOwnWorkout(workout)) {
+                    return (
+                      <button
+                        key={di}
+                        type="button"
+                        onClick={() => onOpenWorkout(workout)}
+                        aria-label={`Otwórz trening: ${workout.name}`}
+                        className="transition-transform active:scale-90"
+                      >
+                        {cell}
+                      </button>
+                    );
+                  }
                   return workout?.id ? (
                     <Link key={di} to={`/athlete/workouts/${workout.id}`} className="transition-transform active:scale-90">
                       {cell}
@@ -124,6 +190,7 @@ function StageBlock({ stage, index, color, defaultOpen }: { stage: TrainingPlan[
 function PlanCard({ plan }: { plan: TrainingPlan }) {
   const { stages, weeks, workouts } = planStats(plan);
   const color = levelColor(plan.level);
+  const [openWorkout, setOpenWorkout] = useState<Workout | null>(null);
 
   return (
     <article className="overflow-hidden rounded-2xl bg-card">
@@ -151,9 +218,17 @@ function PlanCard({ plan }: { plan: TrainingPlan }) {
 
       <div className="space-y-2 p-3">
         {plan.stages.map((stage, i) => (
-          <StageBlock key={i} stage={stage} index={i} color={color} defaultOpen={plan.stages.length === 1 && i === 0} />
+          <StageBlock
+            key={i}
+            stage={stage}
+            index={i}
+            color={color}
+            defaultOpen={plan.stages.length === 1 && i === 0}
+            onOpenWorkout={setOpenWorkout}
+          />
         ))}
       </div>
+      <PlanDayDialog workout={openWorkout} onClose={() => setOpenWorkout(null)} />
     </article>
   );
 }
