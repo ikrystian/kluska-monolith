@@ -1880,12 +1880,23 @@ function WorkoutPreviewSheet({ trigger, title, description, exerciseSeries, acti
 /** Klucz dnia planu w obrębie jednego planu (etap-tydzień-dzień). */
 const planDayKey = (stage: number, week: number, day: number) => `${stage}-${week}-${day}`;
 
-/** Ile dni challenge w planie sportowiec już wykonał. */
+/**
+ * Czy plan jest challenge. Plany zapisane przed zmianą mają flagę na dniach zamiast na planie —
+ * wtedy też uznajemy je za challenge, dopóki trener ich nie zapisze ponownie.
+ */
+function isChallengePlan(plan: TrainingPlan) {
+  return plan.isChallenge ?? !!plan.stages?.some(stage =>
+    stage.weeks?.some(week => week.days?.some(day => typeof day === 'object' && !!day?.isChallenge))
+  );
+}
+
+/** Ile treningów planu (challenge = wszystkie dni treningowe) sportowiec już wykonał. */
 function challengeProgress(plan: TrainingPlan, completedDays?: Set<string>) {
   let total = 0;
   let done = 0;
+  if (!isChallengePlan(plan)) return { total, done };
   plan.stages?.forEach((stage, s) => stage.weeks?.forEach((week, w) => week.days?.forEach((day, d) => {
-    if (typeof day === 'object' && day?.isChallenge) {
+    if (typeof day === 'object' && day) {
       total += 1;
       if (completedDays?.has(planDayKey(s, w, d))) done += 1;
     }
@@ -1901,6 +1912,7 @@ function PlanStagesAccordion({ plan, onStartWorkout, defaultStage, completedDays
   /** Dni planu już wykonane przez sportowca (`planDayKey`). */
   completedDays?: Set<string>;
 }) {
+  const planIsChallenge = isChallengePlan(plan);
   return (
     <Accordion type="single" collapsible defaultValue={defaultStage} className="w-full">
       {plan.stages?.map((stage, stageIndex) => (
@@ -1923,7 +1935,7 @@ function PlanStagesAccordion({ plan, onStartWorkout, defaultStage, completedDays
                       }
                       // It's a Workout object
                       const planDay: PlanDayRef = { planId: plan.id, stage: stageIndex, week: weekIndex, day: dayIndex };
-                      const challenge = !!day.isChallenge;
+                      const challenge = planIsChallenge;
                       const done = challenge && !!completedDays?.has(planDayKey(stageIndex, weekIndex, dayIndex));
                       return (
                         <WorkoutPreviewSheet

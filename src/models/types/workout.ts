@@ -12,7 +12,7 @@ export interface Workout {
   ownerId?: string;
   description?: string;
   sourceWorkoutId?: string; // Track the original workout when copied
-  /** Dzień planu oznaczony przez trenera jako challenge (tylko w kopii dnia planu). */
+  /** @deprecated Challenge jest oznaczany na poziomie planu (`TrainingPlan.isChallenge`). Zostaje tylko do odczytu starych planów. */
   isChallenge?: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -42,6 +42,8 @@ export interface TrainingPlan {
   name: string;
   level: TrainingLevel;
   description?: string;
+  /** Cały plan jest challenge — każdy dzień treningowy liczy się do postępu. Brak wartości = stary plan. */
+  isChallenge?: boolean;
   stages: TrainingStage[];
   trainerId?: string;
   assignedAthleteIds?: string[];

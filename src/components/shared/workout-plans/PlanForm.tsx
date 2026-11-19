@@ -41,12 +41,12 @@ const planSchema = z.object({
     name: z.string().min(1, 'Nazwa jest wymagana.'),
     level: z.nativeEnum(TrainingLevel, { error: 'Poziom jest wymagany.' }),
     description: z.string().optional(),
+    isChallenge: z.boolean(),
     stages: z.array(z.object({
         name: z.string().min(1, 'Nazwa etapu jest wymagana.'),
         weeks: z.array(z.object({
             days: z.array(z.string()).length(7), // storing workout IDs, 'Rest Day' or CUSTOM_DAY_VALUE
             custom: z.array(customDaySchema).length(7), // treningi ułożone w planie, indeksowane jak `days`
-            challenges: z.array(z.boolean()).length(7), // oznaczenie challenge, indeksowane jak `days`
         })).min(1, 'Przynajmniej jeden tydzień jest wymagany.'),
     })).min(1, 'Przynajmniej jeden etap jest wymagany.'),
 });
@@ -70,6 +70,21 @@ const isCustomDay = (day: DayPlan, allowCustomDays: boolean): day is Workout =>
 
 const dayToFormValue = (day: DayPlan, allowCustomDays: boolean): string =>
     isCustomDay(day, allowCustomDays) ? CUSTOM_DAY_VALUE : rawDayId(day);
+
+/**
+ * Czy plan jest challenge. Plany zapisane przed zmianą mają flagę na dniach zamiast na planie —
+ * wtedy też uznajemy je za challenge, dopóki nie zostaną zapisane ponownie.
+ */
+export const isChallengePlan = (plan: TrainingPlan): boolean =>
+    plan.isChallenge ?? !!plan.stages?.some(stage =>
+        stage.weeks?.some(week => week.days?.some(day => typeof day !== 'string' && !!day.isChallenge))
+    );
+
+/** Od teraz challenge należy do planu, więc starą flagę z dnia usuwamy przy zapisie. */
+const withoutLegacyDayChallenge = (workout: Workout): Workout => {
+    const { isChallenge: _legacyFlag, ...day } = workout;
+    return day;
+};
 
 /** Trening zapisany w planie zamieniony na wartości formularza. */
 const workoutToCustomValue = (workout: Workout): NonNullable<CustomDayValues> => ({
@@ -135,14 +150,14 @@ export function PlanForm({ initialData, onSubmit, isLoading, allowCustomDays = f
             name: initialData?.name || '',
             level: initialData?.level || TrainingLevel.Beginner,
             description: initialData?.description || '',
+            isChallenge: initialData ? isChallengePlan(initialData) : false,
             stages: initialData?.stages?.map(stage => ({
                 name: stage.name,
                 weeks: stage.weeks.map(week => ({
                     days: week.days.map(day => dayToFormValue(day, allowCustomDays)),
                     custom: week.days.map(day => (isCustomDay(day, allowCustomDays) ? workoutToCustomValue(day) : null)),
-                    challenges: week.days.map(day => typeof day !== 'string' && !!day.isChallenge),
                 })),
-            })) || [{ name: 'Etap 1', weeks: [{ days: Array(7).fill('Rest Day'), custom: Array(7).fill(null), challenges: Array(7).fill(false) }] }],
+            })) || [{ name: 'Etap 1', weeks: [{ days: Array(7).fill('Rest Day'), custom: Array(7).fill(null) }] }],
         },
     });
 
@@ -160,14 +175,13 @@ export function PlanForm({ initialData, onSubmit, isLoading, allowCustomDays = f
             weeks: stage.weeks.map(week => ({
                 days: week.days.map((dayId, dayIndex) => {
                     if (dayId === 'Rest Day') return 'Rest Day';
-                    const isChallenge = week.challenges[dayIndex];
                     if (allowCustomDays && dayId === CUSTOM_DAY_VALUE) {
                         const custom = week.custom[dayIndex];
-                        return custom ? { ...customValueToWorkout(custom, data.level), isChallenge } : 'Rest Day';
+                        return custom ? customValueToWorkout(custom, data.level) : 'Rest Day';
                     }
                     // Aktualna wersja z biblioteki, a gdy trening usunięto — kopia zapisana w planie.
                     const workout = workouts.find(w => w.id === dayId) ?? savedWorkouts.get(dayId);
-                    return workout ? { ...workout, isChallenge } : 'Rest Day';
+                    return workout ? withoutLegacyDayChallenge(workout) : 'Rest Day';
                 }) as [DayPlan, DayPlan, DayPlan, DayPlan, DayPlan, DayPlan, DayPlan]
             }))
         }));
@@ -177,6 +191,7 @@ export function PlanForm({ initialData, onSubmit, isLoading, allowCustomDays = f
             name: data.name,
             level: data.level,
             description: data.description,
+            isChallenge: data.isChallenge,
             stages: mappedStages,
         };
 
@@ -237,13 +252,30 @@ export function PlanForm({ initialData, onSubmit, isLoading, allowCustomDays = f
                                 </FormItem>
                             )}
                         />
+                        <FormField
+                            control={form.control}
+                            name="isChallenge"
+                            render={({ field }) => (
+                                <FormItem className="sm:col-span-2 flex flex-row items-center justify-between space-y-0 rounded-lg border p-4">
+                                    <div className="space-y-0.5">
+                                        <FormLabel>Challenge</FormLabel>
+                                        <p className="text-sm text-muted-foreground">
+                                            Cały plan jest challenge — każdy dzień treningowy liczy się do postępu sportowca.
+                                        </p>
+                                    </div>
+                                    <FormControl>
+                                        <Switch checked={field.value} onCheckedChange={field.onChange} disabled={isLoading} />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
                     </CardContent>
                 </Card>
 
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-semibold">Etapy Treningowe</h2>
-                        <Button type="button" onClick={() => appendStage({ name: `Etap ${stageFields.length + 1}`, weeks: [{ days: Array(7).fill('Rest Day'), custom: Array(7).fill(null), challenges: Array(7).fill(false) }] })} variant="outline">
+                        <Button type="button" onClick={() => appendStage({ name: `Etap ${stageFields.length + 1}`, weeks: [{ days: Array(7).fill('Rest Day'), custom: Array(7).fill(null) }] })} variant="outline">
                             <Plus className="mr-2 h-4 w-4" /> Dodaj Etap
                         </Button>
                     </div>
@@ -314,7 +346,7 @@ function StageWeeks({ stageIndex, form, workouts, daysOfWeek, isLoading, allowCu
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <h4 className="text-sm font-medium text-muted-foreground">Tygodnie w tym etapie</h4>
-                <Button type="button" variant="secondary" size="sm" onClick={() => { appendWeek({ days: Array(7).fill('Rest Day'), custom: Array(7).fill(null), challenges: Array(7).fill(false) }); setActiveWeek(`week-${weekFields.length}`); }} disabled={isLoading}>
+                <Button type="button" variant="secondary" size="sm" onClick={() => { appendWeek({ days: Array(7).fill('Rest Day'), custom: Array(7).fill(null) }); setActiveWeek(`week-${weekFields.length}`); }} disabled={isLoading}>
                     <Plus className="mr-2 h-3 w-3" /> Dodaj Tydzień
                 </Button>
             </div>
@@ -379,7 +411,6 @@ function StageWeeks({ stageIndex, form, workouts, daysOfWeek, isLoading, allowCu
                                                 </FormItem>
                                             )}
                                         />
-                                        <ChallengeSwitch form={form} stageIndex={stageIndex} weekIndex={weekIndex} dayIndex={dayIndex} isLoading={isLoading} />
                                     </CardContent>
                                 </Card>
                             ))}
@@ -398,36 +429,6 @@ function StageWeeks({ stageIndex, form, workouts, daysOfWeek, isLoading, allowCu
             </Tabs>
         </div>
     )
-}
-
-/** Przełącznik „Challenge” dla dnia; dni wolne nie mogą być challenge. */
-function ChallengeSwitch({ form, stageIndex, weekIndex, dayIndex, isLoading }: {
-    form: StageWeeksProps['form'];
-    stageIndex: number;
-    weekIndex: number;
-    dayIndex: number;
-    isLoading?: boolean;
-}) {
-    const dayValue = useWatch({ control: form.control, name: `stages.${stageIndex}.weeks.${weekIndex}.days.${dayIndex}` });
-
-    return (
-        <FormField
-            control={form.control}
-            name={`stages.${stageIndex}.weeks.${weekIndex}.challenges.${dayIndex}`}
-            render={({ field }) => (
-                <FormItem className="mt-3 flex items-center justify-between space-y-0">
-                    <FormLabel className="text-xs font-medium">Challenge</FormLabel>
-                    <FormControl>
-                        <Switch
-                            checked={!!field.value}
-                            onCheckedChange={field.onChange}
-                            disabled={isLoading || dayValue === 'Rest Day'}
-                        />
-                    </FormControl>
-                </FormItem>
-            )}
-        />
-    );
 }
 
 /** Edytory własnych treningów dla dni tygodnia ustawionych na „Własne ćwiczenia”. */

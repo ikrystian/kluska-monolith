@@ -13,6 +13,8 @@ export interface IWorkoutPlan extends Document {
       days: (string | object)[]; // Workout ID or 'Rest Day' or Workout object
     }[];
   }[];
+  /** Cały plan jest challenge. Bez `default` — stare plany nie mają wartości i odczytują się po staremu. */
+  isChallenge?: boolean;
   isDraft: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -35,6 +37,7 @@ const WorkoutPlanSchema = new Schema<IWorkoutPlan>(
         ],
       },
     ],
+    isChallenge: { type: Boolean },
     isDraft: { type: Boolean, default: true },
   },
   {
