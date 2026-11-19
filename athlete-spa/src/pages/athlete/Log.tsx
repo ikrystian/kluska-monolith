@@ -2548,7 +2548,8 @@ export default function LogWorkoutPage() {
   const handleStartBuilder = (data: LogFormValues, startedFromPlanDay?: PlanDayRef) => {
     setBuilderData(data);
     setPlanDay(startedFromPlanDay ?? null);
-    setView('builder');
+    // Dzień z planu startuje od razu do sesji, bez ekranu edycji ćwiczeń.
+    setView(startedFromPlanDay ? 'active' : 'builder');
   };
 
   const handleStartActive = (data: LogFormValues) => {

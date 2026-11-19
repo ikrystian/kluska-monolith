@@ -1,7 +1,7 @@
 import { useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
-import { ChevronRight, LogOut, Palette, Search, X } from 'lucide-react';
+import { ChevronRight, LogOut, MessageSquare, Palette, Search, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   AlertDialog,
@@ -15,7 +15,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import { EmptyState } from '@/components/ui/section';
 import { useUserProfile } from '@/contexts/UserProfileContext';
-import { useUser } from '@/lib/db-hooks';
+import { useDoc, useUser } from '@/lib/db-hooks';
+import type { UserProfile } from '@/lib/types';
+import { TrainerAvatar } from '@/components/trainers/TrainerAvatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRecentRoutes } from '@/hooks/useRecentRoutes';
 import { useGamificationProfile } from '@/hooks/useGamification';
@@ -44,6 +46,9 @@ const SETTINGS_HREF = '/athlete/settings';
 const SHORTCUT_COUNT = 4;
 /** Shortcuts shown until the athlete has opened enough screens of their own. */
 const DEFAULT_SHORTCUTS = ['/athlete/nutrition', '/athlete/calendar', '/athlete/progress', '/athlete/exercises'];
+
+/** Screens for finding a trainer; hidden from the menu once one is assigned. */
+const WITHOUT_TRAINER_HREFS = ['/athlete/trainers'];
 
 const SEARCH_HINTS = ['trening', 'waga', 'makro', 'czat', 'kalendarz', 'strava', 'powiadomienia', 'motyw'];
 
@@ -201,6 +206,42 @@ function ProfileRow() {
   );
 }
 
+/** The assigned trainer under the shortcuts: profile on tap, chat on the side. */
+function TrainerBanner({ trainerId }: { trainerId: string }) {
+  const { data: trainer } = useDoc<UserProfile>('users', trainerId);
+  if (!trainer) return null;
+
+  return (
+    <section aria-labelledby="menu-trainer">
+      <SectionTitle id="menu-trainer">Twój trener</SectionTitle>
+      <div className={cn(CARD, 'grid grid-cols-[1fr_auto] gap-px')}>
+        <Link
+          to={`/athlete/trainers/${trainer.id}`}
+          onClick={() => haptic('tap')}
+          className={cn(CELL, 'flex min-w-0 items-center gap-3 px-3.5 py-3')}
+        >
+          <TrainerAvatar trainer={trainer} className="h-12 w-12 text-base" />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[15px] font-semibold leading-snug">{trainer.name}</span>
+            {trainer.location && (
+              <span className="mt-0.5 block truncate text-[13px] text-muted-foreground">{trainer.location}</span>
+            )}
+          </span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+        </Link>
+        <Link
+          to="/athlete/chat"
+          onClick={() => haptic('tap')}
+          aria-label="Napisz do trenera"
+          className={cn(CELL, 'grid w-16 place-items-center')}
+        >
+          <MessageSquare className="h-5 w-5 text-primary" />
+        </Link>
+      </div>
+    </section>
+  );
+}
+
 /** Theme switch inline, so the most-changed setting needs no extra screen. */
 function ThemeRow() {
   const { theme, setTheme } = useTheme();
@@ -282,9 +323,18 @@ export default function MenuPage() {
 
   const role = userProfile?.role;
 
+  const trainerId = userProfile?.trainerId;
+  const hasTrainer = Boolean(trainerId);
+  /** Hides the screens for finding a trainer once one is assigned. */
+  const isVisible = (leaf: NavLeaf) => !(hasTrainer && WITHOUT_TRAINER_HREFS.includes(leaf.href));
   const groups = useMemo(
-    () => navItemsForRole(role).filter(isNavGroup).filter(group => group.label !== SETTINGS_GROUP && group.items.length > 0),
-    [role]
+    () =>
+      navItemsForRole(role)
+        .filter(isNavGroup)
+        .filter(group => group.label !== SETTINGS_GROUP)
+        .map(group => ({ ...group, items: group.items.filter(isVisible) }))
+        .filter(group => group.items.length > 0),
+    [role, hasTrainer]
   );
 
   const settingsLeaf = useMemo(() => navLeavesForRole(role).find(leaf => leaf.href === SETTINGS_HREF), [role]);
@@ -294,22 +344,23 @@ export default function MenuPage() {
     const leaves = navLeavesForRole(role);
     return recentRoutes
       .map(href => leaves.find(leaf => leaf.href === href))
-      .filter((leaf): leaf is NavLeaf => Boolean(leaf));
-  }, [recentRoutes, role]);
+      .filter((leaf): leaf is NavLeaf => Boolean(leaf))
+      .filter(isVisible);
+  }, [recentRoutes, role, hasTrainer]);
 
   /** The same screens topped up with defaults to a full row, in menu order. */
   const shortcutLeaves = useMemo(() => {
     const leaves = navLeavesForRole(role);
     const picked = new Set(
       [...recentLeaves.map(leaf => leaf.href), ...DEFAULT_SHORTCUTS]
-        .filter(href => leaves.some(leaf => leaf.href === href))
+        .filter(href => leaves.some(leaf => leaf.href === href && isVisible(leaf)))
         .filter((href, index, all) => all.indexOf(href) === index)
         .slice(0, SHORTCUT_COUNT)
     );
-    return leaves.filter(leaf => picked.has(leaf.href));
-  }, [recentLeaves, role]);
+    return leaves.filter(leaf => picked.has(leaf.href) && isVisible(leaf));
+  }, [recentLeaves, role, hasTrainer]);
 
-  const results = query.trim() ? searchNavLeaves(query, role) : null;
+  const results = query.trim() ? searchNavLeaves(query, role).filter(isVisible) : null;
 
   const closeSearch = () => {
     setQuery('');
@@ -425,6 +476,7 @@ export default function MenuPage() {
       ) : (
         <div className="stagger-rise space-y-6">
           {shortcutLeaves.length === SHORTCUT_COUNT && <Shortcuts leaves={shortcutLeaves} />}
+          {trainerId && <TrainerBanner trainerId={trainerId} />}
 
           {groups.map(group => (
             <DirectorySection key={group.label} title={group.label} leaves={group.items} />
